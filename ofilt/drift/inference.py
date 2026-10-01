@@ -1,5 +1,7 @@
 """Inference (Stage B). Part 1 (B1): design builder, pooled OLS, Driscoll-Kraay.
 Part 2 (B2): Huber M-estimator, exact date-deletion influence and curve, TOST.
+Part 3 (B3): stacked (b, delta_cc) with joint DK covariance; fraction unpriced f
+with delta-method and Fieller CIs; b_mkt and the raw/abnormal decomposition; Holm.
 
 Blinding: every entry point calls blind.require_unblinded BEFORE touching the
 target. On real dev data in Pass 1 that raises, so nothing involving a target
@@ -339,3 +341,154 @@ def tost_result(result: Result, param: str, spec: Spec | None = None, sesoi: flo
     sesoi = spec.sesoi() if sesoi is None else sesoi
     p = result.param(param)
     return tost(p["estimate"], p["se"], float(sesoi), float(spec.value("equivalence.alpha")))
+
+
+# ================================================================ part 3
+@dataclass(frozen=True)
+class JointResult:
+    """Two targets on ONE common sample and ONE design; joint DK covariance."""
+    names: tuple[str, ...]
+    targets: tuple[str, str]
+    coef: np.ndarray        # (2k,): [coef target 1, coef target 2]
+    cov: np.ndarray         # (2k, 2k)
+    lag: int
+    T: int
+    n: int
+    alpha: float
+
+    def pair(self, param: str) -> tuple[float, float, np.ndarray]:
+        k, j = len(self.names), self.names.index(param)
+        ix = [j, k + j]
+        return float(self.coef[j]), float(self.coef[k + j]), self.cov[np.ix_(ix, ix)]
+
+    def result(self, i: int) -> Result:
+        k = len(self.names)
+        sl = slice(i * k, (i + 1) * k)
+        return Result(self.names, self.coef[sl], self.cov[sl, sl], self.lag, self.T, self.n, self.alpha)
+
+
+def fit_joint(df: pd.DataFrame, spec: Spec | None = None, *, targets: tuple[str, str] = ("abn_oc", "cc_abn"),
+              secondary: str | None = None, exclude: list[str] | None = None,
+              provenance: str | None = None, lag: int | None = None) -> JointResult:
+    """Stacked OLS of two targets on the same design and common sample (rows where
+    both targets are non-missing). Row scores [x*e1, x*e2] are summed by date and
+    passed through the same Bartlett long-run matrix: cov = Bj S Bj, Bj = diag(B, B)."""
+    blind.require_unblinded(df, provenance=provenance)
+    spec = spec or Spec.load()
+    t1, t2 = targets
+    for t in targets:
+        if t in FORBIDDEN_TARGET_NAMES or t not in df.columns:
+            raise DesignError(f"bad target {t!r}")
+    sub = df.loc[df[t1].notna() & df[t2].notna()]
+    d1 = build_design(sub, spec, target=t1, secondary=secondary, exclude=exclude, provenance=provenance)
+    d2 = build_design(sub, spec, target=t2, secondary=secondary, exclude=exclude, provenance=provenance)
+    if not (np.array_equal(d1.index, d2.index) and np.array_equal(d1.X, d2.X)):
+        raise DesignError("joint designs differ")  # cannot happen with a common sample
+    f1, f2 = pooled_ols(d1), pooled_ols(d2)
+    L = Spec.dk_lag(int(d1.T)) if lag is None else lag
+    H = date_sums(np.hstack([d1.X * f1.resid[:, None], d1.X * f2.resid[:, None]]), d1.date_codes, d1.T)
+    Bj = linalg.block_diag(f1.bread, f1.bread)
+    cov = Bj @ bartlett_long_run(H, L) @ Bj
+    return JointResult(d1.names, (t1, t2), np.r_[f1.coef, f2.coef], cov, int(L), d1.T, len(d1.y), spec.alpha)
+
+
+def fraction_from(b: float, d: float, V: np.ndarray, alpha: float) -> dict:
+    """f = b/d with delta-method and Fieller CIs (normal reference).
+    Fieller set {f: (b - f d)^2 <= q^2 (Vbb - 2 f Vbd + f^2 Vdd)}, i.e.
+    A f^2 + B f + C <= 0 with A = d^2 - q^2 Vdd, B = -2(b d - q^2 Vbd), C = b^2 - q^2 Vbb.
+    f_hat always belongs to it, so it is never empty: 'bounded' iff A > 0
+    (|t_d| > q), else 'two_rays' (complement of an open interval) or 'real_line'."""
+    V = np.asarray(V, dtype=float)
+    q = float(stats.norm.ppf(1 - alpha / 2))
+    f = b / d
+    g = np.array([1.0 / d, -b / d ** 2])
+    se = float(np.sqrt(g @ V @ g))
+    A, Bc, C = d * d - q * q * V[1, 1], -2.0 * (b * d - q * q * V[0, 1]), b * b - q * q * V[0, 0]
+    disc = Bc * Bc - 4.0 * A * C
+    if A > 0:
+        r = np.sqrt(max(disc, 0.0))
+        fie = dict(kind="bounded", ci=((-Bc - r) / (2 * A), (-Bc + r) / (2 * A)))
+    elif disc > 0 and A < 0:
+        r = np.sqrt(disc)
+        lo, hi = sorted(((-Bc - r) / (2 * A), (-Bc + r) / (2 * A)))
+        fie = dict(kind="two_rays", ci=((-np.inf, lo), (hi, np.inf)))
+    else:
+        fie = dict(kind="real_line", ci=(-np.inf, np.inf))
+    return dict(f=f, se_delta=se, ci_delta=(f - q * se, f + q * se), fieller=fie,
+                t_denominator=float(d / np.sqrt(V[1, 1])), b=b, delta_cc=d, alpha=alpha)
+
+
+def fraction_unpriced(joint: JointResult, param: str | None = None) -> dict:
+    """f = b / delta_cc for the (abn_oc, cc_abn) joint fit (spec fraction_unpriced)."""
+    param = param or Spec.load().h1_parameter
+    b, d, V = joint.pair(param)
+    return fraction_from(b, d, V, joint.alpha)
+
+
+def fit_market(df: pd.DataFrame, spec: Spec | None = None, *, exclude: list[str] | None = None,
+               provenance: str | None = None, lag: int | None = None) -> Result:
+    """b_mkt: hedge_oc on the date-level version of the primary design (intercept +
+    FX block + controls with common slopes), one row per unique date of the primary
+    estimation sample; time-series NW with the same lag rule (= DK with one row per date)."""
+    spec = spec or Spec.load()
+    hedge = spec.hedge_oc_column
+    pooled = build_design(df, spec, target=hedge, exclude=exclude, provenance=provenance)  # guard first
+    cols = [hedge] + list(spec.fx_block) + list(spec.controls)
+    rows = df.loc[pooled.index, ["date"] + cols]
+    if (rows.groupby("date")[cols].nunique(dropna=False) > 1).any().any():
+        raise DesignError("market variables differ across tickers within a date")
+    m = rows.groupby("date", sort=True)[cols].first()
+    T = len(m)
+    X = np.column_stack([np.ones(T)] + [m[c].to_numpy(dtype=float) for c in cols[1:]])
+    dm = Design(y=m[hedge].to_numpy(dtype=float), X=X, names=("const",) + tuple(cols[1:]),
+                dates=m.index.to_numpy(dtype="datetime64[ns]"), tickers=np.array(["MKT"] * T),
+                index=np.arange(T), date_codes=np.arange(T, dtype=np.int64), T=T, target=hedge,
+                secondary=None, provenance=pooled.provenance)
+    return fit_dk(dm, spec, lag)
+
+
+def decomposition(df: pd.DataFrame, spec: Spec | None = None, *, exclude: list[str] | None = None,
+                  provenance: str | None = None) -> dict:
+    """b_raw vs mean_beta * b_mkt + b_abn (spec target.decomposition). Exact (gap = 0)
+    when beta is constant and the sample is balanced; otherwise an approximation."""
+    spec = spec or Spec.load()
+    h1 = spec.h1_parameter
+    da = build_design(df, spec, target="abn_oc", exclude=exclude, provenance=provenance)
+    dr = build_design(df, spec, target="raw_oc", exclude=exclude, provenance=provenance)
+    if not np.array_equal(da.index, dr.index):
+        raise DesignError("raw and abnormal samples differ")
+    ra, rr = fit_dk(da, spec).param(h1), fit_dk(dr, spec).param(h1)
+    rm = fit_market(df, spec, exclude=exclude, provenance=provenance).param(h1)
+    mean_beta = float(df.loc[da.index, "beta"].mean())
+    approx = mean_beta * rm["estimate"] + ra["estimate"]
+    return dict(b_raw=rr["estimate"], b_abn=ra["estimate"], b_mkt=rm["estimate"], mean_beta=mean_beta,
+                approx=approx, gap=rr["estimate"] - approx,
+                se_raw=rr["se"], se_abn=ra["se"], se_mkt=rm["se"])
+
+
+def holm(pvalues) -> np.ndarray:
+    """Holm step-down adjusted p-values, in the input order (monotone, capped at 1)."""
+    p = np.asarray(pvalues, dtype=float)
+    if p.ndim != 1 or not np.all((p >= 0) & (p <= 1)):
+        raise ValueError("p-values must be a 1-d array in [0, 1]")
+    m = len(p)
+    order = np.argsort(p, kind="mergesort")
+    adj = np.minimum(1.0, np.maximum.accumulate((m - np.arange(m)) * p[order]))
+    out = np.empty(m)
+    out[order] = adj
+    return out
+
+
+def secondary_family_tests(df: pd.DataFrame, spec: Spec | None = None, *, exclude: list[str] | None = None,
+                           provenance: str | None = None) -> pd.DataFrame:
+    """The four secondary members (AM-01 designs), each tested on its SECONDARY_TESTED
+    contrast with DK SEs; Holm across the family."""
+    spec = spec or Spec.load()
+    rows = []
+    for term in SECONDARY_TERMS:
+        r = fit_dk(build_design(df, spec, secondary=term, exclude=exclude, provenance=provenance), spec)
+        c = r.contrast(SECONDARY_TESTED[term])
+        rows.append(dict(member=term, estimate=c["estimate"], se=c["se"], z=c["z"], p=c["p"]))
+    out = pd.DataFrame(rows)
+    out["p_holm"] = holm(out["p"].to_numpy())
+    return out
