@@ -14,8 +14,14 @@ Samples:
     features non-missing;
   * evaluation rows: excl_forecast_eval == False (TANSHIN D, D+1; news D+1), target
     and features non-missing. Unscheduled news day D therefore stays in evaluation.
-Fold f tests on unique dates [s_f, s_f + 21) with s_f = 500 + 21 f, trained on all
-eligible rows dated < date[s_f]. Output: one tidy row per (date, ticker, model).
+Fold geometry (C1 correction): an ELIGIBLE training date has at least one eligible
+training row. The first test date is the first panel date after the 500th eligible
+date, so fold 0 trains on exactly 500 eligible dates (beta warm-up dates do not
+count); folds then advance every 21 PANEL dates and train on all eligible rows dated
+before the fold's first test date. All models in one call share the fold geometry,
+the training rows and the evaluation rows: the sample requires the feature sources
+of EVERY model in the call, so paired comparisons (CW, DM) use identical rows.
+Output: one tidy row per (date, ticker, model).
 """
 from __future__ import annotations
 
@@ -74,11 +80,20 @@ class ForecastModel:
         raise NotImplementedError
 
 
-def fold_starts(n_dates: int, spec: Spec) -> list[int]:
+def fold_starts(dates: pd.DatetimeIndex, eligible_dates, spec: Spec) -> list[int]:
+    """Panel-date positions of the fold starts. The first test date is the first panel
+    date after the min_train_dates-th ELIGIBLE training date (a date with at least one
+    eligible training row), so fold 0 trains on exactly min_train_dates eligible dates;
+    later folds advance every refit_every_dates PANEL dates (C1 correction)."""
     m, k = int(spec.value("forecast.min_train_dates")), int(spec.value("forecast.refit_every_dates"))
-    if n_dates <= m:
-        raise ValueError(f"need more than {m} dates for a first forecast, have {n_dates}")
-    return list(range(m, n_dates, k))
+    dates = pd.DatetimeIndex(dates)
+    elig = pd.DatetimeIndex(np.sort(pd.to_datetime(pd.Series(eligible_dates)).unique()))
+    if len(elig) < m:
+        raise ValueError(f"need {m} eligible training dates for a first forecast, have {len(elig)}")
+    s0 = int(dates.searchsorted(elig[m - 1], side="right"))
+    if s0 >= len(dates):
+        raise ValueError("no panel dates left after the training warm-up")
+    return list(range(s0, len(dates), k))
 
 
 def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, target: str = "abn_oc",
@@ -94,27 +109,32 @@ def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, ta
         raise ValueError(f"panel lacks {missing}")
     seed = spec.seed if seed is None else int(seed)
     dates = pd.DatetimeIndex(np.sort(df["date"].unique()))
-    starts = fold_starts(len(dates), spec)
     k = int(spec.value("forecast.refit_every_dates"))
     y_all = df[target].to_numpy(dtype=float)
+    feats_by = {}
+    for name, factory in models.items():
+        feats_by[name] = list(factory().features)
+        schema.assert_features_allowed(feats_by[name])
+    # One sample for ALL models in the call (paired comparisons need identical rows):
+    # finite target and every model's feature sources present.
+    need = sorted(set().union(*(schema.feature_sources(f) for f in feats_by.values())))
+    ok = np.isfinite(y_all) & df[need].notna().all(axis=1).to_numpy()
+    train_ok = ok & ~df["excl_inference"].astype(bool).to_numpy()
+    eval_ok = ok & ~df["excl_forecast_eval"].astype(bool).to_numpy()
+    dvals = df["date"].to_numpy(dtype="datetime64[ns]")
+    elig_dates = pd.DatetimeIndex(np.unique(dvals[train_ok]))
+    starts = fold_starts(dates, elig_dates, spec)
     preds, folds = [], []
     for name, factory in models.items():
-        proto = factory()
-        feats = list(proto.features)
-        schema.assert_features_allowed(feats)
-        need = sorted(schema.feature_sources(feats))
-        ok = np.isfinite(y_all) & df[need].notna().all(axis=1).to_numpy()
+        feats = feats_by[name]
         base = schema.select_features(df, feats) if feats else pd.DataFrame(index=df.index)
         F = pd.concat([df[["date", "ticker"]], base], axis=1)
-        train_ok = ok & ~df["excl_inference"].astype(bool).to_numpy()
-        eval_ok = ok & ~df["excl_forecast_eval"].astype(bool).to_numpy()
-        dvals = df["date"].to_numpy(dtype="datetime64[ns]")
         for f, s in enumerate(starts):
             t0, t1 = dates[s], dates[min(s + k, len(dates)) - 1]
             tr = train_ok & (dvals < np.datetime64(t0))
             te = eval_ok & (dvals >= np.datetime64(t0)) & (dvals <= np.datetime64(t1))
-            ctx = FoldContext(fold=f, train_end=dates[s - 1], test_start=t0, n_train_dates=s, spec=spec,
-                              seed=seed + 1000 * f)
+            ctx = FoldContext(fold=f, train_end=dates[s - 1], test_start=t0,
+                              n_train_dates=int(elig_dates.searchsorted(t0)), spec=spec, seed=seed + 1000 * f)
             m = factory()
             m.fit(F.loc[tr].reset_index(drop=True), y_all[tr], ctx)
             if te.any():
@@ -125,7 +145,8 @@ def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, ta
                                            "fold": f, "train_end": dates[s - 1], "model": name,
                                            "y": y_all[te], "yhat": yhat}))
             folds.append(dict(model=name, fold=f, train_end=dates[s - 1], test_start=t0, test_end=t1,
-                              n_train=int(tr.sum()), n_test=int(te.sum()), chosen=dict(m.chosen)))
+                              n_train_dates=ctx.n_train_dates, n_train=int(tr.sum()), n_test=int(te.sum()),
+                              chosen=dict(m.chosen)))
     out = pd.concat(preds, ignore_index=True)[list(PRED_COLUMNS)] if preds else pd.DataFrame(columns=PRED_COLUMNS)
     out.attrs = {"provenance": prov, "target": target}
     return out, pd.DataFrame(folds)
