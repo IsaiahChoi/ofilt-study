@@ -103,7 +103,8 @@ def _register_real_targets(df: pd.DataFrame) -> None:
     reg = getattr(blind, "register_real_values", None)
     if reg is not None:
         for c in ("y_oc", "y_topix_oc"):
-            reg(df[c].to_numpy(dtype=float), label=f"{df.attrs.get('provenance')}:{c}")
+            reg(df[c].to_numpy(dtype=float), label=f"{df.attrs.get('provenance')}:{c}",
+                dates=df["date"], tickers=df["ticker"])
 
 
 def load_events_firm(path: str | Path | None = None, spec: Spec | None = None) -> pd.DataFrame:

@@ -96,17 +96,52 @@ class TestGuard(unittest.TestCase):
         self.assertEqual(B.require_unblinded(d), "synthetic")  # oc_lag1 exempt; bar counts low-info
 
     def test_tick_grid_collision_margin(self):
-        # Real gap columns collide with y_oc keys (tick-grid ratios) but must stay well clear.
-        for c in ("ao_gap_adj", "ao_gap_raw", "ao_topix_gap"):
-            frac, n = B.match_fraction(self.dev[c])
-            self.assertLess(frac, 0.30, c)          # measured 0.219 / 0.218 / 0.002 at A4
-            self.assertLess(frac, B.MATCH_FRAC / 1.5, c)
-        d = self.dev[["ao_gap_adj", "ao_gap_raw", "ao_topix_gap", "usdjpy_ret"]].copy()
-        d["y_sim"] = np.random.default_rng(4).normal(0, 0.015, len(d))
-        d.attrs = {"provenance": "synthetic"}
-        self.assertEqual(B.require_unblinded(d), "synthetic")
-        small = B.mark_synthetic(pd.DataFrame({"t": self.dev["y_oc"].to_numpy()[:60]}))
+        # Real gap columns share tick-grid values with y_oc; the row-aligned check must stay clear
+        # on EVERY ticker-year subset (worst measured at A5: 0.187, 5706 2015).
+        d = self.dev
+        groups = [d] + [g for _, g in d.groupby("ticker")] + [g for _, g in d.groupby([d.ticker, d.date.dt.year])]
+        worst = max(B.row_match_fraction(g[c], g.date, g.ticker)[0]
+                    for g in groups for c in ("ao_gap_adj", "ao_gap_raw", "ao_topix_gap", "oc_lag1",
+                                              "topix_oc_lag1", "gap_adj_lag1", "range_lag1"))
+        self.assertLess(worst, 0.25)
+        cols = ["date", "ticker", "ao_gap_adj", "ao_gap_raw", "ao_topix_gap"] + sorted(PRE_OPEN_FEATURES)
+        for g in groups:
+            f = g[cols].copy()
+            f["y_sim"] = np.random.default_rng(4).normal(0, 0.015, len(f))
+            f.attrs = {"provenance": "synthetic"}
+            self.assertEqual(B.require_unblinded(f), "synthetic")
+        small = B.mark_synthetic(pd.DataFrame({"t": d["y_oc"].to_numpy()[:60]}))
         self.assertEqual(B.require_unblinded(small), "synthetic")  # documented limit: < MIN_DISTINCT
+
+    def test_fx_columns_never_compared(self):
+        fx_cols = {c for c in self.dev.columns if c.startswith(("usdjpy_", "eurusd_"))}
+        self.assertLessEqual(fx_cols, B.FX_NAMES)
+        calls = []
+        orig = B.row_match_fraction
+        def spy(values, dates, tickers):
+            calls.append(values.name)
+            return orig(values, dates, tickers)
+        r = self.dev.copy()
+        r.attrs = {"provenance": "synthetic"}
+        r = r.drop(columns=["y_oc", "y_topix_oc"])
+        from unittest import mock as _m
+        with _m.patch.object(B, "row_match_fraction", spy), _m.patch.object(B, "match_fraction", lambda v: (calls.append(v.name), (0.0, 0))[1]):
+            B.require_unblinded(r)
+        self.assertTrue(calls)
+        self.assertFalse(set(calls) & B.FX_NAMES)
+
+    def test_holes_closed(self):
+        d = self.dev
+        fake = B.mark_synthetic(pd.DataFrame({  # real target pasted under synthetic dates
+            "date": pd.bdate_range("2030-01-01", periods=len(d)), "ticker": d.ticker.to_numpy(),
+            "y": d.y_oc.to_numpy()}))
+        with self.assertRaisesRegex(B.BlindingError, "distinct values"):
+            B.require_unblinded(fake)
+        ren = d[["date", "ticker", "usdjpy_ret"]].assign(oc_lag1=d.y_oc.to_numpy())  # rename to exempt name
+        ren.attrs = {"provenance": "synthetic"}
+        with self.assertRaisesRegex(B.BlindingError, "oc_lag1.*rows"):
+            B.require_unblinded(ren)
+        self.assertEqual(B.row_match_fraction(d.y_oc, d.date, d.ticker)[0], 1.0)
 
     def test_false_positive_rate(self):
         z = np.random.default_rng(3).standard_t(5, 50_000) * 0.015
