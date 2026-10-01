@@ -19,6 +19,12 @@ delta_cc = delta_gap + b holds exactly on a common design and sample):
 On real data every constructed target is registered with the blinding
 fingerprint registry (gap_abn too: its beta is target-derived).
 
+KNOWN ISSUE (Flag 6, fix decided in Pass 2; spec unchanged): ao_gap_adj is
+dividend-adjusted but the hedge gap (ao_topix_gap) is not. On mass ex-dividend
+dates (~end-Mar/Sep) TOPIX gaps down mechanically, so gap_abn and cc_abn carry
+an upward error of about beta x the index dividend drop on ~2 days/year.
+abn_oc (primary) is unaffected. The 1306 hedge's own ex-date needs the same fix.
+
 Masks (True = drop the row):
   excl_inference     = any(spec.sample.inference_exclude_rows_if)  (P07: D, D+1)
   excl_d2            = TANSHIN or STANDALONE_NEWS on D, D+1, D+2   (robustness)
