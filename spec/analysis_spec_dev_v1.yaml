@@ -30,7 +30,7 @@ inference:
   reference: normal
   test: two_sided
   alpha: 0.05
-  size_rule: "Pass 4: rejection at b=0 over 2000 dev-calibrated sims must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag"
+  size_rule: "Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_conf (confirmation trading days minus dates on which all three tickers are excluded; 1013 per ofilt.drift.calendar) must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag."
 fraction_unpriced:
   f: "b / delta_cc, delta_cc = loading of (gap_adj + oc) on same design; identity delta_cc = delta_gap + b"
   ci: [delta_method, fieller]

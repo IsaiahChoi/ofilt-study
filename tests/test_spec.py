@@ -56,7 +56,8 @@ class TestSpecLoad(unittest.TestCase):
             if a != b and n not in amended:
                 self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
                 self.assertNotIn("TO_FILL", b)
-        self.assertEqual(sorted(amended), [43, 44, 45, 46, 62])        # AM-01
+        self.assertEqual(sorted(amended), [33, 43, 44, 45, 46, 62])    # AM-02: 33; AM-01: 43-46, 62
+        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02"})
 
     def test_am01_pins_reject_pre_amendment_text(self):
         import copy, yaml
@@ -65,6 +66,9 @@ class TestSpecLoad(unittest.TestCase):
         for path, bad in [(("secondary_family_holm", "fx_x_longwindow"), "usdjpy_ret * 1[window_hours > 18]"),
                           (("secondary_family_holm", "fx_x_highrv"),
                            "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"),
+                          (("inference", "size_rule"),
+                           "Pass 4: rejection at b=0 over 2000 dev-calibrated sims must be in [3.5%, 6.5%]; else primary "
+                           "inference = stationary block bootstrap (mean block 5), decided before tag"),
                           (("forecast", "models", "M4"),
                            "M3 + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)")]:
             e = copy.deepcopy(d)
@@ -74,6 +78,13 @@ class TestSpecLoad(unittest.TestCase):
             node[path[-1]] = bad
             with self.subTest(path=path), self.assertRaises(S.SpecError):
                 S.validate(e)
+
+    def test_am02_size_rule_matches_calendar(self):
+        from ofilt.drift import calendar as C
+        self.assertIn(f"T = T_conf", S.SIZE_RULE)
+        self.assertIn(f"; {C.T_CONF} per ofilt.drift.calendar", S.SIZE_RULE)
+        self.assertIn("over 5000 dev-calibrated sims", S.SIZE_RULE)
+        self.assertEqual(S.Spec.load().raw("inference.size_rule"), S.SIZE_RULE)
 
     def test_typed_accessors(self):
         sp = S.Spec.load()

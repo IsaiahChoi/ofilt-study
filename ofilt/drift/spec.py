@@ -42,6 +42,7 @@ SECONDARY_DEFS = {  # AM-01 (2026-10-01): moderator main effects added; tested t
     "fx_x_highrv": "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction",
     "fx_asymmetry": "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes",
 }
+SIZE_RULE = 'Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_conf (confirmation trading days minus dates on which all three tickers are excluded; 1013 per ofilt.drift.calendar) must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag.'  # AM-02 (2026-10-01)
 M4_DEF = ("M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare"
           " + e*1[rv_per_bar > expanding past median] + min(e,0)")
 FORBIDDEN_MODELS = frozenset({"M6"})  # time-varying Kalman model: DROPPED
@@ -197,6 +198,7 @@ def validate(d: dict) -> None:
     for k, v in SECONDARY_DEFS.items():  # AM-01: the spec text must match what build_design builds
         _require(sf[k] == v, f"secondary_family_holm.{k} must be {v!r} (implemented design, AM-01)")
     _require(d["forecast"]["models"]["M4"] == M4_DEF, f"forecast.models.M4 must be {M4_DEF!r} (AM-01)")
+    _require(d["inference"]["size_rule"] == SIZE_RULE, f"inference.size_rule must be {SIZE_RULE!r} (AM-02)")
     if sf["rv_per_bar_dev_median"] != UNFILLED:
         v = sf["rv_per_bar_dev_median"]
         _require(isinstance(v, float) and v > 0, "rv_per_bar_dev_median must be a positive float")
