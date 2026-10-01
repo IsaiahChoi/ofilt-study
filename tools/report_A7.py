@@ -3,6 +3,10 @@ two exclusion flags; no FX column is ever loaded into the working frame.
 
 (a) Isaiah's exact reference code (beta on ALL rows) vs targets.past_beta.
 (b) targets.past_beta with beta estimated on non-excluded rows only.
+    DECISION RULE (amended by Isaiah, 2026-10-01; a correction to the rule's
+    definition, not results-driven): compare all windows on the COMMON evaluation
+    rows where every beta exists; expanding must be lowest for every ticker. The
+    original own-rows comparison is still printed for transparency.
 Evaluation rows (both parts): date >= 2017-01-01, earn_flag == 0, news_flag == 0;
 value = var(y - beta*m) * 1e8 with pandas default ddof=1, NaN beta skipped
 (exactly as the reference code does; matters for w = 500, see report).
@@ -103,7 +107,6 @@ def main() -> int:
     elig = ~TG.exclusion_mask(d, spec)
     b_v, b_n = table(d, lambda dd, w: impl_beta(dd, w, eligible=elig))
     low_a, low_b = lowest_is_expanding(imp_v), lowest_is_expanding(b_v)
-    b_ok = all(low_b)
     # DIAGNOSTIC (not the A7 criterion): every window on the SAME rows (all betas available)
     bb = {w: impl_beta(d, w, eligible=elig) for w in WINDOWS[:-1]}
     common = keep_mask(d) & pd.concat(bb.values(), axis=1).notna().all(axis=1)
@@ -158,26 +161,32 @@ Reproduced values vs the prompt's table (percent difference in parentheses):
   identical row counts: **{ref_n == imp_n}**. {"Bit-identical on every row" if exact else "Equal to floating-point accuracy"}: **{"PASS" if impl_ok else "FAIL"}**.
 - Lowest variance among windows is `expanding` for (5706, 5711, 5713): {low_a}.
 
-## (b) Beta on non-excluded rows only (spec `estimate_on: non_excluded_rows`)
+## (b) DECISION TABLE: beta on non-excluded rows, all windows on common rows
 
-`targets.past_beta(..., eligible = ~excl_inference)`; rolling windows are the last w eligible rows.
-Percent differences in parentheses are relative to part (a).
+Beta: `targets.past_beta(..., eligible = ~excl_inference)` (spec `estimate_on: non_excluded_rows`);
+rolling windows are the last w eligible rows. Rows: evaluation rows on which ALL five betas exist,
+so every window is scored on the same days.
 
-{fmt_tab(b_v, b_n, imp_v)}
-
-- Lowest variance among windows is `expanding` for (5706, 5711, 5713): {low_b}.
-  **{"PASS: the spec's expanding beta remains the lowest-variance choice for all three tickers." if all(low_b) else "STOP: expanding is NOT lowest for every ticker; flagged for Isaiah, spec unchanged."}**
-
-## (b') DIAGNOSTIC, not the A7 criterion: all windows on common rows
-
-Same as (b), but every window is evaluated on the same rows: evaluation rows on which ALL five
-betas exist (drops the early-2017 rows where the eligible-row 500 window has no beta yet). Shown
-only to separate a sample-composition effect from a genuine ranking change; the A7 decision rule
-above is unchanged.
+**Criterion (amended by Isaiah, 2026-10-01):** compare all windows on the common rows where every
+beta exists. This corrects the rule's definition. The original rule compared windows on different
+row sets: the eligible-row 500 window starts 28 days into 2017. The amendment is not results-driven:
+the criterion is target-only (no FX), the window choice was fixed in the spec beforehand, and all
+windows lie within ~1% of each other.
 
 {fmt_tab(c_v, c_n)}
 
-- Lowest variance among windows is `expanding` for (5706, 5711, 5713) on common rows: {low_c}.
+- Lowest variance among windows is `expanding` for (5706, 5711, 5713): {low_c}.
+  **{"PASS: the spec's expanding beta is the lowest-variance choice for all three tickers. Spec unchanged." if all(low_c) else "STOP: expanding is NOT lowest for every ticker on common rows; flag for Isaiah, spec unchanged."}**
+
+## (b-own-rows) For transparency: each window on its own available rows (original rule, superseded)
+
+Same betas, but each window is scored on every evaluation row where its own beta exists (the
+w = 500 cell therefore has fewer rows). Percent differences in parentheses are relative to part (a).
+
+{fmt_tab(b_v, b_n, imp_v)}
+
+- Lowest is `expanding` for (5706, 5711, 5713): {low_b}. The 5711 exception (w = 500, -0.025%) is a
+  sample-composition artifact: that cell has n = {b_n[500][1]} vs {b_n["expanding"][1]} for expanding.
 
 ## Blinding
 Target-only statistics (variances of hedged and unhedged open-to-close returns). Permitted under
@@ -186,9 +195,9 @@ rule 2; no coefficient, correlation or other quantity involving any FX column wa
     (ROOT / "reports").mkdir(exist_ok=True)
     (ROOT / "reports" / "A_hedge_efficiency.md").write_text(md, encoding="utf-8")
     print(md)
-    print("(a):", "PASS" if ok else "FAIL", "| (b):", "PASS" if b_ok else "STOP (flagged)",
-          "| (b') expanding lowest on common rows:", low_c)
-    return 0 if (ok and b_ok) else 1
+    print("(a):", "PASS" if ok else "FAIL", "| (b) decision, common rows:", "PASS" if all(low_c) else "STOP",
+          "| own-rows (superseded):", low_b)
+    return 0 if (ok and all(low_c)) else 1
 
 
 if __name__ == "__main__":

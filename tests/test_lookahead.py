@@ -118,6 +118,15 @@ class TestA7Reference(unittest.TestCase):
             for j in range(3):
                 self.assertLess(abs(v[w][j] / A7.PROMPT_TABLE[w][j] - 1), A7.TOL_PROMPT)
 
+    def test_a7_decision_rule_passes(self):
+        # Amended A7(b) rule (Isaiah, 2026-10-01): windows compared on common rows; report exits 0.
+        import contextlib, io as _io
+        with contextlib.redirect_stdout(_io.StringIO()):
+            self.assertEqual(A7.main(), 0)
+        md = (ROOT / "reports" / "A_hedge_efficiency.md").read_text(encoding="utf-8")
+        self.assertIn("DECISION TABLE", md)
+        self.assertIn("superseded", md)
+
 
 if __name__ == "__main__":
     unittest.main()

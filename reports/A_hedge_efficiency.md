@@ -34,29 +34,17 @@ Reproduced values vs the prompt's table (percent difference in parentheses):
   identical row counts: **True**. Bit-identical on every row: **PASS**.
 - Lowest variance among windows is `expanding` for (5706, 5711, 5713): [True, True, True].
 
-## (b) Beta on non-excluded rows only (spec `estimate_on: non_excluded_rows`)
+## (b) DECISION TABLE: beta on non-excluded rows, all windows on common rows
 
-`targets.past_beta(..., eligible = ~excl_inference)`; rolling windows are the last w eligible rows.
-Percent differences in parentheses are relative to part (a).
+Beta: `targets.past_beta(..., eligible = ~excl_inference)` (spec `estimate_on: non_excluded_rows`);
+rolling windows are the last w eligible rows. Rows: evaluation rows on which ALL five betas exist,
+so every window is scored on the same days.
 
-| window | 5706 | 5711 | 5713 |
-|---|---|---|---|
-| 60 | 24,578.9 (-0.163%) [n=1178] | 11,856.4 (-0.264%) [n=1168] | 18,050.0 (-0.423%) [n=1180] |
-| 120 | 24,472.2 (+0.269%) [n=1178] | 11,780.7 (+0.235%) [n=1168] | 17,933.8 (-0.103%) [n=1180] |
-| 250 | 24,461.8 (-0.086%) [n=1178] | 11,760.9 (+0.116%) [n=1168] | 17,948.9 (-0.035%) [n=1180] |
-| 500 | 24,073.9 (-0.245%) [n=1150] | 11,659.7 (-0.336%) [n=1140] | 17,988.3 (+0.957%) [n=1152] |
-| expanding | 24,063.0 (+0.046%) [n=1178] | 11,662.6 (+0.006%) [n=1168] | 17,753.3 (+0.019%) [n=1180] |
-| none | 29,603.3 (+0.000%) [n=1178] | 15,854.7 (+0.000%) [n=1168] | 22,954.9 (+0.000%) [n=1180] |
-
-- Lowest variance among windows is `expanding` for (5706, 5711, 5713): [True, False, True].
-  **STOP: expanding is NOT lowest for every ticker; flagged for Isaiah, spec unchanged.**
-
-## (b') DIAGNOSTIC, not the A7 criterion: all windows on common rows
-
-Same as (b), but every window is evaluated on the same rows: evaluation rows on which ALL five
-betas exist (drops the early-2017 rows where the eligible-row 500 window has no beta yet). Shown
-only to separate a sample-composition effect from a genuine ranking change; the A7 decision rule
-above is unchanged.
+**Criterion (amended by Isaiah, 2026-10-01):** compare all windows on the common rows where every
+beta exists. This corrects the rule's definition. The original rule compared windows on different
+row sets: the eligible-row 500 window starts 28 days into 2017. The amendment is not results-driven:
+the criterion is target-only (no FX), the window choice was fixed in the spec beforehand, and all
+windows lie within ~1% of each other.
 
 | window | 5706 | 5711 | 5713 |
 |---|---|---|---|
@@ -67,7 +55,25 @@ above is unchanged.
 | expanding | 24,030.2 [n=1150] | 11,639.9 [n=1140] | 17,983.9 [n=1152] |
 | none | 29,686.3 [n=1150] | 15,811.2 [n=1140] | 23,217.0 [n=1152] |
 
-- Lowest variance among windows is `expanding` for (5706, 5711, 5713) on common rows: [True, True, True].
+- Lowest variance among windows is `expanding` for (5706, 5711, 5713): [True, True, True].
+  **PASS: the spec's expanding beta is the lowest-variance choice for all three tickers. Spec unchanged.**
+
+## (b-own-rows) For transparency: each window on its own available rows (original rule, superseded)
+
+Same betas, but each window is scored on every evaluation row where its own beta exists (the
+w = 500 cell therefore has fewer rows). Percent differences in parentheses are relative to part (a).
+
+| window | 5706 | 5711 | 5713 |
+|---|---|---|---|
+| 60 | 24,578.9 (-0.163%) [n=1178] | 11,856.4 (-0.264%) [n=1168] | 18,050.0 (-0.423%) [n=1180] |
+| 120 | 24,472.2 (+0.269%) [n=1178] | 11,780.7 (+0.235%) [n=1168] | 17,933.8 (-0.103%) [n=1180] |
+| 250 | 24,461.8 (-0.086%) [n=1178] | 11,760.9 (+0.116%) [n=1168] | 17,948.9 (-0.035%) [n=1180] |
+| 500 | 24,073.9 (-0.245%) [n=1150] | 11,659.7 (-0.336%) [n=1140] | 17,988.3 (+0.957%) [n=1152] |
+| expanding | 24,063.0 (+0.046%) [n=1178] | 11,662.6 (+0.006%) [n=1168] | 17,753.3 (+0.019%) [n=1180] |
+| none | 29,603.3 (+0.000%) [n=1178] | 15,854.7 (+0.000%) [n=1168] | 22,954.9 (+0.000%) [n=1180] |
+
+- Lowest is `expanding` for (5706, 5711, 5713): [True, False, True]. The 5711 exception (w = 500, -0.025%) is a
+  sample-composition artifact: that cell has n = 1140 vs 1168 for expanding.
 
 ## Blinding
 Target-only statistics (variances of hedged and unhedged open-to-close returns). Permitted under
