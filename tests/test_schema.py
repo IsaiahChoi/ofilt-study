@@ -118,14 +118,16 @@ class TestSpecConsistency(unittest.TestCase):
         self.assertTrue(set(sp.raw("robustness.winsorize_fx.cols")) <= SC.PRE_OPEN_FEATURES)
 
     def test_secondary_family_strings_match_implementation(self):
+        # AM-01 (2026-10-01): definitions now include the moderator main effects.
+        from ofilt.drift import spec as SP
         sp = Spec.load()
-        self.assertEqual(sp.raw("secondary_family_holm.fx_x_longwindow"), "usdjpy_ret * 1[window_hours > 18]")
+        for k, v in SP.SECONDARY_DEFS.items():
+            self.assertEqual(sp.raw(f"secondary_family_holm.{k}"), v)
+        self.assertIn("long_window = 1[window_hours > 18]", SP.SECONDARY_DEFS["fx_x_longwindow"])
         self.assertEqual(SC.LONG_WINDOW_HOURS, 18.0)
-        self.assertEqual(sp.raw("secondary_family_holm.fx_x_jumpshare"),
-                         "usdjpy_ret * clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1)")
-        self.assertEqual(sp.raw("secondary_family_holm.fx_x_highrv"),
-                         "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]")
-
+        self.assertIn("clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1)", SP.SECONDARY_DEFS["fx_x_jumpshare"])
+        self.assertIn("usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median", SP.SECONDARY_DEFS["fx_x_highrv"])
+        self.assertEqual(sp.raw("forecast.models.M4"), SP.M4_DEF)
 
 class TestNoPatternColumnSelection(unittest.TestCase):
     """Static check: no package module selects columns by prefix or pattern."""

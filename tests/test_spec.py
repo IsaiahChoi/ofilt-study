@@ -37,14 +37,43 @@ class TestSpecLoad(unittest.TestCase):
     def test_unfilled_only_stage_a_fields(self):
         self.assertTrue(set(S.Spec.load().unfilled()) <= STAGE_A_FIELDS)
 
-    def test_live_file_differs_from_verbatim_only_on_to_fill_lines(self):
+    def test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines(self):
+        import json, re
         live = S.DEFAULT_SPEC_PATH.read_text(encoding="utf-8").splitlines()
         orig = VERBATIM.read_text(encoding="utf-8").splitlines()
         self.assertEqual(len(live), len(orig))
-        for a, b in zip(orig, live):
-            if a != b:
-                self.assertIn("TO_FILL", a, f"non-TO_FILL line changed:\n{a}\n{b}")
+        md = (S.REPO_ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(encoding="utf-8")
+        recs = [json.loads(l) for blk in re.findall(r"```jsonl\n(.*?)```", md, re.S)
+                for l in blk.splitlines() if l.strip()]
+        amended = {}
+        for r in recs:  # every record must describe the files exactly (no stale or duplicate records)
+            self.assertNotIn(r["line"], amended, r)
+            self.assertEqual(orig[r["line"] - 1], r["old"], r["id"])
+            self.assertEqual(live[r["line"] - 1], r["new"], r["id"])
+            self.assertNotIn("TO_FILL", r["old"])
+            amended[r["line"]] = r["id"]
+        for n, (a, b) in enumerate(zip(orig, live), start=1):
+            if a != b and n not in amended:
+                self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
                 self.assertNotIn("TO_FILL", b)
+        self.assertEqual(sorted(amended), [43, 44, 45, 46, 62])        # AM-01
+
+    def test_am01_pins_reject_pre_amendment_text(self):
+        import copy, yaml
+        d = yaml.safe_load(S.DEFAULT_SPEC_PATH.read_text(encoding="utf-8"))
+        S.validate(d)
+        for path, bad in [(("secondary_family_holm", "fx_x_longwindow"), "usdjpy_ret * 1[window_hours > 18]"),
+                          (("secondary_family_holm", "fx_x_highrv"),
+                           "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"),
+                          (("forecast", "models", "M4"),
+                           "M3 + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)")]:
+            e = copy.deepcopy(d)
+            node = e
+            for k in path[:-1]:
+                node = node[k]
+            node[path[-1]] = bad
+            with self.subTest(path=path), self.assertRaises(S.SpecError):
+                S.validate(e)
 
     def test_typed_accessors(self):
         sp = S.Spec.load()

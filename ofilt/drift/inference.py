@@ -7,9 +7,10 @@ and an FX column together is ever computed.
 
 Design (spec `model`): ticker fixed effects, NO global intercept; common FX
 block [usdjpy_ret, eurusd_ret]; ticker-specific slopes on [spy_oc, copx_oc];
-optionally ONE secondary term (spec secondary_family_holm: "primary design +
-one term", so no moderator main effects; fx_asymmetry replaces usdjpy_ret by
-(e_pos, e_neg)). Sample: drop rows flagged by the exclusion columns, then
+optionally ONE secondary family member (spec secondary_family_holm, amended
+AM-01): the moderator main effect AND its interaction with usdjpy_ret; the
+tested coefficient is the interaction (SECONDARY_TESTED). fx_asymmetry replaces
+usdjpy_ret by (e_pos, e_neg) and tests equal slopes. Sample: drop rows flagged by the exclusion columns, then
 require non-missing spec.require_nonmissing + target + secondary sources.
 Features are built only through schema.select_features (the allowlist path).
 
@@ -34,9 +35,13 @@ from .targets import CONSTRUCTED_TARGETS, DERIVED_NONFEATURES
 SECONDARY_TERMS = ("fx_x_longwindow", "fx_x_jumpshare", "fx_x_highrv", "fx_asymmetry")
 _SECONDARY_FEATURES = {"fx_x_longwindow": ["long_window"], "fx_x_jumpshare": ["jumpshare"],
                        "fx_x_highrv": ["rv_per_bar"], "fx_asymmetry": ["e_pos", "e_neg"]}
+SECONDARY_TESTED = {"fx_x_longwindow": {"usdjpy_ret:long_window": 1.0},
+                    "fx_x_jumpshare": {"usdjpy_ret:jumpshare": 1.0},
+                    "fx_x_highrv": {"usdjpy_ret:highrv": 1.0},
+                    "fx_asymmetry": {"e_pos": 1.0, "e_neg": -1.0}}   # contrast weights; H0: = 0
 FORBIDDEN_TARGET_NAMES = frozenset(
     (schema.all_grouped_columns() - schema.TARGET_INPUTS) | schema.ALLOWED_FEATURES
-    | blind.FX_NAMES | (DERIVED_NONFEATURES - CONSTRUCTED_TARGETS))
+    | blind.FX_NAMES | (DERIVED_NONFEATURES - CONSTRUCTED_TARGETS) | {"highrv"})
 
 
 class DesignError(ValueError):
@@ -95,16 +100,19 @@ def build_design(df: pd.DataFrame, spec: Spec | None = None, *, target: str = "a
         for t in utick:
             cols.append(feats[c].to_numpy() * (tick == t)); names.append(f"{c}:{t}")
     e = feats[h1].to_numpy() if h1 in feats else None
+    mod = None
     if secondary == "fx_x_longwindow":
-        cols.append(e * feats["long_window"].to_numpy()); names.append(f"{h1}:long_window")
+        mod, mname = feats["long_window"].to_numpy(), "long_window"
     elif secondary == "fx_x_jumpshare":
-        cols.append(e * feats["jumpshare"].to_numpy()); names.append(f"{h1}:jumpshare")
+        mod, mname = feats["jumpshare"].to_numpy(), "jumpshare"
     elif secondary == "fx_x_highrv":
         thr = spec.rv_per_bar_dev_median() if rv_threshold is None else float(rv_threshold)
         rvb = feats["rv_per_bar"].to_numpy()
         if np.isnan(rvb).any():
             raise DesignError("rv_per_bar undefined (usdjpy_bars <= 0) on some rows")
-        cols.append(e * (rvb > thr)); names.append(f"{h1}:highrv")
+        mod, mname = (rvb > thr).astype(float), "highrv"
+    if mod is not None:  # AM-01: moderator main effect, then the tested interaction
+        cols += [mod, e * mod]; names += [mname, f"{h1}:{mname}"]
     X = np.column_stack(cols)
     y = d[target].to_numpy(dtype=float)
     if not (np.isfinite(X).all() and np.isfinite(y).all()):

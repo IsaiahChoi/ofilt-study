@@ -69,14 +69,17 @@ class TestDesign(unittest.TestCase):
         e = base.X[:, base.col("usdjpy_ret")]
         src = self.df.loc[base.index]
         thr = self.spec.rv_per_bar_dev_median()
-        want = {"fx_x_longwindow": e * (src.window_hours.to_numpy() > 18),
-                "fx_x_jumpshare": e * np.clip((src.usdjpy_rv - src.usdjpy_bv) / src.usdjpy_rv, 0, 1).to_numpy(),
-                "fx_x_highrv": e * ((src.usdjpy_rv / src.usdjpy_bars).to_numpy() > thr)}
-        for term, w in want.items():
+        mods = {"fx_x_longwindow": ("long_window", (src.window_hours.to_numpy() > 18).astype(float)),
+                "fx_x_jumpshare": ("jumpshare", np.clip((src.usdjpy_rv - src.usdjpy_bv) / src.usdjpy_rv, 0, 1).to_numpy()),
+                "fx_x_highrv": ("highrv", ((src.usdjpy_rv / src.usdjpy_bars).to_numpy() > thr).astype(float))}
+        for term, (mname, m) in mods.items():   # AM-01: primary + main effect + interaction
             d = I.build_design(self.df, self.spec, secondary=term)
-            self.assertEqual(d.names[:-1], base.names, term)
-            self.assertTrue(np.allclose(d.X[:, -1], w), term)
-        self.assertGreater(want["fx_x_highrv"].astype(bool).sum(), 0)
+            self.assertEqual(d.names, base.names + (mname, f"usdjpy_ret:{mname}"), term)
+            self.assertTrue(np.allclose(d.X[:, -2], m), term)
+            self.assertTrue(np.allclose(d.X[:, -1], e * m), term)
+            self.assertEqual(list(I.SECONDARY_TESTED[term]), [f"usdjpy_ret:{mname}"])
+            self.assertTrue(0 < m.astype(bool).sum() < len(m), term)      # moderator varies
+        self.assertEqual(I.SECONDARY_TESTED["fx_asymmetry"], {"e_pos": 1.0, "e_neg": -1.0})
         a = I.build_design(self.df, self.spec, secondary="fx_asymmetry")
         self.assertNotIn("usdjpy_ret", a.names)
         self.assertTrue(np.allclose(a.X[:, a.col("e_pos")] + a.X[:, a.col("e_neg")], e))

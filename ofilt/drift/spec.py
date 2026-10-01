@@ -36,6 +36,14 @@ TOP_LEVEL_KEYS = frozenset({
     "forecast", "seeds",
 })
 REQUIRED_MODELS = frozenset({"M0", "M1", "M2", "M3", "M4", "M5", "M7"})
+SECONDARY_DEFS = {  # AM-01 (2026-10-01): moderator main effects added; tested term = interaction
+    "fx_x_longwindow": "long_window + usdjpy_ret * long_window; long_window = 1[window_hours > 18]; test the interaction",
+    "fx_x_jumpshare": "jumpshare + usdjpy_ret * jumpshare; jumpshare = clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1); test the interaction",
+    "fx_x_highrv": "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction",
+    "fx_asymmetry": "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes",
+}
+M4_DEF = ("M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare"
+          " + e*1[rv_per_bar > expanding past median] + min(e,0)")
 FORBIDDEN_MODELS = frozenset({"M6"})  # time-varying Kalman model: DROPPED
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _DAY_TOKEN = re.compile(r"^D(?:\+(\d+))?$")
@@ -186,6 +194,9 @@ def validate(d: dict) -> None:
     sf = d["secondary_family_holm"]
     _require(set(sf) == {"fx_x_longwindow", "fx_x_jumpshare", "fx_x_highrv", "fx_asymmetry", "rv_per_bar_dev_median"},
              "secondary_family_holm keys mismatch")
+    for k, v in SECONDARY_DEFS.items():  # AM-01: the spec text must match what build_design builds
+        _require(sf[k] == v, f"secondary_family_holm.{k} must be {v!r} (implemented design, AM-01)")
+    _require(d["forecast"]["models"]["M4"] == M4_DEF, f"forecast.models.M4 must be {M4_DEF!r} (AM-01)")
     if sf["rv_per_bar_dev_median"] != UNFILLED:
         v = sf["rv_per_bar_dev_median"]
         _require(isinstance(v, float) and v > 0, "rv_per_bar_dev_median must be a positive float")

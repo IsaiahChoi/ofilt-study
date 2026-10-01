@@ -40,10 +40,10 @@ robustness:
   winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: {usdjpy_ret: [-1.6482588843e-02, 1.4399911615e-02], eurusd_ret: [-1.6324806371e-02, 1.5438152188e-02]}}
   influence_curve: {unit: date, k_max: 20, ranking: "full-sample |exact date-deletion change in b|"}
   others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
-secondary_family_holm:      # each = primary design + one term
-  fx_x_longwindow: "usdjpy_ret * 1[window_hours > 18]"
-  fx_x_jumpshare: "usdjpy_ret * clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1)"
-  fx_x_highrv: "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"
+secondary_family_holm:      # each = primary design + one tested interaction (+ its moderator main effect, AM-01)
+  fx_x_longwindow: "long_window + usdjpy_ret * long_window; long_window = 1[window_hours > 18]; test the interaction"
+  fx_x_jumpshare: "jumpshare + usdjpy_ret * jumpshare; jumpshare = clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1); test the interaction"
+  fx_x_highrv: "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction"
   fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
   rv_per_bar_dev_median: 1.2950114214e-08
 equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
@@ -59,7 +59,7 @@ forecast:
     M1: prevailing_mean_per_ticker
     M2: "FE + ticker-specific spy_oc, copx_oc + eurusd_ret"
     M3: "M2 + usdjpy_ret"
-    M4: "M3 + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)"
+    M4: "M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)"
     M5: {type: ridge, design: M4, fe: "unpenalized via in-fold within-ticker demeaning", alpha_grid: "n_train * [1e-4,1e-3,1e-2,1e-1,1]", tune: "last 250 dates of training fold"}
     M7: {type: HistGradientBoostingRegressor, features: "PRE_OPEN allowlist + ticker one-hot + N(0,1) noise column", grid: {max_depth: [2,3], max_iter: [50,100,200,400]}, fixed: {learning_rate: 0.03, min_samples_leaf: 100, l2_regularization: 1.0, early_stopping: false}, tune: "last 250 dates of training fold", status: exploratory}
   comparisons:
