@@ -207,6 +207,15 @@ class TestDevCalibrated(SyntheticBase):
         self.assertTrue(y.equals(cal.draw(0.1, seed=3)))
         with self.assertRaises(ValueError):
             cal.draw(0.1, positions=np.arange(cal.T - 1))
+        short = cal.draw(0.1, seed=3, n_dates=383)                               # B7: any output length
+        self.assertEqual(short.date.nunique(), 383)
+        self.assertEqual(short.attrs["truth"]["n_dates"], 383)
+        self.assertEqual(B.require_unblinded(short), "synthetic")
+        long_ = cal.draw(0.1, seed=3, n_dates=2 * cal.T)
+        self.assertEqual(long_.date.nunique(), 2 * cal.T)
+        ident = cal.draw(0.25, -0.1, positions=np.r_[np.arange(cal.T), np.arange(cal.T)], n_dates=2 * cal.T)
+        r = I.fit_dk(I.build_design(ident, self.spec, target="y_sim"), self.spec)
+        self.assertAlmostEqual(r.param("usdjpy_ret")["estimate"], 0.25, places=10)  # duplicated identity map
 
     def test_stationary_bootstrap(self):
         rng = np.random.default_rng(0)

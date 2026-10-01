@@ -171,15 +171,18 @@ def _sealed_blind_fit(df: pd.DataFrame, spec: Spec | None = None) -> dict:
     return {"residuals": residuals, "fitted_controls": fitted_controls, "row_index": d.index}
 
 
-def stationary_bootstrap_positions(T: int, mean_block: float, rng: np.random.Generator) -> np.ndarray:
-    """Politis-Romano: geometric block lengths with the given mean, wrap-around."""
-    if not (T >= 1 and mean_block >= 1):
-        raise ValueError("need T >= 1 and mean_block >= 1")
-    new = rng.random(T) < 1.0 / mean_block
-    starts = rng.integers(0, T, size=T)
-    pos = np.empty(T, dtype=np.int64)
+def stationary_bootstrap_positions(T: int, mean_block: float, rng: np.random.Generator,
+                                   n_out: int | None = None) -> np.ndarray:
+    """Politis-Romano: n_out positions over T source dates (default n_out = T),
+    geometric block lengths with the given mean, wrap-around."""
+    n = T if n_out is None else int(n_out)
+    if not (T >= 1 and mean_block >= 1 and n >= 1):
+        raise ValueError("need T >= 1, mean_block >= 1 and n_out >= 1")
+    new = rng.random(n) < 1.0 / mean_block
+    starts = rng.integers(0, T, size=n)
+    pos = np.empty(n, dtype=np.int64)
     pos[0] = starts[0]
-    for s in range(1, T):
+    for s in range(1, n):
         pos[s] = starts[s] if new[s] else (pos[s - 1] + 1) % T
     return pos
 
@@ -208,27 +211,30 @@ class DevCalibrator:
         self.mean_block = float(mean_block)
         self._cal = pd.bdate_range(SIM_CALENDAR_START, periods=self.T)
 
-    def positions(self, rng: np.random.Generator) -> np.ndarray:
-        return stationary_bootstrap_positions(self.T, self.mean_block, rng)
+    def positions(self, rng: np.random.Generator, n: int | None = None) -> np.ndarray:
+        return stationary_bootstrap_positions(self.T, self.mean_block, rng, n)
 
     def draw(self, b_sim: float, a2_sim: float = 0.0, seed: int | None = None,
-             positions: np.ndarray | None = None) -> pd.DataFrame:
+             positions: np.ndarray | None = None, n_dates: int | None = None) -> pd.DataFrame:
+        """One simulated panel of n_dates dates (default: T, the source length)."""
+        n = self.T if n_dates is None else int(n_dates)
         rng = np.random.default_rng(seed)
-        pos = self.positions(rng) if positions is None else np.asarray(positions, dtype=np.int64)
-        if pos.shape != (self.T,) or pos.min() < 0 or pos.max() >= self.T:
-            raise ValueError("positions must be T source-date codes in [0, T)")
+        pos = self.positions(rng, n) if positions is None else np.asarray(positions, dtype=np.int64)
+        if pos.shape != (n,) or pos.min() < 0 or pos.max() >= self.T:
+            raise ValueError("positions must be n_dates source-date codes in [0, T)")
         lens = np.diff(self._bounds)[pos]
         offs = np.r_[0, np.cumsum(lens)[:-1]]
         src = np.repeat(self._bounds[pos] - offs, lens) + np.arange(int(lens.sum()))
         out = self._pred.iloc[src].reset_index(drop=True)
-        out.insert(0, "date", np.repeat(self._cal.to_numpy(), lens))
+        cal = self._cal if n == self.T else pd.bdate_range(SIM_CALENDAR_START, periods=n)
+        out.insert(0, "date", np.repeat(cal.to_numpy(), lens))
         e, eur = out["usdjpy_ret"].to_numpy(), out["eurusd_ret"].to_numpy()
         out["earn_flag"], out["news_flag"], out["beta"] = 0, 0, 1.0
         out["y_sim"] = self._fc[src] + b_sim * e + a2_sim * eur + self._resid[src]
         out = out[list(SIM_COLUMNS)]
         out.attrs = {"provenance": blind.SYNTHETIC,
                      "truth": dict(b=float(b_sim), a2=float(a2_sim), seed=seed, mean_block=self.mean_block,
-                                   n_dates=self.T, source="dev_calibrated")}
+                                   n_dates=n, source="dev_calibrated")}
         blind.require_unblinded(out)   # condition (d): the fingerprint guard must pass
         return out
 
