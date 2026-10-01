@@ -5,7 +5,8 @@
 # must be recorded in PASS1_STATUS.md).
 set -uo pipefail
 cd /home/claude/ofilt_pass1
-python -m unittest discover -s tests > /tmp/ckpt_tests.txt 2>&1; rc=$?
+# The real-data sealed fit is opt-in via the OFILT_RUN_SEALED variable; checkpoints unset it.
+env -u OFILT_RUN_SEALED python -m unittest discover -s tests > /tmp/ckpt_tests.txt 2>&1; rc=$?
 tail -n 4 /tmp/ckpt_tests.txt
 if [ $rc -ne 0 ] && [ "${FORCE:-0}" != "1" ]; then echo "TESTS FAILED; not checkpointing"; exit 1; fi
 git add -A && git commit -q -m "checkpoint: $1" && echo "commit $(git rev-parse --short HEAD)"

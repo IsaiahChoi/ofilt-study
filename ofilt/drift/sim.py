@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import os
 import traceback
 
 import numpy as np
@@ -137,6 +138,7 @@ PRED_COLUMNS = ("usdjpy_ret", "eurusd_ret", "spy_oc", "copx_oc",
                 "window_hours", "usdjpy_rv", "usdjpy_bv", "usdjpy_bars")
 SIM_COLUMNS = ("date", "ticker") + PRED_COLUMNS + ("earn_flag", "news_flag", "beta", "y_sim")
 SIM_CALENDAR_START = "1990-01-01"   # obviously synthetic, pre-sample date labels
+SEALED_ENV = "OFILT_RUN_SEALED"     # real-data sealed fit runs only when this is "1" (deliberate invocation)
 
 
 def _log_blind_fit(provenance: str, panel_sha: str | None, spec: Spec, n_rows_input: int) -> None:
@@ -155,6 +157,8 @@ def _sealed_blind_fit(df: pd.DataFrame, spec: Spec | None = None) -> dict:
     prov = blind.provenance_of(df)
     if prov not in (blind.DEV_REAL, blind.SYNTHETIC):
         raise blind.BlindingError(f"sealed blind fit accepts dev_real or synthetic data only, not {prov!r}")
+    if prov == blind.DEV_REAL and os.environ.get(SEALED_ENV) != "1":
+        raise blind.BlindingError(f"the real-data sealed fit runs only when deliberately invoked ({SEALED_ENV}=1)")
     spec = spec or Spec.load()
     _log_blind_fit(prov, df.attrs.get("sha256"), spec, len(df))   # logged at ENTRY: failed calls count too
     d = _inf._design_core(df, spec, target="abn_oc", secondary=None, exclude=None,

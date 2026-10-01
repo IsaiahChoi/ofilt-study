@@ -5,6 +5,7 @@ import ast
 import contextlib
 import io as _io
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -145,6 +146,26 @@ class TestSealedFitMechanics(SyntheticBase):
         S._sealed_blind_fit(self.stand_in, self.spec)
         self.assertEqual(len(self.log.read_text().splitlines()), 2)              # one line per call
 
+    def test_real_fit_is_opt_in(self):
+        relabelled = self.stand_in.copy()          # synthetic data labelled dev_real: no real data involved
+        relabelled.attrs = {"provenance": "dev_real", "sha256": "synthetic-standin"}
+        env = {k: v for k, v in os.environ.items() if k != S.SEALED_ENV}
+        with mock.patch.dict(os.environ, env, clear=True):
+            with self.assertRaisesRegex(B.BlindingError, "deliberately invoked"):
+                S._sealed_blind_fit(relabelled, self.spec)
+            with self.assertRaises(B.BlindingError):
+                S.DevCalibrator(relabelled, self.spec)
+        self.assertFalse(self.log.exists())        # refused attempts compute nothing and log nothing
+        with mock.patch.dict(os.environ, {S.SEALED_ENV: "1"}):
+            self.assertEqual(set(S._sealed_blind_fit(relabelled, self.spec)), set(S.FIT_KEYS))
+        self.assertEqual(len(self.log.read_text().splitlines()), 1)
+        for v in ("0", "true", "yes", ""):
+            with mock.patch.dict(os.environ, {S.SEALED_ENV: v}), self.assertRaises(B.BlindingError):
+                S._sealed_blind_fit(relabelled, self.spec)
+        sh = (ROOT / "tools" / "checkpoint.sh").read_text(encoding="utf-8")
+        self.assertIn("env -u OFILT_RUN_SEALED python -m unittest discover", sh)
+        self.assertNotIn("OFILT_RUN_SEALED=1", sh)
+
     def test_refusals_and_guard_intact(self):
         for prov in ("confirm_real", None, "weird"):
             d = self.stand_in.copy()
@@ -201,8 +222,10 @@ class TestDevCalibrated(SyntheticBase):
             S.stationary_bootstrap_positions(10, 0.5, rng)
 
 
+@unittest.skipUnless(os.environ.get("OFILT_RUN_SEALED") == "1", "real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)")
 class TestRealDev(unittest.TestCase):
-    """THE single real-data sealed fit per suite run (logged to the real BLIND_FIT_LOG)."""
+    """The real-data sealed fit; runs ONLY when deliberately invoked with OFILT_RUN_SEALED=1
+    (one call per invocation, logged to the real BLIND_FIT_LOG). Checkpoints never set it."""
 
     @classmethod
     def setUpClass(cls):
