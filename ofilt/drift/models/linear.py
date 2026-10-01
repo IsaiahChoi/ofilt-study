@@ -82,3 +82,40 @@ class M2(_PooledOLS):
 class M3(_PooledOLS):
     name, common = "M3", ("usdjpy_ret", "eurusd_ret")
     features = ("usdjpy_ret", "eurusd_ret") + CONTROLS
+
+
+# ------------------------------------------------------------------ M4 (C3)
+M4_EXTRA = ("long_window", "jumpshare", "highrv", "e:long_window", "e:jumpshare", "e:highrv", "e_neg")
+M4_FEATURES = ("usdjpy_ret", "eurusd_ret") + CONTROLS + ("long_window", "jumpshare", "rv_per_bar", "e_neg")
+
+
+def rv_threshold(X: pd.DataFrame) -> float:
+    """Median of rv_per_bar over the frame's unique dates (one value per date): the
+    'expanding past median' when X is a training fold."""
+    per_date = X.groupby("date")["rv_per_bar"].first()
+    if not np.isfinite(per_date).all() or per_date.empty:
+        raise ValueError("rv_per_bar must be finite on every training date")
+    return float(per_date.median())
+
+
+def m4_augment(X: pd.DataFrame, thr: float) -> pd.DataFrame:
+    e = X["usdjpy_ret"].to_numpy(dtype=float)
+    hr = (X["rv_per_bar"].to_numpy(dtype=float) > thr).astype(float)
+    return X.assign(highrv=hr, **{"e:long_window": e * X["long_window"].to_numpy(dtype=float),
+                                  "e:jumpshare": e * X["jumpshare"].to_numpy(dtype=float), "e:highrv": e * hr})
+
+
+class M4(_PooledOLS):
+    """M3 + 1[long] + jumpshare + highrv + e*1[long] + e*jumpshare + e*highrv + min(e,0)
+    (spec AM-01); highrv threshold = training-fold date median of rv_per_bar, frozen in fit."""
+    name = "M4"
+    common = ("usdjpy_ret", "eurusd_ret") + M4_EXTRA
+    features = M4_FEATURES
+
+    def fit(self, X: pd.DataFrame, y: np.ndarray, ctx: FoldContext) -> None:
+        self.thr = rv_threshold(X)
+        self.chosen = {"rv_threshold": self.thr}
+        super().fit(m4_augment(X, self.thr), y, ctx)
+
+    def predict(self, X: pd.DataFrame, ctx: FoldContext) -> np.ndarray:
+        return super().predict(m4_augment(X, self.thr), ctx)

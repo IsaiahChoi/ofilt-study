@@ -81,7 +81,7 @@ class TestModels(unittest.TestCase):
             m3.fit(self.frame(bad, m3), bad.abn_oc.to_numpy(), self.c)
 
     def test_all_four_in_engine(self):
-        pred, folds = F.walk_forward(self.df, {k: v for k, v in REGISTRY.items()}, self.spec)
+        pred, folds = F.walk_forward(self.df, {k: REGISTRY[k] for k in ("M0", "M1", "M2", "M3")}, self.spec)
         self.assertEqual(sorted(pred.model.unique()), ["M0", "M1", "M2", "M3"])
         keys = {k: g[["date", "ticker"]].reset_index(drop=True) for k, g in pred.groupby("model")}
         for k in ("M1", "M2", "M3"):
