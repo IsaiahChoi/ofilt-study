@@ -37,7 +37,7 @@ fraction_unpriced:
   status: "confirmatory for 2022 only; descriptive for 2023-2026"
 robustness:
   huber: {c: 1.345, scale: "1.4826*MAD of OLS residuals"}
-  winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: TO_FILL}
+  winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: {usdjpy_ret: [-1.6482588843e-02, 1.4399911615e-02], eurusd_ret: [-1.6324806371e-02, 1.5438152188e-02]}}
   influence_curve: {unit: date, k_max: 20, ranking: "full-sample |exact date-deletion change in b|"}
   others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
 secondary_family_holm:      # each = primary design + one term
@@ -45,7 +45,7 @@ secondary_family_holm:      # each = primary design + one term
   fx_x_jumpshare: "usdjpy_ret * clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1)"
   fx_x_highrv: "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"
   fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
-  rv_per_bar_dev_median: TO_FILL
+  rv_per_bar_dev_median: 1.2950114214e-08
 equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
 forecast:
   scheme: expanding
