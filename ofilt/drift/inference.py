@@ -71,8 +71,18 @@ class Design:
 def build_design(df: pd.DataFrame, spec: Spec | None = None, *, target: str = "abn_oc",
                  secondary: str | None = None, exclude: list[str] | None = None,
                  rv_threshold: float | None = None, provenance: str | None = None) -> Design:
+    """THE public design builder: the blinding guard runs first, then the core."""
     prov = blind.require_unblinded(df, provenance=provenance)  # first: before touching the target
-    spec = spec or Spec.load()
+    return _design_core(df, spec or Spec.load(), target=target, secondary=secondary, exclude=exclude,
+                        rv_threshold=rv_threshold, provenance=prov)
+
+
+def _design_core(df: pd.DataFrame, spec: Spec, *, target: str, secondary: str | None,
+                 exclude: list[str] | None, rv_threshold: float | None, provenance: str) -> Design:
+    """UNGUARDED builder. Callers: build_design (after the guard) and the sealed
+    blind fit in sim.py (the single Flag 8 exception) ONLY; a static test
+    (tests/test_sim_b5.py) enforces exactly these two call sites."""
+    prov = provenance
     if not isinstance(target, str) or target in FORBIDDEN_TARGET_NAMES:
         raise DesignError(f"{target!r} may not be used as a target (feature/FX/schema name)")
     if secondary not in (None, *SECONDARY_TERMS):
