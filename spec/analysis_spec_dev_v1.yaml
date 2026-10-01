@@ -1,0 +1,70 @@
+spec_id: drift-dev-v1
+status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)
+data:
+  dev_panel_sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42
+  events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
+  events_boj_sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99
+  sealed_panel_sha256: 9c18a6c106356139a375ecd7b3e6eaa085d937341c02817021003a4451c6b826   # superseded after Pass 2 rebuild
+sample:
+  inference_exclude_rows_if: [earn_flag, news_flag]          # P07: days D and D+1
+  forecast_eval_exclusion: {tanshin: [D, D+1], standalone_news: [D+1]}   # unscheduled news on day D is not knowable pre-open
+  require_nonmissing: [usdjpy_ret, eurusd_ret, spy_oc, copx_oc, beta]
+target:
+  primary: abnormal_oc                 # y_oc - beta_{i,t-1} * hedge_oc
+  hedge_oc_column: y_topix_oc          # PLACEHOLDER; 1306 open->close after Pass 2
+  beta: {method: expanding, min_periods: 250, lag_days: 1, estimate_on: non_excluded_rows, continue_across_samples: true}
+  secondary: raw_oc
+  decomposition: "b_raw ≈ mean_beta * b_mkt + b_abn; b_mkt = hedge_oc on the same design (time-series NW, same lag rule)"
+model:
+  fixed_effects: ticker               # no global intercept
+  fx_block_common: [usdjpy_ret, eurusd_ret]
+  controls_ticker_specific: [spy_oc, copx_oc]
+  h1_parameter: usdjpy_ret
+  h3_parameter: eurusd_ret
+inference:
+  estimator: pooled_ols
+  se: driscoll_kraay
+  kernel: bartlett
+  lag_rule: "floor(4*(T/100)**(2/9)), T = unique dates in estimation sample"
+  small_sample_correction: none
+  reference: normal
+  test: two_sided
+  alpha: 0.05
+  size_rule: "Pass 4: rejection at b=0 over 2000 dev-calibrated sims must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag"
+fraction_unpriced:
+  f: "b / delta_cc, delta_cc = loading of (gap_adj + oc) on same design; identity delta_cc = delta_gap + b"
+  ci: [delta_method, fieller]
+  status: "confirmatory for 2022 only; descriptive for 2023-2026"
+robustness:
+  huber: {c: 1.345, scale: "1.4826*MAD of OLS residuals"}
+  winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: TO_FILL}
+  influence_curve: {unit: date, k_max: 20, ranking: "full-sample |exact date-deletion change in b|"}
+  others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
+secondary_family_holm:      # each = primary design + one term
+  fx_x_longwindow: "usdjpy_ret * 1[window_hours > 18]"
+  fx_x_jumpshare: "usdjpy_ret * clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1)"
+  fx_x_highrv: "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"
+  fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
+  rv_per_bar_dev_median: TO_FILL
+equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
+forecast:
+  scheme: expanding
+  min_train_dates: 500
+  refit_every_dates: 21
+  pooled_across_tickers: true
+  scaling: in_fold_only
+  test_aggregation: "mean across tickers within date, then time-series NW with lag_rule"
+  models:
+    M0: zero
+    M1: prevailing_mean_per_ticker
+    M2: "FE + ticker-specific spy_oc, copx_oc + eurusd_ret"
+    M3: "M2 + usdjpy_ret"
+    M4: "M3 + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)"
+    M5: {type: ridge, design: M4, fe: "unpenalized via in-fold within-ticker demeaning", alpha_grid: "n_train * [1e-4,1e-3,1e-2,1e-1,1]", tune: "last 250 dates of training fold"}
+    M7: {type: HistGradientBoostingRegressor, features: "PRE_OPEN allowlist + ticker one-hot + N(0,1) noise column", grid: {max_depth: [2,3], max_iter: [50,100,200,400]}, fixed: {learning_rate: 0.03, min_samples_leaf: 100, l2_regularization: 1.0, early_stopping: false}, tune: "last 250 dates of training fold", status: exploratory}
+  comparisons:
+    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}
+    secondary: [[clark_west, M4, M3], [clark_west, M5, M3], [clark_west, M7, M1], [diebold_mariano, M7, M1]]
+    report_all: [oos_r2_vs_M0, oos_r2_vs_M1, pesaran_timmermann_with_training_base_rate]
+  importance: {method: permutation, unit: date, repeats: 20, calibration: noise_column}
+seeds: {global: 20261001}
