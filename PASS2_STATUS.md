@@ -15,21 +15,31 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-0 f. .gitignore | done | `*.csv`, `*.csv.gz`, `*.gz`, `*.xlsx`, `build_out/`, `.DS_Store`; dummy panel shown ignored, then deleted |
 | P2-0 g. Guard (P46) | done | Conjunctive, fail-closed gate in `io._check_access` and `blind._tag_ok`; 4 new tests (`tests/test_guard_p46.py`); existing guard tests unchanged and passing |
 | P2-0 h. Docs sync (P57) | done | 3 docs over `docs/replacements/`, 5 new in `docs/`, all byte-identical to SHA256SUMS; phase-P2-0 test changes applied; `tests/test_docs_p2.py` added |
-| P2-0 i. Report | done | Checkpoint `checkpoint: P2-0` |
-| P2-0b | NOT STARTED | Isaiah is deciding its acceptance rule (Flag 16) |
+| P2-0 i. Report | done | Checkpoint `checkpoint: P2-0`; accepted by Isaiah 2026-10-05 |
+| P2-0b | done | `build/pass1/` frozen byte for byte, with its pin test (`tests/test_build_pass1_pin.py`). The frozen build in ofilt_p2 reproduced the Mac baseline (656d5117… / 138e5e21…); rows and spans equal MANIFEST. ACCEPTED under Isaiah's rule. Checkpoint `checkpoint: P2-0b` |
+| P2-1 | in progress | |
 
 ## Next action
 
-P2-0b (baseline), once Isaiah fixes its acceptance rule in light of Flag 16. Do not start it before then.
+P2-1 (validate the new inputs; reports only), then checkpoint and STOP for supervisor review.
 
 ## Decision log
 
 - D2 / P39(b) (Isaiah, 2026-10-05): Book2.xlsx and the 1306 sheet of newbloombergdata_fixed.xlsx were both pulled with the JT suffix and the PASS2_HANDOFF Appendix E settings, per Isaiah's statement. The 1A cell-for-cell re-pull was not run. P2-1 proceeds on this statement.
 - D3 / P40 (Isaiah, 2026-10-05): the TOPIX total-return series is TPXDDVD Index. Records only.
 - Environment (Isaiah, 2026-10-05): Pass 2 runs in ~/venvs/ofilt_p2 (macOS arm64, Python 3.12.4), pinned to the library versions of a Claude sandbox on 2026-10-05; the certification environment's versions are unrecorded. Suite: 205, OK, skipped=5. The suite needs numpy 2 or later (test_models_c3.py:68 fails on numpy 1.26).
-- (Supervisor, 2026-10-05) Rule C amended: ofilt_p2 is the Pass 2 environment, because the build mismatch is identical in every Mac environment. conda myenv is not used again.
-- (Supervisor, 2026-10-05) The dev comparison of the Mac rebuild against the Pass 1 dev panel was approved (dev only), with its EXPLAINED rule fixed in advance. Result: EXPLAINED.
-- (Supervisor, 2026-10-05) P2-0b's acceptance rule is pending with Isaiah.
+- (Isaiah, 2026-10-05, on the supervisor's recommendation) Rule C amended: ofilt_p2 is the Pass 2 environment, because the build mismatch is identical in every Mac environment. conda myenv is not used again.
+- (Isaiah, 2026-10-05, on the supervisor's recommendation) The dev comparison of the Mac rebuild against the Pass 1 dev panel was approved (dev only), with its EXPLAINED rule fixed in advance. Result: EXPLAINED.
+- Old-column source after Flag 16 (ADOPTED, Isaiah, 2026-10-05). The Mac cannot reproduce the original panel bytes (Flag 16), and the original sealed file (9c18…) is not available.
+  - Dev: the 41 old columns are the original panel_dev.csv (736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42), read as strings and hash-verified before use. P2-4 acceptance (a) is unchanged.
+  - Sealed: the 41 old columns come from the frozen build run on the Mac in ofilt_p2. Their reference is the Mac baseline hash 138e5e2104d5ebf6e9616edc55ca00f548e38be604365bd47932e1716f4d9d19. P2-4 acceptance (b) becomes: the sealed 41-column projection hashes to that value.
+  - Evidence of equivalence: the frozen code and every input are hash-verified; the dev comparison of the Mac output against 736636… is EXPLAINED (differences only in the 18 log-derived columns; largest relative difference 2.273e-13); rows, dates and spans are equal.
+  - Byte identity of the sealed old columns with 9c18… cannot be demonstrated; this is disclosed in the pre-registration. P10's hash is superseded by AM-04, as already planned.
+  - The P2-4 MANIFEST records the platform, the source of the old columns for each panel, and both reference pairs (736636… / 656d5117a7d0027f7ba7d2cc8d16236fcc9258af384363c8be4577ce15933bd4, and 9c18… / 138e5e2104d5ebf6…).
+- P2-0b acceptance (Isaiah, 2026-10-05; replaces A′'s): rows 5,124 / 3,057 and spans as in MANIFEST; the frozen build's dev output hashes to 656d5117a7d0027f7ba7d2cc8d16236fcc9258af384363c8be4577ce15933bd4 and its sealed output to 138e5e2104d5ebf6e9616edc55ca00f548e38be604365bd47932e1716f4d9d19. Any mismatch: STOP. On success the EXPLAINED dev comparison carries over, because the bytes are the same.
+- P2-2 design constraints (Isaiah, 2026-10-05; recorded now, no code until P2-2):
+  - build_panel_p2.py takes the original dev panel as an input path and verifies its hash is 736636… wherever it lives (after the switch commit it is DATA/archive/panel_dev_736636031ca1.csv). It uses that file's strings for dev's 41 old columns. For the sealed side it uses the frozen build's output, which must hash to 138e5e21…. It also asserts that the frozen build's dev output hashes to 656d5117…, so every run is shown to be the verified one.
+  - *.csv is git-ignored, so synthetic test fixtures must be generated inside the tests, never committed as CSV files.
 - (P2-0e, implementation) `tools/checkpoint.sh` calls bare `python`, because `test_sim_b5` pins the literal `env -u OFILT_RUN_SEALED python -m unittest discover`. It therefore requires an activated venv (`VIRTUAL_ENV` set, and `command -v python` equal to `$VIRTUAL_ENV/bin/python`). Extra arguments after the item id become extra commit-message paragraphs, used for the commit attribution trailer.
 - (P2-0g, implementation) Both gates run the fallback check first. The external guard is consulted only if the fallback grants. A grant requires the return value to be identical to `None` or `True`: `np.True_`, 1 and "granted" are denials. `io._check_access` now raises `AccessDenied` for every external-guard failure; before, the guard's own exception propagated. The `guard` field of an ACCESS_LOG line still reads `ofilt.guards` whenever an external guard is importable (unchanged).
 
@@ -85,6 +95,39 @@ pip freeze of ofilt_p2: `OUT/env/pip_freeze_ofilt_p2_20261005T200424Z.txt` (writ
 
 **Dev comparison** (`OUT/diag_compare_20261005T204658Z/compare_dev.py`; supervisor item 3): equal shape, equal column names and order, equal date and ticker columns all True. The 23 non-log columns are string-identical. In all 18 log-derived columns the empty-cell pattern is identical. The largest relative difference in any column is 2.273e-13, against the 1e-8 limit. Max ulps: 1 for single-log columns; usdjpy_rv 1876, usdjpy_bv 1473, fcx_oc 256, eurusd_rv 65, ewj_oc 8, copx_oc 4, spy_oc 2. Cells differing as strings, by column: usdjpy_ret 192, usdjpy_rv 489, usdjpy_bv 489, eurusd_ret 234, eurusd_rv 2718, spy_oc 201, ewj_oc 231, fcx_oc 177, copx_oc 192, gap_adj_lag1 222, oc_lag1 242, range_lag1 137, topix_oc_lag1 258, ao_gap_adj 222, ao_gap_raw 222, ao_topix_gap 276, y_oc 242, y_topix_oc 258. **Verdict: EXPLAINED.**
 
+**P2-0b, baseline** (frozen `build/pass1/build_panel.py`, hash-verified; ofilt_p2; `OUT/baseline_20261005T214044Z/`; event-file copies from DATA hash-verified True; exit 0; wall 19 s; no stderr). Outputs block:
+
+```
+{
+  "panel_dev.csv": {
+    "sha256": "656d5117a7d0027f7ba7d2cc8d16236fcc9258af384363c8be4577ce15933bd4",
+    "rows": 5124,
+    "span": [
+      "2015-01-06",
+      "2021-12-30"
+    ]
+  },
+  "panel_confirm_SEALED.csv": {
+    "sha256": "138e5e2104d5ebf6e9616edc55ca00f548e38be604365bd47932e1716f4d9d19",
+    "rows": 3057,
+    "span": [
+      "2022-01-04",
+      "2026-03-05"
+    ]
+  }
+}
+```
+
+Acceptance (Isaiah's rule):
+
+```
+panel_dev.csv: rows equal MANIFEST: True; span equals MANIFEST: True; file sha256 equals the outputs block: True; hash equals the Mac baseline: True
+panel_confirm_SEALED.csv: rows equal MANIFEST: True; span equals MANIFEST: True; file sha256 equals the outputs block: True; hash equals the Mac baseline: True
+P2-0b ACCEPTED
+```
+
+The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries over.
+
 **Suite runs:**
 
 | When | Environment | Result |
@@ -95,7 +138,7 @@ pip freeze of ofilt_p2: `OUT/env/pip_freeze_ofilt_p2_20261005T200424Z.txt` (writ
 | P2-0g, new tests vs `pass1-final` code (git archive in /tmp) | ofilt_p2 | test_guard_p46: FAILED (failures=8, errors=2), as intended: every "returns other than None/True" case and the "None while the tag is absent" case fail (fail-open); the "raises" cases error because the old `_check_access` let the guard's exception escape instead of raising AccessDenied; the granted case passes |
 | P2-0h targeted | ofilt_p2 | test_docs_*: Ran 35, OK (skipped=1, the Project test) |
 | P2-0, before the checkpoint commit (A′ command with `-v`) | ofilt_p2 | Ran 211 tests in 235.963s, OK (skipped=5); wall 238 s. Same five skips as D2. 211 = 205 + 4 (test_guard_p46) + 2 (test_docs_p2). The B6 rewrite was identical to D2's (deterministic under Accelerate) |
-| P2-0 checkpoint (`tools/checkpoint.sh "P2-0"`) | ofilt_p2 | the suite runs again inside the script; the commit exists only if it passed |
+| P2-0 checkpoint (`tools/checkpoint.sh "P2-0"`) | ofilt_p2 | Ran 211 tests in 227.849s, OK (skipped=5). The script printed the B6 diff (identical to D2's), restored it, and committed `a102ed1753f20344bb9ec8ae73e37d73ab6d57e0` |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -116,9 +159,17 @@ Protocol: PASS2_ADDENDUM §5. Line numbers are those of the rebuilt repo at `pas
 | `test_docs_d4`, `test_docs_d6` docstrings | — | one added sentence each, citing P57 (comment only) | P57 | P2-0 |
 | new `tests/test_docs_p2.py` | — | 2 tests: the 8 synced kit docs pinned to their SHA256SUMS lines | P57 | P2-0, pre-approved |
 | new `tests/test_guard_p46.py` | — | 4 tests: external False (and other non-None/True values) denied; external None with the tag absent (then side-branch only) denied; external raises (incl. signature mismatch) denied; both satisfied in a temp repo granted | P46 | P2-0, pre-approved |
-| new build-code pin | — | deferred to P2-0b, where A′ copies `build/pass1/` and adds the pin | P51 | P2-0b |
+| new `tests/test_build_pass1_pin.py` | — | 2 tests: each `build/pass1/` file's SHA-256 equals its `code` entry in `docs/PASS2_INPUTS.json`; the folder holds exactly `build_panel.py`, `make_events.py` and `events.py` | P51 | P2-0b, pre-approved |
 
 No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d3`) are unchanged.
+
+**Pending for the P2-3a test-change table** (Isaiah, 2026-10-05; for approval at the decision checkpoint):
+
+| Test (line) | Current | Proposed | Reason |
+|---|---|---|---|
+| `test_docs_d4` (11, `DOCS`) | Project file name for README `"README__2_.md"` | `"README.md"` | The Project now holds `README.md`, so the byte comparison against the Project copy silently never runs in a sandbox |
+| `test_docs_p2` (`PINNED`) | the 2026-10-05 kit hashes | old → new hash for every kit doc edited at P2-6: at least `docs/DATA_PROVENANCE.md` and `docs/PASS2_INPUTS.json`; `docs/replacements/README.md` and `PLAN.md` if they are refreshed. README line 16 still says "`PLAN.md` (v2.2) is the authoritative research plan", while its line 134 says v2.3 (checked 2026-10-05) | P2-6 records |
+| — (proposal for Isaiah) | — | Decisions P58 onward go in a new `docs/DECISIONS_P58_onward.md`, so `docs/DECISIONS_P37_onward.md` keeps its pin | Keeps the P57 pin stable |
 
 ## Flags
 
@@ -140,6 +191,7 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - **Since the disk-scope rule** (supervisor D.3): inside `~/Desktop/FX_Project` only REPO, KIT, DATA, RAW (hashing) and OUT (writing, plus the reads listed above) were used.
 - **Code read:** KIT docs, the frozen `build_panel.py`, repo code and tests. Helper scripts and logs lived in `/tmp/p2_0/` (outside FX_Project).
 - **Printed data:** none from RAW or OUT. Session 1 printed synthetic dates from a failing synthetic test (`masked_panel(800, seed=33)`).
+- **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
 
 ## Deviations
 
@@ -148,4 +200,5 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - `.gitignore` has `.DS_Store` as a sixth pattern (supervisor D.1, approved deviation).
 - `tools/checkpoint.sh` has the supervisor's D.2 additions beyond A′ P2-0e (venv check and interpreter print; pre-suite status and diff hash; B6 restore or abort). Beyond those, it passes extra arguments as extra commit-message paragraphs (for the attribution trailer).
 - The D2 suite run used A′'s command with `-v` added (verbosity only), so that skipped tests are named.
-- The P51 build-code pin test is deferred from P2-0 to P2-0b, where `build/pass1/` is created.
+- The P51 build-code pin test was moved from P2-0 to P2-0b, where `build/pass1/` is created (added in P2-0b).
+- P2-0b's acceptance rule is Isaiah's of 2026-10-05 (the Mac baseline hashes), replacing A′'s (Flag 16).
