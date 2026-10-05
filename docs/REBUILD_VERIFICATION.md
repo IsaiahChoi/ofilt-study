@@ -88,10 +88,20 @@ Every machine-checkable claim in P29–P35 holds (`tests/test_docs_d3.py`, 6 tes
 - P30: "H1 and CW agree in about 97% of H1-significant runs". This is P28's 170/175; the rebuild has 175/175 (D2 difference 3).
 - P31: "CW is conservative (2.67% …)". The rebuild has 3.00%, still conservative (D2 difference 1).
 
-## D3b: P36
+## D3b: P36 (verified at the D3b checkpoint)
 
-Not yet verified (next item).
+P36 is mostly a plan (steps 1–7, Notes 1–2). Its checkable claims hold (`tests/test_docs_d3b.py`, 2 tests). **No differences.**
+
+| Claim | Evidence | Result |
+|---|---|---|
+| tag semantics as implemented: dev_real needs `spec-dev-v1`; confirm_real needs `spec-dev-v1` and `prereg-v1` | `blind.REQUIRED_TAGS` exactly; tag must be an ancestor of HEAD (`blind._tag_ok`; `test_blind`) | ✓ |
+| the two tags are the only unblinding events | no Python file in `ofilt/` or `tools/` other than `blind.py` and `io.py` names either tag; `io.load_confirm` gates on `prereg-v1` (P29), and computations on its output still need both tags through `require_unblinded` | ✓ |
+| choices LOCKED from `spec-dev-v1`; AM-02's "decided before tag" means before `spec-dev-v1` | spec `status: DRAFT`, "FROZEN only when Isaiah tags spec-dev-v1"; `SIZE_RULE` says "decided before tag" | ✓ |
+| calibration decisions are written as AM-xx amendments | `spec/SPEC_AMENDMENTS.md` headings AM-01, AM-02 | ✓ |
+| before step 4 the only real FX-and-target computation is the sealed fit, so the calibration pass sees no real b | `BLIND_FIT_LOG` 6 sealed-fit lines (D3); committed `RUN_REGISTRY.jsonl` empty | ✓ |
+| steps 1–7, Note 1 (dry run after the first tag), Note 2 (cost inputs before step 3) | plan | text only |
+| PLAN §8 milestones rewritten to this order | belongs to D4 | checked in D4 |
 
 ## D4–D6: README, PLAN, DATA_DICTIONARY, setup docs
 
-Not yet started.
+Not yet started. Finding at D3b: Pass 1's own D4b output (PLAN v2.1, `docs/replacements/PLAN.md`) is **superseded** by PLAN v2.2 (2026-10-04) in the Project, and the Project's README and PROJECT_SETUP are post-Pass-1 versions (2026-10-04, "after Pass 1"). The rebuild therefore restores the current adopted copies and verifies that they contain the edits P14–P36 require. It does not reconstruct superseded Pass 1 text.
