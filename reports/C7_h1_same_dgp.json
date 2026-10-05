@@ -1,0 +1,94 @@
+{
+ "key": {
+  "cfg": {
+   "n_dates": 1513,
+   "h1_dates": 1013,
+   "p_excl": 0.02,
+   "seed_offset": 3000000,
+   "cells": [
+    [
+     "size",
+     0.0,
+     300
+    ],
+    [
+     "power_040",
+     0.4,
+     200
+    ],
+    [
+     "power_025",
+     0.25,
+     200
+    ]
+   ],
+   "bands": {
+    "size": [
+     0.02,
+     0.09
+    ],
+    "power_040_min": 0.8
+   },
+   "out": [
+    "reports/C7_mc.json",
+    "reports/C7_h1_same_dgp.json"
+   ],
+   "partial": "reports/C7_mc.partial.json"
+  },
+  "spec_seed": 20261001,
+  "spec_sha256": "9775a05ccf035c9ca3f769efe5e9ddaed068c1891b3de26940859f04fd7acae2",
+  "code": {
+   "tools/c7_mc.py": "972422b06c6c25c573530486a6df894d67e493a1909aa277788871472fd5857d",
+   "ofilt/drift/fctests.py": "b908b6dad0684a91b0fafea9a15ca13e538dc90bd0274579d26f7b1f61ed8066",
+   "ofilt/drift/forecast.py": "f816d277edec7e8d3fdbeffe03e3ac2461713ace4982b606163efec5a44b66e9",
+   "ofilt/drift/models/linear.py": "3ce9c0f2a6e6d4f8d21f8311428638defa18403d94bd36d68149803cad04679e",
+   "ofilt/drift/sim.py": "d0e7ab15e67544be398a867fe6614ba91eac5bfaefc6fa302e4e2d45f79cf7fd",
+   "ofilt/drift/inference.py": "d040fc508d80fbd25619591de615137b9934a3089deeb5727a22fdae0801518b"
+  }
+ },
+ "runtime_s": 618.2086887359619,
+ "label": "synthetic Gaussian DGP (P28); not binding",
+ "cell": "power_025",
+ "b": 0.25,
+ "reps": 200,
+ "cw": {
+  "rate": 0.895,
+  "k": 179,
+  "n": 200,
+  "mc_se": 0.021676600286945368,
+  "wilson95": [
+   0.8448196800887696,
+   0.9302925120731899
+  ]
+ },
+ "h1_two_sided": {
+  "rate": 0.875,
+  "k": 175,
+  "n": 200,
+  "mc_se": 0.023385358667337135,
+  "wilson95": [
+   0.8219857499741765,
+   0.9138802552428735
+  ]
+ },
+ "h1_one_sided": {
+  "rate": 0.935,
+  "k": 187,
+  "n": 200,
+  "mc_se": 0.01743201078476031,
+  "wilson95": [
+   0.8919809207009312,
+   0.961623645350847
+  ]
+ },
+ "agree_among_h1_two": [
+  175,
+  175
+ ],
+ "crosstab": {
+  "h1_and_cw": 175,
+  "h1_only": 0,
+  "cw_only": 4,
+  "neither": 21
+ }
+}
