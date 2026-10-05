@@ -141,6 +141,52 @@ The Project's `DATA_DICTIONARY.md` is the post-P20 version. It is restored byte 
 | `ao_` columns not features (P16); β, hedge placeholder, controls (P17–P19); highrv threshold | dictionary text; threshold 1.2950114214e-08 == spec | ✓ |
 | "Planned for Pass 2 (P34; not yet in the panel)" | still true: the Pass 2 inputs are pulled (PLAN §2.2) but the panel is not rebuilt | ✓ (current) |
 
-## D6: setup docs
+## D6: setup docs (verified at the D6 checkpoint)
 
-Not yet started.
+The Project's `PROJECT_SETUP.md` ("October 2026, after Pass 1"; it supersedes the pre-Pass-1 version) is restored byte for byte to `docs/replacements/` (sha256 prefix `d2afcf2a1fe90074`) and pinned in `tests/test_docs_d6.py` (3 tests).
+
+| Claim | Evidence | Result |
+|---|---|---|
+| the repo holds `ofilt/drift/`, `spec/`, `tests/`, `tools/`, `docs/`, `reports/`, `BLIND_FIT_LOG`, `RUN_REGISTRY.jsonl`, `PASS1_STATUS.md` | all present in the rebuilt repo | ✓ |
+| the guard needs the tags as ancestors of HEAD; the two logs are append-only | `blind._tag_ok` (D3b); `registry.record_run` opens in append mode; `BLIND_FIT_LOG` appended by the sealed fit (`test_sim_b5`) | ✓ |
+| the four replacements are in `docs/replacements/`; `DECISIONS_P14_onward.md` in `docs/` | present (restored in D1, D4–D6) | ✓ |
+| never in the Project: sealed panel, `Book2.xlsx`, Dukascopy and HistData files, Pass 2 raw pulls, forward-holdout data | none in `/mnt/project`; `panel_dev.csv` ends 2021 (date column only); no sealed panel in the repo either | ✓ |
+| removed files (`fx_dark_window_features.csv`, `build_windows.py`, `histdata_tz.py`, `slim_encode.py`, `MASTER_README__1_.md`) | absent | ✓ |
+| the "In the project" list | all named files present (README as `README__2_.md`) | ✓, see differences |
+
+**Differences (flagged; the adopted text is not edited):**
+
+1. **The doc lags the Project.** It lists "`PLAN.md` (v2.1)"; the Project holds v2.2 (2026-10-04). It also omits the 2026-10-04 additions `DECISIONS_P37_onward.md`, `PASS2_HANDOFF.md` and `PASS2_INPUTS.json`, which PASS2_HANDOFF's checklist (row 7) expects in the Project. This is a documentation refresh for Pass 2 ("the docs are updated"), not a rebuild error.
+2. **No `.diff` files.** The doc says each `docs/replacements/` file "has a `.diff` against the previous project copy". Those previous (pre-Pass-1) copies do not survive, so the rebuild cannot regenerate the diffs honestly and does not fabricate them.
+
+---
+
+## Summary: every difference found by the rebuild (C4–D6)
+
+None of these changes a decision; all are for Isaiah to review. The adopted text is unedited throughout.
+
+**Numbers (synthetic validation, P28; repeated in P30, P31 and PLAN §4.4).** The data-generating process behind P28 is not recorded, so exact equality was not expected. These reproduce exactly: CW power 100% and 89.5% (with P28's Wilson intervals), and same-panel H1 two-sided 87.5%. These differ:
+
+| Quantity | Adopted | Rebuild |
+|---|---|---|
+| CW size, b = 0 | 2.67% (8/300) | 3.00% (9/300); same band, Flag 12's reading holds |
+| same-panel H1 one-sided | 94.0% | 93.5% |
+| CW rejects among H1-significant runs | 170 of 175 | 175 of 175 |
+| Pesaran–Timmermann size | 4.6% | 4.3% one-sided, 4.5% two-sided |
+| M7 mean OOS R² on pure noise | −0.011 | −0.0064 (planted signal +0.364) |
+
+**Implementation and structure:**
+1. The run registry sends synthetic runs to a temp-directory file; P27 says every call appends to `RUN_REGISTRY.jsonl` (Flag 15d).
+2. The slow tier runs as resumable chunks, because background processes die between turns; it has 2 slow tests instead of 3.
+3. The Pesaran–Timmermann training base rate comes from a new fold-log field `train_up` (Flag 14).
+4. Test counts: 205 tests with 4 skipped, vs the original's 171 with 5 (PLAN §8's Pass 1 row quotes the original).
+5. P20's "README rule 2" is numbered 3 in the current README.
+6. PROJECT_SETUP lags the Project (PLAN v2.1; no P37+ files listed).
+7. The replacement `.diff` files are not rebuilt.
+
+**Decisions open for Isaiah from the rebuild:**
+- **Flag 14** (C5): PT sidedness and zero convention, DM loss, OOS R² pooling, base-rate definition, the engine's `train_up` field.
+- **Flag 15** (C6): permutation groups, the exceeds-noise rule, the synthetic-registry location, the data-hash definition.
+- **Flag 12:** entered into the status file from P28.
+
+The earlier open flags (6, 10, 2, 4, 5) are unchanged.
