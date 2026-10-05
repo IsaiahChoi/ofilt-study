@@ -102,6 +102,32 @@ P36 is mostly a plan (steps 1–7, Notes 1–2). Its checkable claims hold (`tes
 | steps 1–7, Note 1 (dry run after the first tag), Note 2 (cost inputs before step 3) | plan | text only |
 | PLAN §8 milestones rewritten to this order | belongs to D4 | checked in D4 |
 
-## D4–D6: README, PLAN, DATA_DICTIONARY, setup docs
+## D4: README and PLAN (verified at the D4 checkpoint)
 
-Not yet started. Finding at D3b: Pass 1's own D4b output (PLAN v2.1, `docs/replacements/PLAN.md`) is **superseded** by PLAN v2.2 (2026-10-04) in the Project, and the Project's README and PROJECT_SETUP are post-Pass-1 versions (2026-10-04, "after Pass 1"). The rebuild therefore restores the current adopted copies and verifies that they contain the edits P14–P36 require. It does not reconstruct superseded Pass 1 text.
+**What was restored.** The Project holds the CURRENT adopted versions, and the rebuild restores those rather than reconstructing superseded Pass 1 drafts. Pass 1's own D4b output (PLAN v2.1, `docs/replacements/PLAN.md`) is superseded by **PLAN v2.2** (2026-10-04), and the README is the 2026-10-04 version. Both are restored byte for byte to `docs/replacements/` (README from the Project's `README__2_.md`; sha256 prefixes `dc7983326fc4964e`, `220fc762a511b13a`) and pinned in `tests/test_docs_d4.py` (4 tests).
+
+**Required edits.** Every edit P14–P36 assigns to README or PLAN is present:
+
+| Document | Edit (entry) | Where | Result |
+|---|---|---|---|
+| README | two-spec framing gone (P14, P16) | no "two spec" or "never mix" anywhere | ✓ |
+| README | auction-conditional spec retired (P16) | line 39 | ✓ |
+| README | allowlist replaces "features come from unprefixed columns"; `open`, `close`, `prev_close`, `audit_flag` forbidden (P20) | lines 143–145 | ✓ |
+| PLAN | two-sided H1 (P14); H2 retired (P16); H3 restated as a₂ = 0 (P15) | §1.3 | ✓ |
+| PLAN | past-only expanding β on non-excluded rows (P17); controls with EWJ out (P19) | §1.2, §3.1, §3.3 | ✓ |
+| PLAN | crisis windows replaced by tails/influence (P22); closed robustness list (P33); TOST with SESOI pending (P23) | §3.5, §6, §1.3 | ✓ |
+| PLAN | ladder with M6 dropped; Lemma K replacement as an ADVISOR QUESTION (P26); 500 eligible training dates (P27) | §4.1, §7, §4.2 | ✓ |
+| PLAN | MDE in units of b, ≈ 0.257, with the B7b preview figures (P30) | §5 (6.04% [5.41%, 6.73%], 22.5 / 78.2 / 98.5%, SE/sd 0.960; agrees with D3) | ✓ |
+| PLAN | §8 milestones in P36's order: Pass 1 → data → calibration (blinded) → tag `spec-dev-v1` → dev first look + dry run → pre-registration → tag `prereg-v1` → confirmation | §8 table, parsed | ✓ |
+
+**Superseded by later adopted text (not a difference).** P36's pass numbering ("the calibration pass is what earlier entries call Pass 4") is renamed by **P44** (EDITORIAL, 2026-10-04): calibration = Pass 3, dev first look = Pass 4, pre-registration = Pass 5. PLAN v2.2 uses P44's names. The rebuild's `PASS1_STATUS.md` entries sometimes say "Pass 4" in P35/AM-02's older sense, which is one of P44's listed aliases.
+
+**Differences (flagged; the adopted text is not edited):**
+
+1. **PLAN §8, Pass 1 row:** "Complete (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits". This describes the original repo. The rebuild has more tests (Stage D adds verification modules; 199 at this checkpoint) and 4 skipped (2 slow tests instead of 3). The 6 sealed fits match.
+2. **PLAN §4.4** repeats P28: Clark–West size 2.67% and agreement in 170 of 175 H1-significant runs. The rebuild has 3.00% and 175/175 (D2 differences 1 and 3). The 89.5% and 100% power figures match.
+3. **README rule number:** P20 refers to "README rule 2"; the current README numbers the allowlist rule **3**. The content is present; only the numbering moved.
+
+## D5–D6: DATA_DICTIONARY, setup docs
+
+Not yet started.
