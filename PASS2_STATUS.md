@@ -17,11 +17,12 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-0 h. Docs sync (P57) | done | 3 docs over `docs/replacements/`, 5 new in `docs/`, all byte-identical to SHA256SUMS; phase-P2-0 test changes applied; `tests/test_docs_p2.py` added |
 | P2-0 i. Report | done | Checkpoint `checkpoint: P2-0`; accepted by Isaiah 2026-10-05 |
 | P2-0b | done | `build/pass1/` frozen byte for byte, with its pin test (`tests/test_build_pass1_pin.py`). The frozen build in ofilt_p2 reproduced the Mac baseline (656d5117… / 138e5e21…); rows and spans equal MANIFEST. ACCEPTED under Isaiah's rule. Checkpoint `checkpoint: P2-0b` |
-| P2-1 | done; STOP for supervisor review | `tools/p2_1_inputs.py` → `reports/P2_1_inputs.md`. Every input hash-verified before reading. 27 of 32 comparisons with B′ / DATA_PROVENANCE match; the 5 mismatches are documentation or definition differences (Flags, P2-1). Settings check (P39b) supplied. Checkpoint `checkpoint: P2-1` |
+| P2-1 | done; accepted by Isaiah 2026-10-05 | `tools/p2_1_inputs.py` → `reports/P2_1_inputs.md`. Every input hash-verified before reading. 27 of 32 comparisons with B′ / DATA_PROVENANCE match; the 5 mismatches are documentation or definition differences (Flags, P2-1). Settings check (P39b) supplied. Checkpoint `checkpoint: P2-1` |
+| P2-2 | done; STOP for review | `build/pass2/columns.py` (pure functions; frozen helpers reused by import) and `build/pass2/build_panel_p2.py` (append-only build; every A′ and Isaiah build-time assertion). Synthetic tests only (`tests/test_p2_columns.py`, `tests/test_p2_build.py`, helper `tests/p2_synth.py`); no real-data run. Checkpoint `checkpoint: P2-2` |
 
 ## Next action
 
-STOP: supervisor review of P2-1 (`reports/P2_1_inputs.md`; Flags, P2-1). P2-2 starts only after that review.
+STOP after P2-2 (report `/tmp/p2_2_report.txt`). P2-3a starts only after Isaiah's review.
 
 ## Decision log
 
@@ -40,6 +41,13 @@ STOP: supervisor review of P2-1 (`reports/P2_1_inputs.md`; Flags, P2-1). P2-2 st
 - P2-2 design constraints (Isaiah, 2026-10-05; recorded now, no code until P2-2):
   - build_panel_p2.py takes the original dev panel as an input path and verifies its hash is 736636… wherever it lives (after the switch commit it is DATA/archive/panel_dev_736636031ca1.csv). It uses that file's strings for dev's 41 old columns. For the sealed side it uses the frozen build's output, which must hash to 138e5e21…. It also asserts that the frozen build's dev output hashes to 656d5117…, so every run is shown to be the verified one.
   - *.csv is git-ignored, so synthetic test fixtures must be generated inside the tests, never committed as CSV files.
+- P2-0b accepted (Isaiah, 2026-10-05): the frozen build reproduced the Mac baseline exactly (dev 656d5117…, sealed 138e5e21…). P2-1 accepted: 27 of 32 comparisons match; the 5 mismatches are errors in DATA_PROVENANCE §4 / Appendix B′ (Japan 225 calendar convention and coverage wording; XAU Good Friday closures), to be corrected at P2-6. Supervisor cross-check (dev, gap-only): on all 7 dev ex-dates the dividend-adjusted 1306 gap equals the TOPIX gap within 0.24 pp, so the ÷10 factor holds in every year.
+- P2-2 additions (Isaiah, 2026-10-05):
+  - Reuse the frozen helpers in build/pass1/build_panel.py by import; compute xau_* and n225_* with the frozen fx_windows; never edit build/pass1/; re-implement a helper only when it cannot be reused as is, and add a test of identical output to the frozen function on synthetic inputs.
+  - 1306 distributions use the stored corrected amounts of the `1306 dividends` sheet; RAW ÷ 10 is never recomputed.
+  - Build-time assertions: the number of NY sessions summed for usdjpy_us_ret equals the frozen build's us_n_sessions on every row; the XAU and Japan 225 window instants equal the panel's window_start_utc and window_end_utc on every row.
+  - MANIFEST.json also records platform.platform(), platform.machine(), sys.version and the SHA-256 of the original dev panel used as dev's old-column source.
+  - Unit tests compare log-derived values within an explicit tolerance, or use values exact by construction; never bit-identical floats across platforms (Flag 16).
 - (P2-0e, implementation) `tools/checkpoint.sh` calls bare `python`, because `test_sim_b5` pins the literal `env -u OFILT_RUN_SEALED python -m unittest discover`. It therefore requires an activated venv (`VIRTUAL_ENV` set, and `command -v python` equal to `$VIRTUAL_ENV/bin/python`). Extra arguments after the item id become extra commit-message paragraphs, used for the commit attribution trailer.
 - (P2-0g, implementation) Both gates run the fallback check first. The external guard is consulted only if the fallback grants. A grant requires the return value to be identical to `None` or `True`: `np.True_`, 1 and "granted" are denials. `io._check_access` now raises `AccessDenied` for every external-guard failure; before, the guard's own exception propagated. The `guard` field of an ACCESS_LOG line still reads `ofilt.guards` whenever an external guard is importable (unchanged).
 
@@ -141,6 +149,8 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-0 checkpoint (`tools/checkpoint.sh "P2-0"`) | ofilt_p2 | Ran 211 tests in 227.849s, OK (skipped=5). The script printed the B6 diff (identical to D2's), restored it, and committed `a102ed1753f20344bb9ec8ae73e37d73ab6d57e0` |
 | P2-0b targeted | ofilt_p2 | test_build_pass1_pin: Ran 2, OK |
 | P2-0b checkpoint (`tools/checkpoint.sh "P2-0b"`) | ofilt_p2 | Ran 213 tests in 218.559s, OK (skipped=5). 213 = 211 + 2 (test_build_pass1_pin). B6 diff identical to D2's, restored; committed `090fc2198de2d9ea5f2591ff422cd79b565d6c92` |
+| P2-1 checkpoint (`tools/checkpoint.sh "P2-1"`) | ofilt_p2 | Ran 213 tests in 196.575s, OK (skipped=5). B6 diff identical to D2's, restored; committed `6e04632fdb12ab621acb7694f0efa667fbcb8d92` |
+| P2-2 targeted (synthetic only) | ofilt_p2 | test_p2_columns + test_p2_build: Ran 25 tests, OK (19 + 6). The end-to-end synthetic build passed 72 build-time assertions (count from a rerun of the test fixture) |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -175,6 +185,14 @@ Protocol: PASS2_ADDENDUM §5. Line numbers are those of the rebuilt repo at `pas
 
 No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d3`) are unchanged.
 
+**P2-2 additions** (new files; no existing assertion changed):
+
+| File | Tests | What they pin | Entry |
+|---|---|---|---|
+| new `tests/test_p2_columns.py` | 19 | A′ P2-2 unit tests on synthetic bars and calendars: dark-window bounds and the 2024-11-05 close change; the price-at-instant rule; endpoint staleness; a night without bars; the session-FX window by day t; NY DST; NYSE early closes; nights with no US session (exactly 0.0); multi-session sums; gotobi on the four month-crossing rolls, February (leap and non-leap) and a month whose 30th and 31st fall on a weekend; the 1306 dividend-adjusted gap identity; the TOPIX TR component on an ex-date; stored 1306 amounts and cash types. Re-implemented routines equal the frozen code: `parse_price_sheet` and `parse_dividends` vs `load_workbook`; `dark_window_instants` vs `fx_windows`; `us_session_dates` vs `us_features`. The frozen helpers are reused by import, and `build/pass1/` stays untouched | P50, P48, P49, P51; Isaiah 2026-10-05 |
+| new `tests/test_p2_build.py` | 6 | the string round-trip keeps old columns byte-identical; an unknown date is refused; end to end on synthetic inputs: outputs and MANIFEST (platform, libraries, input/event/code hashes, the original dev panel's hash, the old-column sources, the new-column list), dev old columns = the original panel's strings (not the frozen output), sealed old columns = the frozen output, new-column values against independent computations; refusals on a wrong input, original-dev or frozen-output hash, and on a non-empty output folder | P51; Isaiah 2026-10-05 |
+| new `tests/p2_synth.py` (helper, not a test module) | — | generates the synthetic raw and event files in temporary folders (no committed fixture) | Isaiah 2026-10-05 |
+
 **Pending for the P2-3a test-change table** (Isaiah, 2026-10-05; for approval at the decision checkpoint):
 
 | Test (line) | Current | Proposed | Reason |
@@ -194,6 +212,9 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - (P2-1, for review) DATA_PROVENANCE §4.2 lists XAU gaps over 6 h as weekends plus Christmas and New Year. The data also have the 11 Good Friday closures (2015–2025). Records only (P2-6).
 - (P2-1, for review) DATA_PROVENANCE §4.4 says RAW amount / prior close is "13.6–21% on every ex-date". This holds on the 7 dev ex-dates (13.6–21.0%) but is False for the 2022+ ex-dates (boolean only; no value shown). P47's issuer check of the 2022–2025 amounts is unaffected. Records only (P2-6).
 - (P2-1, info) 1306 RAW ÷ 10: the stored corrected amounts are decimal-exact, but binary-float RAW/10 differs from them in the last bit on 1 of 11 rows. The P2-2 build should use the stored corrected amounts (as `build_panel` does for the miners) and never recompute RAW/10.
+- (P2-2, for decision before P2-4) A′'s build assertion "usdjpy_us_ret == 0.0 if and only if us_n_sessions == 0" is implemented literally. Its "only if" half fails whenever a night has US sessions but the summed log return is exactly 0.0. That happens when, on a one-session night, the USD/JPY bid at the NY close equals the bid at the NY open to the 0.001 tick. A rough estimate, not computed on data: a 6.5-hour move has a standard deviation of about 0.3% (about 350 ticks), so the chance of an exact repeat is about 0.1% per session; over about 2,500 one-session nights that is roughly 3 expected cases, so P2-4 would very likely STOP on it. Suggested replacement, for Isaiah's decision: "usdjpy_us_ret == 0.0 wherever us_n_sessions == 0, and finite wherever us_n_sessions > 0", and MANIFEST to report the count of nights with sessions and an exact 0.0 sum.
+- (P2-2, risk at P2-4) `build/pass2` reads the XAU and Japan 225 files with the frozen `load_fx`, which needs timezone-aware `ts_utc` strings (as the USD/JPY master has). P2-1 parsed these files with `utc=True`, which accepts either form, so the format is untested until P2-4 (P2-2 has no real-data run). If they are naive, P2-4 stops at load time, and `load_fx` would need a tested re-implementation (Isaiah's rule 2a).
+- (P2-2, info) The frozen build writes `us_n_sessions` as "1.0" (a float column: joining on the calendar's first day introduces a NaN). `build_panel_p2` reads it as a number and asserts it is whole on every row.
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 
 ## Blinding attestation
@@ -207,6 +228,8 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - **Since the disk-scope rule** (supervisor D.3): inside `~/Desktop/FX_Project` only REPO, KIT, DATA, RAW (hashing) and OUT (writing, plus the reads listed above) were used.
 - **Code read:** KIT docs, the frozen `build_panel.py`, repo code and tests. Helper scripts and logs lived in `/tmp/p2_0/` (outside FX_Project).
 - **Printed data:** none from RAW or OUT. Session 1 printed synthetic dates from a failing synthetic test (`masked_panel(800, seed=33)`).
+- **P2-2:** code and synthetic tests only; no real-data run. The tests generate synthetic inputs in temporary folders outside the repo and run the frozen build on them. No file under RAW, DATA or OUT was read.
+- **Correction to P2-1 (found 2026-10-05, during P2-2):** the P2-1 report and the P2-1 line below say the fixed workbook's `README` sheet "was not read". In fact `pd.read_excel(sheet_name=None)` loaded it into memory with the other sheets (in P2-1's structure probe and in `tools/p2_1_inputs.py`), and its shape and dtypes were printed. Its contents were never printed or used. `build_panel_p2` reads only the `1306`, `1306 dividends` and `TOPIX optional` sheets.
 - **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
 
@@ -225,3 +248,8 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
   - XAU gaps now have a Good Friday category; the literal DATA_PROVENANCE row is kept and still False;
   - a dev-only weekday-calendar diagnostic was added for Japan 225.
   One criterion changed: "exactly" went from binary float equality to decimal equality of the stored values, which turned that row from False to True; the float result is still printed. No other criterion changed, and no row was removed. Six rows were added (26 → 32), and five of them are True: two XAU gap rows and three of the four weekday-calendar diagnostic rows.
+- P2-2 design choices beyond A′'s text (for review):
+  - `build()` takes an `Expect` (hashes, counts, early-close list) so the tests can run it end to end on synthetic inputs. The command line always uses `real_expect()`: hashes from `docs/PASS2_INPUTS.json`, the Mac baseline hashes of Isaiah's 2026-10-05 decision, 11 distribution rows, gotobi 529 / 319 and the 23 P49 dates.
+  - Extra build-time assertions: the original dev panel's columns, and its dates and tickers row for row, equal the frozen dev output's; `us_n_sessions` is whole; every written panel's old columns re-read equal the original strings.
+  - The frozen build runs in a temporary folder inside the output folder, which is removed afterwards. Only `panel_dev.csv`, `panel_confirm_SEALED.csv` and `MANIFEST.json` remain.
+  - The build reads only the three needed sheets of the fixed workbook.
