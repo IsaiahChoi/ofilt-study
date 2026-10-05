@@ -17,11 +17,11 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-0 h. Docs sync (P57) | done | 3 docs over `docs/replacements/`, 5 new in `docs/`, all byte-identical to SHA256SUMS; phase-P2-0 test changes applied; `tests/test_docs_p2.py` added |
 | P2-0 i. Report | done | Checkpoint `checkpoint: P2-0`; accepted by Isaiah 2026-10-05 |
 | P2-0b | done | `build/pass1/` frozen byte for byte, with its pin test (`tests/test_build_pass1_pin.py`). The frozen build in ofilt_p2 reproduced the Mac baseline (656d5117… / 138e5e21…); rows and spans equal MANIFEST. ACCEPTED under Isaiah's rule. Checkpoint `checkpoint: P2-0b` |
-| P2-1 | in progress | |
+| P2-1 | done; STOP for supervisor review | `tools/p2_1_inputs.py` → `reports/P2_1_inputs.md`. Every input hash-verified before reading. 27 of 32 comparisons with B′ / DATA_PROVENANCE match; the 5 mismatches are documentation or definition differences (Flags, P2-1). Settings check (P39b) supplied. Checkpoint `checkpoint: P2-1` |
 
 ## Next action
 
-P2-1 (validate the new inputs; reports only), then checkpoint and STOP for supervisor review.
+STOP: supervisor review of P2-1 (`reports/P2_1_inputs.md`; Flags, P2-1). P2-2 starts only after that review.
 
 ## Decision log
 
@@ -139,8 +139,20 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-0h targeted | ofilt_p2 | test_docs_*: Ran 35, OK (skipped=1, the Project test) |
 | P2-0, before the checkpoint commit (A′ command with `-v`) | ofilt_p2 | Ran 211 tests in 235.963s, OK (skipped=5); wall 238 s. Same five skips as D2. 211 = 205 + 4 (test_guard_p46) + 2 (test_docs_p2). The B6 rewrite was identical to D2's (deterministic under Accelerate) |
 | P2-0 checkpoint (`tools/checkpoint.sh "P2-0"`) | ofilt_p2 | Ran 211 tests in 227.849s, OK (skipped=5). The script printed the B6 diff (identical to D2's), restored it, and committed `a102ed1753f20344bb9ec8ae73e37d73ab6d57e0` |
+| P2-0b targeted | ofilt_p2 | test_build_pass1_pin: Ran 2, OK |
+| P2-0b checkpoint (`tools/checkpoint.sh "P2-0b"`) | ofilt_p2 | Ran 213 tests in 218.559s, OK (skipped=5). 213 = 211 + 2 (test_build_pass1_pin). B6 diff identical to D2's, restored; committed `090fc2198de2d9ea5f2591ff422cd79b565d6c92` |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
+
+**P2-1, input validation** (`python tools/p2_1_inputs.py <RAW>` in ofilt_p2; exit 0; wall 10 s; no stderr; full text in `reports/P2_1_inputs.md`):
+- Inputs hash-verified before any read: Book2.xlsx, newbloombergdata_fixed.xlsx, newbloombergdata.xlsx, the XAU and Japan 225 files: all True.
+- **Final run: 27 of 32 comparisons match.** The 5 that do not:
+  - XAU gaps over 6 h, DATA_PROVENANCE §4.2 literal ("weekends, plus Christmas and New Year"): False. The other 11 gaps are the Good Friday closures of 2015–2025; none is unexplained.
+  - Japan 225 fresh share, 2015-H2 → 2018-H1, "about 0%" (miners' calendar): False. 2018-H1 is 43.8%: the feed is fresh from 2018-04-13 onward.
+  - Japan 225 fresh share, 2018-H2 onward, "97–99%" (miners' calendar): False. 2021-H1 is 100.0%; by counts, 2023-H1 (122/122) and 2026-H1 (41/41) are 100%.
+  - Japan 225 changeover, 2018-07-02 (miners' calendar): 2018-07-05.
+  - Diagnostic, Mon–Fri weekday calendar (dev): 2015-H2 → 2018-H1 "about 0%": False (2018-H1 43.1%). Its other three rows match: 2015-H1 37; changeover 2018-07-02; 2018-H2 → 2021-H2 within 97–99%.
+- First run (before the script was revised; see Deviations): 21 of 26. The extra mismatch was "amounts = RAW ÷ 10" under binary float equality (1 of 11 rows differs in the last bit). The stored decimal values are exactly RAW ÷ 10.
 
 ## Test changes
 
@@ -178,6 +190,10 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
     - Evidence (builder): Mac rebuild vs the original dev panel, ao_gap_raw differs as strings in 222 cells, max 1 ulp; dev comparison EXPLAINED. B6 diffs: under Accelerate, mean_b, sd_b and se_over_sd change in the last 1–2 digits; under OpenBLAS, also mean_se. Coverage 0.952 unchanged.
 - (info) No git remote is configured. P45's push to a private remote is Isaiah's step.
 - (info) `oldfiles/pull_dukascopy.py` hashes `e0c48f778060a1d2…` (the pre-P38 version: naive datetimes, `utcnow()` cap, no XAU/JPN225). The registered hash `6d9464f8…` matches the copies in `pass 2 data/` and `prepping for pass 2/`. Not a build input.
+- (P2-1, for review) Japan 225 freshness in B′ / DATA_PROVENANCE §4.3 matches a Mon–Fri weekday calendar, not the miners' (Tokyo) calendar that the build and P42 use. On the Tokyo calendar: 2015-H1 37.2%; 2018-H1 43.8%; the changeover (trailing 60-day share ≥ 95%) is 2018-07-05; some half-years are 100%. Under any calendar, the 08:59 JST price is fresh on every Tokyo day from 2018-04-13, so B′'s "about 0% (2015-H2 → 2018-H1)" holds only through 2017-H2. Relevant to D7 (P42 coverage) and to the P2-6 records.
+- (P2-1, for review) DATA_PROVENANCE §4.2 lists XAU gaps over 6 h as weekends plus Christmas and New Year. The data also have the 11 Good Friday closures (2015–2025). Records only (P2-6).
+- (P2-1, for review) DATA_PROVENANCE §4.4 says RAW amount / prior close is "13.6–21% on every ex-date". This holds on the 7 dev ex-dates (13.6–21.0%) but is False for the 2022+ ex-dates (boolean only; no value shown). P47's issuer check of the 2022–2025 amounts is unaffected. Records only (P2-6).
+- (P2-1, info) 1306 RAW ÷ 10: the stored corrected amounts are decimal-exact, but binary-float RAW/10 differs from them in the last bit on 1 of 11 rows. The P2-2 build should use the stored corrected amounts (as `build_panel` does for the miners) and never recompute RAW/10.
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 
 ## Blinding attestation
@@ -191,6 +207,7 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - **Since the disk-scope rule** (supervisor D.3): inside `~/Desktop/FX_Project` only REPO, KIT, DATA, RAW (hashing) and OUT (writing, plus the reads listed above) were used.
 - **Code read:** KIT docs, the frozen `build_panel.py`, repo code and tests. Helper scripts and logs lived in `/tmp/p2_0/` (outside FX_Project).
 - **Printed data:** none from RAW or OUT. Session 1 printed synthetic dates from a failing synthetic test (`masked_panel(800, seed=33)`).
+- **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
 
 ## Deviations
@@ -202,3 +219,9 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - The D2 suite run used A′'s command with `-v` added (verbosity only), so that skipped tests are named.
 - The P51 build-code pin test was moved from P2-0 to P2-0b, where `build/pass1/` is created (added in P2-0b).
 - P2-0b's acceptance rule is Isaiah's of 2026-10-05 (the Mac baseline hashes), replacing A′'s (Flag 16).
+- P2-1 goes beyond A′'s bullet list in three ways, all calendar-only or boolean-only: the DATA_PROVENANCE §4.6 calendar facts (NYSE early closes, gotobi counts and rolls, the confirmation-calendar cross-check), the cell-for-cell check of the fixed workbook against the original pull, and the dev-only Japan 225 weekday-calendar diagnostic.
+- `tools/p2_1_inputs.py` was revised after its first run (21 of 26 matching), once its output had been seen:
+  - "RAW ÷ 10 exactly" now uses decimal equality of the stored values, with the float result still shown;
+  - XAU gaps now have a Good Friday category; the literal DATA_PROVENANCE row is kept and still False;
+  - a dev-only weekday-calendar diagnostic was added for Japan 225.
+  One criterion changed: "exactly" went from binary float equality to decimal equality of the stored values, which turned that row from False to True; the float result is still printed. No other criterion changed, and no row was removed. Six rows were added (26 → 32), and five of them are True: two XAU gap rows and three of the four weekday-calendar diagnostic rows.
