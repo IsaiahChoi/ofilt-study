@@ -128,6 +128,19 @@ P36 is mostly a plan (steps 1–7, Notes 1–2). Its checkable claims hold (`tes
 2. **PLAN §4.4** repeats P28: Clark–West size 2.67% and agreement in 170 of 175 H1-significant runs. The rebuild has 3.00% and 175/175 (D2 differences 1 and 3). The 89.5% and 100% power figures match.
 3. **README rule number:** P20 refers to "README rule 2"; the current README numbers the allowlist rule **3**. The content is present; only the numbering moved.
 
-## D5–D6: DATA_DICTIONARY, setup docs
+## D5: DATA_DICTIONARY (verified at the D5 checkpoint)
+
+The Project's `DATA_DICTIONARY.md` is the post-P20 version. It is restored byte for byte to `docs/replacements/` (sha256 prefix `c6aeded2f93a3cd5`) and pinned in `tests/test_docs_d5.py` (3 tests). **No differences.**
+
+| Check | Evidence | Result |
+|---|---|---|
+| P20's change to the "unprefixed = pre-open" wording | the old equation is absent; the replacement reads "Being unprefixed does not make a column a feature: `open`, `close`, `prev_close` and `audit_flag` are unprefixed and forbidden"; groups are "explicit frozensets in `ofilt/drift/schema.py` (DECISIONS P20)"; nothing selects by prefix | ✓ |
+| group table == `schema` | 9 groups in order, counts 2 / 20 / 2 / 1 / 1 / 3 / 2 / 10 / 0 = 41, explicit member lists equal to the frozensets | ✓ |
+| PRE_OPEN list and derived features | the PRE_OPEN section names exactly `schema.PRE_OPEN_FEATURES`; the six derived features listed; `usdjpy_bars` the only PROVENANCE source; `noise_N01` described as model-generated | ✓ |
+| every schema column documented | all 41 names appear | ✓ |
+| `ao_` columns not features (P16); β, hedge placeholder, controls (P17–P19); highrv threshold | dictionary text; threshold 1.2950114214e-08 == spec | ✓ |
+| "Planned for Pass 2 (P34; not yet in the panel)" | still true: the Pass 2 inputs are pulled (PLAN §2.2) but the panel is not rebuilt | ✓ (current) |
+
+## D6: setup docs
 
 Not yet started.
