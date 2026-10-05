@@ -63,9 +63,34 @@ Every structural claim in P22–P28 holds in the rebuilt repo (`tests/test_docs_
 
 The data-generating process behind P28's numbers is not recorded, so exact equality was not expected.
 
-## D3, D3b: P29–P36
+## D3: P29–P35 (verified at the D3 checkpoint)
 
-Not yet verified.
+Every machine-checkable claim in P29–P35 holds (`tests/test_docs_d3.py`, 6 tests, plus the tests cited). The P30–P31 numbers come from the committed B7 pilot and B7b preview reports, which predate the C3 checkpoint, so the rebuild did not regenerate them; the verification checks that the adopted text quotes them correctly. P32 and most of P34–P35 are claim wording and plans, with nothing in the repo to test yet.
+
+| Entry | Claim | Evidence | Result |
+|---|---|---|---|
+| P29 | tag gates: synthetic passes; dev_real needs `spec-dev-v1`; confirm_real needs both tags; missing or unknown refused; attrs and kwarg must agree; neither tag exists in Pass 1 | `blind.require_unblinded` on a toy frame; `git tag`; `test_blind` | ✓ |
+| P29 | `io.load_confirm` gated by `prereg-v1`, logs attempts; `_guards_fallback.py` fails closed (Flag 5) | file present; `test_io`, `test_blind` | ✓ |
+| P29 | sealed blind fit: conditions (a)–(e), AST check that the coefficients never leave local scope | `sim._sealed_blind_fit`; `test_sim_b5` (the real-data part is opt-in and skipped) | ✓ |
+| P29 | opt-in `OFILT_RUN_SEALED=1`; `checkpoint.sh` unsets it | `checkpoint.sh` contains `env -u OFILT_RUN_SEALED` and never sets it | ✓ |
+| P29 | `BLIND_FIT_LOG`: 6 dev_real lines, all on `panel_dev.csv`; lines 1–3 from `test_sim_b5`, 4–5 from `report_B7.py`, 6 from `report_B7b.py` | parsed: 6 lines, provenance, panel hash == spec dev hash, caller fields | ✓ |
+| P29 | Stage C synthetic only | rebuilt C4–C7 attestations in `PASS1_STATUS.md` | ✓ |
+| P30 | B7b preview at T = 1013, lag 6: H1 size 6.04% [5.41%, 6.73%]; H3 5.92%; pooled coverage 93.91%, SE/sd 0.960, bias ≈ 0; power 22.5 / 78.2 / 98.5%; MDE80 0.257; no flag | `reports/B7b_size_preview.json`: 302/5000, 296/5000, 225 / 782 / 985 of 1000, probit MDE 0.2568, flags [] | ✓ |
+| P30 | CW power 89.5% at b = 0.25 (synthetic) | rebuilt C7: 179/200 | ✓ exact |
+| P31 | SE/sd 0.954 at T = 983 (pooled over 2,000 sims); 0.960 at T = 1013 | `reports/B_sim_pilot.json` four 500-rep cells pooled: 0.9539, coverage 93.95%; B7b pooled 0.9604 | ✓ |
+| P31 | if the true size is 6.04%, P(5000-rep rate > 6.5%) = 0.086; at 6.73%, 0.742 | recomputed independently: 0.086 and 0.742 under the normal approximation (the exact binomial gives 0.083 and 0.731) | ✓ |
+| P33 | closed robustness list: Huber, winsorised FX, influence curve + 10 rows, in the stated order; the post-2024-11-05 row not yet in `inference.py` | spec `robustness`; `inference.py` has no such term | ✓ |
+| P34 | sealed panel hash `9c18a6c1…` in the spec until the Pass 2 rebuild; CONTEMPORANEOUS empty; calendar 1,019 / 1013 | spec; `schema` (D1); `calendar` (D1) | ✓ |
+| P35 | T3 needs `walk_forward` on DevCalibrator draws with target `y_sim` | `walk_forward` has `target=`; `sim.DevCalibrator` exists | ✓ (capability only) |
+| P32; P34 items 1–8; P35 T1–T7 | claim tiers, Pass 2 pulls, Pass 4 tasks | plans and wording | text only, not checkable in Pass 1 |
+
+**Differences:** none new. Two D3 sentences restate P28 numbers that the rebuild reproduces differently (see D2):
+- P30: "H1 and CW agree in about 97% of H1-significant runs". This is P28's 170/175; the rebuild has 175/175 (D2 difference 3).
+- P31: "CW is conservative (2.67% …)". The rebuild has 3.00%, still conservative (D2 difference 1).
+
+## D3b: P36
+
+Not yet verified (next item).
 
 ## D4–D6: README, PLAN, DATA_DICTIONARY, setup docs
 
