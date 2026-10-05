@@ -28,9 +28,40 @@ All machine-checkable claims in P14–P21 hold in the rebuilt repo. **No differe
 | P21 | AM-02 size rule (5000 sims at T_conf, [3.5%, 6.5%], else stationary block bootstrap with mean block 5, decided before the tag) | `spec.SIZE_RULE` == spec `inference.size_rule` | ✓ |
 | P21 | T_conf = 1013 = 1,019 confirmation trading days − 6 all-excluded dates; each ticker loses 34 rows | `calendar.N_CONF_DAYS`, `T_CONF`, `len(confirmation_calendar())`; `test_calendar` (34 rows per ticker, T = 1013; passes) | ✓ |
 
-## D2: P22–P28
+## D2: P22–P28 (verified at the D2 checkpoint)
 
-Not yet verified (next item). This is where the rebuilt Stage C numbers meet the quoted ones; those differences are already recorded in `PASS1_STATUS.md` Deviations (C4–C7).
+Every structural claim in P22–P28 holds in the rebuilt repo (`tests/test_docs_d2.py`, 7 tests, plus the tests cited). P28's quoted numbers meet the **rebuilt** Stage C. Three P28 numbers are reproduced exactly and are asserted. The others differ and are listed below for Isaiah; they are not asserted, and the adopted text is not edited.
+
+| Entry | Claim | Evidence | Result |
+|---|---|---|---|
+| P22 | Huber c = 1.345, fixed scale 1.4826 × MAD; → OLS-DK as c → ∞ (1e-12) | spec `robustness.huber`; `inference.fit_huber`; `test_inference_b2` | ✓ |
+| P22 | winsorised FX at 0.5% / 99.5%, values fixed in the spec (usdjpy [−1.6482588843e-02, 1.4399911615e-02], eurusd [−1.6324806371e-02, 1.5438152188e-02]) | spec `robustness.winsorize_fx` | ✓ |
+| P22 | influence curve by date, k = 0…20, exact date-deletion (brute force 1e-12); named crisis windows removed | spec `robustness.influence_curve`; `inference.influence_curve`; `test_inference_b2`; no crisis window in `robustness` | ✓ |
+| P23 | TOST at α = 0.05; SESOI `PENDING_COSTS`; viability decided in Pass 4; `Spec.sesoi()` raises `SpecPendingError` | spec `equivalence`; raises | ✓ |
+| P24 | f = b/δ_cc with δ_cc = δ_gap + b (1e-12); one stacked fit (`fit_joint`); delta method and Fieller; status mentions 2022 | spec `fraction_unpriced`; `test_inference_b3` | ✓ |
+| P25 | four Holm members with AM-01 main effects; highrv threshold 1.2950114214e-08 | `inference.SECONDARY_TERMS` (four); spec family strings; `rv_per_bar_dev_median` == `Spec.rv_per_bar_dev_median()`. The spec block also holds the threshold key, which is a parameter, not a member. | ✓ |
+| P26 | ladder M0, M1, M2, M3, M4, M5, M7 (M6 dropped); M2 = controls + EUR/USD, M3 = M2 + usdjpy_ret; M5 α multipliers 1e-4…1; M3 in-fold == pooled_ols (1e-12); M4 18 coefficients | spec `forecast.models`; model features; `ridge.ALPHA_MULTS`; `test_models_c2` | ✓ |
+| P26 | comparisons (primary CW M3/M2 one-sided; CW M4/M3, M5/M3, M7/M1; DM M7/M1 two-sided, positive favours M7); importance spec; test aggregation | `fctests.spec_comparisons`; spec; `test_fctests_c5` (aggregation == hand computation) | ✓ |
+| P27 | expanding, pooled, refit every 21, scaling in fold; 500 **eligible** training dates; training rows exclude `excl_inference`; evaluation exclusions; one sample per call; firewall | spec `forecast`; `test_forecast_c1`; `test_fctests_c5` (pairing refuses anything else) | ✓ |
+| P27 | M7: early_stopping=False, lr 0.03, min_samples_leaf 100, l2 1.0; grid {2, 3} × {50, 100, 200, 400}; 20 PRE_OPEN sources; tuned on the last 250 training dates | `gbm.FIXED`, `gbm.GRID`; `test_models_c4` | ✓ |
+| P27 | registry line: run id, UTC, git commit, spec and data hashes, models, grids, per-fold chosen hyperparameters, output path | `registry.KEYS` (superset), `FOLD_KEYS`; `test_importance_registry_c6` | ✓ (see difference 6) |
+| P28 | slow tier `OFILT_SLOW=1`, `reports/C7_mc.json` + `C7_h1_same_dgp.json`, bands re-asserted, staleness by code hash; bands [2%, 9%] and ≥ 80% | `tools/c7_mc.py`; `test_validation_c7` | ✓ (see difference 7) |
+| P28 | CW power b = 0.4: 100% [98.1%, 100%]; b = 0.25: 89.5% [84.5%, 93.0%]; same-panel H1 two-sided 87.5% | rebuilt report: 200/200, 179/200, 175/200 | ✓ exact |
+| P28 | look-ahead bit-identical (M1–M5; M7 with M1), block-level leak caught | `test_validation_c7` (+ mutation check, C7 entry) | ✓ |
+| P28 | importance: planted feature first, noise near 0 | `test_importance_registry_c6` | ✓ qualitative (P28 quotes no number) |
+
+**Differences (flagged; no decision depends on them):**
+
+1. **P28, CW size:** quoted 2.67% (8/300, [1.36%, 5.17%]); rebuilt **3.00%** (9/300, [1.59%, 5.60%]). One rejection apart, inside both intervals and the band. Flag 12's reading (CW conservative) holds.
+2. **P28, same-panel H1 one-sided:** 94.0% vs **93.5%** (188 vs 187 of 200).
+3. **P28, agreement:** CW rejects in 170 of 175 H1-significant runs vs **175 of 175** in the rebuild (4 CW-only, 0 H1-only).
+4. **P28, PT size:** 4.6% vs **4.3%** one-sided (4.5% two-sided); P28 does not state sidedness, length or marginals.
+5. **P28, M7 on pure noise:** mean OOS R² −0.011 vs **−0.0064** (C4). The planted-signal check holds (+0.364).
+6. **P27, registry path:** "every call appends … to `RUN_REGISTRY.jsonl`". In the rebuild, real-provenance calls append there; synthetic calls go to a registry in the temp directory (Flag 15d). The handoff records the committed registry as empty after a Pass 1 that ran many synthetic forecasts, which this reproduces. The rebuilt line also has extra fields (git_dirty, provenance, target, seed, importance).
+7. **P28, slow tier operation:** "run detached". The rebuild runs it as resumable, chunk-invariant detached chunks, because background processes do not survive the end of a turn in this environment. It has 2 slow tests where the original had 3.
+8. **P26, training-window base rate:** implemented through a new fold-log field `train_up`. Its definition is a rebuild choice (Flag 14d, e).
+
+The data-generating process behind P28's numbers is not recorded, so exact equality was not expected.
 
 ## D3, D3b: P29–P36
 
