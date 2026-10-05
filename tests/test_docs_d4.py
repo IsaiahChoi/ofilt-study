@@ -1,14 +1,16 @@
 """D4 (rebuild): README and PLAN. The Project holds the CURRENT adopted versions (README of
 2026-10-04; PLAN v2.2, which supersedes v2.1 = Pass 1's original D4b output). They are restored
 byte for byte to docs/replacements/ and pinned; this module checks that each edit P14-P36
-assigns to README or PLAN is present. Superseded Pass 1 text is not reconstructed."""
+assigns to README or PLAN is present. Superseded Pass 1 text is not reconstructed.
+P57 (2026-10-05): the pins follow the 2026-10-05 refresh (README of 2026-10-05; PLAN v2.3, which
+supersedes v2.2); the PASS2_ADDENDUM §5 phase-P2-0 test changes, pre-approved."""
 import hashlib
 import re
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS = {"README.md": ("README__2_.md", "dc7983326fc4964e"), "PLAN.md": ("PLAN.md", "220fc762a511b13a")}
+DOCS = {"README.md": ("README__2_.md", "9596fe7d2de098c1"), "PLAN.md": ("PLAN.md", "8030770119338ad8")}  # P57: was dc7983326fc4964e / 220fc762a511b13a
 
 
 def text(name):
@@ -28,8 +30,10 @@ class TestRestored(unittest.TestCase):
             src = Path("/mnt/project") / project_name
             if src.exists():
                 self.assertEqual(data, src.read_bytes(), name)
-        self.assertTrue(text("PLAN.md").startswith("# Research Plan v2.2"))
-        self.assertIn("Supersedes:** v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)", text("PLAN.md"))
+        self.assertTrue(text("PLAN.md").startswith("# Research Plan v2.3"))      # P57: was v2.2
+        # P57: was "Supersedes:** v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)"
+        self.assertIn("Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, "
+                      "`docs/replacements/PLAN.md`)", text("PLAN.md"))
 
 
 class TestReadme(unittest.TestCase):

@@ -1,9 +1,15 @@
 # Overnight FX and the Tokyo opening auction (October 2026)
 
-**Status (2026-10-04).**
-- **Done:** Pass 1, the analysis machine, completed 2026-10-02. Pass 2's inputs are pulled and verified.
-- **Next:** the Pass 2 build (data and rebuild). It runs in Claude Code on Isaiah's Mac, following `PASS2_HANDOFF.md`.
-- **Still open:** the pre-flight items in `PASS2_HANDOFF.md` §6.
+**Status (2026-10-05).**
+- **Done:**
+  - Pass 1, the analysis machine, completed 2026-10-02. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (205 tests). The rebuilt repository is the canonical study repository (P45).
+  - Pass 2's inputs are pulled and verified, and the pre-flight decisions are recorded (P45–P57).
+- **Next:** the Pass 2 build (data and rebuild). It runs in Claude Code on Isaiah's Mac, following `PASS2_HANDOFF.md` as corrected by `PASS2_ADDENDUM.md` (builder prompt A′).
+- **Still open** (`PASS2_ADDENDUM.md` §2):
+  - the settings-check suffix (P39b), which is blocking;
+  - the TOPIX total-return ticker (P40), needed for records only;
+  - organising the raw files;
+  - the Mac environment.
 
 ## Current scope
 
@@ -12,7 +18,7 @@
 The decision log has three parts:
 - `DECISIONS_ADDENDUM.md`: P01–P13, the panel build;
 - `DECISIONS_P14_onward.md`: P14–P36, Pass 1;
-- `DECISIONS_P37_onward.md`: P37–P44, Pass 2 inputs.
+- `DECISIONS_P37_onward.md`: P37–P57, Pass 2 inputs and the pre-flight decisions.
 
 The plan's discipline applies throughout:
 - the pre-registration and the holdout lock;
@@ -52,8 +58,8 @@ This tests whether FX is fully priced at the open, not how fast. Speed needs int
 
 | Pass | Contents | Status |
 |---|---|---|
-| 1 | Analysis machine (`ofilt/drift/`): 171 tests, 5 skipped by default; 6 sealed fits, none returning an FX coefficient | **Complete** (2026-10-02) |
-| 2 | Data and rebuild (`PASS2_HANDOFF.md`). No sealed fit is sanctioned in this pass | Inputs verified; build next |
+| 1 | Analysis machine (`ofilt/drift/`): originally 171 tests, 5 skipped by default. Rebuilt C4–D: 205 tests, 4 skipped (5 on the Mac). 6 sealed fits, none returning an FX coefficient | **Complete** (2026-10-02; rebuilt 2026-10-05) |
+| 2 | Data and rebuild (`PASS2_HANDOFF.md` + `PASS2_ADDENDUM.md`). No sealed fit is sanctioned in this pass | Inputs verified; pre-flight decisions taken; build next |
 | 3 | Calibration, with dev still blinded by the guard: binding size run (AM-02), power and MDE, joint H1/CW cross-tab, Flags 10/12, SESOI and equivalence viability. Exactly one sanctioned sealed fit | — |
 | — | **Tag `spec-dev-v1`**. Inference and calibration choices are locked from here | — |
 | 4 | Dev first look (exploratory) + the P13(b) dry run | — |
@@ -91,11 +97,14 @@ python make_events.py
 python build_panel.py "<dir with raw inputs>" "<out dir>"
 ```
 
+`build_panel.py` reads `events_firm.csv` and `events_boj.csv` from its **working directory**, not from the raw folder.
+
 Then compare the hashes with `MANIFEST.json`. Identical hashes prove an identical panel.
 
 **Pass 2 extends the build.**
 - **New columns:** the 1306 hedge return and gaps; XAU and Japan 225 dark-window returns with endpoint staleness; US-session USD/JPY and a yen-denominated EWJ; the gotobi flag; session FX (09:00 → close).
-  - Names and groups follow the recommended default in `PASS2_HANDOFF.md` §7 (decision D6).
+  - Names and groups follow P50: the handoff's §7 default, with staleness and bar counts in PROVENANCE. The panel grows from 41 to 60 columns.
+- **Design:** append-only (P51). The frozen original build produces the 41 old columns byte for byte, and the new columns are appended to the right.
 - **Acceptance:** the 41 existing columns must be unchanged in both panels (P2-4).
 - **Hashes:** the rebuild supersedes the sealed hash `9c18a6c1…`, and the new hashes are recorded as an AM-xx entry.
 - **Afterwards:** the new `panel_dev.csv` and `MANIFEST.json` come into this Project. The sealed panel never does.
@@ -105,7 +114,7 @@ Then compare the hashes with `MANIFEST.json`. Identical hashes prove an identica
 | Input | Status |
 |---|---|
 | Book2, USD/JPY, EUR/USD | Verified. Offer side confirmed bid (P37) |
-| 1306 + TOPIX total return | Accepted. Dividends ÷10 is inferred; pending CACS confirmation (P39). The TOPIX total-return ticker is pending (P40) |
+| 1306 + TOPIX total return | Accepted. The dividend ÷10 factor is confirmed by the issuer's split notice and its published distributions (P47). The settings-check suffix (P39b) and the TOPIX total-return ticker (P40) are pending |
 | XAU/USD | Verified (P41) |
 | Japan 225 CFD | Verified, with a coverage limitation. The usage rule is PROPOSED (P42) |
 
@@ -118,11 +127,14 @@ Then compare the hashes with `MANIFEST.json`. Identical hashes prove an identica
 | `DATA_PROVENANCE.md` | What was verified about every input, and how. §4 covers the Pass 2 inputs. |
 | `MANIFEST.json` | Hashes of raw inputs, event files, and both panels. |
 | `PASS2_INPUTS.json` | Hashes and status of every Pass 2 raw input, plus the pending pre-flight items. The build refuses to run on a mismatch. |
-| `PASS2_HANDOFF.md` | How Pass 2 is run, verified and decided (supervisor's guide and the builder prompt). |
-| `PLAN.md` | The research plan, v2.2 (authoritative). |
+| `PASS2_HANDOFF.md` | How Pass 2 is run, verified and decided (the supervisor's guide). |
+| `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; the 2026-10-05 decisions; builder prompt A′; reference numbers B′. Governs where it differs from the handoff. |
+| `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`) | The Pass 1 build record. |
+| `REBUILD_VERIFICATION.md` | The rebuilt repo checked against the adopted decision text, with every difference listed. |
+| `PLAN.md` | The research plan, v2.3 (authoritative). |
 | `DECISIONS_ADDENDUM.md` | Decisions P01–P13. |
-| `DECISIONS_P14_onward.md` | Decisions P14–P36 (Pass 1). Add it from the Pass 1 kit if it is not yet in the Project. |
-| `DECISIONS_P37_onward.md` | Decisions P37–P44 (Pass 2 inputs; P42 and P43 PROPOSED). |
+| `DECISIONS_P14_onward.md` | Decisions P14–P36 (Pass 1). |
+| `DECISIONS_P37_onward.md` | Decisions P37–P57: the Pass 2 inputs and the pre-flight decisions (P42 still PROPOSED). |
 | `build_panel.py`, `make_events.py`, `events.py` | Reproducible build. |
 | `events_firm.csv`, `events_boj.csv` | Event calendars (calendar data only, no outcomes). |
 | `pull_dukascopy.py` | FX download script (patched version, P38). |
@@ -151,16 +163,17 @@ Then compare the hashes with `MANIFEST.json`. Identical hashes prove an identica
    - The primary exclusions are `earn_flag` and `news_flag` (days D and D+1).
    - Forecast evaluation keeps unscheduled news on day D.
    - `audit_flag` is robustness only. `mech_flag` is informational.
-6. **The spec changes only through AM-xx entries that Isaiah approves.** The spec is pinned in `spec.py`, and the verbatim-diff test enforces the amendments log. The fingerprint mechanism in `blind.py` is frozen.
+6. **The spec changes only through AM-xx entries that Isaiah approves.** The spec is pinned in `spec.py`, and the verbatim-diff test enforces the amendments log. The fingerprint algorithm in `blind.py` is frozen. The only permitted `blind.py` changes are the conjunctive tag gate (P46) and the `FX_NAMES` list extension (P52).
 7. **Reporting.**
    - Linear models are primary. Report every pre-registered result, including nulls.
    - Report accuracy next to its training-window base rate.
    - Use Clark–West for nested comparisons.
    - Use permutation importance by whole dates, calibrated against a noise column; never impurity importance.
    - Interim wording, verbatim: "H1 and the CW forecast test may disagree; disagreement is not by itself evidence against H1. The expected joint behaviour is quantified in Pass 4." Here "Pass 4" means Pass 3 (calibration) under P44.
-8. **Raw data and the code repository never go in this Project.** The new `panel_dev.csv` and `MANIFEST.json` come in after Pass 2; the sealed panel never does.
+8. **Raw data and the code repository never go in this Project.** The new `panel_dev.csv` and `MANIFEST.json` come in after Pass 2; the sealed panel never does. Raw files don't need to be uploaded to chats either, because Claude Code reads them locally. No session opens or prints a raw or sealed file (P51).
 9. **Stop for Isaiah's decision:**
    - at every decision point in `PASS2_HANDOFF.md` §8;
+   - at the Pass 2 decision checkpoint before the switch commit (P51);
    - at each AM-xx;
    - at `spec-dev-v1`;
    - at `prereg-v1`.

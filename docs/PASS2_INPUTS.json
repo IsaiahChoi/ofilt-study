@@ -1,0 +1,127 @@
+{
+  "_about": "Pass 2 input registry (2026-10-04; updated 2026-10-05). SHA-256 of every file the Pass 2 build reads: raw inputs, event files and the original build code. Raw files stay LOCAL (never in the Claude Project, never in git). The build must refuse to run if any hash differs.",
+  "local_layout": {
+    "raw": "~/Desktop/FX Project/raw/ (flat; build_panel reads this directory). Checks in raw/checks/.",
+    "data": "~/Desktop/FX Project/data/ = OFILT_DATA_DIR: panel_dev.csv, events_firm.csv, events_boj.csv.",
+    "kit": "~/Desktop/FX Project/pass2_kit_2026-10-05/: updated docs, original build code, SHA256SUMS_2026-10-05.txt.",
+    "build_out": "~/Desktop/FX Project/build_out/: one subfolder per build run; outside the repo; holds sealed panels.",
+    "repo": "~/Desktop/FX Project/ofilt_pass1/ (canonical repo, DECISIONS P45). Paths are confirmed by Isaiah before the build."
+  },
+  "inputs": {
+    "Book2.xlsx": {
+      "sha256": "40c0a051397377cd328e424b502cfa7cf0c721f72073fec15f72dc7af26527b4",
+      "source": "Bloomberg (Pass 0/1; unchanged)",
+      "role": "miners OHLC, TOPIX, SPY/EWJ/FCX/COPX, miner dividends",
+      "status": "verified (MANIFEST.json)"
+    },
+    "usdjpy_dukascopy_2015-01-01_2026-03-05.csv": {
+      "sha256": "d25497d28862f20fa676ff41e8e0d29d1093684a55be17f0b1d8222db672b4cc",
+      "source": "Dukascopy 1-min, BID (confirmed 2026-10-04)",
+      "status": "verified (MANIFEST.json)"
+    },
+    "eurusd_dukascopy_2015-01-01_2026-03-05.csv": {
+      "sha256": "7467495a8134afb372abe0cbe3fe6e16865368c0e5e06ea616a88abe9a3499c3",
+      "source": "Dukascopy 1-min, BID (same pull procedure)",
+      "status": "verified (MANIFEST.json)"
+    },
+    "newbloombergdata_fixed.xlsx": {
+      "sha256": "ca51235b9f7aa8380b725984636bff5a3ae7db816e4ab0e904e70a3d0054370d",
+      "source": "Bloomberg 1306 + TOPIX TR, corrected copy (dividends /10, type relabel; RAW sheet kept)",
+      "role": "1306 hedge OHLC + dividends; TOPIX total return (fallback only)",
+      "status": "ACCEPTED (P39, P47): split ratio 10 confirmed by the issuer (record 2026-03-31, effective 2026-04-01) and by Nomura's published distributions; settings-check suffix PENDING (P39b)"
+    },
+    "newbloombergdata.xlsx": {
+      "sha256": "2d91c756a0fc64216bd6d1dea7850f98f9326b15e8fa7050cdf62dbbcbe531cc",
+      "source": "Bloomberg, as pulled",
+      "role": "provenance only; the build reads the _fixed copy",
+      "status": "archived; provenance only; re-verified 2026-10-05"
+    },
+    "xauusd_dukascopy_2015-01-01_2026-03-05.csv.gz": {
+      "sha256": "219c58a9713b16dfb64ea1a967ca19a39095f9f6c9cc085b3405a72683d9dbaf",
+      "source": "Dukascopy 1-min BID via patched pull_dukascopy.py",
+      "role": "XAU dark-window return (robustness only, P34)",
+      "status": "verified (DECISIONS P41)"
+    },
+    "jpn225_dukascopy_2015-01-01_2026-03-05.csv.gz": {
+      "sha256": "4490bb473dbb372a13515c5e8a5be8d341d59cbb01910a2cb0f664c8fa3b9cf1",
+      "source": "Dukascopy 1-min BID (INSTRUMENT_IDX_ASIA_E_N225JAP)",
+      "role": "overnight Nikkei proxy (exposure-claim robustness)",
+      "status": "verified with coverage limitation: fresh 08:59 JST price only from ~2018-07-02 (DECISIONS P42)"
+    },
+    "checks/usdjpy_dukascopy_2019-06-04_2019-06-04.csv.gz": {
+      "sha256": "9c7bb9a063b98a5abdf57ca7aa419f6cc1b7b6f208968f0ac2cb5448c151b45e",
+      "role": "evidence for the offer-side check (P37); not a build input",
+      "status": "archived"
+    }
+  },
+  "event_files": {
+    "events_firm.csv": {
+      "sha256": "61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c",
+      "source": "make_events.py (Pass 0)",
+      "status": "verified (MANIFEST.json; spec data.events_firm_sha256)",
+      "note": "build_panel.py reads it from its WORKING DIRECTORY"
+    },
+    "events_boj.csv": {
+      "sha256": "8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99",
+      "source": "make_events.py (Pass 0)",
+      "status": "verified (MANIFEST.json; spec data.events_boj_sha256)",
+      "note": "build_panel.py reads it from its WORKING DIRECTORY"
+    }
+  },
+  "code": {
+    "pull_dukascopy.py": {
+      "sha256": "6d9464f88b6eca90834b5a4805b363e0914606b28c69c97f107ae3f195c4e4af",
+      "note": "final patched version (UTC bounds, forward-holdout cap, XAUUSD/JPN225). If your local copy hashes differently, record your copy's hash and diff it against this one."
+    },
+    "build_panel.py": {
+      "sha256": "1fd59c0baa8de354053749cea91617f023a97bfa6d318e2287b4e1828b5b6b10",
+      "role": "ORIGINAL Pass 1 build; frozen (build/pass1/ in the repo). P2-0b must reproduce the baseline outputs with it.",
+      "note": "Project copy. If a local copy hashes differently, use the Project/kit copy."
+    },
+    "make_events.py": {
+      "sha256": "3c0640fd4823e35a606780bbebfaeb7beefe40c28e388073352833fd6fdfdf31",
+      "role": "event-file generator (Pass 0); frozen"
+    },
+    "events.py": {
+      "sha256": "5180adf3c9750e86881d0275336ce898ed90ccc650195f2cb4df2e6e3ed135fa",
+      "role": "event data used by make_events.py; frozen"
+    }
+  },
+  "baseline_outputs": {
+    "_about": "Outputs of the original build (MANIFEST.json, 2026-10-01). P2-0b reproduces both; P2-4 checks the old-column projections against them.",
+    "panel_dev.csv": {
+      "sha256": "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42",
+      "rows": 5124,
+      "span": [
+        "2015-01-06",
+        "2021-12-30"
+      ]
+    },
+    "panel_confirm_SEALED.csv": {
+      "sha256": "9c18a6c106356139a375ecd7b3e6eaa085d937341c02817021003a4451c6b826",
+      "rows": 3057,
+      "span": [
+        "2022-01-04",
+        "2026-03-05"
+      ]
+    }
+  },
+  "verifications": [
+    {
+      "date": "2026-10-05",
+      "by": "supervisor chat",
+      "what": "Uploaded copies of newbloombergdata.xlsx, checks/usdjpy_dukascopy_2019-06-04_2019-06-04.csv.gz, xauusd_dukascopy_2015-01-01_2026-03-05.csv.gz, jpn225_dukascopy_2015-01-01_2026-03-05.csv.gz and pull_dukascopy.py hashed: all match this registry."
+    }
+  ],
+  "pending_before_pass2": [
+    "Settings check 1A (DECISIONS P39b): which suffix (JT/JP) reproduced Book2 exactly, and whether 1306 used it. BLOCKS P2-1's acceptance of 1306 and everything after it.",
+    "TOPIX total-return ticker (P40): records only. Not recoverable from the workbook (values only).",
+    "Raw files organised and hash-checked with organize_raw_inputs.sh (pre-flight item 8).",
+    "Mac environment: venv package versions; the data folder with panel_dev.csv and both event files (pre-flight item 9)."
+  ],
+  "resolved_2026_10_05": [
+    "CACS split ratio: confirmed 10 by issuer documentation and published distributions (P47).",
+    "Gotobi convention (P48).",
+    "Guard (Flag 5): no external guard in the canonical repo; conjunctive fail-closed adapter (P45, P46)."
+  ]
+}

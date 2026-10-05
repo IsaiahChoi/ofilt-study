@@ -179,13 +179,17 @@ def check_no_real_values(df: pd.DataFrame | None = None, arrays: dict | None = N
 
 # ------------------------------------------------------------- tag gate
 def _tag_ok(tag: str) -> bool:
+    """Conjunctive, fail-closed tag gate (P46): the fallback check always runs; if the external
+    guard is importable it must ALSO return None or True without raising."""
+    if not _fallback.is_ancestor_tag(tag, _GUARD_REPO):
+        return False
     if _external_check_access is not None:
         try:
-            _external_check_access(tag)
-            return True
+            result = _external_check_access(tag)
         except Exception:  # any failure, incl. signature mismatch, is a denial
             return False
-    return _fallback.is_ancestor_tag(tag, _GUARD_REPO)
+        return result is None or result is True  # any other return value is a denial
+    return True
 
 
 # ------------------------------------------------------------ main guard

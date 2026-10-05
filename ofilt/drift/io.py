@@ -127,10 +127,16 @@ def load_events_boj(path: str | Path | None = None, spec: Spec | None = None) ->
 
 # ------------------------------------------------------------ confirmation
 def _check_access(tag: str) -> None:
+    """Conjunctive, fail-closed tag gate (P46): the fallback check always runs; if the external
+    guard is importable it must ALSO return None or True without raising."""
+    _fallback.check_access(tag, _GUARD_REPO)
     if _external_check_access is not None:
-        _external_check_access(tag)  # any exception (incl. signature mismatch) is a denial
-    else:
-        _fallback.check_access(tag, _GUARD_REPO)
+        try:
+            result = _external_check_access(tag)
+        except Exception as e:  # any exception (incl. signature mismatch) is a denial
+            raise AccessDenied(f"external guard denied {tag!r}: {type(e).__name__}: {e}") from e
+        if result is not None and result is not True:  # any other return value is a denial
+            raise AccessDenied(f"external guard returned {result!r} for {tag!r}; only None or True grants")
 
 
 def _log_access(result: str, reason: str) -> None:

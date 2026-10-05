@@ -1,13 +1,13 @@
-# Research Plan v2.2: Is overnight FX fully priced at the Tokyo open?
+# Research Plan v2.3: Is overnight FX fully priced at the Tokyo open?
 
 **Owner:** Isaiah Choi. **Executor:** Claude, with Isaiah as decision-maker.
 
-**Status:** 2026-10-04.
-- Pass 1 (the analysis machine) is complete.
-- Pass 2 inputs are pulled and verified.
-- The Pass 2 build (rebuild) is next.
+**Status:** 2026-10-05.
+- Pass 1 (the analysis machine) is complete. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (2026-10-04/05). The rebuilt repository is the canonical study repository (P45).
+- Pass 2 inputs are pulled and verified. The pre-flight decisions of 2026-10-05 are recorded as P45–P57.
+- The Pass 2 build (rebuild) is next. It runs per `PASS2_HANDOFF.md`, as corrected by `PASS2_ADDENDUM.md`.
 
-**Supersedes:** v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive both. If any wording differs, the decision log (P01–P44) and `spec/SPEC_AMENDMENTS.md` govern.
+**Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all three. If any wording differs, the decision log (P01–P57) and `spec/SPEC_AMENDMENTS.md` govern.
 
 **Companion files:**
 
@@ -19,8 +19,10 @@
 | `PASS2_INPUTS.json` | Hashes |
 | `DECISIONS_ADDENDUM.md` | P01–P13 |
 | `DECISIONS_P14_onward.md` | P14–P36 |
-| `DECISIONS_P37_onward.md` | P37–P44 |
+| `DECISIONS_P37_onward.md` | P37–P57 |
 | `PASS2_HANDOFF.md` | How to run Pass 2 |
+| `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; builder prompt A′; reference numbers B′ |
+| `PASS1_STATUS.md`, `REBUILD_VERIFICATION.md` | The Pass 1 build record, and the rebuilt repo checked against the adopted text |
 
 Marks used below:
 - **[PREREG]**: fixed in the pre-registration.
@@ -125,7 +127,7 @@ A well-powered null is a finding: "the auction prices overnight FX for FX-expose
 | Tier | Claim | What it needs |
 |---|---|---|
 | (i) | "overnight USD/JPY predicts the drift" | H1 alone |
-| (ii) | "the exposure channel" | H1 plus the Nikkei-proxy robustness check (§6), because USD/JPY partly carries overnight Japan-equity news |
+| (ii) | "the exposure channel" | H1 plus the Nikkei-proxy robustness check (§6), because USD/JPY partly carries overnight Japan-equity news. The pass criterion is fixed with D7, before `spec-dev-v1` (P56) |
 | (iii) | "the cascade" | (ii) plus H3 plus the metals controls |
 
 ---
@@ -150,18 +152,18 @@ The sealed panel's hash (P10: `9c18a6c1…`) is **superseded by the Pass 2 rebui
 
 | Input | Status | Role |
 |---|---|---|
-| 1306 ETF daily OHLC (Bloomberg) | Verified; calendar identical to the miners | **Primary hedge** (P18) |
-| 1306 dividends | Corrected copy (÷10, relabelled); **PENDING CACS** | Flag 6 fix on the hedge gap |
+| 1306 ETF daily OHLC (Bloomberg) | Verified; calendar identical to the miners. Settings-check suffix **PENDING** (P39b) | **Primary hedge** (P18) |
+| 1306 dividends | Corrected copy (÷10, relabelled). The ÷10 factor is **confirmed** (P47): the issuer's 1:10 split took effect 2026-04-01, after the panel ends, and the ÷10 amounts equal Nomura's published distributions | Flag 6 fix on the hedge gap |
 | TOPIX total-return close | Verified; ticker PENDING | Fallback-path Flag 6 fix only (P40) |
 | XAU/USD 1-minute (Dukascopy, bid) | Verified | Robustness control (P41) |
 | Japan 225 CFD 1-minute (Dukascopy, bid) | Verified; **fresh only from about 2018-07-02** | Nikkei proxy for the exposure claim (P42) |
 | USD/JPY and EUR/USD masters | Unchanged; offer side confirmed **bid** (P37) | Dark-window FX, plus the new session FX and US-session FX |
 
 Computed in Pass 2, with no new pulls:
-- **Session FX**, 09:00 → close JST (`CONTEMPORANEOUS`; never a feature);
-- **US-session USD/JPY**, and from it a yen-denominated EWJ;
+- **Session FX**, 09:00 → close JST (`CONTEMPORANEOUS`; never a feature). The close is 15:00 JST through 2024-11-04 and 15:30 from 2024-11-05; the sample has no half-day sessions;
+- **US-session USD/JPY**, and from it a yen-denominated EWJ. The window is NY 09:30–16:00 ET, or 13:00 ET on the 23 NYSE early-close days (P49);
 - **XAU and Japan 225 dark-window returns**, with endpoint staleness;
-- **the gotobi flag**;
+- **the gotobi flag** (definition P48);
 - **1306 columns**, including its dividend-adjusted gap.
 
 ### 2.3 Prior exposure (disclose in the pre-registration; P32)
@@ -261,9 +263,11 @@ M6 (a Kalman filter on time-varying β) is dropped.
 
 ### 4.4 Validated behaviour (synthetic; C7)
 
-- Clark–West size: **2.67%** at nominal 5% (conservative, Flag 12).
-- Power: **89.5%** at b = 0.25 and 100% at b = 0.4.
-- On a common data-generating process, H1 and Clark–West agree in 170 of 175 H1-significant runs.
+These numbers come from the rebuilt repository (P54). The lost original run's figures are shown in brackets for the record.
+
+- Clark–West size: **3.00%** (9/300, Wilson [1.59%, 5.60%]) at nominal 5% [original: 2.67%]. It is conservative (Flag 12).
+- Power: **89.5%** at b = 0.25 and 100% at b = 0.4 (identical in both runs).
+- On a common data-generating process, Clark–West rejects in 175 of 175 H1-significant runs [original: 170 of 175].
 
 **Interim wording (verbatim):** "H1 and the CW forecast test may disagree; disagreement is not by itself evidence against H1. The expected joint behaviour is quantified in Pass 4."
 
@@ -309,12 +313,14 @@ All of this is rerun in Pass 3 on the rebuilt panel with the 1306 hedge, and the
 7. Per-ticker slopes (Holm).
 8. Excluding BoJ days; excluding major SQ (futures settlement) days.
 9. **The post-2024-11-05 TSE session change** (confirmation only): design + post + e × post, reporting b_pre and b_post. Outside the Holm family. Implemented with the confirmation script before `prereg-v1`.
-10. **Yen-denominated EWJ** as an added control (after Pass 2).
+10. **Yen-denominated EWJ** as an added control (after Pass 2; the US-session USD/JPY leg follows P49).
 11. **The XAU dark-window return** as an added control (P41).
-12. **The Nikkei proxy** (Japan 225 CFD dark-window return) as an added control, **only on nights where both window endpoints are at most 5 minutes stale** (P42, PROPOSED [P2]). Dev coverage is about 2018-07 → 2021-12, against near-complete coverage in confirmation. This check underwrites claim tier (ii).
-13. **The gotobi flag** (Tokyo-fix flow days) in the mechanism specification (§9.2). The holiday convention is [P2].
+12. **The Nikkei proxy** (Japan 225 CFD dark-window return) as an added control, **only on nights where both window endpoints are at most 5 minutes stale** (P42, PROPOSED [P2]). Dev coverage is about 2018-07 → 2021-12, against near-complete coverage in confirmation. This check underwrites claim tier (ii). Its amendment compares b with and without the control on the same eligible nights, and states the operational tier-(ii) criterion before `spec-dev-v1` (P56).
+13. **The gotobi flag** (Tokyo-fix flow days) in the mechanism specification (§9.2). Definition (P48): the 5th, 10th, 15th, 20th, 25th and 30th, plus month-end; a nominal date that is not a trading day moves to the preceding trading day.
 
 **Mechanism specification (not tradable):** primary + session USD/JPY and EUR/USD (09:00 → close). It separates "FX keeps moving and the stock follows contemporaneously" from "the stock lags FX" (problem 1.6 in the original analysis).
+
+**Every robustness amendment** (AM-05, AM-06) states its exact design, its slopes (common or ticker-specific) and its estimation sample before `spec-dev-v1` (P56).
 
 ---
 
@@ -370,8 +376,8 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 
 | Pass | Contents | Done when | Stop point |
 |---|---|---|---|
-| 1 | Analysis machine | **Complete** (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits | — |
-| 2 | Data and rebuild (`PASS2_HANDOFF.md`) | See below | Yes, at every decision point |
+| 1 | Analysis machine | **Complete** (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits. Stage C4–D rebuilt 2026-10-05 (P45): 205 tests, 4 skipped in the sandbox and 5 on the Mac; the same 6 sealed fits | — |
+| 2 | Data and rebuild (`PASS2_HANDOFF.md`) | See below; run as corrected by `PASS2_ADDENDUM.md` (P51) | Yes, at every decision point, including one combined decision checkpoint before the switch commit |
 | 3 | Calibration, dev still blinded | See below | Each AM-xx |
 | — | **Tag `spec-dev-v1`** | Inference and calibration **locked** | — |
 | 4 | Dev first look (exploratory) + P13(b) dry run | Confirmation script recovers a known b on simulated data, runs end to end on dev; post-2024 row implemented | Yes |
@@ -383,8 +389,9 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 - the new columns are built and tested;
 - the old columns are unchanged;
 - the sealed panel's dates are cross-checked against the calendar;
-- A7 is rerun on 1306 and the staleness test is run (both dev only);
-- the hedge switch and the new hashes are recorded as AM-xx;
+- A7 is rerun on 1306 and the staleness test is run (both dev only; the staleness reading follows P55);
+- the hedge switch and the new hashes are recorded as AM-xx, approved at one decision checkpoint and applied in one switch commit (P51);
+- the C7 slow tier has been rerun once and has reproduced every replication bit for bit (P51);
 - the docs are updated.
 
 **Pass 3 is done when** the following are run on dev-calibrated simulations through **one** sanctioned sealed fit, with each outcome written as an AM-xx:
@@ -417,7 +424,7 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 2. **Blinding.** No computation whose output relates any predictor to any target on real data. Predictors here include FX, XAU, Japan 225, the US controls and session FX.
    - The **one** exception is the sealed blind fit, under its tested conditions (P29), opt-in through `OFILT_RUN_SEALED=1`. Each run must be sanctioned explicitly and counted in `BLIND_FIT_LOG`.
    - Allowed: hashes; structural checks; predictor-only statistics; target-only statistics without predictors (such as A7); gap-only statistics on dev (such as the staleness test).
-3. **Features** come only from the schema allowlist (`select_features`). `open`/`close`/`prev_close`/`audit_flag` are never features. New Pass 2 predictors go in `PRE_OPEN_ROBUSTNESS` (P43). Session FX is `CONTEMPORANEOUS`.
+3. **Features** come only from the schema allowlist (`select_features`). `open`/`close`/`prev_close`/`audit_flag` are never features. New Pass 2 predictors go in `PRE_OPEN_ROBUSTNESS` (P43, adopted as P50). Session FX is `CONTEMPORANEOUS`.
 4. **Nuisance quantities** are fitted past-only or on dev only.
 5. **Spec changes** need Isaiah's instruction and an AM-xx entry. The spec is pinned in `spec.py`.
 6. **Report** every pre-registered result, including nulls.
@@ -426,7 +433,7 @@ Dates are set with the advisor; v2.0's dates are only indicative.
    - Importance is permutation-based only.
 7. **Never cite an unverified reference.**
 8. **Stop** at every decision point in `PASS2_HANDOFF.md`, at each AM-xx, at `spec-dev-v1`, and at `prereg-v1`.
-9. **Raw data and the code repository never go in the Claude Project.** Sessions receive the repo as a tarball or, in Claude Code, from the local clone.
+9. **Raw data and the code repository never go in the Claude Project.** Sessions receive the repo as a tarball or, in Claude Code, from the local clone. Raw files need not be uploaded to chats either. When a supervisor chat must verify them, it hashes them and reads nothing beyond what the check needs (DATA_PROVENANCE §4.5). No session ever opens or prints a raw or sealed file (P51).
 
 ---
 
@@ -437,10 +444,12 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 | Low power at plausible effects (MDE80 ≈ 0.257) | Binding power analysis in Pass 3; interpret against the MDE; equivalence test where viable; the forward holdout adds data |
 | **Flag 6:** TOPIX ex-dividend error in hedge gaps | Fixed in Pass 2: 1306 gap with its own dividends; the TOPIX total-return component on the fallback path |
 | **Flag 10:** DK slightly oversized (~6%) at T_conf | Pass 3 decision, jointly with Flag 12 |
-| **Flag 12:** CW conservative (2.67%) | As above |
-| **Flag 5:** guard signature at merge | Reconcile before any Pass 2 code runs |
+| **Flag 12:** CW conservative (3.00% in the rebuild; 2.67% in the original run; P54) | As above |
+| **Flag 5:** guard signature | RESOLVED. The canonical repo has no external guard, and a conjunctive fail-closed adapter guards against one appearing (P45, P46) |
 | **Flags 2 and 4:** fingerprint check is a mislabelling net only; coarse early-dev ticks for 5706/5711 | Frozen; Flag 4 feeds the cost model and the Huber/winsor behaviour |
-| **1306 dividend factor inferred** (P39) | CACS confirmation before the rebuild |
+| 1306 dividend factor (P39) | RESOLVED. Issuer documentation and published distributions confirm ÷10 (P47); the settings-check suffix is still pending (P39b) |
+| Pass 1 verification tests pin Pass 1 state, and any spec amendment invalidates the C7 report | Test-change protocol, the `pass1-final` tag, one batched switch commit and one C7 rerun (P51) |
+| Exposure to sealed data through file viewers in an agentic session | No raw or sealed file is ever opened or printed; scripts print only counts, hashes and permitted dev statistics; sealed output lives outside the repo and the Project (P51) |
 | **Japan 225 coverage** (P42) | Pre-stated staleness rule; tier (ii) claims rest mainly on confirmation |
 | β or the hedge unstable across samples | Expanding β carried across samples; rolling-250 robustness |
 | Unscheduled firm news left in the sample | Accepted by design (P08); audit-exclusion robustness |
@@ -468,11 +477,24 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 - Politis & Romano (1994): stationary bootstrap.
 - Barndorff-Nielsen & Shephard (2004): bipower variation.
 - Bodnar & Gentry (1993), *JIMF*: FX exposure of Japanese industries.
-- Ito & Yamada [gotobi effect; VERIFY].
+- Ito & Yamada (2017), *Journal of International Economics* 109: 214–234, "Puzzles in the Tokyo fixing in the forex market: Order imbalances and bank pricing" (NBER WP 22820): the Tokyo-fix order imbalance and payment-day effects. Bibliographic details checked 2026-10-05; read the paper before citing its findings.
 
 ---
 
 ## 13. Change log
+
+**v2.2 → v2.3 (2026-10-05)**
+- Pre-flight decisions recorded as P45–P57:
+  - the rebuilt repo is canonical (P45), behind a conjunctive guard (P46);
+  - the 1306 ÷10 factor is confirmed (P47);
+  - the gotobi definition (P48) and the US-session window with NYSE early closes (P49) are fixed;
+  - the column names and groups are fixed (P50);
+  - Pass 2 runs append-only, with one decision checkpoint, one switch commit and the test-change protocol (P51);
+  - the blinding list is extended (P52);
+  - Flags 14 and 15 are accepted as implemented (P53);
+  - the citable rebuilt numbers are recorded (P54);
+  - the staleness-test reading rule (P55) and the robustness-amendment standards (P56) are fixed in advance.
+- The status block, the companion files and §1.4, §2.2, §4.4, §6, §8, §10, §11 and §12 updated to match. The Ito & Yamada reference is completed. `PASS2_ADDENDUM.md` is added to the companion files.
 
 **v2.1 → v2.2 (2026-10-04)**
 - Pass 2 inputs pulled and verified: §2.2 and DATA_PROVENANCE §4. Offer side confirmed bid (P37); pull procedure patched (P38).

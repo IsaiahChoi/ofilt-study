@@ -1,2 +1,8 @@
 __pycache__/
 *.pyc
+*.csv
+*.csv.gz
+*.gz
+*.xlsx
+build_out/
+.DS_Store
