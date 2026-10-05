@@ -21,7 +21,10 @@ count); folds then advance every 21 PANEL dates and train on all eligible rows d
 before the fold's first test date. All models in one call share the fold geometry,
 the training rows and the evaluation rows: the sample requires the feature sources
 of EVERY model in the call, so paired comparisons (CW, DM) use identical rows.
-Output: one tidy row per (date, ticker, model).
+Output: one tidy row per (date, ticker, model). The fold log has one row per (model,
+fold), including `train_up` (C5): the target's up-counts on the fold's training rows,
+per ticker and for the equal-weighted portfolio, which fctests reports as the
+training-window base rate next to Pesaran-Timmermann.
 """
 from __future__ import annotations
 
@@ -96,6 +99,18 @@ def fold_starts(dates: pd.DatetimeIndex, eligible_dates, spec: Spec) -> list[int
     return list(range(s0, len(dates), k))
 
 
+def _train_up(tr: np.ndarray, y: np.ndarray, tick: np.ndarray, dvals: np.ndarray) -> dict:
+    """Up-counts of the target on one fold's TRAINING rows (C5, Pesaran-Timmermann base
+    rate): {'by_ticker': {ticker: [n_up, n]}, 'portfolio': [n_up, n]} where the portfolio
+    series is the mean target across the tickers present on each training date and 'up'
+    means > 0. Plain ints, str keys: JSON-safe for the run registry."""
+    by = {str(t): [int((y[tr & (tick == t)] > 0).sum()), int((tr & (tick == t)).sum())]
+          for t in np.unique(tick[tr])}
+    _, inv = np.unique(dvals[tr], return_inverse=True)
+    pm = np.bincount(inv, weights=y[tr]) / np.bincount(inv)
+    return {"by_ticker": by, "portfolio": [int((pm > 0).sum()), int(pm.size)]}
+
+
 def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, target: str = "abn_oc",
                  provenance: str | None = None, seed: int | None = None) -> tuple[pd.DataFrame, pd.DataFrame]:
     """models: {name: zero-argument factory returning a fresh ForecastModel}.
@@ -124,6 +139,10 @@ def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, ta
     dvals = df["date"].to_numpy(dtype="datetime64[ns]")
     elig_dates = pd.DatetimeIndex(np.unique(dvals[train_ok]))
     starts = fold_starts(dates, elig_dates, spec)
+    tick = df["ticker"].astype(str).to_numpy()
+    # C5: training-window base rates for Pesaran-Timmermann (target only; identical for
+    # every model in the call, because the training rows are).
+    train_up = [_train_up(train_ok & (dvals < np.datetime64(dates[s])), y_all, tick, dvals) for s in starts]
     preds, folds = [], []
     for name, factory in models.items():
         feats = feats_by[name]
@@ -146,7 +165,7 @@ def walk_forward(df: pd.DataFrame, models: dict, spec: Spec | None = None, *, ta
                                            "y": y_all[te], "yhat": yhat}))
             folds.append(dict(model=name, fold=f, train_end=dates[s - 1], test_start=t0, test_end=t1,
                               n_train_dates=ctx.n_train_dates, n_train=int(tr.sum()), n_test=int(te.sum()),
-                              chosen=dict(m.chosen)))
+                              chosen=dict(m.chosen), train_up=train_up[f]))
     out = pd.concat(preds, ignore_index=True)[list(PRED_COLUMNS)] if preds else pd.DataFrame(columns=PRED_COLUMNS)
     out.attrs = {"provenance": prov, "target": target}
     return out, pd.DataFrame(folds)
