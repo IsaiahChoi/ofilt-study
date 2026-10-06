@@ -175,3 +175,22 @@ def winsorise_fx(frame: pd.DataFrame, spec: Spec) -> pd.DataFrame:
 def window_positions(K: int, n_out: int, rng: np.random.Generator, mean_block: float = 5.0) -> np.ndarray:
     """Stationary-bootstrap positions in [0, K) (the first K source dates: D4.3's early window)."""
     return _sim.stationary_bootstrap_positions(int(K), mean_block, rng, n_out=int(n_out))
+
+
+# ------------------------------------------------------------------ P3-2b addition (new function only)
+def bootstrap_t_given_fit(frame: pd.DataFrame, spec: Spec, rng: np.random.Generator, target: str, B: int,
+                          fit: dict, mean_block: float = 5.0) -> dict:
+    """bootstrap_t with the original fit supplied (fit_t(frame, spec, target)'s output) instead of recomputed: the same
+    resampling, refits and t* = (b* - b)/se*, for H1 and H3. tests/test_p3_sealed_run.py shows it returns exactly
+    bootstrap_t's t* for the same frame and generator seed."""
+    blind.require_unblinded(frame)
+    if not (isinstance(B, (int, np.integer)) and B >= 1):
+        raise ValueError("B must be an integer >= 1")
+    sample = frame.loc[fit["index"]]
+    sample.attrs = dict(frame.attrs)
+    t1, t3 = np.empty(B), np.empty(B)
+    for i in range(B):
+        fi = fit_t(resample_dates(sample, rng, mean_block), spec, target, lag=fit["lag"])
+        t1[i] = (fi["b"] - fit["b"]) / fi["se"]
+        t3[i] = (fi["b_h3"] - fit["b_h3"]) / fi["se_h3"]
+    return dict(t_star=t1, t_star_h3=t3)

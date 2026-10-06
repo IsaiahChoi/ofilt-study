@@ -1,0 +1,310 @@
+{
+  "K_early": 409,
+  "T_conf": 1013,
+  "T_source": 1439,
+  "a2": 0,
+  "cells": [
+    {
+      "b": 0.0,
+      "id": 0,
+      "n_dates": 1013,
+      "replications": 5000,
+      "task": "T1",
+      "window": "full"
+    },
+    {
+      "b": 0.8652,
+      "id": 1,
+      "n_dates": 1013,
+      "replications": 5000,
+      "task": "T5_boundary",
+      "window": "full"
+    },
+    {
+      "b": 0.1,
+      "id": 2,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T2",
+      "window": "full"
+    },
+    {
+      "b": 0.25,
+      "id": 3,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T2",
+      "window": "full"
+    },
+    {
+      "b": 0.4,
+      "id": 4,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T2",
+      "window": "full"
+    },
+    {
+      "b": 0.0,
+      "id": 5,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T6",
+      "window": "full"
+    },
+    {
+      "b": 0.25,
+      "id": 6,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T6",
+      "window": "full"
+    },
+    {
+      "b": 0.0,
+      "id": 7,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T6",
+      "window": "early"
+    },
+    {
+      "b": 0.25,
+      "id": 8,
+      "n_dates": 1013,
+      "replications": 1000,
+      "task": "T6",
+      "window": "early"
+    },
+    {
+      "b": 0.0,
+      "id": 9,
+      "n_dates": 2452,
+      "replications": 2000,
+      "task": "T3",
+      "window": "full"
+    },
+    {
+      "b": 0.1,
+      "id": 10,
+      "n_dates": 2452,
+      "replications": 500,
+      "task": "T3",
+      "window": "full"
+    },
+    {
+      "b": 0.25,
+      "id": 11,
+      "n_dates": 2452,
+      "replications": 500,
+      "task": "T3",
+      "window": "full"
+    }
+  ],
+  "cw_cal_cell": 9,
+  "dev_panel_sha256": "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68",
+  "early_window_before": "2017-09-27",
+  "expected_lag": 6,
+  "mean_block": 5.0,
+  "methods": {
+    "alpha": 0.05,
+    "cw": {
+      "calibrated": "reject if stat > c_CW,cal, the 0.95 order statistic of the Clark-West statistic over cw_cal_cell (D3.3)",
+      "normal": "one-sided: reject if p = scipy.stats.norm.sf(stat) < alpha (fctests.py:146-147)"
+    },
+    "h1": {
+      "bootstrap": "reject if |t| > c_boot(0.95), the order statistic of |t*| pooled over pooled_cells (D3.1, D3.2 amended); interval b +/- c_boot(0.95) se; TOST at c_boot(0.90)",
+      "calibrated": "reject if |t| > c_cal(0.95), the order statistic of |(b_hat - b)/se| pooled over pooled_cells (D3.3 amended); interval b +/- c_cal(0.95) se; TOST at c_cal(0.90)",
+      "dk_normal": "reject if |t| > z = scipy.stats.norm.ppf(1 - alpha/2), the quantile of inference.Result.contrast (inference.py:208-212, whose p = 2 sf(|z|) < alpha is the same decision); interval b +/- z se; TOST at scipy.stats.norm.ppf(1 - alpha), as inference.tost (inference.py:341)"
+    },
+    "h3": "dk_normal as for H1; bootstrap at c_boot_h3(0.95), the order statistic of |t*_h3| pooled over pooled_cells (D3.5); H3 keeps the normal reference under c_cal",
+    "mde80": "calib.mde80 over cells 0, 2, 3, 4 (b = 0, 0.10, 0.25, 0.40) per H1 method; cross-checks with sd(b_hat) and mean se pooled over pooled_cells",
+    "order_statistics": "calib.order_stat (the ceil(level n)-th smallest) with calib.order_stat_interval",
+    "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference"
+  },
+  "n_dates_T3": 2452,
+  "outputs": [
+    "T_source",
+    "aborted",
+    "b",
+    "bootstrap",
+    "both",
+    "c_boot",
+    "c_boot_h3",
+    "c_cal",
+    "c_cw_cal",
+    "calibrated",
+    "calibrator",
+    "calibrator_seconds",
+    "cell",
+    "cells",
+    "complete",
+    "config_sha256",
+    "coverage",
+    "crosstab",
+    "cw",
+    "cw_method",
+    "cw_only",
+    "dev_panel_sha256",
+    "dk_normal",
+    "error_class",
+    "errors",
+    "estimates",
+    "estimators",
+    "h1",
+    "h1_method",
+    "h1_only",
+    "h3",
+    "head",
+    "high",
+    "huber_dk",
+    "interval",
+    "k",
+    "lag",
+    "line",
+    "low",
+    "mde80",
+    "mean_bias",
+    "mean_se",
+    "mean_share_downweighted",
+    "mode",
+    "n",
+    "n_dates",
+    "neither",
+    "normal",
+    "normal_approx_mean_se",
+    "normal_approx_sd",
+    "ols_dk",
+    "own_quantiles",
+    "pooled",
+    "primary",
+    "probit_interpolated",
+    "q90",
+    "q95",
+    "rank",
+    "rank_interval",
+    "rate",
+    "registry_lines",
+    "reject",
+    "replications",
+    "rows",
+    "runtime",
+    "sd",
+    "se_over_sd",
+    "seconds",
+    "seconds_per_replication",
+    "smoke",
+    "spec_sha256",
+    "t3",
+    "task",
+    "tasks",
+    "tool",
+    "tost",
+    "total_seconds",
+    "value",
+    "walk_forward_calls",
+    "wilson95",
+    "window",
+    "winsorised_ols_dk"
+  ],
+  "pooled_cells": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "rows": 4192,
+  "rules": {
+    "AM-02": [
+      "Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_conf (confirmation trading days minus dates on which all three tickers are excluded; 1013 per ofilt.drift.calendar) must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag."
+    ],
+    "D2.6": [
+      ">   - D2.6 Viability (the spec's `equivalence.viability`, written in the switch). TOST is viable at T_conf if, under the primary inference method that the T1 and T4 rules select, (i) the probability of declaring equivalence at b = 0 is at least 0.80 at the primary SESOI, and (ii) the rate of declaring equivalence at b = +SESOI (primary) is at most 6.5%. The run also reports (i) at the low and high SESOI, under every DQ1.6 method. If TOST is not viable, it is reported as descriptive only, the equivalence wording is not used, and a null H1 is read against MDE80."
+    ],
+    "D2.7": [
+      ">   - D2.7 Claim wording. The equivalence wording (\"no drift exploitable net of costs\") is used only if TOST declares equivalence at the primary SESOI, and the report states next to it whether it also does at the low SESOI. It is an economic statement; MDE80 remains the statement about informational pricing."
+    ],
+    "D3.2_D3.3_amended": [
+      "> - D3.2 and D3.3 amended (Isaiah, 2026-10-06, on the supervisor's recommendation): pooled critical values.",
+      ">   - In the sealed run's draws, y_sim = fitted controls + b\u00b7e + a\u2082\u00b7eur + residuals, and the fitted controls lie in the design's column space. So (b\u0302 \u2212 b)/se and the recentred t* = (b\u0302* \u2212 b\u0302)/se* do not depend on b: their distributions are the same in every cell of full 1,013-date draws.",
+      ">   - c_boot at 0.95 and 0.90 is therefore the order statistic of |t*| pooled over cells 0 to 4 (13,000 warp-speed draws). c_cal(\u03b1) is the order statistic of |(b\u0302 \u2212 b)/se| pooled over the same cells. Each is reported with its 95% order-statistic interval.",
+      ">   - Both apply to cells 0 to 4 and to T3's H1 column, because the last 1,013 dates of a stationary-bootstrap draw are distributed as a 1,013-date draw. The noise these critical values add to a rejection rate falls to about \u00b10.2 percentage points, from about \u00b10.3 with 5,000 draws and about \u00b11 with 500.",
+      ">   - Each cell's own quantiles are reported for information, as a check of the invariance. P3-2b adds a synthetic test that, with identical positions and seeds, (b\u0302 \u2212 b)/se is the same at every b to 1e-10.",
+      ">   - Clark\u2013West's c_CW,cal stays as D3.3 defines it (T3's cell at b = 0), because its statistic is not invariant to b."
+    ],
+    "D3.4": [
+      ">   - D3.4 The joint T1/T4 rule (Flags 10 and 12), applied at P3-5 to point estimates, as AM-02 is.",
+      ">     - H1: if the DK-normal rejection rate at b = 0 (T1) lies in [3.5%, 6.5%], primary inference is DK with the normal reference. Otherwise it is the D3.1 bootstrap (AM-02), provided the bootstrap's own rate at b = 0 lies in that band; if it does not, primary inference is DK with c_cal(0.05).",
+      ">     - Clark\u2013West: if its rate at b = 0 (T3, normal reference) lies in [3.5%, 6.5%], the normal reference stays; otherwise c_CW,cal replaces it.",
+      ">     - The selected methods' numbers are the binding ones (power, MDE80, D2.6 and the T3 cross-tab). Every method's numbers are reported (DQ1.6)."
+    ],
+    "D4.3_flag": [
+      "If an estimator's rate at b = 0 on early-window draws lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods."
+    ]
+  },
+  "seeds": {
+    "cell_stride": 100000,
+    "draw": "DevCalibrator.draw(b, 0.0, seed=outer seed, ...) creates numpy.random.default_rng(seed) (sim.py:221) and uses it for the stationary-bootstrap positions only when positions is None (sim.py:222); when positions are given (T6's early window) the generator is unused and the seed is only recorded in attrs['truth'] (sim.py:235-237)",
+    "early_window_positions": "calib.window_positions(K_early, n_dates, numpy.random.default_rng(outer seed))",
+    "outer": "spec seed + 5,000,000 + 100,000 * cell + replication (D4.5)",
+    "outer_offset": 5000000,
+    "spec_seed": 20261001,
+    "walk_forward": "forecast.walk_forward(..., seed=outer seed) (M2 and M3 do not use it)",
+    "warp": "outer seed + 50,000: calib.bootstrap_t_given_fit(draw, ..., numpy.random.default_rng(warp), B=1) for cells 0 to 4",
+    "warp_offset": 50000
+  },
+  "sesoi": {
+    "high": 2.719,
+    "low": 0.07152,
+    "primary": 0.8652
+  },
+  "spec_sha256": "0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9",
+  "stand_in": {
+    "dates": 1439,
+    "one_ticker_dates": 29,
+    "panel": "sim.synthetic_panel(T_source, b=0.4, a2=-0.2, seed=spec seed + 7, p_excl=0) as tools/report_B7.py's stand-in, then abn_oc set missing on seeded rows (numpy.random.default_rng(spec seed + 8)) so that the dates keep 1, 2 and 3 tickers as counted",
+    "source": "reports/P3_0b_preflight.md (Part A)",
+    "three_ticker_dates": 1343,
+    "two_ticker_dates": 67
+  },
+  "task_order": [
+    {
+      "cells": [
+        0
+      ],
+      "task": "T1"
+    },
+    {
+      "cells": [
+        1
+      ],
+      "task": "T5_boundary"
+    },
+    {
+      "cells": [
+        2,
+        3,
+        4
+      ],
+      "task": "T2"
+    },
+    {
+      "cells": [
+        5,
+        6,
+        7,
+        8
+      ],
+      "task": "T6"
+    },
+    {
+      "cells": [
+        9,
+        10,
+        11
+      ],
+      "task": "T3"
+    }
+  ]
+}
