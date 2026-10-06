@@ -23,10 +23,11 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-3a | done | `docs/P2_switch_drafts.md`: schema (P50), HEDGE_GAP_FOR / io / FX_NAMES (AM-03, P52), AM-03 to AM-06 in SPEC_AMENDMENTS JSONL form (AM-04 to be filled after P2-4; AM-05/06 skeletons per P56), the 60-column DATA_DICTIONARY, and the test-change table (24 rows). Nothing applied. Checkpoint `checkpoint: P2-3a` |
 | P2-4 | done; accepted by Isaiah 2026-10-05 | `build/pass2/build_panel_p2.py` on the committed tree (HEAD `34f61dbb49a14bdb1965e20fab71ded33057509b`) into `build_out/p2_20261006T002928Z/`: exit 0, 72 build-time assertions. `tools/p2_4_accept.py` → `reports/P2_4_acceptance.md`: (a)–(g) all True. AM-04's hashes filled in the drafts. Checkpoint `checkpoint: P2-4` |
 | P2-4b | done | `tools/p2_4_accept.py`: the HEAD-equality check is replaced by "MANIFEST git head is an ancestor of HEAD" and "build/ and docs/PASS2_INPUTS.json unchanged from the MANIFEST head to HEAD" (both heads printed); it writes the report only with --write-report (never used). Rerun: exit 0, P2-4 ACCEPTED: True; the only difference from the committed report is the replaced head line. Full environment recorded. Checkpoint `checkpoint: P2-4b` |
+| P2-5 | done with two STOPs (D9; 2.3 table); item 3 (P2-5b) not run | 2.1 `tools/report_A7_1306.py` → `reports/A_hedge_efficiency_1306.md`: the TOPIX self-check passed; **D9 STOP: expanding is not lowest on common rows for 5706 and 5711** (rolling-500 is). 2.2–2.3 `tools/p2_5_staleness.py`: P55 staleness established in both samples; **2.3 STOP: 4 of the 7 ex-date 1306 gaps differ from the supervisor's table by 0.01 at 2 decimals** (diagnostics in Flags). 2.4 `tools/p2_5_coverage.py`: no STOP. Reports in `reports/P2_5_dev_checks.md`. Checkpoint `checkpoint: P2-5` |
 
 ## Next action
 
-STOP after P2-4 (report `/tmp/p2_4_report.txt`). P2-5 starts only after the supervisor has checked P2-4.
+STOP for the decision checkpoint (report `/tmp/p2_5_report.txt`). Item 3 (P2-5b, the switch dry run) was not run, because item 2 raised STOPs (D9; the 2.3 table). P2-3b is not started.
 
 ## Decision log
 
@@ -183,6 +184,18 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 - Nights with US sessions summing to exactly 0.0: dev 4, sealed 2. A′'s original "if and only if" assertion would have failed.
 - Acceptance (`tools/p2_4_accept.py`; full text in `reports/P2_4_acceptance.md`): every item True; **P2-4 ACCEPTED: True**.
 
+**P2-5 dev checks** (ofilt_p2; panel `build_out/p2_20261006T002928Z/panel_dev.csv`, hash-verified against MANIFEST before every load; full text in `reports/A_hedge_efficiency_1306.md` and `reports/P2_5_dev_checks.md`):
+- 2.1 A7 on 1306: the TOPIX self-check reproduced both committed TOPIX tables cell for cell (second run; see Deviations). `y_1306_oc` NaN 0. Decision table on common rows (5706 / 5711 / 5713):
+  - | 500 | 22,609.8 [n=1150] | 11,137.6 [n=1140] | 17,055.7 [n=1152] |
+  - | expanding | 22,703.6 [n=1150] | 11,139.7 [n=1140] | 17,053.5 [n=1152] |
+  - | none | 29,686.3 [n=1150] | 15,811.2 [n=1140] | 23,217.0 [n=1152] |
+  - Lowest is expanding for (5706, 5711, 5713): [False, False, True] → **D9 STOP**.
+- 2.2 P55 (one row per date; N, b_IE, b_EI, R², identity gap, bracket, NW lag, SE, CI, reading):
+  - | (i) no miner ex-day and no 1306 ex-date; g_I = ao_topix_gap | 1687 (0) | 0.7571 | 1.2068 | 0.9137 | 1.1e-16 | [0.7571, 0.8286] | 7 | 0.0250 | [1.1578, 1.2559] | staleness established |
+  - | (ii) all dev dates; g_I = ao_topix_gap_tradj | 1708 (0) | 0.7579 | 1.2061 | 0.9141 | 0.0e+00 | [0.7579, 0.8291] | 7 | 0.0248 | [1.1575, 1.2548] | staleness established |
+- 2.3: zero-gap share of dev dates: ao_1306_gap_raw 84 of 1708 (4.92%), ao_topix_gap 0. The 7 ex-date table differs from the supervisor's at 2 decimals on 2016-07-06, 2018-07-06, 2019-07-08 and 2021-07-08 (1306 column only) → **STOP**.
+- 2.4: Dev totals: 1708 dates; no Japan 225 bar 7; start fresh 1530; end fresh 938; eligible 929. First eligible dev date 2015-01-06; last 2021-12-30. The end-fresh counts equal the P2-4 table; coverage as expected; the exact-zero nights (4 dev, 2 sealed) resolve to distinct bars. No STOP.
+
 **Suite runs:**
 
 | When | Environment | Result |
@@ -270,6 +283,11 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - (P2-2, info) The frozen build writes `us_n_sessions` as "1.0" (a float column: joining on the calendar's first day introduces a NaN). `build_panel_p2` reads it as a number and asserts it is whole on every row.
 - (P2-4, info) The amended usdjpy_us_ret rule was needed: 4 dev and 2 sealed nights have US sessions whose summed return is exactly 0.0 (counts from MANIFEST).
 - (P2-4, for review) `tools/p2_4_accept.py` checks "MANIFEST git head is this checkout's HEAD". That holds only until the post-build commit. A rerun after `checkpoint: P2-4` gave False on that one line, and therefore "P2-4 ACCEPTED: False"; every other line was identical. The rerun also overwrote `reports/P2_4_acceptance.md`, which was restored from the commit with `git checkout`. Git shows that the build's commit (MANIFEST head `34f61db…`) is an ancestor of HEAD and that `build/` and `docs/PASS2_INPUTS.json` are unchanged between them. Proposed fix, not applied (stop after P2-4): check that ancestry and the unchanged paths instead of equality with HEAD.
+- (P2-5, **D9 STOP**, for Isaiah) A7 on 1306: on common rows, rolling-500 has a lower hedged variance than expanding for 5706 and 5711; expanding is lowest only for 5713. Under P17/P18, expanding stays primary only if it wins on common rows for every ticker, so this is Isaiah's nuisance choice (D9), before `spec-dev-v1`. Target-only.
+- (P2-5, **2.3 STOP**, for the supervisor) On 4 of the 7 dev ex-dates, the 1306 adjusted gap at 2 decimals differs by 0.01 from the supervisor's table: 2016-07-06 −1.64 vs −1.63; 2018-07-06 +0.78 vs +0.79; 2019-07-08 −0.17 vs −0.16; 2021-07-08 −0.22 vs −0.21. The TOPIX column matches on all 7. The largest difference is 0.23 pp here, against 0.24 in the supervisor's table. Diagnostics (gap-only / hedge-only, dev; run after the STOP, outside the scripts):
+  - the panel's ao_1306_gap_adj equals an independent recomputation ln(open_t/(close_{t−1} − D_t)) from the hash-verified raw 1306 sheet and its stored distributions on all 7 dates, to 1e-12 (to 4 decimals: −0.3004, −1.6359, +0.0000, +0.7843, −0.1655, −0.1309, −0.2201 %);
+  - simple returns exp(g)−1 do not reproduce the supervisor's 1306 column either (3 of the 4 rows still differ), so the supervisor's column follows neither the log nor the simple definition exactly. The ÷10 conclusion is unaffected: every difference is within 0.24 pp.
+- (P2-5, D7) Under P42 as proposed (both endpoints ≤ 5 min), 40 dev dates in 2015-H1 are eligible: the first eligible dev date is 2015-01-06, and the 2015-H2 → 2018-H1 dates are not eligible. Seven dev nights, one in each half-year from 2015-H1 to 2018-H1, have no Japan 225 bar in the window. Sealed: 999 of 1019 dates eligible.
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 
 ## Blinding attestation
@@ -286,6 +304,13 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - **P2-2:** code and synthetic tests only; no real-data run. The tests generate synthetic inputs in temporary folders outside the repo and run the frozen build on them. No file under RAW, DATA or OUT was read.
 - **P2-4:** the build hash-verified every input, then read RAW, DATA's event files and the original dev panel, and wrote `build_out/p2_20261006T002928Z/`. Its printed output is hashes, rows, spans and a count. `tools/p2_4_accept.py` read both new panels in memory; for the sealed side it printed counts and booleans only (and the sealed span, from MANIFEST). It also hash-verified the raw Japan 225 file and read it for one dev date (2015-01-05). No panel value was printed; nothing related a predictor to a target.
 - **P2-4 acceptance rerun** (to capture its exit code for the report): read the same files in the same way, printing counts and booleans only.
+- **This message (P2-4b, P2-5; supervisor message of 2026-10-05)**, by category:
+  - P2-4b: `tools/p2_4_accept.py` rerun (stdout only): both new panels read in memory; dev hashes and counts; sealed counts and booleans only. The raw Japan 225 file was read for one dev date (2015-01-05), as at P2-4.
+  - 2.1: target-only (dev): y_oc, y_topix_oc, y_1306_oc and the two flags.
+  - 2.2 and 2.3: gap-only (dev): the four gap columns and exdiv_day. The diagnostics after the 2.3 STOP were gap-only (ao_1306_gap_adj, ao_topix_gap) and hedge-only (the raw 1306 sheet and distributions, hash-verified, for the 7 dev ex-dates).
+  - 2.4: predictor and provenance counts (dev) and counts and booleans (sealed); the raw USD/JPY master and Book2 calendars read by script, after hash checks, for bar labels and staleness on the 4 dev and 2 sealed exact-zero nights (no price printed; no sealed date printed).
+  - Item 3 (P2-5b) was not run.
+  - No computation related a predictor to a target. OFILT_RUN_SEALED unset; BLIND_FIT_LOG 6 dev_real lines.
 - **Correction to P2-1 (found 2026-10-05, during P2-2):** the P2-1 report and the P2-1 line below say the fixed workbook's `README` sheet "was not read". In fact `pd.read_excel(sheet_name=None)` loaded it into memory with the other sheets (in P2-1's structure probe and in `tools/p2_1_inputs.py`), and its shape and dtypes were printed. Its contents were never printed or used. `build_panel_p2` reads only the `1306`, `1306 dividends` and `TOPIX optional` sheets.
 - **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
@@ -310,3 +335,5 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
   - Extra build-time assertions: the original dev panel's columns, and its dates and tickers row for row, equal the frozen dev output's; `us_n_sessions` is whole; every written panel's old columns re-read equal the original strings.
   - The frozen build runs in a temporary folder inside the output folder, which is removed afterwards. Only `panel_dev.csv`, `panel_confirm_SEALED.csv` and `MANIFEST.json` remain.
   - The build reads only the three needed sheets of the fixed workbook.
+- P2-5, 2.1: the first run of `tools/report_A7_1306.py` stopped at the TOPIX self-check because of a parser bug in the script. It kept only table lines starting with "| ", which drops the `|---|` separator, so the computed and committed lines were compared one line out of step. The printed lines showed every computed row equal to a committed row. Nothing was computed with y_1306_oc in that run. The parser was fixed to keep every table line, and the rerun passed the self-check. First-run output: `/tmp/p2_0/p2_5_a7_run1_parserbug.out`.
+- P2-5: after the D9 STOP in 2.1, checks 2.2–2.4 were still run, because they are gap-only or predictor-count checks that do not depend on the beta window. After the 2.3 STOP, 2.4 was run for the same reason. Item 3 (P2-5b) was not run, as instructed ("only if item 2 raised no STOP"). The two 2.3 diagnostics were run after the STOP, outside the committed scripts.
