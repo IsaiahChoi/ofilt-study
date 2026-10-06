@@ -24,6 +24,7 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-4 | done; accepted by Isaiah 2026-10-05 | `build/pass2/build_panel_p2.py` on the committed tree (HEAD `34f61dbb49a14bdb1965e20fab71ded33057509b`) into `build_out/p2_20261006T002928Z/`: exit 0, 72 build-time assertions. `tools/p2_4_accept.py` → `reports/P2_4_acceptance.md`: (a)–(g) all True. AM-04's hashes filled in the drafts. Checkpoint `checkpoint: P2-4` |
 | P2-4b | done | `tools/p2_4_accept.py`: the HEAD-equality check is replaced by "MANIFEST git head is an ancestor of HEAD" and "build/ and docs/PASS2_INPUTS.json unchanged from the MANIFEST head to HEAD" (both heads printed); it writes the report only with --write-report (never used). Rerun: exit 0, P2-4 ACCEPTED: True; the only difference from the committed report is the replaced head line. Full environment recorded. Checkpoint `checkpoint: P2-4b` |
 | P2-5 | done with two STOPs (D9; 2.3 table); item 3 (P2-5b) not run | 2.1 `tools/report_A7_1306.py` → `reports/A_hedge_efficiency_1306.md`: the TOPIX self-check passed; **D9 STOP: expanding is not lowest on common rows for 5706 and 5711** (rolling-500 is). 2.2–2.3 `tools/p2_5_staleness.py`: P55 staleness established in both samples; **2.3 STOP: 4 of the 7 ex-date 1306 gaps differ from the supervisor's table by 0.01 at 2 decimals** (diagnostics in Flags). 2.4 `tools/p2_5_coverage.py`: no STOP. Reports in `reports/P2_5_dev_checks.md`. Checkpoint `checkpoint: P2-5` |
+| P2-5c | done (items 1, 2, 4 committed; item 3 read-only; item 5 not committed) | Item 1: the two 2.3 diagnostics saved as `tools/p2_5_diag_23_simple_vs_log.py` and `tools/p2_5_diag_23_from_raw.py` (reruns byte-identical), and `reports/P2_5_resolutions.md`. Item 2: `tools/report_A7_1306_supp.py` → `reports/A_hedge_efficiency_1306_supplement.md` (self-check 774 = 774). Item 3: β code audit; the switch to rolling-500 is NOT spec-only (Flags). Item 4: `tools/p2_5_tick_1306.py`: R = 1.541 > 1.5, flagged for D8 (Flags). Checkpoint `checkpoint: P2-5c` |
 
 ## Next action
 
@@ -61,6 +62,14 @@ STOP for the decision checkpoint (report `/tmp/p2_5_report.txt`). Item 3 (P2-5b,
 - Acceptance-tool fix adopted (Isaiah, 2026-10-05, on the supervisor's recommendation): in tools/p2_4_accept.py the check "MANIFEST git head is this checkout's HEAD" becomes two checks (the MANIFEST head is an ancestor of HEAD; build/ and docs/PASS2_INPUTS.json are unchanged from the MANIFEST head to HEAD), both heads printed; the tool writes reports/P2_4_acceptance.md only with an explicit --write-report flag, never used.
 - P2-5 operational details, fixed before any P2-5 script runs (Isaiah, 2026-10-05, on the supervisor's recommendation): as written in the supervisor message of 2026-10-05, item 2, including the P55 estimator (OLS with an intercept, centred R², Newey–West on the reverse slope), the one-row-per-date rule, the sample definitions, and the self-checks with their STOP rules.
 - The switch dry run asked about in docs/P2_switch_drafts.md §5 is adopted as P2-5b (Isaiah, 2026-10-05, on the supervisor's recommendation): a scratch clone with the drafts applied as written (AM-03 and AM-04 only; test-change rows 1–7, 9, 11–19 and 21) and the full suite run on the P2-4 dev panel. Nothing from it is committed.
+
+- The 2.3 STOP is resolved (Isaiah, 2026-10-05, on the supervisor's recommendation). The supervisor's reference table was wrong, not the panel.
+  - Its 1306 column for 2017 and 2019–2021 was built from 2-decimal simple percentages (÷10 yield minus the ex-day open drop, from DATA_PROVENANCE §4.4). Its 2016 and 2018 values match no single definition.
+  - The panel's ao_1306_gap_adj equals the independent recomputation from the raw sheet to 1e-12.
+  - Corrected table (log gaps, %; 1306 / TOPIX): 2015-07-08 −0.30 / −0.41; 2016-07-06 −1.64 / −1.55; 2017-07-06 0.00 / −0.04; 2018-07-06 +0.78 / +0.55; 2019-07-08 −0.17 / −0.26; 2020-07-09 −0.13 / −0.09; 2021-07-08 −0.22 / −0.15. The largest difference is 0.23 pp. D8's conclusion (÷10 holds every year) is unchanged.
+- Deviation accepted (Isaiah, 2026-10-05, on the supervisor's recommendation): checks 2.2–2.4 were run after the D9 STOP, which is acceptable because they do not depend on the β window.
+- D9 stays OPEN for the decision checkpoint (Isaiah, 2026-10-05). Nothing about the β window is decided in this message; items 2–5 of the supervisor message of 2026-10-05 (after the P2-5 report) collect what D9 needs.
+- Supervisor's error: the previous message described A7 table (a) as "own rows". PASS2_ADDENDUM A′ P2-5's table (a) is β on all rows. It is requested now, as a supplement.
 
 **Open for the decision checkpoint**
 
@@ -216,6 +225,8 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-2b checkpoint (`tools/checkpoint.sh "P2-2b"`) | ofilt_p2 | Ran 243 tests in 265.529s, OK (skipped=5). 243 = 238 + 5. B6 diff restored by the script; committed `564e254a6214c0cd1256ef978b6d9694392e95fa` |
 | P2-3a checkpoint (`tools/checkpoint.sh "P2-3a"`) | ofilt_p2 | Ran 243 tests in 275.205s, OK (skipped=5). B6 diff restored by the script; committed `34f61dbb49a14bdb1965e20fab71ded33057509b` |
 | P2-4 checkpoint (`tools/checkpoint.sh "P2-4"`) | ofilt_p2 | Ran 243 tests in 216.959s, OK (skipped=5). B6 diff restored by the script; committed `b61f341133baac68580701119609cb85c423338a` |
+| P2-4b checkpoint (`tools/checkpoint.sh "P2-4b"`) | ofilt_p2 | Ran 243 tests in 260.380s, OK (skipped=5). B6 diff restored by the script; committed `c7a369343af8301d2b98df35c97a976a94e92991` |
+| P2-5 checkpoint (`tools/checkpoint.sh "P2-5"`) | ofilt_p2 | Ran 243 tests in 243.824s, OK (skipped=5). B6 diff restored by the script; committed `563521d12d705f8c599ebe4b938ea19f73893cf5` |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -288,6 +299,19 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
   - the panel's ao_1306_gap_adj equals an independent recomputation ln(open_t/(close_{t−1} − D_t)) from the hash-verified raw 1306 sheet and its stored distributions on all 7 dates, to 1e-12 (to 4 decimals: −0.3004, −1.6359, +0.0000, +0.7843, −0.1655, −0.1309, −0.2201 %);
   - simple returns exp(g)−1 do not reproduce the supervisor's 1306 column either (3 of the 4 rows still differ), so the supervisor's column follows neither the log nor the simple definition exactly. The ÷10 conclusion is unaffected: every difference is within 0.24 pp.
 - (P2-5, D7) Under P42 as proposed (both endpoints ≤ 5 min), 40 dev dates in 2015-H1 are eligible: the first eligible dev date is 2015-01-06, and the 2015-H2 → 2018-H1 dates are not eligible. Seven dev nights, one in each half-year from 2015-H1 to 2018-H1, have no Japan 225 bar in the window. Sealed: 999 of 1019 dates eligible.
+- (P2-5c, D9 information, β not decided) A7 supplement (target-only, dev; `reports/A_hedge_efficiency_1306_supplement.md`):
+  - With β on ALL rows (table (a′)), expanding is lowest for 5711 and 5713, and rolling-500 for 5706 (22,716.1 vs 22,781.5 bp²).
+  - β coverage on all dev rows (β on non-excluded rows): expanding 4,350 of 5,124 rows from 2016-01-26 (774 without β, as A5); rolling-500 3,570 rows from 2017-02-16 (1,554 without β).
+- (P2-5c, D9, β code audit; read-only) The primary β is set on spec line 15 (`beta: {method: expanding, min_periods: 250, lag_days: 1, estimate_on: non_excluded_rows, continue_across_samples: true}`), which has no window field.
+  - `targets.add_targets` (lines 103–119) reads the method, min_periods (expanding only), lag_days, estimate_on and the hedge from the spec, but takes `window` only as an argument, default None. Its only non-test callers, tools/report_B7.py:62 and tools/report_B7b.py:93, pass none.
+  - So rolling-500 is NOT reachable by spec lines alone: with `method: rolling` in the spec, `past_beta` raises "rolling beta needs an integer window". The code that would change: `spec.py` (`BetaSpec`, `validate`, `Spec.beta`) and `targets.add_targets` (read the window from the spec). Neither is frozen or C7-hashed.
+  - The frozen and C7-hashed files hard-code no β method, min_periods or window. `inference.py:444` reads the hedge from the spec; `sim.py:102` names its synthetic market column `y_topix_oc` (switch-table rows 18–19).
+  - Tests pinning the expanding β: `test_spec` 95–97, `test_docs_d1` 80, `test_targets` 54, 91 and 152–159.
+  - Pass B of P2-5b was therefore not run.
+- (P2-5c, **D8 flag**) 1306 tick grid (hedge prices only, dev; `tools/p2_5_tick_1306.py`, rule fixed beforehand): the grid is 0.1 in 2015–2020 and 0.05 in 2021 (every year 100% on its grid). Counts at −2/−1/0/+1/+2 steps: 58/60/84/49/78; R = 1.541 > 1.5, so flagged for D8 under the rule. The dev zero-step count is 84, as in 2.3.
+  - Context (a diagnostic after the flag, outside the rule): 14 of the 245 differences in 2021 are odd multiples of 0.05, and the 2021 grid makes its ±1 step (±0.05) almost empty (0 and 1), so 2021's R is 14.0.
+  - On a uniform 0.1 grid, R would be 1.382 (2021: 1.067). That grid is not exact for 2021: a ±0.05 move rounds into the zero bin, giving 85 zeros instead of 84.
+  - Per-year R on the rule's grids: 2015 2.154, 2016 1.250, 2017 1.185, 2018 2.000, 2019 1.048, 2020 1.412, 2021 14.000.
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 
 ## Blinding attestation
@@ -311,6 +335,13 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
   - 2.4: predictor and provenance counts (dev) and counts and booleans (sealed); the raw USD/JPY master and Book2 calendars read by script, after hash checks, for bar labels and staleness on the 4 dev and 2 sealed exact-zero nights (no price printed; no sealed date printed).
   - Item 3 (P2-5b) was not run.
   - No computation related a predictor to a target. OFILT_RUN_SEALED unset; BLIND_FIT_LOG 6 dev_real lines.
+- **Supervisor message of 2026-10-05 after the P2-5 report**, by category:
+  - item 1: gap-only and hedge-only (dev; the reruns of the two saved 2.3 diagnostics);
+  - item 2: target-only (dev): y_oc, y_topix_oc, y_1306_oc and the two flags;
+  - item 3: code only;
+  - item 4: 1306 hedge prices only (dev): dates, opens and closes of the hash-verified fixed workbook, filtered to dev before any statistic. The diagnostic after the flag read the same data;
+  - item 5: the suite on the real dev panel in a scratch clone (structural and target-only tests).
+  - No computation related a predictor to a target. OFILT_RUN_SEALED unset.
 - **Correction to P2-1 (found 2026-10-05, during P2-2):** the P2-1 report and the P2-1 line below say the fixed workbook's `README` sheet "was not read". In fact `pd.read_excel(sheet_name=None)` loaded it into memory with the other sheets (in P2-1's structure probe and in `tools/p2_1_inputs.py`), and its shape and dtypes were printed. Its contents were never printed or used. `build_panel_p2` reads only the `1306`, `1306 dividends` and `TOPIX optional` sheets.
 - **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
@@ -337,3 +368,4 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
   - The build reads only the three needed sheets of the fixed workbook.
 - P2-5, 2.1: the first run of `tools/report_A7_1306.py` stopped at the TOPIX self-check because of a parser bug in the script. It kept only table lines starting with "| ", which drops the `|---|` separator, so the computed and committed lines were compared one line out of step. The printed lines showed every computed row equal to a committed row. Nothing was computed with y_1306_oc in that run. The parser was fixed to keep every table line, and the rerun passed the self-check. First-run output: `/tmp/p2_0/p2_5_a7_run1_parserbug.out`.
 - P2-5: after the D9 STOP in 2.1, checks 2.2–2.4 were still run, because they are gap-only or predictor-count checks that do not depend on the beta window. After the 2.3 STOP, 2.4 was run for the same reason. Item 3 (P2-5b) was not run, as instructed ("only if item 2 raised no STOP"). The two 2.3 diagnostics were run after the STOP, outside the committed scripts.
+- P2-5c, item 4: after the D8 flag, a diagnostic outside the fixed rule (uniform 0.1 grid; count of 2021 differences off it) was run, to give the flag its context. Its output is `/tmp/p2_0/p2_5c_tick_diag.out`, quoted in Flags. The rule's reading (R = 1.541, flag) stands.
