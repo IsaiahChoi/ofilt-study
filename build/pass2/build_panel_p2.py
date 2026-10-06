@@ -10,7 +10,12 @@
    the new columns by date, assert that row count and order are unchanged, and write the
    60-column panel. Old-column source (Isaiah, 2026-10-05): dev = the original panel_dev.csv;
    sealed = the frozen build's output on this machine.
-5. Write MANIFEST.json.
+5. Write MANIFEST.json. It records `git rev-parse HEAD` and whether
+   `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty; the command line refuses to
+   run when it is not (P2-2b, Isaiah 2026-10-05).
+
+The usdjpy_us_ret assertion is the amended one (Isaiah, 2026-10-05): 0.0 wherever us_n_sessions == 0,
+finite wherever us_n_sessions > 0; MANIFEST counts the nights with sessions that sum to exactly 0.0.
 
 Prints only hashes, row counts, spans and booleans; never a panel value. Every assertion message
 is a fixed text. The expectations (hashes, counts) default to the real study's; tests pass
@@ -144,6 +149,26 @@ def append_new_columns(old: pd.DataFrame, per_date: pd.DataFrame) -> pd.DataFram
     return pd.concat([old.reset_index(drop=True), new[[c for c, _ in C.NEW_COLUMNS]]], axis=1)
 
 
+def check_us_ret(label: str, dates, ur: np.ndarray, n_sess: np.ndarray, check: Checks) -> int:
+    """The amended usdjpy_us_ret rule (Isaiah, 2026-10-05; replaces A′'s 'if and only if'):
+    usdjpy_us_ret == 0.0 wherever us_n_sessions == 0, and finite wherever us_n_sessions > 0. A night
+    with sessions may sum to exactly 0.0 (equal bids at the NY open and close). Returns the number of
+    such nights (distinct dates), which MANIFEST reports."""
+    none = n_sess == 0
+    check(f"{label}: usdjpy_us_ret == 0.0 wherever us_n_sessions == 0", (ur[none] == 0.0).all())
+    check(f"{label}: usdjpy_us_ret finite wherever us_n_sessions > 0", np.isfinite(ur[~none]).all())
+    return len(set(np.asarray(dates)[(~none) & (ur == 0.0)]))
+
+
+def git_state() -> dict:
+    """HEAD and whether `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty."""
+    head = subprocess.run(["git", "-C", str(REPO), "rev-parse", "HEAD"], capture_output=True, text=True)
+    st = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--", "build/", "docs/PASS2_INPUTS.json"],
+                        capture_output=True, text=True)
+    return {"head": head.stdout.strip() if head.returncode == 0 else None,
+            "build_and_inputs_registry_clean": st.returncode == 0 and st.stdout.strip() == ""}
+
+
 def library_versions() -> dict:
     out = {"python": platform.python_version()}
     for name in LIBRARIES:
@@ -173,6 +198,7 @@ def build(raw: Path, events_dir: Path, orig_dev: Path, out: Path, expect: Expect
     if out.exists() and any(out.iterdir()):
         raise BuildAssertion("build assertion failed: the output folder is new or empty")
     check = Checks()
+    git = git_state()
 
     # 1. inputs, verified before any read (A′ hard rule 1)
     in_sha = {n: sha256(raw / n) for n in expect.inputs}
@@ -291,9 +317,7 @@ def build(raw: Path, events_dir: Path, orig_dev: Path, out: Path, expect: Expect
         summed = per.loc[keys, "us_sessions_summed"].astype(int).to_numpy()
         check(f"{label}: NY sessions summed equal us_n_sessions on every row", (summed == n_sess).all())
         ur = final["usdjpy_us_ret"].to_numpy(dtype=float)
-        check(f"{label}: usdjpy_us_ret == 0.0 if and only if us_n_sessions == 0",
-              ((ur == 0.0) == (n_sess == 0)).all())
-        check(f"{label}: usdjpy_us_ret finite wherever us_n_sessions > 0", np.isfinite(ur[n_sess > 0]).all())
+        zero_sum_nights = check_us_ret(label, keys, ur, n_sess, check)
         ewj = to_float(old["ewj_oc"]).to_numpy()
         check(f"{label}: ewj_oc_jpy is NaN if and only if ewj_oc is NaN",
               (np.isnan(final["ewj_oc_jpy"].to_numpy(dtype=float)) == np.isnan(ewj)).all())
@@ -317,13 +341,15 @@ def build(raw: Path, events_dir: Path, orig_dev: Path, out: Path, expect: Expect
         results[fname] = {"sha256": sha256(out / fname), "rows": int(len(final)), "columns": int(final.shape[1]),
                           "span": [str(final["date"].min()), str(final["date"].max())],   # ISO strings
                           "old41_projection_sha256": proj_back,
-                          "old41_source": {"what": source, "sha256": src_sha}}
+                          "old41_source": {"what": source, "sha256": src_sha},
+                          "usdjpy_us_ret_zero_sum_session_nights": zero_sum_nights}
 
     # 5. MANIFEST
     manifest = {
         "built": pd.Timestamp.now(tz="UTC").isoformat(),
         "builder": "build/pass2/build_panel_p2.py (Pass 2, P51; append-only)",
         "platform": {"platform": platform.platform(), "machine": platform.machine(), "sys_version": sys.version},
+        "git": git,
         "libraries": library_versions(),
         "split_date": str(C.pass1.SPLIT_DATE.date()),
         "inputs": in_sha,
@@ -348,6 +374,8 @@ def main(argv=None) -> None:
     ap.add_argument("--orig-dev", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
     a = ap.parse_args(argv)
+    if not git_state()["build_and_inputs_registry_clean"]:
+        raise SystemExit("refusing to run: `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is not empty")
     m = build(a.raw.expanduser(), a.events.expanduser(), a.orig_dev.expanduser(), a.out.expanduser())
     print(json.dumps({"outputs": {k: {x: v[x] for x in ("sha256", "rows", "columns", "span", "old41_projection_sha256")}
                                   for k, v in m["outputs"].items()},

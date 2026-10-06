@@ -4,14 +4,21 @@ folders (tests/p2_synth.py). Covers:
 * the end-to-end append-only build: the frozen build run as in P2-0b, the old-column sources
   (Isaiah, 2026-10-05: dev = the original panel, sealed = the frozen output), every build-time
   assertion, the new columns' values against independent computations, and MANIFEST.json;
-* the refusals: a wrong input, original-dev or frozen-output hash, or a non-empty output folder.
+* the refusals: a wrong input, original-dev or frozen-output hash, or a non-empty output folder;
+* P2-2b (Isaiah, 2026-10-05): the amended usdjpy_us_ret rule (a session night summing to exactly 0.0
+  passes; a nonzero value on a no-session night is refused), and the git state in MANIFEST and the
+  command line's refusal when build/ or docs/PASS2_INPUTS.json is not committed.
 No real data is read: the expectations passed to build() are the synthetic files' own hashes and
 counts. Log-derived values are compared within an explicit tolerance (Flag 16)."""
+import contextlib
 import dataclasses
+import io
+import subprocess
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "build" / "pass2"))
@@ -140,6 +147,11 @@ class TestEndToEnd(unittest.TestCase):
             self.assertEqual(o["columns"], 60)
             self.assertEqual(o["span"], [panel.date.min(), panel.date.max()])
         self.assertEqual(m["build_assertions"]["passed"], len(m["build_assertions"]["names"]))
+        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        self.assertEqual(m["git"]["head"], head)                                           # P2-2b
+        self.assertIsInstance(m["git"]["build_and_inputs_registry_clean"], bool)
+        for f in (B.DEV_FILE, B.SEALED_FILE):
+            self.assertIsInstance(m["outputs"][f]["usdjpy_us_ret_zero_sum_session_nights"], int)
         self.assertGreater(m["build_assertions"]["passed"], 60)
 
     def test_old_columns_from_their_sources(self):
@@ -223,6 +235,56 @@ class TestEndToEnd(unittest.TestCase):
         (busy / "x").write_text("x")
         with self.assertRaisesRegex(B.BuildAssertion, "output folder"):
             B.build(raw, ev, self.orig, busy, expect=self.expect)
+
+
+class TestUsRetRuleP22b(unittest.TestCase):
+    """The amended rule (Isaiah, 2026-10-05): 0.0 wherever us_n_sessions == 0; finite wherever > 0."""
+
+    def test_session_night_summing_to_exactly_zero_passes(self):
+        from test_p2_columns import bars
+        ts, px, _ = bars("2024-03-05", "2024-03-09")
+        labels = ts.astype("datetime64[m]")
+        i_open = int(np.flatnonzero(labels == np.datetime64("2024-03-06T14:29"))[0])     # 09:30 EST, minus 1 min
+        i_close = int(np.flatnonzero(labels == np.datetime64("2024-03-06T20:59"))[0])    # 16:00 EST, minus 1 min
+        px = px.copy()
+        px[i_close] = px[i_open]                                                         # equal bids
+        r = C.usdjpy_us_ret(ts, px, pd.DatetimeIndex(["2024-03-06"]), pd.DatetimeIndex(["2024-03-06", "2024-03-07"]), ())
+        self.assertEqual(r.loc["2024-03-07", "usdjpy_us_ret"], 0.0)
+        self.assertEqual(r.loc["2024-03-07", "us_sessions_summed"], 1)
+        check = B.Checks()
+        n = B.check_us_ret("synthetic", np.array(["2024-03-07"] * 3 + ["2024-03-08"] * 3),
+                           np.array([0.0] * 3 + [1e-3] * 3), np.array([1.0] * 3 + [2.0] * 3), check)
+        self.assertEqual(n, 1)                          # one night (three ticker rows) with an exact 0.0 sum
+        self.assertEqual(len(check.passed), 2)
+
+    def test_nonzero_on_a_no_session_night_refused(self):
+        with self.assertRaisesRegex(B.BuildAssertion, "wherever us_n_sessions == 0"):
+            B.check_us_ret("synthetic", np.array(["2024-03-13"]), np.array([1e-4]), np.array([0.0]), B.Checks())
+        with self.assertRaisesRegex(B.BuildAssertion, "finite wherever us_n_sessions > 0"):
+            B.check_us_ret("synthetic", np.array(["2024-03-12"]), np.array([np.nan]), np.array([1.0]), B.Checks())
+
+
+class TestCommandLineGitGuardP22b(unittest.TestCase):
+    ARGS = ["--raw", "r", "--events", "e", "--orig-dev", "o", "--out", "x"]
+
+    def test_refuses_when_build_or_registry_not_committed(self):
+        with mock.patch.object(B, "git_state", return_value={"head": "x", "build_and_inputs_registry_clean": False}), \
+                mock.patch.object(B, "build") as mb, self.assertRaisesRegex(SystemExit, "refusing to run"):
+            B.main(self.ARGS)
+        mb.assert_not_called()
+
+    def test_runs_when_clean(self):
+        fake = {"outputs": {}, "build_assertions": {"passed": 0}}
+        with mock.patch.object(B, "git_state", return_value={"head": "x", "build_and_inputs_registry_clean": True}), \
+                mock.patch.object(B, "build", return_value=fake) as mb, contextlib.redirect_stdout(io.StringIO()):
+            B.main(self.ARGS)
+        mb.assert_called_once()
+
+    def test_git_state_reports_this_repo(self):
+        g = B.git_state()
+        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+        self.assertEqual(g["head"], head)
+        self.assertIsInstance(g["build_and_inputs_registry_clean"], bool)
 
 
 if __name__ == "__main__":
