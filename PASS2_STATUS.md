@@ -20,6 +20,7 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-1 | done; accepted by Isaiah 2026-10-05 | `tools/p2_1_inputs.py` → `reports/P2_1_inputs.md`. Every input hash-verified before reading. 27 of 32 comparisons with B′ / DATA_PROVENANCE match; the 5 mismatches are documentation or definition differences (Flags, P2-1). Settings check (P39b) supplied. Checkpoint `checkpoint: P2-1` |
 | P2-2 | done; accepted by Isaiah 2026-10-05 | `build/pass2/columns.py` (pure functions; frozen helpers reused by import) and `build/pass2/build_panel_p2.py` (append-only build; every A′ and Isaiah build-time assertion). Synthetic tests only (`tests/test_p2_columns.py`, `tests/test_p2_build.py`, helper `tests/p2_synth.py`); no real-data run. Checkpoint `checkpoint: P2-2` |
 | P2-2b | done | Amendment to `build/pass2/build_panel_p2.py` only: the amended usdjpy_us_ret rule (`check_us_ret`) with the per-panel MANIFEST count of session nights summing to exactly 0.0; MANIFEST records `git rev-parse HEAD` and whether `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty, and the command line refuses to run otherwise. 5 synthetic tests added. Checkpoint `checkpoint: P2-2b` |
+| P2-3a | done | `docs/P2_switch_drafts.md`: schema (P50), HEDGE_GAP_FOR / io / FX_NAMES (AM-03, P52), AM-03 to AM-06 in SPEC_AMENDMENTS JSONL form (AM-04 to be filled after P2-4; AM-05/06 skeletons per P56), the 60-column DATA_DICTIONARY, and the test-change table (24 rows). Nothing applied. Checkpoint `checkpoint: P2-3a` |
 
 ## Next action
 
@@ -52,6 +53,12 @@ STOP after P2-2 (report `/tmp/p2_2_report.txt`). P2-3a starts only after Isaiah'
 - P2-2 accepted (Isaiah, 2026-10-05).
 - usdjpy_us_ret assertion amended (Isaiah, 2026-10-05; replaces A′'s 'usdjpy_us_ret == 0.0 if and only if us_n_sessions == 0'): usdjpy_us_ret == 0.0 wherever us_n_sessions == 0, and finite wherever us_n_sessions > 0. Reason: on a night with US sessions the summed return is exactly 0.0 whenever the USD/JPY bid at the NY close equals the bid at the NY open, so the 'only if' half would fail on legitimate data. The zero-session nights stay pinned by the row-by-row check that the sessions summed equal us_n_sessions. MANIFEST reports, per panel, the number of nights with sessions whose sum is exactly 0.0 (a count).
 - XAU / Japan 225 ts_utc format (P2-2 flag, resolved by the supervisor): the registered pull_dukascopy.py (6d9464f8…) converts ts_utc to timezone-aware UTC before writing, the same form as the FX masters, so the frozen load_fx should read them. If not, P2-4 stops at load time; there is no silent path.
+
+**Open for the decision checkpoint**
+
+- D7 (P42 rule; tier-(ii) criterion; yen-EWJ option), D8 (1306 open-auction timing; default (a)), D9 (A7 on 1306), D10 (staleness result, read per P55) and D12 (the exact AM-03 to AM-06 texts), as in PASS2_ADDENDUM §1 and §4.
+- The drafts in `docs/P2_switch_drafts.md`: the schema, targets, io and FX_NAMES diffs; AM-03 to AM-06, including AM-05's line placement (one record per spec line); the DATA_DICTIONARY draft; the test-change table; and the points in its §6 (`blind.VALUE_EXEMPT` grows with AT_OPEN; whether to dry-run the switch on a scratch copy first).
+- D16: where the C7 slow-tier rerun runs. The supervisor recommends a Claude sandbox, the stored report's platform, because the slow tier's bit-identity tests cannot pass on the Mac (Flag 16).
 - (P2-0e, implementation) `tools/checkpoint.sh` calls bare `python`, because `test_sim_b5` pins the literal `env -u OFILT_RUN_SEALED python -m unittest discover`. It therefore requires an activated venv (`VIRTUAL_ENV` set, and `command -v python` equal to `$VIRTUAL_ENV/bin/python`). Extra arguments after the item id become extra commit-message paragraphs, used for the commit attribution trailer.
 - (P2-0g, implementation) Both gates run the fallback check first. The external guard is consulted only if the fallback grants. A grant requires the return value to be identical to `None` or `True`: `np.True_`, 1 and "granted" are denials. `io._check_access` now raises `AccessDenied` for every external-guard failure; before, the guard's own exception propagated. The `guard` field of an ACCESS_LOG line still reads `ofilt.guards` whenever an external guard is importable (unchanged).
 
@@ -157,6 +164,7 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-2 targeted (synthetic only) | ofilt_p2 | test_p2_columns + test_p2_build: Ran 25 tests, OK (19 + 6). The end-to-end synthetic build passed 72 build-time assertions (count from a rerun of the test fixture) |
 | P2-2 checkpoint (`tools/checkpoint.sh "P2-2"`) | ofilt_p2 | Ran 238 tests in 214.023s, OK (skipped=5). 238 = 213 + 25 (test_p2_columns 19, test_p2_build 6). B6 diff restored by the script; committed `791a6b80c8e70f008cccd165d6abaf769f08e691` |
 | P2-2b targeted (synthetic only) | ofilt_p2 | test_p2_columns + test_p2_build: Ran 30 tests, OK (19 + 11) |
+| P2-2b checkpoint (`tools/checkpoint.sh "P2-2b"`) | ofilt_p2 | Ran 243 tests in 265.529s, OK (skipped=5). 243 = 238 + 5. B6 diff restored by the script; committed `564e254a6214c0cd1256ef978b6d9694392e95fa` |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -200,7 +208,7 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 | new `tests/p2_synth.py` (helper, not a test module) | — | generates the synthetic raw and event files in temporary folders (no committed fixture) | Isaiah 2026-10-05 |
 | `tests/test_p2_build.py`, 5 tests added (P2-2b) | 5 | the amended usdjpy_us_ret rule: a session night summing to exactly 0.0 (equal bids at the NY open and close) passes and is counted; a nonzero value on a no-session night, and a NaN on a session night, are refused; the command line refuses when `build/` or `docs/PASS2_INPUTS.json` is not committed and runs when they are; `git_state` reports this repo's HEAD. The end-to-end test also checks MANIFEST's `git` block and the zero-sum counts | Isaiah 2026-10-05 (P2-2b) |
 
-**Pending for the P2-3a test-change table** (Isaiah, 2026-10-05; for approval at the decision checkpoint):
+**Pending for the P2-3a test-change table** (Isaiah, 2026-10-05; for approval at the decision checkpoint; now rows 21–23 of `docs/P2_switch_drafts.md` §5):
 
 | Test (line) | Current | Proposed | Reason |
 |---|---|---|---|
