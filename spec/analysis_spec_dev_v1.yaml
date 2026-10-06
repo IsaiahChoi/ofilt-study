@@ -1,17 +1,17 @@
 spec_id: drift-dev-v1
 status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)
 data:
-  dev_panel_sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42
+  dev_panel_sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
   events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
   events_boj_sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99
-  sealed_panel_sha256: 9c18a6c106356139a375ecd7b3e6eaa085d937341c02817021003a4451c6b826   # superseded after Pass 2 rebuild
+  sealed_panel_sha256: b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1   # AM-04: Pass 2 rebuild (60 columns); supersedes 9c18a6c1… (P10)
 sample:
   inference_exclude_rows_if: [earn_flag, news_flag]          # P07: days D and D+1
   forecast_eval_exclusion: {tanshin: [D, D+1], standalone_news: [D+1]}   # unscheduled news on day D is not knowable pre-open
   require_nonmissing: [usdjpy_ret, eurusd_ret, spy_oc, copx_oc, beta]
 target:
   primary: abnormal_oc                 # y_oc - beta_{i,t-1} * hedge_oc
-  hedge_oc_column: y_topix_oc          # PLACEHOLDER; 1306 open->close after Pass 2
+  hedge_oc_column: y_1306_oc           # AM-03 (P18): 1306 open->close; gap pair ao_1306_gap_adj
   beta: {method: expanding, min_periods: 250, lag_days: 1, estimate_on: non_excluded_rows, continue_across_samples: true}
   secondary: raw_oc
   decomposition: "b_raw ≈ mean_beta * b_mkt + b_abn; b_mkt = hedge_oc on the same design (time-series NW, same lag rule)"
@@ -39,7 +39,7 @@ robustness:
   huber: {c: 1.345, scale: "1.4826*MAD of OLS residuals"}
   winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: {usdjpy_ret: [-1.6482588843e-02, 1.4399911615e-02], eurusd_ret: [-1.6324806371e-02, 1.5438152188e-02]}}
   influence_curve: {unit: date, k_max: 20, ranking: "full-sample |exact date-deletion change in b|"}
-  others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
+  others: [beta_rolling_250, beta_rolling_500, raw_target, copx_to_fcx, ewj_yen_denominated, xau_control, nikkei_proxy_p42, mechanism_session_fx_gotobi, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
 secondary_family_holm:      # each = primary design + one tested interaction (+ its moderator main effect, AM-01)
   fx_x_longwindow: "long_window + usdjpy_ret * long_window; long_window = 1[window_hours > 18]; test the interaction"
   fx_x_jumpshare: "jumpshare + usdjpy_ret * jumpshare; jumpshare = clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1); test the interaction"

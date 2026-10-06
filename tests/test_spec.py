@@ -32,7 +32,7 @@ class TestSpecLoad(unittest.TestCase):
         self.assertEqual(sp.status, "DRAFT")
         self.assertEqual(len(sp.sha256), 64)
         self.assertEqual(sp.data_hash("dev_panel"),
-                         "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42")
+                         "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68")   # AM-04 (row 1)
 
     def test_unfilled_only_stage_a_fields(self):
         self.assertTrue(set(S.Spec.load().unfilled()) <= STAGE_A_FIELDS)
@@ -56,8 +56,8 @@ class TestSpecLoad(unittest.TestCase):
             if a != b and n not in amended:
                 self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
                 self.assertNotIn("TO_FILL", b)
-        self.assertEqual(sorted(amended), [33, 43, 44, 45, 46, 62])    # AM-02: 33; AM-01: 43-46, 62
-        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02"})
+        self.assertEqual(sorted(amended), [4, 7, 14, 33, 42, 43, 44, 45, 46, 62])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3)
+        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05"})
 
     def test_am01_pins_reject_pre_amendment_text(self):
         import copy, yaml
@@ -98,7 +98,7 @@ class TestSpecLoad(unittest.TestCase):
         self.assertEqual(sp.fx_block, ("usdjpy_ret", "eurusd_ret"))
         self.assertEqual(sp.controls, ("spy_oc", "copx_oc"))
         self.assertEqual((sp.h1_parameter, sp.h3_parameter), ("usdjpy_ret", "eurusd_ret"))
-        self.assertEqual(sp.hedge_oc_column, "y_topix_oc")
+        self.assertEqual(sp.hedge_oc_column, "y_1306_oc")   # AM-03 (row 2)
         self.assertEqual(sp.alpha, 0.05)
         self.assertEqual(sp.seed, 20261001)
         self.assertEqual(sp.huber_c, 1.345)

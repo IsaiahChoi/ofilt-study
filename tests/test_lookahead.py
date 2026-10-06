@@ -18,7 +18,8 @@ from ofilt.drift.spec import Spec  # noqa: E402
 from test_targets import synth_panel  # noqa: E402
 
 OUT_COLS = ["beta", "raw_oc", "abn_oc", "gap_abn", "cc_abn", "cc_raw", "excl_inference"]
-REAL_COLS = ["date", "ticker", "y_oc", "y_topix_oc", "ao_gap_adj", "ao_topix_gap", "earn_flag", "news_flag"]
+REAL_COLS = ["date", "ticker", "y_oc", "y_topix_oc", "y_1306_oc", "ao_gap_adj", "ao_topix_gap", "ao_1306_gap_adj",
+             "earn_flag", "news_flag"]   # AM-03 (row 16)
 CONFIGS = [dict(), dict(method="rolling", window=60), dict(estimate_on="all_rows")]
 
 
@@ -33,12 +34,26 @@ def perturb(df, tau, rng, scramble_all):
     n = int(after.sum())
     p.loc[after, "y_oc"] = rng.normal(0, 0.03, n)
     p.loc[after, "y_topix_oc"] = rng.normal(0, 0.02, n)
+    p.loc[after, "y_1306_oc"] = rng.normal(0, 0.02, n)   # AM-03 (row 16)
     if scramble_all:
         p.loc[after, "ao_gap_adj"] = rng.normal(0, 0.03, n)
         p.loc[after, "ao_topix_gap"] = rng.normal(0, 0.02, n)
+        p.loc[after, "ao_1306_gap_adj"] = rng.normal(0, 0.02, n)   # AM-03 (row 16)
         p.loc[after, "earn_flag"] = (rng.random(n) < 0.3).astype(int)
         p.loc[after, "news_flag"] = (rng.random(n) < 0.3).astype(int)
     return p
+
+
+def topix_spec():
+    """A spec copy with hedge_oc_column: y_topix_oc, keeping the TOPIX look-ahead case (AM-03, row 16)."""
+    import tempfile
+    from ofilt.drift.spec import DEFAULT_SPEC_PATH
+    lines = DEFAULT_SPEC_PATH.read_text(encoding="utf-8").split("\n")
+    lines = [("  hedge_oc_column: y_topix_oc" if l.startswith("  hedge_oc_column:") else l) for l in lines]
+    f = tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8")
+    f.write("\n".join(lines))
+    f.close()
+    return Spec.load(f.name)
 
 
 class LookAhead:
@@ -84,6 +99,9 @@ class TestLookAheadSynthetic(LookAhead, unittest.TestCase):
     def test_targets(self):
         self.check(Spec.load())
 
+    def test_targets_topix(self):   # AM-03 (row 16)
+        self.check(topix_spec())
+
 
 class TestLookAheadRealDev(LookAhead, unittest.TestCase):
     @classmethod
@@ -100,6 +118,9 @@ class TestLookAheadRealDev(LookAhead, unittest.TestCase):
     def test_targets(self):
         self.assertFalse([c for c in self.df.columns if c.startswith(("usdjpy", "eurusd"))])
         self.check(Spec.load())
+
+    def test_targets_topix(self):   # AM-03 (row 16)
+        self.check(topix_spec())
 
     def test_masks(self):
         self.check_masks(self.events, Spec.load())

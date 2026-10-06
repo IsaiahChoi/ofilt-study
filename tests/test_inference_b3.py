@@ -20,6 +20,7 @@ def panel3(n_dates=400, seed=0, exclusions=True, const_beta=True, b=0.3, delta=0
     dates = df.date.unique()
     m = dict(zip(dates, rng.normal(0, 0.008, len(dates)) + 0.2 * df.groupby("date").usdjpy_ret.first().to_numpy()))
     df["y_topix_oc"] = df.date.map(m).to_numpy()
+    df["y_1306_oc"] = df["y_topix_oc"]   # AM-03 (row 18)
     if not exclusions:
         df["earn_flag"] = 0
     df["beta"] = 1.0 if const_beta else rng.uniform(0.6, 1.4, len(df))

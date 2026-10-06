@@ -43,8 +43,9 @@ BETA_COL = "beta"
 CONSTRUCTED_TARGETS = frozenset({"raw_oc", "abn_oc", "gap_abn", "cc_abn", "cc_raw"})
 MASK_COLUMNS = frozenset({"excl_inference", "excl_d2", "excl_forecast_eval"})
 DERIVED_NONFEATURES = CONSTRUCTED_TARGETS | MASK_COLUMNS | {BETA_COL}
-# Gap column of each permitted hedge. Pass 2 (1306 ETF) must add its pair explicitly.
-HEDGE_GAP_FOR = {"y_topix_oc": "ao_topix_gap"}
+# Gap column of each permitted hedge. AM-03 (P18): the 1306 ETF's open->close, with its own
+# dividend-adjusted gap (Flag 6 fixed on the hedge leg). The TOPIX pair stays for the fallback path.
+HEDGE_GAP_FOR = {"y_topix_oc": "ao_topix_gap", "y_1306_oc": "ao_1306_gap_adj"}
 D2_OFFSETS = (0, 1, 2)
 EXCLUDED_EVENT_CATEGORIES = ("TANSHIN", "STANDALONE_NEWS")
 _REAL = (blind.DEV_REAL, blind.CONFIRM_REAL)

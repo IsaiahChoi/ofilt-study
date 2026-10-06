@@ -13,7 +13,7 @@ from ofilt.drift import schema as SC  # noqa: E402
 
 DOC = ROOT / "docs" / "replacements" / "DATA_DICTIONARY.md"
 GROUPS = ("KEYS", "PRE_OPEN_FEATURES", "EXCLUSION_FLAGS", "INFORMATIONAL", "ROBUSTNESS_ONLY", "AT_OPEN",
-          "TARGET_INPUTS", "PROVENANCE", "CONTEMPORANEOUS")
+          "TARGET_INPUTS", "PROVENANCE", "CONTEMPORANEOUS", "PRE_OPEN_ROBUSTNESS")   # P50 (row 13)
 
 
 def text():
@@ -23,7 +23,7 @@ def text():
 class TestDataDictionary(unittest.TestCase):
     def test_restored_byte_for_byte(self):
         data = DOC.read_bytes()
-        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("c6aeded2f93a3cd5"))
+        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("14f9e1ac8348e5a9"))   # P50: the 60-column DATA_DICTIONARY (row 13)
         src = Path("/mnt/project/DATA_DICTIONARY.md")
         if src.exists():
             self.assertEqual(data, src.read_bytes())
@@ -51,13 +51,13 @@ class TestDataDictionary(unittest.TestCase):
             self.assertEqual(n, len(getattr(SC, g)), g)
             if named:                                                           # explicit member lists
                 self.assertEqual(named, set(getattr(SC, g)), g)
-        self.assertEqual(sum(n for n, _ in rows.values()), 41)
+        self.assertEqual(sum(n for n, _ in rows.values()), 60)   # P50 (row 13)
         pre = section_names(t, "### PRE_OPEN_FEATURES", "**Model-side features**")
         self.assertEqual(pre, set(SC.PRE_OPEN_FEATURES))
         derived = section_names(t, "**Model-side features**", "### Flags")
         self.assertTrue(set(SC.DERIVED_FEATURES) <= derived)
         every = set().union(*(getattr(SC, g) for g in GROUPS))
-        self.assertTrue(every <= set(re.findall(r"`([a-z][a-z0-9_]*)`", t)))   # all 41 columns documented
+        self.assertTrue(every <= set(re.findall(r"`([a-z][a-z0-9_]*)`", t)))   # all 60 columns documented (P50, row 13)
 
 
 def section_names(t, start, end):

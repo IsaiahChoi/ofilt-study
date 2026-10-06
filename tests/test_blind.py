@@ -40,6 +40,7 @@ class TestGuard(unittest.TestCase):
         labels = B.registered_labels()
         self.assertIn("dev_real:y_oc", labels)
         self.assertIn("dev_real:y_topix_oc", labels)
+        self.assertIn("dev_real:y_1306_oc", labels)   # P52 (row 15)
         self.assertGreater(B._REGISTRY["dev_real:y_oc"].size, 4000)
 
     def test_synthetic_passes(self):
@@ -116,6 +117,9 @@ class TestGuard(unittest.TestCase):
     def test_fx_columns_never_compared(self):
         fx_cols = {c for c in self.dev.columns if c.startswith(("usdjpy_", "eurusd_"))}
         self.assertLessEqual(fx_cols, B.FX_NAMES)
+        self.assertLessEqual({"xau_ret", "xau_rv", "xau_bv", "xau_bars", "xau_stale_start_min", "xau_stale_end_min",
+                              "n225_ret", "n225_bars", "n225_stale_start_min", "n225_stale_end_min", "usdjpy_us_ret",
+                              "ewj_oc_jpy", "c_usdjpy_sess_ret", "c_eurusd_sess_ret"}, B.FX_NAMES)   # P52 (row 14)
         calls = []
         orig = B.row_match_fraction
         def spy(values, dates, tickers):
@@ -123,7 +127,7 @@ class TestGuard(unittest.TestCase):
             return orig(values, dates, tickers)
         r = self.dev.copy()
         r.attrs = {"provenance": "synthetic"}
-        r = r.drop(columns=["y_oc", "y_topix_oc"])
+        r = r.drop(columns=["y_oc", "y_topix_oc", "y_1306_oc"])   # P52: y_1306_oc is a registered real target (row 25)
         from unittest import mock as _m
         with _m.patch.object(B, "row_match_fraction", spy), _m.patch.object(B, "match_fraction", lambda v: (calls.append(v.name), (0.0, 0))[1]):
             B.require_unblinded(r)

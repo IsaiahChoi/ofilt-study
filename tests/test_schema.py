@@ -26,13 +26,14 @@ class TestGroups(unittest.TestCase):
 
     def test_sizes(self):
         self.assertEqual(len(SC.PRE_OPEN_FEATURES), 20)
-        self.assertEqual(len(SC.PROVENANCE), 10)
-        self.assertEqual(len(SC.AT_OPEN), 3)
-        self.assertEqual(len(SC.CONTEMPORANEOUS), 0)
+        self.assertEqual(len(SC.PROVENANCE), 16)        # P50 (row 4)
+        self.assertEqual(len(SC.AT_OPEN), 6)
+        self.assertEqual(len(SC.CONTEMPORANEOUS), 2)
+        self.assertEqual(len(SC.PRE_OPEN_ROBUSTNESS), 7)
 
     def test_every_panel_column_in_exactly_one_group(self):
         cols = _panel_columns()
-        self.assertEqual(len(cols), 41)
+        self.assertEqual(len(cols), 60)   # P50 (row 5)
         for c in cols:
             hits = [n for n, g in SC.GROUPS.items() if c in g]
             self.assertEqual(len(hits), 1, f"{c} in {hits}")
@@ -140,6 +141,20 @@ class TestNoPatternColumnSelection(unittest.TestCase):
             src = py.read_text(encoding="utf-8")
             for pat in self.BAD:
                 self.assertIsNone(re.search(pat, src), f"{py.relative_to(REPO_ROOT)} matches {pat}")
+
+
+class TestP50FeaturePins(unittest.TestCase):
+    PASS1 = {"usdjpy_ret", "usdjpy_rv", "usdjpy_bv", "eurusd_ret", "eurusd_rv", "spy_oc", "ewj_oc", "fcx_oc",
+             "copx_oc", "us_n_sessions", "window_hours", "gap_adj_lag1", "oc_lag1", "range_lag1",
+             "topix_oc_lag1", "boj_day", "sq_day", "sq_major", "exdiv_day", "div_exdate"}
+
+    def test_pre_open_features_and_m7_unchanged(self):
+        self.assertEqual(set(SC.PRE_OPEN_FEATURES), self.PASS1)       # P50: exactly the 20 Pass 1 columns
+        from ofilt.drift.models.gbm import M7
+        self.assertEqual(M7.features, tuple(sorted(self.PASS1)))       # M7's inputs unchanged (P43/P50)
+        for c in SC.PRE_OPEN_ROBUSTNESS | SC.CONTEMPORANEOUS:
+            with self.assertRaises(SC.FeatureNotAllowedError):
+                SC.select_features(pd.DataFrame({c: [0.0]}), [c])
 
 
 if __name__ == "__main__":

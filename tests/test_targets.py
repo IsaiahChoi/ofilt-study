@@ -25,6 +25,7 @@ def synth_panel(n_dates=300, seed=0):
             "earn_flag": (rng.random(n_dates) < 0.05).astype(int),
             "news_flag": (rng.random(n_dates) < 0.02).astype(int)}))
     df = pd.concat(rows).sort_values(["date", "ticker"], kind="mergesort").reset_index(drop=True)
+    df["y_1306_oc"], df["ao_1306_gap_adj"] = df["y_topix_oc"], df["ao_topix_gap"]   # AM-03: the hedge pair (row 17)
     return B.mark_synthetic(df)
 
 
@@ -38,7 +39,7 @@ def brute_beta(df, i, *, window=None, min_periods, exclude=True):
         s = s.iloc[-window:]
     if len(s) < min_periods:
         return np.nan
-    y, h = s.y_oc.to_numpy(), s.y_topix_oc.to_numpy()
+    y, h = s.y_oc.to_numpy(), s[Spec.load().hedge_oc_column].to_numpy()   # AM-03 (row 17)
     return np.mean((y - y.mean()) * (h - h.mean())) / np.var(h)
 
 
@@ -74,6 +75,7 @@ class TestBeta(unittest.TestCase):
         ex = (d2.earn_flag == 1) | (d2.news_flag == 1)
         d2.loc[ex, "y_oc"] = 9.0
         d2.loc[ex, "y_topix_oc"] = -7.0
+        d2.loc[ex, self.spec.hedge_oc_column] = -7.0   # AM-03: perturb the spec hedge too (row 28)
         out2 = TG.add_targets(d2, self.spec)
         pd.testing.assert_series_equal(out.beta, out2.beta)
         pd.testing.assert_series_equal(out.abn_oc[~ex], out2.abn_oc[~ex])

@@ -32,15 +32,26 @@ PRE_OPEN_FEATURES = frozenset({
 EXCLUSION_FLAGS = frozenset({"earn_flag", "news_flag"})      # sample filters (P07), never features
 INFORMATIONAL = frozenset({"mech_flag"})                      # recorded, not excluded, not a feature
 ROBUSTNESS_ONLY = frozenset({"audit_flag"})                   # outcome-selected (P08): robustness filter only
-AT_OPEN = frozenset({"ao_gap_adj", "ao_gap_raw", "ao_topix_gap"})  # uses the 09:00 print
-TARGET_INPUTS = frozenset({"y_oc", "y_topix_oc"})             # outcomes of day t's session
+AT_OPEN = frozenset({"ao_gap_adj", "ao_gap_raw", "ao_topix_gap",   # uses the 09:00 print
+                     "ao_1306_gap_raw", "ao_1306_gap_adj",        # P50: the 1306 hedge gap (AM-03)
+                     "ao_topix_gap_tradj"})                       # P50, P40: TOPIX gap + TR component; fallback path only
+TARGET_INPUTS = frozenset({"y_oc", "y_topix_oc", "y_1306_oc"})  # outcomes of day t's session; y_1306_oc: P50
 PROVENANCE = frozenset({
     "open", "close", "prev_close",                            # auction / target information
     "window_start_utc", "window_end_utc",
     "usdjpy_bars", "usdjpy_stale_start_min", "usdjpy_stale_end_min",
     "eurusd_bars", "eurusd_stale_end_min",
+    # P50: bar counts and endpoint staleness of the XAU and Japan 225 dark windows. The P42 rule reads
+    # the n225 staleness as a sample filter (like earn_flag); never regressors.
+    "xau_bars", "xau_stale_start_min", "xau_stale_end_min",
+    "n225_bars", "n225_stale_start_min", "n225_stale_end_min",
 })
-CONTEMPORANEOUS = frozenset()  # Pass 2 placeholder (e.g. post-open FX); empty in Pass 1
+CONTEMPORANEOUS = frozenset({"c_usdjpy_sess_ret", "c_eurusd_sess_ret"})  # P50: session FX 09:00 JST -> close of t; never a feature
+# P50: known by 08:59 JST but outside the primary allowlist; robustness designs only (refused by
+# select_features). gotobi_day is a calendar flag (P48).
+PRE_OPEN_ROBUSTNESS = frozenset({
+    "xau_ret", "xau_rv", "xau_bv", "n225_ret", "usdjpy_us_ret", "ewj_oc_jpy", "gotobi_day",
+})
 
 GROUPS: dict[str, frozenset] = {
     "KEYS": KEYS,
@@ -52,6 +63,7 @@ GROUPS: dict[str, frozenset] = {
     "TARGET_INPUTS": TARGET_INPUTS,
     "PROVENANCE": PROVENANCE,
     "CONTEMPORANEOUS": CONTEMPORANEOUS,
+    "PRE_OPEN_ROBUSTNESS": PRE_OPEN_ROBUSTNESS,
 }
 
 _FORBIDDEN_REASON = {
@@ -63,6 +75,7 @@ _FORBIDDEN_REASON = {
     "TARGET_INPUTS": "target input; never a feature",
     "PROVENANCE": "provenance/QA or auction/target price; never a feature",
     "CONTEMPORANEOUS": "contemporaneous with the session; not pre-open",
+    "PRE_OPEN_ROBUSTNESS": "pre-open robustness control (P50); robustness designs only, never a model feature",
 }
 
 # Long-window threshold of the secondary term fx_x_longwindow. Normal dev

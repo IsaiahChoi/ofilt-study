@@ -23,6 +23,7 @@ class TestSyntheticPanel(unittest.TestCase):
 
     def test_drop_in_for_all_entry_points(self):
         df = S.synthetic_panel(600, b=0.2, seed=1, delta_cc=0.5, p_excl=0.03)
+        df["y_1306_oc"] = df["y_topix_oc"]   # AM-03; sim.py is frozen (row 19)
         self.assertEqual(B.require_unblinded(df), "synthetic")
         self.assertEqual(len(df), 1800)
         I.fit_dk(I.build_design(df, self.spec), self.spec)

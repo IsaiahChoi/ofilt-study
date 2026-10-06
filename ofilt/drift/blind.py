@@ -66,7 +66,11 @@ VALUE_EXEMPT = frozenset(PRE_OPEN_FEATURES | AT_OPEN)
 FX_NAMES = frozenset({
     "usdjpy_ret", "usdjpy_rv", "usdjpy_bv", "eurusd_ret", "eurusd_rv",
     "usdjpy_bars", "eurusd_bars", "usdjpy_stale_start_min", "usdjpy_stale_end_min",
-    "eurusd_stale_end_min", "e_pos", "e_neg", "jumpshare", "rv_per_bar"})
+    "eurusd_stale_end_min", "e_pos", "e_neg", "jumpshare", "rv_per_bar",
+    # P52: Pass 2 predictors, never fingerprint-compared with targets. gotobi_day is a calendar flag, not added.
+    "xau_ret", "xau_rv", "xau_bv", "xau_bars", "xau_stale_start_min", "xau_stale_end_min",
+    "n225_ret", "n225_bars", "n225_stale_start_min", "n225_stale_end_min",
+    "usdjpy_us_ret", "ewj_oc_jpy", "c_usdjpy_sess_ret", "c_eurusd_sess_ret"})
 MIN_DISTINCT = 100
 MATCH_FRAC = 0.5
 _SCALE = 1e8            # key = rint(mantissa * 1e8), mantissa in [1, 10): 9 significant digits

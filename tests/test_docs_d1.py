@@ -61,7 +61,8 @@ class TestP14toP16(unittest.TestCase):
         self.assertEqual((s.value("inference.test"), s.value("inference.alpha")), ("two_sided", 0.05))
 
     def test_p16_at_open_refused(self):
-        self.assertEqual(SC.AT_OPEN, frozenset({"ao_gap_adj", "ao_gap_raw", "ao_topix_gap"}))
+        self.assertEqual(SC.AT_OPEN, frozenset({"ao_gap_adj", "ao_gap_raw", "ao_topix_gap", "ao_1306_gap_raw",
+                                                "ao_1306_gap_adj", "ao_topix_gap_tradj"}))   # P50 (row 26)
         self.assertIn("auction-conditional spec retired", SC.GROUP_REASON["AT_OPEN"] if hasattr(SC, "GROUP_REASON")
                       else inspect.getsource(SC))
         df = pd.DataFrame({c: [0.0] for c in SC.AT_OPEN})
@@ -95,9 +96,9 @@ class TestP17toP19(unittest.TestCase):
 
     def test_p18_hedge_and_secondary(self):
         s = Spec.load()
-        self.assertEqual(s.value("target.hedge_oc_column"), "y_topix_oc")
+        self.assertEqual(s.value("target.hedge_oc_column"), "y_1306_oc")   # AM-03 (row 7)
         self.assertEqual(s.value("target.secondary"), "raw_oc")
-        self.assertEqual(T.HEDGE_GAP_FOR, {"y_topix_oc": "ao_topix_gap"})
+        self.assertEqual(T.HEDGE_GAP_FOR, {"y_topix_oc": "ao_topix_gap", "y_1306_oc": "ao_1306_gap_adj"})   # AM-03 (row 7)
         self.assertIn("if hedge not in HEDGE_GAP_FOR", inspect.getsource(T.add_targets))
 
     def test_p19_controls_and_robustness(self):
@@ -108,7 +109,7 @@ class TestP17toP19(unittest.TestCase):
         self.assertNotIn("ewj_oc", design)
         self.assertNotIn("fcx_oc", design)
         rob = s.value("robustness.others")
-        for r in ("ewj_yen_denominated_REQUIRES_PASS2", "copx_to_fcx", "exclude_boj_day", "exclude_sq_major"):
+        for r in ("ewj_yen_denominated", "copx_to_fcx", "exclude_boj_day", "exclude_sq_major"):   # AM-05 (row 8)
             self.assertIn(r, rob)
         self.assertIn("fx_x_longwindow", s.value("secondary_family_holm"))
         for c in ("gap_adj_lag1", "oc_lag1", "window_hours", "boj_day", "sq_major", "exdiv_day"):
@@ -118,13 +119,14 @@ class TestP17toP19(unittest.TestCase):
 class TestP20P21(unittest.TestCase):
     def test_p20_allowlist(self):
         groups = {"KEYS": 2, "PRE_OPEN_FEATURES": 20, "EXCLUSION_FLAGS": 2, "INFORMATIONAL": 1, "ROBUSTNESS_ONLY": 1,
-                  "AT_OPEN": 3, "TARGET_INPUTS": 2, "PROVENANCE": 10, "CONTEMPORANEOUS": 0}
+                  "AT_OPEN": 6, "TARGET_INPUTS": 3, "PROVENANCE": 16, "CONTEMPORANEOUS": 2,
+                  "PRE_OPEN_ROBUSTNESS": 7}                                  # P50 (row 9)
         sets = {g: getattr(SC, g) for g in groups}
         self.assertEqual({g: len(v) for g, v in sets.items()}, groups)
         union = set().union(*sets.values())
         self.assertEqual(len(union), sum(groups.values()))                      # pairwise disjoint
         cols = list(pd.read_csv(io.DATA_DIR / io.DEV_FILE, nrows=0).columns)    # header only
-        self.assertEqual((len(cols), set(cols)), (41, union))
+        self.assertEqual((len(cols), set(cols)), (60, union))   # P50 (row 9)
         self.assertEqual(set(SC.DERIVED_FEATURES),
                          {"long_window", "jumpshare", "rv_per_bar", "e_pos", "e_neg", "no_us_session"})
         self.assertEqual(SC.PERMITTED_DERIVED_SOURCES, frozenset({"usdjpy_bars"}))

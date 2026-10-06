@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS = {"README.md": ("README__2_.md", "9596fe7d2de098c1"), "PLAN.md": ("PLAN.md", "8030770119338ad8")}  # P57: was dc7983326fc4964e / 220fc762a511b13a
+DOCS = {"README.md": ("README.md", "9596fe7d2de098c1"), "PLAN.md": ("PLAN.md", "8030770119338ad8")}  # P57: was dc7983326fc4964e / 220fc762a511b13a; Project name README__2_.md -> README.md (Isaiah 2026-10-05, row 21)
 
 
 def text(name):

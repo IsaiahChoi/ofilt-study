@@ -65,7 +65,7 @@ class TestP29Blinding(unittest.TestCase):
         lines = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
         self.assertEqual(len(lines), 6)                                          # "dev_real lines: 6"
         self.assertTrue(all(x["provenance"] == B.DEV_REAL for x in lines))
-        dev = Spec.load().value("data.dev_panel_sha256")
+        dev = "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42"   # AM-04, P51: lines 1-6 are Pass 1 history (row 12)
         self.assertTrue(all(x["panel_sha256"] == dev for x in lines))            # all on panel_dev.csv
         callers = [x["caller"] for x in lines]
         self.assertTrue(all("test_sim_b5" in c for c in callers[:3]))            # lines 1-3: B5 tests
@@ -107,15 +107,12 @@ class TestP33toP35(unittest.TestCase):
     def test_p33_closed_robustness_list(self):
         rob = Spec.load().value("robustness")
         self.assertEqual(list(rob), ["huber", "winsorize_fx", "influence_curve", "others"])
-        self.assertEqual(rob["others"], ["beta_rolling_250", "raw_target", "copx_to_fcx",
-                                         "ewj_yen_denominated_REQUIRES_PASS2", "exclusion_d_plus_2",
-                                         "exclude_audit_flag", "exclude_boj_day", "exclude_sq_major",
-                                         "post_2024_11_05_indicator_CONFIRMATION_ONLY", "per_ticker_slopes_holm"])
+        self.assertEqual(rob["others"], ["beta_rolling_250", "beta_rolling_500", "raw_target", "copx_to_fcx", "ewj_yen_denominated", "xau_control", "nikkei_proxy_p42", "mechanism_session_fx_gotobi", "exclusion_d_plus_2", "exclude_audit_flag", "exclude_boj_day", "exclude_sq_major", "post_2024_11_05_indicator_CONFIRMATION_ONLY", "per_ticker_slopes_holm"])   # AM-05 (row 10)
         self.assertNotIn("post_2024_11_05", (ROOT / "ofilt" / "drift" / "inference.py").read_text())   # "not yet"
 
     def test_p34_p35_named_artifacts(self):
         s = Spec.load()
-        self.assertTrue(s.value("data.sealed_panel_sha256").startswith("9c18a6c1"))   # superseded in Pass 2
+        self.assertTrue(s.value("data.sealed_panel_sha256").startswith("b575272a"))   # AM-04 (row 11)
         self.assertIn("target", inspect.signature(F.walk_forward).parameters)         # T3: target y_sim
         self.assertTrue(hasattr(S, "DevCalibrator"))
 

@@ -102,7 +102,7 @@ def _register_real_targets(df: pd.DataFrame) -> None:
         return
     reg = getattr(blind, "register_real_values", None)
     if reg is not None:
-        for c in ("y_oc", "y_topix_oc"):
+        for c in ("y_oc", "y_topix_oc", "y_1306_oc"):   # P52: y_1306_oc registered (label dev_real:y_1306_oc)
             reg(df[c].to_numpy(dtype=float), label=f"{df.attrs.get('provenance')}:{c}",
                 dates=df["date"], tickers=df["ticker"])
 
