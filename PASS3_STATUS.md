@@ -11,12 +11,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
 | P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
 | P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
-| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | done | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
 | Pass 3 | in progress | |
 
 ## Next action
 
-P3-3: the rehearsal in a scratch clone (`--rehearsal`, full counts, twice, in Isaiah's own Terminal), the DQ5 test-change table and the DQ6 amendment drafts.
+P3-3: Isaiah runs the two full rehearsals (`--rehearsal`) in his own Terminal; then the DQ5 test-change rehearsal in a scratch clone and the DQ6 amendment drafts.
 
 ## Decision log
 
@@ -200,6 +201,13 @@ P3-3: the rehearsal in a scratch clone (`--rehearsal`, full counts, twice, in Is
 >   - Outputs. Real mode writes `reports/P3_4_sealed_run.json` and `reports/P3_4_sealed_run.md`, rewritten after each flush. Synthetic mode writes the same two files under `--out-dir` (under `/tmp`). Runtime fields sit in their own `runtime` section; everything else is byte-identical between runs with the same configuration (sorted keys; floats as `repr`).
 >   - The tool applies no decision rule. D2.6, D3.4 and D4.3's flag rule are applied at P3-5, from its outputs.
 
+> - P3-2b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `befb7da4a4d7fdd5fbcfca8a303110ee213e741e`. The configuration `docs/P3_RUN_CONFIG.json` has SHA-256 `645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa`; it is not yet sanctioned (DQ1.7).
+>   - The acceptance covers P3-2b's recorded deviations: the tests' setup bug and its one rerun; the design choices listed for review; test 4's use of the pure function `mode_refusal`; and the reuse-the-first-fit variant `calib.bootstrap_t_given_fit`, appended to `calib.py` with every existing function unchanged.
+>   - The warp-path gate passed. The warp-speed and inner draws come from the same `calib.bootstrap_t` path, and all 9 seeded identity checks were True. The two high values of q_warp in P3-2a were therefore chance, and the open point of the P3-2a acceptance is closed.
+>   - K_early = 409 (K16 = 165). The two smoke runs were identical apart from runtime and project 1.54 hours for the full configuration at empty-registry rates.
+> - DQ1.3 clarification (Isaiah, 2026-10-06, on the supervisor's recommendation): the clean-tree check. The script may not import subprocess, so its own check (`registry.git_state`) covers tracked files only. The P3-4 launch command therefore begins with a shell check that `git status --porcelain` prints nothing, untracked files included, and does not start the run otherwise.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -241,6 +249,10 @@ P3-3: the rehearsal in a scratch clone (`--rehearsal`, full counts, twice, in Is
 - Smoke run (`--smoke 20`, twice): both complete, with no exception and no abort (True), and the JSON outputs are identical apart from `runtime` (True). The projected full run is in `reports/P3_2b_smoke.md` (empty fingerprint registry).
 - The full suite ran inside the P3-2b checkpoint; its result is in the P3-2b report (`/tmp/p3_2b.txt`).
 
+**P3-2c:**
+- `tests/test_p3_sealed_run.py` alone, after the step d change: 9 tests, OK; no `REFUSED` line in the output.
+- The full suite ran inside the P3-2c checkpoint; its result is in the P3-2c report (`/tmp/p3_2c.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
@@ -250,7 +262,7 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 | new `tests/test_p3_0b_preflight.py` | — | 3 tests, synthetic only: the Part A sample rule keeps exactly `inference.build_design`'s rows on three injected `synthetic_panel` frames; the grid detector on hand-built series (including a grid change mid-sample); the tool refuses a panel whose hash does not match the registry, before reading it | P3-0b (supervisor message, 2026-10-06) | P3-0b |
 | new `tests/test_p3_1_sesoi.py` (row recorded at P3-2a; see Deviations) | — | 5 tests, synthetic only: the FWL residual equals the residual of `usdjpy_ret` on `build_design`'s other columns; tick tables, band edges and price factors; the conformity check; the cost arithmetic (primary, low, high); refusals (unregistered panel, cost file with a missing key) | P3-1 (supervisor message, 2026-10-06) | P3-1 |
 | new `tests/test_p3_calib.py` | — | 8 tests, synthetic only (test 5 reads B7b's committed aggregates): `tost_declares` vs `inference.tost`; `fit_t` vs `fit_dk`; `resample_dates`; order statistics and their intervals; `wilson` and `mde80` reproduce B7b; `winsorise_fx`; `window_positions`; static imports and no `open(` in `calib.py` | P3-2a (supervisor message, 2026-10-06) | P3-2a |
-| new `tests/test_p3_sealed_run.py` | — | 9 tests, synthetic only (no data file read; no test sets `OFILT_RUN_SEALED`):<br>1. static checks (one `DevCalibrator(`; no banned import; one writing function; private attributes only in the row-count assertion);<br>2. the invariance of (b̂ − b)/se and t* across b, and `calib.bootstrap_t_given_fit` equal to `calib.bootstrap_t`;<br>3. the configuration (rebuilt equals committed; refusals);<br>4. real-mode refusals with no data read;<br>5. outputs whitelisted, no list over 20;<br>6. the run-registry directory;<br>7. seeds disjoint;<br>8. the 6 → 7 → 7 log checks;<br>9. determinism | P3-2b (supervisor message, 2026-10-06) | P3-2b |
+| new `tests/test_p3_sealed_run.py` | — | 9 tests, synthetic only (no data file read; no test sets `OFILT_RUN_SEALED`):<br>1. static checks (one `DevCalibrator(`; no banned import; one writing function; private attributes only in the row-count assertion);<br>2. the invariance of (b̂ − b)/se and t* across b, and `calib.bootstrap_t_given_fit` equal to `calib.bootstrap_t`;<br>3. the configuration (rebuilt equals committed; refusals);<br>4. real-mode refusals with no data read;<br>5. outputs whitelisted, no list over 20;<br>6. the run-registry directory;<br>7. seeds disjoint;<br>8. the 6 → 7 → 7 log checks;<br>9. determinism<br>P3-2c change: test 4's two in-process refusals have their stdout captured (`contextlib.redirect_stdout`), and the captured text must start with `REFUSED` (was: printed to the suite's stdout, uncaptured) | P3-2b (supervisor message, 2026-10-06); P3-2c (supervisor message, 2026-10-06) | P3-2b; P3-2c |
 
 ## Flags
 
@@ -333,6 +345,11 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - No `--real` or `--rehearsal` run. `docs/P3_RUN_CONFIG.json` was built from the registry, the reports and the spec (no data file).
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-2c (supervisor message of 2026-10-06)**, by category:
+  - Records only, and a code listing (the tool, the tests and `sim.py`, printed with `cat -n`).
+  - `tests/test_p3_sealed_run.py` ran alone (synthetic; the same tests as P3-2b, with test 4's output captured).
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests. No data file was read otherwise.
+  - No `--real` or `--rehearsal` run. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -371,3 +388,4 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - Real mode takes no `--out-dir`.
 - P3-2b g, test 4: the real-mode conditions are tested on the pure function `mode_refusal`, with the sealed value passed as an argument. No test sets the `OFILT_RUN_SEALED` environment variable; the subprocess test removes it from the child's environment.
 - P3-2b, the optional reuse-the-first-fit variant: the tool uses `calib.bootstrap_t_given_fit`, a new function appended to `calib.py`, to avoid refitting each draw a second time. Test 2 shows it returns exactly `calib.bootstrap_t`'s t*. Every existing function of `calib.py` is unchanged: the P3-2a file is a byte prefix of the new one.
+- P3-2c d: besides the test 4 change, the diff adds the two imports it needs (`import contextlib` and `from io import StringIO`). Nothing else in the file changed.

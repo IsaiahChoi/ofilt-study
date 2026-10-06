@@ -16,12 +16,14 @@ tested on the pure refusal function, and subprocess runs have the variable remov
 9. Determinism: two tiny synthetic runs identical apart from `runtime`.
 """
 import ast
+import contextlib
 import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from io import StringIO
 from pathlib import Path
 from unittest import mock
 
@@ -136,8 +138,12 @@ class TestRealRefusals(unittest.TestCase):
             self.assertIn("expect-config-sha256", P.mode_refusal(real=True, smoke=None, rehearsal=False,
                                                                  sealed_value="1", config_sha=sha,
                                                                  expected_sha=sha[::-1], dirty=False))
-            self.assertEqual(P.main(["--real", "--smoke", "5"]), P.EXIT_REFUSED)
-            self.assertEqual(P.main(["--real", "--rehearsal"]), P.EXIT_REFUSED)
+            for argv in (["--real", "--smoke", "5"], ["--real", "--rehearsal"]):
+                buf = StringIO()
+                with contextlib.redirect_stdout(buf):                       # keep the suite output clean
+                    rc = P.main(argv)
+                self.assertEqual(rc, P.EXIT_REFUSED)
+                self.assertTrue(buf.getvalue().startswith("REFUSED"), buf.getvalue())
             ld.assert_not_called()
         with tempfile.TemporaryDirectory() as t:                       # a fresh process, the variable removed
             nodata, tmp = Path(t) / "nodata", Path(t) / "tmp"
