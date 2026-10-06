@@ -141,10 +141,10 @@ P50, P51). The old-column sources follow Isaiah's decision of 2026-10-05: dev = 
 BLIND_FIT_LOG lines 1–6 keep referring to `736636…`, which is archived under its hash
 (`DATA/archive/panel_dev_736636031ca1.csv`).
 
-**Lines (exact; the new hashes are filled after P2-4):**
+**Lines (exact; the new hashes filled from `MANIFEST.json` of `build_out/p2_20261006T002928Z`, the accepted P2-4 build):**
 ```jsonl
-{"id": "AM-04", "line": 4, "old": "  dev_panel_sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42", "new": "  dev_panel_sha256: ⟨P2-4 dev panel SHA-256⟩"}
-{"id": "AM-04", "line": 7, "old": "  sealed_panel_sha256: 9c18a6c106356139a375ecd7b3e6eaa085d937341c02817021003a4451c6b826   # superseded after Pass 2 rebuild", "new": "  sealed_panel_sha256: ⟨P2-4 sealed panel SHA-256⟩   # AM-04: Pass 2 rebuild (60 columns); supersedes 9c18a6c1… (P10)"}
+{"id": "AM-04", "line": 4, "old": "  dev_panel_sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42", "new": "  dev_panel_sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68"}
+{"id": "AM-04", "line": 7, "old": "  sealed_panel_sha256: 9c18a6c106356139a375ecd7b3e6eaa085d937341c02817021003a4451c6b826   # superseded after Pass 2 rebuild", "new": "  sealed_panel_sha256: b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1   # AM-04: Pass 2 rebuild (60 columns); supersedes 9c18a6c1… (P10)"}
 ```
 
 ### AM-05 (⟨date⟩, Isaiah): the Nikkei-proxy robustness row (P42, D7; P56 skeleton)
@@ -327,7 +327,7 @@ were found while drafting.
 
 | # | Test (line) | Current assertion | New assertion | Entry |
 |---|---|---|---|---|
-| 1 | `test_spec` (34–35) | dev hash `736636…` | the P2-4 dev-panel hash | AM-04 |
+| 1 | `test_spec` (34–35) | dev hash `736636…` | the P2-4 dev-panel hash `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68` | AM-04 |
 | 2 | `test_spec` (101) | `hedge_oc_column == "y_topix_oc"` | `"y_1306_oc"` | AM-03 |
 | 3 | `test_spec` (59–60) | amended lines {33, 43–46, 62}; ids {AM-01, AM-02} | plus 4, 7 (AM-04), 14 (AM-03) and the AM-05/AM-06 lines; ids plus AM-03…AM-06 (⟨placement option⟩) | AM-03…06 |
 | 4 | `test_schema` (27–31) | sizes 20 / 10 / 3 / 0 | PRE_OPEN 20 (unchanged), PROVENANCE 16, AT_OPEN 6, CONTEMPORANEOUS 2; add PRE_OPEN_ROBUSTNESS 7 | P50 |
@@ -337,7 +337,7 @@ were found while drafting.
 | 8 | `test_docs_d1` (111) | `ewj_yen_denominated_REQUIRES_PASS2` in the list | the AM-06 name | AM-06 |
 | 9 | `test_docs_d1` (120–127) | group counts with CONTEMPORANEOUS 0; 41 columns | P50 counts plus `PRE_OPEN_ROBUSTNESS: 7`; 60 | P50 |
 | 10 | `test_docs_d3` (110–113) | the exact robustness list | the AM-06 list | AM-06 |
-| 11 | `test_docs_d3` (118) | sealed hash starts `9c18a6c1` | the P2-4 sealed prefix | AM-04 |
+| 11 | `test_docs_d3` (118) | sealed hash starts `9c18a6c1` | the P2-4 sealed prefix `b575272a` | AM-04 |
 | 12 | `test_docs_d3` (68–69) | every BLIND_FIT_LOG `panel_sha256` equals the spec's dev hash | equals the constant `736636031ca1…` (lines 1–6 are Pass 1 history) | AM-04, P51 |
 | 13 | `test_docs_d5` (15–16, 26, 54, 60) | pin `c6aeded2f93a3cd5`; 9 groups; total 41; "all 41 columns" | the new pin; GROUPS + `PRE_OPEN_ROBUSTNESS`; 60 | P50 |
 | 14 | `test_blind` (116–118) | `usdjpy_`/`eurusd_` columns ⊆ `FX_NAMES` | also every P52 column ⊆ `FX_NAMES` | P52 |
