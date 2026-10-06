@@ -235,5 +235,81 @@ class TestSeedsAndLogs(unittest.TestCase):
             self.assertTrue(P.check_log(log, 7, panel_sha=dev, caller=P.SCRIPT_NAME))     # not dev_real
 
 
+class TestP32d(unittest.TestCase):
+    """P3-2d: R1 (the generalised log check; the logged-panel check), R2 (no exception message printed) and the
+    rehearsal script (static)."""
+
+    def test_10_r1_log_check_and_logged_panel(self):
+        dev = CFG["dev_panel_sha256"]
+        caller = f'File "/x/tools/{P.SCRIPT_NAME}", line 1, in main | cal = S.DevCalibrator(base, spec)'
+        rec = lambda prov, c: json.dumps({"utc": "x", "provenance": prov, "panel_sha256": "none", "spec_sha256": "s",
+                                          "n_rows_input": 1, "caller": c})
+        with tempfile.TemporaryDirectory() as t:
+            log = Path(t) / "BLIND_FIT_LOG"
+            log.write_text(rec("synthetic", caller) + "\n", encoding="utf-8")
+            self.assertEqual(P.check_log(log, 1, caller=P.SCRIPT_NAME, provenance="synthetic"), [])
+            self.assertTrue(P.check_log(log, 1, caller=P.SCRIPT_NAME))                       # default: dev_real
+            log.write_text((rec("synthetic", caller) + "\n") * 2, encoding="utf-8")
+            self.assertTrue(P.check_log(log, 1, caller=P.SCRIPT_NAME, provenance="synthetic"))   # wrong count
+            log.write_text(rec("dev_real", caller) + "\n", encoding="utf-8")
+            self.assertTrue(P.check_log(log, 1, caller=P.SCRIPT_NAME, provenance="synthetic"))   # wrong provenance
+            log.write_text(rec("synthetic", "report_B7b.py") + "\n", encoding="utf-8")
+            self.assertTrue(P.check_log(log, 1, caller=P.SCRIPT_NAME, provenance="synthetic"))   # wrong caller
+        import pandas as pd
+        from ofilt.drift import blind as Bl
+        f = pd.DataFrame({"x": [1.0]})
+        f.attrs = {"provenance": "dev_real", "sha256": dev}
+        P.assert_logged_panel(f, CFG, Bl)                                                   # passes
+        for attrs in ({"provenance": "dev_real", "sha256": "0" * 64}, {"provenance": "dev_real"},
+                      {"provenance": "synthetic", "sha256": dev}):
+            g = f.copy()
+            g.attrs = attrs
+            with self.assertRaises(P.AbortRun):
+                P.assert_logged_panel(g, CFG, Bl)
+
+    def test_11_r2_generic_handlers_print_no_message(self):
+        tree = ast.parse(TOOL.read_text(encoding="utf-8"))
+        fns = {n.name: n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef) and n.name in ("main", "_run")}
+        self.assertEqual(set(fns), {"main", "_run"})
+        for name, fn in fns.items():
+            generic = [h for h in ast.walk(fn) if isinstance(h, ast.ExceptHandler)
+                       and isinstance(h.type, ast.Name) and h.type.id == "Exception"]
+            self.assertTrue(generic, name)
+            for h in generic:
+                for n in ast.walk(ast.Module(body=h.body, type_ignores=[])):
+                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in ("str", "repr"):
+                        self.assertFalse(any(isinstance(x, ast.Name) and x.id == h.name for x in n.args), name)
+                    if isinstance(n, ast.FormattedValue):
+                        self.assertFalse(isinstance(n.value, ast.Name) and n.value.id == h.name, name)
+                    if isinstance(n, ast.Attribute):
+                        self.assertFalse(isinstance(n.value, ast.Name) and n.value.id == "traceback"
+                                         and n.attr.startswith("print"), name)
+                        self.assertFalse(isinstance(n.value, ast.Name) and n.value.id == h.name
+                                         and n.attr == "args", name)
+
+    def test_12_r2_abort_text(self):
+        try:
+            raise ValueError("a message that must not be printed")
+        except ValueError as e:
+            txt = P._abort_text(e)
+            self.assertEqual(txt, f"ValueError at line {e.__traceback__.tb_lineno}")
+        try:
+            P.check_log(Path("/nonexistent/p3_2d/BLIND_FIT_LOG"), 1)                          # raised inside the tool
+        except FileNotFoundError as e:
+            txt = P._abort_text(e)
+            self.assertRegex(txt, r"^FileNotFoundError at line \d+$")
+            self.assertNotIn("nonexistent", txt)
+
+    def test_13_rehearsal_script_static(self):
+        sh = (ROOT / "tools" / "p3_3_rehearse.sh").read_text(encoding="utf-8")
+        lines = sh.splitlines()
+        self.assertEqual(lines[0], "set -euo pipefail")
+        self.assertNotIn("--real", sh)
+        self.assertNotIn("OFILT_RUN_SEALED=1", sh)
+        check = next(i for i, l in enumerate(lines) if "${OFILT_RUN_SEALED+x}" in l and "refuse" in l)
+        first_py = next(i for i, l in enumerate(lines) if "python" in l and not l.lstrip().startswith("#"))
+        self.assertLess(check, first_py)
+
+
 if __name__ == "__main__":
     unittest.main()

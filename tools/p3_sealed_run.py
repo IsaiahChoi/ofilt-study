@@ -244,14 +244,16 @@ def mode_refusal(*, real: bool, smoke, rehearsal: bool, sealed_value, config_sha
     return None
 
 
-def check_log(path: Path, n_expected: int, panel_sha: str | None = None, caller: str | None = None) -> list:
-    """Problems with BLIND_FIT_LOG: line count, all dev_real; and, if given, the last line's panel hash and caller."""
+def check_log(path: Path, n_expected: int, panel_sha: str | None = None, caller: str | None = None,
+              provenance: str = "dev_real") -> list:
+    """Problems with a BLIND_FIT_LOG: line count, every line of the given provenance (default dev_real); and, if given,
+    the last line's panel hash and caller."""
     recs = [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()]
     p = []
     if len(recs) != n_expected:
         p.append(f"{len(recs)} lines, expected {n_expected}")
-    if any(r.get("provenance") != "dev_real" for r in recs):
-        p.append("a line is not dev_real")
+    if any(r.get("provenance") != provenance for r in recs):
+        p.append(f"a line is not {provenance}")
     if recs and panel_sha is not None and recs[-1].get("panel_sha256") != panel_sha:
         p.append("the last line's panel hash differs")
     if recs and caller is not None and caller not in str(recs[-1].get("caller", "")):
@@ -291,6 +293,11 @@ def _script_line(e: BaseException) -> int:
     tb = traceback.extract_tb(e.__traceback__)
     mine = [f for f in tb if f.filename.endswith(SCRIPT_NAME)]
     return int((mine or tb)[-1].lineno) if tb else -1
+
+
+def _abort_text(e: BaseException) -> str:
+    """'<class> at line <n>': an exception's class and line only, never its message (R2)."""
+    return f"{type(e).__name__} at line {_script_line(e)}"
 
 
 # ====================================================================== the run
@@ -346,6 +353,9 @@ def main(argv: list | None = None) -> int:
     except AbortRun as e:
         print(f"ABORTED at line {_script_line(e)} (before the first flush)")
         return EXIT_ABORTED
+    except Exception as e:                                                  # R2: class and line only
+        print(f"ABORTED: {_abort_text(e)}")
+        return EXIT_ABORTED
     finally:
         shutil.rmtree(run_tmp, ignore_errors=True)
         tempfile.tempdir = previous
@@ -358,6 +368,7 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
         raise AbortRun("registry.SYNTHETIC_PATH lies outside the run's temporary directory")
     import numpy as np
     from scipy import stats
+    from ofilt.drift import blind as B
     from ofilt.drift import calib as C
     from ofilt.drift import fctests as FT
     from ofilt.drift import forecast as F
@@ -419,6 +430,7 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
                 raise AbortRun("dev panel SHA-256 differs from the configuration")
             base = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)
             assert_am03_target(base, spec)
+            assert_logged_panel(base, cfg, B)                               # R1: before the sealed fit
             log_path = S.BLIND_FIT_LOG_PATH
             p = check_log(log_path, 6)
             if p:
@@ -433,7 +445,11 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
                     raise AbortRun("dev panel SHA-256 differs from the configuration")
                 dev = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)   # registers real targets
                 assert_am03_target(dev, spec)
+                assert_logged_panel(dev, cfg, B)                            # R1: rehearses the real-mode check
                 del dev
+                p = check_log(real_log, 6)                                  # R1: read only
+                if p:
+                    raise AbortRun(f"repository BLIND_FIT_LOG: {p}")
             base = stand_in(cfg, spec, S, np)
         t0 = time.time()
         cal = S.DevCalibrator(base, spec)                                   # the ONE sealed fit
@@ -443,6 +459,10 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
             p = check_log(log_path, 7, panel_sha=cfg["dev_panel_sha256"], caller=SCRIPT_NAME)
             if p:
                 raise AbortRun(f"BLIND_FIT_LOG after the calibrator: {p}")
+        else:
+            p = check_log(run_tmp / "BLIND_FIT_LOG", 1, caller=SCRIPT_NAME, provenance="synthetic")   # R1
+            if p:
+                raise AbortRun(f"temporary BLIND_FIT_LOG after the calibrator: {p}")
         assert_calibrator_shape(cal, cfg)
         state["calibrator"] = {"T_source": int(cal.T), "rows": int(cfg["rows"])}
         flush()
@@ -662,6 +682,14 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
             pass
         print(f"ABORTED at line {_script_line(e)}")
         return EXIT_ABORTED
+    except Exception as e:                                                  # R2: class and line only
+        state["aborted"] = {"error_class": type(e).__name__, "line": _script_line(e)}
+        try:
+            flush()
+        except Exception:
+            pass
+        print(f"ABORTED: {_abort_text(e)}")
+        return EXIT_ABORTED
 
 
 # ====================================================================== helpers used by the run
@@ -674,6 +702,16 @@ def assert_am03_target(df, spec) -> None:
     if df.attrs.get("targets") != want or spec.hedge_oc_column != "y_1306_oc" or bs.method != "expanding" \
             or bs.estimate_on != "non_excluded_rows":
         raise AbortRun("the target is not AM-03's")
+
+
+def assert_logged_panel(frame, cfg, B) -> None:
+    """R1, before the sealed fit: the frame's provenance is dev_real, and the panel hash _sealed_blind_fit will log for
+    it, str(df.attrs.get("sha256") or "none") (sim.py:163 and sim.py:147; sim.py has no helper), equals the
+    configured dev-panel hash."""
+    if B.provenance_of(frame) != B.DEV_REAL:
+        raise AbortRun("the frame's provenance is not dev_real")
+    if str(frame.attrs.get("sha256") or "none") != cfg["dev_panel_sha256"]:
+        raise AbortRun("the panel hash the sealed fit would log differs from the configuration")
 
 
 def assert_calibrator_shape(cal, cfg) -> None:
