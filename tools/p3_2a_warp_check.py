@@ -1,0 +1,182 @@
+"""P3-2a warp-speed check (supervisor message of 2026-10-06; DQ3 D3.2). SYNTHETIC ONLY: reads no data file and builds
+no DevCalibrator; calls ofilt.drift.calib, which calls existing code.
+
+Design: R = 200 outer replications; replication r is sim.synthetic_panel(1013, b=0, tails="t5", seed=s_r) with
+s_r = spec seed + seed base + r (--seed-base, default 4,000,000). For each r: t_r from calib.fit_t; one warp-speed resample (seed s_r + 50,000) giving
+t*_r; a full inner bootstrap of B = 99 resamples (seed s_r + 60,000) giving p_r = (1 + #{|t*| >= |t_r|}) / (B + 1);
+the replication's full test rejects if p_r <= 0.05. The warp-speed test rejects if |t_r| > q_warp, the 0.95 order
+statistic of the R values |t*_r|; q_full is the 0.95 order statistic of all R x B inner |t*|.
+Gates: G1, q_full(0.95) lies inside q_warp(0.95)'s 95% order-statistic interval; G2' (replaces G2 after run 1;
+PASS3_STATUS Decision log), |n10' - n01'| <= 1.959964 sqrt(n10' + n01') (passes if n10' + n01' = 0), with n10' =
+#(full rejects, q_full test does not) and n01' the reverse. The superseded G2 (warp vs full) is still printed.
+
+Chunking as tools/c7_mc.py:102-133: --budget seconds per invocation; state after every replication in --state (under
+/tmp/p3_2a only); a later invocation resumes, refusing a state written under another configuration or other code;
+when complete it writes --out and deletes the state. Replication seeds fix every result, so a chunked run and an
+unchunked one give the same report apart from its Runtime section.
+usage: python tools/p3_2a_warp_check.py --budget 420     # repeat until it prints COMPLETE
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import math
+import statistics
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from ofilt.drift import calib as C  # noqa: E402
+from ofilt.drift import sim as S  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+N_DATES, TARGET, SEED_OFFSET, WARP_OFFSET, INNER_OFFSET = 1013, "abn_oc", 4_000_000, 50_000, 60_000
+STATE_PREFIX = "/tmp/p3_2a"
+CODE_FILES = ("ofilt/drift/calib.py", "tools/p3_2a_warp_check.py")
+
+
+def config_key(R: int, B: int, spec: Spec, seed_base: int = SEED_OFFSET) -> dict:
+    code = {f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in CODE_FILES}
+    return dict(R=R, B=B, n_dates=N_DATES, tails="t5", b=0.0, target=TARGET,
+                seed_base=seed_base,
+                seeds=f"s_r = spec seed + {seed_base:,} + r; warp s_r + {WARP_OFFSET:,}; inner s_r + {INNER_OFFSET:,}",
+                spec_seed=spec.seed, spec_sha256=spec.sha256, code=code)
+
+
+def one_rep(r: int, B: int, spec: Spec, seed_base: int = SEED_OFFSET) -> dict:
+    s = spec.seed + seed_base + r
+    df = S.synthetic_panel(N_DATES, b=0.0, tails="t5", seed=s)
+    t0 = time.perf_counter()
+    f = C.fit_t(df, spec, TARGET)
+    t_fit = time.perf_counter() - t0
+    warp = C.bootstrap_t(df, spec, np.random.default_rng(s + WARP_OFFSET), TARGET, 1)
+    t0 = time.perf_counter()
+    inner = C.bootstrap_t(df, spec, np.random.default_rng(s + INNER_OFFSET), TARGET, B)
+    t_inner = time.perf_counter() - t0
+    if not (warp["fit"]["t"] == f["t"] == inner["fit"]["t"] and f["lag"] == 6):
+        raise AssertionError(f"replication {r}: inconsistent original fit or lag {f['lag']}")
+    a = np.abs(inner["t_star"])
+    p = (1 + int((a >= abs(f["t"])).sum())) / (B + 1)
+    return dict(r=r, t=float(f["t"]), t_warp=float(warp["t_star"][0]), inner_abs=[float(v) for v in a], p=p,
+                sec_fit=t_fit, sec_per_resample=t_inner / (B + 1))
+
+
+def summarise(state: dict) -> str:
+    key = state["key"]
+    R, B = key["R"], key["B"]
+    reps = sorted(state["reps"], key=lambda x: x["r"])
+    t = np.array([x["t"] for x in reps])
+    aw = np.abs(np.array([x["t_warp"] for x in reps]))
+    full_abs = np.concatenate([np.array(x["inner_abs"]) for x in reps])
+    p = np.array([x["p"] for x in reps])
+    qw95, qw90 = C.order_stat(aw, 0.95), C.order_stat(aw, 0.90)
+    iw95, iw90 = C.order_stat_interval(aw, 0.95), C.order_stat_interval(aw, 0.90)
+    qf95, qf90 = C.order_stat(full_abs, 0.95), C.order_stat(full_abs, 0.90)
+    rej_warp = C.rejects(t, qw95)
+    rej_full = p <= 0.05
+    rej_qfull = C.rejects(t, qf95)
+    n10 = int((rej_warp & ~rej_full).sum())
+    n01 = int((~rej_warp & rej_full).sum())
+    g1 = iw95[0] <= qf95 <= iw95[1]
+    g2 = (n10 + n01 == 0) or abs(n10 - n01) <= 1.959964 * math.sqrt(n10 + n01)
+    n10p = int((rej_full & ~rej_qfull).sum())
+    n01p = int((~rej_full & rej_qfull).sum())
+    g2p = (n10p + n01p == 0) or abs(n10p - n01p) <= 1.959964 * math.sqrt(n10p + n01p)
+    rej_lo, rej_hi = int(C.rejects(t, iw95[0]).sum()), int(C.rejects(t, iw95[1]).sum())
+    k95, lo95, hi95 = C.order_stat_ranks(R, 0.95)
+    k90, lo90, hi90 = C.order_stat_ranks(R, 0.90)
+    L = ["# P3-2a: warp-speed check (synthetic only)", "",
+         "Generated by `tools/p3_2a_warp_check.py`, using `ofilt/drift/calib.py` (DQ3, D3.1 and D3.2). Synthetic "
+         "aggregates only.", "",
+         "## Design", "",
+         f"- R = {R} outer replications; replication r is `sim.synthetic_panel({N_DATES}, b=0, tails=\"t5\", seed=s_r)`.",
+         f"- Seeds: {key['seeds']} (spec seed {key['spec_seed']}).",
+         f"- Per replication: t_r from `calib.fit_t` (target `{TARGET}`); one warp-speed resample giving t*_r; a full "
+         f"inner bootstrap of B = {B} resamples giving p_r = (1 + #{{|t*| >= |t_r|}}) / (B + 1); the full test "
+         "rejects if p_r <= 0.05. Every fit's DK lag is 6 (asserted).",
+         f"- The warp-speed test rejects if |t_r| > q_warp(0.95), the order statistic of the {R} values |t*_r|; "
+         f"q_full is the order statistic of all {R} x {B} = {full_abs.size} inner |t*|.", "",
+         "## Critical values (order statistics)", "",
+         "| Quantity | Level | Rank k of n | Value | 95% order-statistic interval (ranks) |",
+         "|---|---|---|---|---|",
+         f"| q_warp | 0.95 | {k95} of {R} | {qw95:.6f} | [{iw95[0]:.6f}, {iw95[1]:.6f}] ({lo95}, {hi95}) |",
+         f"| q_warp | 0.90 | {k90} of {R} | {qw90:.6f} | [{iw90[0]:.6f}, {iw90[1]:.6f}] ({lo90}, {hi90}) |",
+         f"| q_full | 0.95 | {C.order_stat_ranks(full_abs.size, 0.95)[0]} of {full_abs.size} | {qf95:.6f} | |",
+         f"| q_full | 0.90 | {C.order_stat_ranks(full_abs.size, 0.90)[0]} of {full_abs.size} | {qf90:.6f} | |", "",
+         "## Rejections at b = 0", "",
+         "| Test | Rejections | of R |",
+         "|---|---|---|",
+         f"| warp-speed (|t_r| > q_warp(0.95)) | {int(rej_warp.sum())} | {R} |",
+         f"| per-replication full bootstrap (p_r <= 0.05) | {int(rej_full.sum())} | {R} |",
+         f"| with q_full (|t_r| > q_full(0.95)) | {int(rej_qfull.sum())} | {R} |",
+         f"| for information: |t_r| > the lower end of q_warp(0.95)'s interval ({iw95[0]:.6f}) | {rej_lo} | {R} |",
+         f"| for information: |t_r| > the upper end of q_warp(0.95)'s interval ({iw95[1]:.6f}) | {rej_hi} | {R} |", "",
+         f"Paired (warp-speed vs per-replication full): n10 (warp rejects, full does not) = {n10}; n01 (the reverse) "
+         f"= {n01}.",
+         f"Paired (per-replication full vs the q_full test): n10' (full rejects, q_full test does not) = {n10p}; "
+         f"n01' (the reverse) = {n01p}.", "",
+         "## Gates (fixed in advance)", "",
+         f"- G1: q_full(0.95) = {qf95:.6f} lies inside q_warp(0.95)'s 95% order-statistic interval "
+         f"[{iw95[0]:.6f}, {iw95[1]:.6f}]: **{g1}**",
+         f"- G2': |n10' - n01'| = {abs(n10p - n01p)} <= 1.959964 sqrt(n10' + n01') = "
+         f"{1.959964 * math.sqrt(n10p + n01p):.4f} (passes if n10' + n01' = 0): **{g2p}**",
+         f"- G2, superseded (mis-specified; see the Decision log): |n10 - n01| = {abs(n10 - n01)} <= 1.959964 "
+         f"sqrt(n10 + n01) = {1.959964 * math.sqrt(n10 + n01):.4f}: {g2}", "",
+         "## Runtime", "",
+         f"- Median time per fit (`calib.fit_t`: build_design + fit_dk), over the {R} replications' original fits: "
+         f"{statistics.median([x['sec_fit'] for x in reps]):.4f} s",
+         f"- Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: "
+         f"{statistics.median([x['sec_per_resample'] for x in reps]):.4f} s",
+         f"- Total runtime over {state['chunks']} chunk(s): {state['runtime_s']:.1f} s", ""]
+    return "\n".join(L)
+
+
+def run(R: int, B: int, budget: float, state_path: Path, out: Path, seed_base: int = SEED_OFFSET) -> bool:
+    if not str(state_path).startswith(STATE_PREFIX):
+        raise SystemExit(f"state must live under {STATE_PREFIX}*")
+    spec = Spec.load()
+    key = config_key(R, B, spec, seed_base)
+    if state_path.exists():
+        state = json.loads(state_path.read_text())
+        if state["key"] != key:
+            raise RuntimeError(f"{state_path} was written under a different config or code; delete it to restart")
+    else:
+        state = dict(key=key, reps=[], runtime_s=0.0, chunks=0)
+    state["chunks"] += 1
+    t0, base = time.time(), float(state["runtime_s"])
+
+    def save():
+        state["runtime_s"] = base + (time.time() - t0)
+        state_path.write_text(json.dumps(state, allow_nan=False))
+
+    while len(state["reps"]) < R and time.time() - t0 < budget:
+        state["reps"].append(one_rep(len(state["reps"]), B, spec, seed_base))
+        save()
+    save()
+    if len(state["reps"]) < R:
+        return False
+    out.write_text(summarise(state), encoding="utf-8")
+    state_path.unlink()
+    return True
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--R", type=int, default=200)
+    ap.add_argument("--B", type=int, default=99)
+    ap.add_argument("--budget", type=float, default=float("inf"))
+    ap.add_argument("--seed-base", type=int, default=SEED_OFFSET)
+    ap.add_argument("--state", type=Path, default=Path("/tmp/p3_2a_warp_state.json"))
+    ap.add_argument("--out", type=Path, default=ROOT / "reports" / "P3_2a_warp_check.md")
+    a = ap.parse_args()
+    done = run(a.R, a.B, a.budget, a.state, a.out, a.seed_base)
+    if done:
+        print("COMPLETE", flush=True)
+        print(a.out.read_text(encoding="utf-8"), end="")
+    else:
+        print(f"PARTIAL {len(json.loads(a.state.read_text())['reps'])} of {a.R}", flush=True)

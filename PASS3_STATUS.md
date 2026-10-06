@@ -9,12 +9,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
 | P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
 | P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
-| P3-1b Records; synthetic timing probe | done | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
 | Pass 3 | in progress | |
 
 ## Next action
 
-P3-2 waits for DQ3, DQ4 and DQ7, which the supervisor brings with the P3-1b probe's facts.
+P3-2b: the sealed-run tool, `docs/P3_RUN_CONFIG.json`, the T6 window's pre-flight count, and a complete synthetic run measuring runtime. DQ5, DQ6 and DQ8 remain open (P3-3, P3-6, P3-8).
 
 ## Decision log
 
@@ -129,6 +130,54 @@ P3-2 waits for DQ3, DQ4 and DQ7, which the supervisor brings with the P3-1b prob
 >   - Mean round trip per name-day: primary 24.5961 bp, low 2.0333 bp, high 77.2878 bp.
 >   - SESOI: primary 0.8652, low 0.07152, high 2.719. These four-significant-digit values are the ones used in the run configuration and in the switch's amendment.
 
+> - P3-1b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `87aff1406356701396a3e99b7b2923257ba81d62`, including the recorded deviation P3-1b c (panel B with `p_excl` = 0; explicit synthetic provenance on `pair` and `clark_west`).
+>   - Probe facts (synthetic, empty fingerprint registry): `build_design` + `fit_dk` at 1,013 dates, median 0.025 s; `fit_huber`, 0.007 s; `stationary_bootstrap_positions`, 0.0002 s; `walk_forward` with {M2, M3} on 2,452 dates, 0.92 s; Clark–West on the last 1,013 dates, 0.033 s. The first forecast falls at date 501 and every one of the last 1,013 dates is forecast. `registry.py` fixes the synthetic registry path at import (`registry.py:34`), and a TMPDIR set before the process starts contains every line.
+> - DQ3 (Isaiah, 2026-10-06, on the supervisor's recommendation): the inference methods, their evaluation and the joint T1/T4 rule.
+>   - D3.1 The bootstrap test (AM-02's branch). The statistic is the Driscoll–Kraay t of `usdjpy_ret`, t = b̂/se. The resampling is a stationary bootstrap of whole dates of the estimation sample (mean block 5): the sample's T dates are drawn to length T, taken in drawn order and refitted with the same design and DK lag, giving t* = (b̂* − b̂)/se* (recentred, not null-imposed). The two-sided 5% test rejects if |t| > c_boot, the 95% quantile of |t*|; the interval is b̂ ± c_boot·se; TOST uses the 90% quantile of |t*|. At the confirmation it uses 9,999 resamples, seeded from the spec's seed (the seed goes into the amendment).
+>   - D3.2 Its evaluation in the sealed run is the warp-speed method (Giacomini, Politis and White, 2013, Econometric Theory 29(3), 567–589, DOI 10.1017/S0266466612000655): one resample per simulated replication, with each cell's critical values taken as quantiles of the pooled |t*| over that cell's replications. P3-2a checks it on synthetic data against a full inner bootstrap.
+>   - D3.3 The simulation-calibrated critical value (P31). c_cal(α) is the ⌈(1 − α)·n⌉-th smallest |t| over T1's n = 5,000 replications at b = 0 (α = 0.05 for H1; α = 0.10 for TOST), reported with its 95% order-statistic interval. Power under it is size-adjusted power. For Clark–West, c_CW,cal is the ⌈0.95·n⌉-th smallest CW statistic over T3's replications at b = 0 (one-sided).
+>   - D3.4 The joint T1/T4 rule (Flags 10 and 12), applied at P3-5 to point estimates, as AM-02 is.
+>     - H1: if the DK-normal rejection rate at b = 0 (T1) lies in [3.5%, 6.5%], primary inference is DK with the normal reference. Otherwise it is the D3.1 bootstrap (AM-02), provided the bootstrap's own rate at b = 0 lies in that band; if it does not, primary inference is DK with c_cal(0.05).
+>     - Clark–West: if its rate at b = 0 (T3, normal reference) lies in [3.5%, 6.5%], the normal reference stays; otherwise c_CW,cal replaces it.
+>     - The selected methods' numbers are the binding ones (power, MDE80, D2.6 and the T3 cross-tab). Every method's numbers are reported (DQ1.6).
+>   - D3.5 When the method selected for H1 is DK-normal or the bootstrap, it applies to every other pre-registered DK test (H3, the secondary family, H4 and the robustness rows). Under c_cal, which is specific to H1 and TOST, the other tests keep the normal reference.
+> - DQ4 (Isaiah, 2026-10-06, on the supervisor's recommendation): the designs of T2, T3, T5's viability and T6.
+>   - D4.1 The cells, in task order (cell id: task, b, replications). Every draw has n_dates = 1,013 unless stated, a₂ = 0 and mean block 5.
+>     - 0: T1, b = 0, 5,000.
+>     - 1: T5's boundary (D2.6 (ii)), b = +0.8652, 5,000.
+>     - 2 to 4: T2, b = 0.10, 0.25 and 0.40, 1,000 each.
+>     - 5 to 8: T6, full draws at b = 0 and 0.25, and early-window draws at b = 0 and 0.25, 1,000 each.
+>     - 9 to 11: T3, n_dates = 2,452, b = 0, 0.10 and 0.25, with 2,000, 500 and 500.
+>     - The counts may be revised before the sanction, on runtime grounds only.
+>   - D4.2 T3. On each 2,452-date draw (T_source + T_conf): `walk_forward` with {M2, M3}, target `y_sim`, both masks False, and the replication's outer seed; Clark–West (M3 vs M2) on the rows of the last 1,013 dates; H1 on the same last 1,013 dates. The cross-tab (both, H1 only, CW only, neither) is reported per cell for every H1 method × CW method.
+>   - D4.3 T6. Early-window draws resample only the source dates before 2017-09-27 (the coarse-grid period of 5711 and 5706); their count is a target-only pre-flight fact, taken at P3-2b. The estimators are OLS-DK, Huber-DK (c = 1.345, MAD scale) and OLS-DK on FX winsorised at the spec's bounds, all with the normal reference. Reported: the rejection rate, mean bias, sd(b̂), mean SE/sd, coverage, and Huber's mean share downweighted. If an estimator's rate at b = 0 on early-window draws lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods.
+>   - D4.4 TOST viability (D2.6): (i) from cell 0, at the primary, low and high SESOI; (ii) from cell 1.
+>   - D4.5 Seeds. The outer seed is the spec's seed + 5,000,000 + 100,000·cell + replication; the warp-speed resample of the same replication uses that seed + 50,000. These are disjoint from the B7, B7b and C7 blocks.
+>   - D4.6 DK and Newey–West lags come from `Spec.dk_lag` on each fit's unique dates; the run asserts 6 for every fit.
+>   - D4.7 Outputs, per cell and method, are only: rejection counts, rates and Wilson intervals; means and standard deviations across replications; coverage; the named quantiles (c_boot, c_cal, c_CW,cal) with their order-statistic intervals; MDE80 per method (probit interpolation with B7b's cross-checks); the cross-tab counts; H3's rate at b = 0; and each task's runtime.
+> - DQ7 (Isaiah, 2026-10-06, on the supervisor's recommendation): code scope.
+>   - New code only: `ofilt/drift/calib.py` and its tests (P3-2a); `tools/p3_sealed_run.py`, its tests and `docs/P3_RUN_CONFIG.json` (P3-2b). The confirmation-time entry point for the selected method lives in `calib.py`.
+>   - Unchanged until the switch: the C7-hashed files, `spec.py`, `blind.py`, `io.py`, `registry.py`, `targets.py` and the guard; `build/pass1/` and `build/pass2/`; `PRE_OPEN_FEATURES` (the 20 Pass 1 columns).
+>   - The switch (P3-6) may change only the spec (AM-07 onward), `spec.py`'s validation of the new inference fields, and the pins listed under DQ5. Any other change needs its own listed approval.
+> - Clarifications of DQ1 (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - DQ1.2. Because `registry.py` fixes the synthetic run-registry path at import, the sealed-run script creates its own temporary directory and sets `tempfile.tempdir` to it before importing any `ofilt` module. It asserts that `registry.SYNTHETIC_PATH` lies inside that directory, asserts at the end that the directory holds exactly one line per `walk_forward` call, and then deletes it. No line is printed or kept. If a run is killed, Isaiah deletes the directory before anything else.
+>   - DQ1.3. "Imports none of multiprocessing, concurrent.futures, joblib or subprocess" is tested on the import statements of the script and of `calib.py`. The indirect imports by sklearn (through `models`) and by `registry.py` (for git) are permitted.
+>   - DQ1.5. The rehearsal loads the dev panel with `io.load_dev` and `targets.add_targets` to populate the fingerprint registry. This is target-only contact: nothing is printed, and no `DevCalibrator` is constructed on real data.
+
+> - P3-2a step e, the G2 STOP (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Run 1 (R = 200, B = 99, seeds from the spec seed + 4,000,000): G1 passed; G2 failed (n10 = 0, n01 = 9).
+>   - The gate was mis-specified by the supervisor. McNemar's test assumes independent discordant pairs, but every warp-speed decision shares one critical value estimated from 200 draws, so the discordances run one way whenever that estimate lands high. q_warp(0.95) = 2.2356 lay about 1.9 standard errors above q_full(0.95) = 1.9751; a 95% quantile estimated from 200 draws has a standard error of about 0.14. With q_full, the pooled-quantile test rejected 14 of 200 replications, against the per-replication bootstrap's 15. The failure measures the Monte Carlo noise of q_warp at R = 200, not a defect of the method or of the code.
+>   - Run 1's report is kept as `reports/P3_2a_warp_check_run1.md`.
+>   - Before run 2, G2 is replaced by G2′: McNemar between the per-replication full bootstrap decisions and the decisions at q_full(0.95), whose critical value is estimated from 19,800 draws. G2′ passes if |n10′ − n01′| ≤ 1.959964·√(n10′ + n01′), or if n10′ + n01′ = 0.
+>   - Run 2 uses fresh seeds (spec seed + 4,100,000 + r) and is judged on G1 and G2′.
+> - D3.2 and D3.3 amended (Isaiah, 2026-10-06, on the supervisor's recommendation): pooled critical values.
+>   - In the sealed run's draws, y_sim = fitted controls + b·e + a₂·eur + residuals, and the fitted controls lie in the design's column space. So (b̂ − b)/se and the recentred t* = (b̂* − b̂)/se* do not depend on b: their distributions are the same in every cell of full 1,013-date draws.
+>   - c_boot at 0.95 and 0.90 is therefore the order statistic of |t*| pooled over cells 0 to 4 (13,000 warp-speed draws). c_cal(α) is the order statistic of |(b̂ − b)/se| pooled over the same cells. Each is reported with its 95% order-statistic interval.
+>   - Both apply to cells 0 to 4 and to T3's H1 column, because the last 1,013 dates of a stationary-bootstrap draw are distributed as a 1,013-date draw. The noise these critical values add to a rejection rate falls to about ±0.2 percentage points, from about ±0.3 with 5,000 draws and about ±1 with 500.
+>   - Each cell's own quantiles are reported for information, as a check of the invariance. P3-2b adds a synthetic test that, with identical positions and seeds, (b̂ − b)/se is the same at every b to 1e-10.
+>   - Clark–West's c_CW,cal stays as D3.3 defines it (T3's cell at b = 0), because its statistic is not invariant to b.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -153,6 +202,13 @@ P3-2 waits for DQ3, DQ4 and DQ7, which the supervisor brings with the P3-1b prob
   - step 3: every (ticker, year, period) cell's opens and closes conform to the dev tick tables at traded prices (share 1), and none is above a bound: True.
 - The full suite ran inside the P3-1 checkpoint; its result is in the P3-1 report (`/tmp/p3_1.txt`).
 
+**P3-2a:**
+- Calibration tests alone (`python -m unittest tests.test_p3_calib -v`): 8 tests, OK, on the first run.
+- Warp-speed check, run 1 (`reports/P3_2a_warp_check_run1.md`; R = 200, B = 99, seeds from the spec seed + 4,000,000): G1 True; G2 False, superseded (mis-specified; Decision log).
+- Run 2 (`reports/P3_2a_warp_check.md`; seeds from the spec seed + 4,100,000): G1 True, G2′ True. The superseded G2, printed for information, was also True.
+- Chunked and unchunked runs gave identical reports apart from the Runtime section (R = 4) at both seed bases.
+- The full suite ran inside the P3-2a checkpoint; its result is in the continuation report (`/tmp/p3_2a_cont.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
@@ -160,6 +216,8 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 | Test | Old | New | Entry | Phase |
 |---|---|---|---|---|
 | new `tests/test_p3_0b_preflight.py` | — | 3 tests, synthetic only: the Part A sample rule keeps exactly `inference.build_design`'s rows on three injected `synthetic_panel` frames; the grid detector on hand-built series (including a grid change mid-sample); the tool refuses a panel whose hash does not match the registry, before reading it | P3-0b (supervisor message, 2026-10-06) | P3-0b |
+| new `tests/test_p3_1_sesoi.py` (row recorded at P3-2a; see Deviations) | — | 5 tests, synthetic only: the FWL residual equals the residual of `usdjpy_ret` on `build_design`'s other columns; tick tables, band edges and price factors; the conformity check; the cost arithmetic (primary, low, high); refusals (unregistered panel, cost file with a missing key) | P3-1 (supervisor message, 2026-10-06) | P3-1 |
+| new `tests/test_p3_calib.py` | — | 8 tests, synthetic only (test 5 reads B7b's committed aggregates): `tost_declares` vs `inference.tost`; `fit_t` vs `fit_dk`; `resample_dates`; order statistics and their intervals; `wilson` and `mde80` reproduce B7b; `winsorise_fx`; `window_positions`; static imports and no `open(` in `calib.py` | P3-2a (supervisor message, 2026-10-06) | P3-2a |
 
 ## Flags
 
@@ -217,6 +275,15 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
     - BLIND_FIT_LOG's SHA-256, RUN_REGISTRY.jsonl's size and the usual synthetic run registry's size were unchanged across the run. Both folders were deleted afterwards.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-2a (supervisor messages of 2026-10-06: the item, and its continuation after the G2 STOP)**, by category:
+  - Records only, in PASS3_STATUS.md.
+  - Synthetic code and tests: `ofilt/drift/calib.py`, `tests/test_p3_calib.py` and `tools/p3_2a_warp_check.py`. Test 5 reads B7b's committed aggregates in `reports/B7b_size_preview.json`.
+  - Both warp-speed checks (run 1, run 2 and the two small-R chunking checks) were synthetic only, with `OFILT_DATA_DIR` pointed at an empty folder and `TMPDIR` at an empty folder of their own.
+    - No data file was read, and no `DevCalibrator` or `_sealed_blind_fit` was used.
+    - BLIND_FIT_LOG's SHA-256, RUN_REGISTRY.jsonl's size and the usual synthetic run registry's size were unchanged across each check.
+    - Both folders stayed empty and were deleted afterwards.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -232,3 +299,11 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-1b c: two probe details the item did not fix.
   - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
   - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
