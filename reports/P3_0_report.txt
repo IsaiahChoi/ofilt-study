@@ -1,0 +1,896 @@
+2026-10-06T18:27:07Z
+c9cea24fba787efc6411131d4314aa7e2e29a331
+=== P3-0 report ===
+--- a. Date gate ---
+$ date +%F
+2026-10-06
+--- b1. Platform and interpreter ---
+$ uname -m
+arm64
+$ sw_vers -productVersion
+26.6.2
+VIRTUAL_ENV=/Users/isaiahchoi/venvs/ofilt_p2
+expected VENV=/Users/isaiahchoi/venvs/ofilt_p2
+command -v python: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+python == $VIRTUAL_ENV/bin/python and VIRTUAL_ENV == VENV: True
+python 3.12.4
+numpy 2.4.4
+pandas 3.0.2
+scipy 1.17.1
+scikit-learn 1.8.0
+PyYAML 6.0.3
+openpyxl 3.1.5
+numpy blas: name=accelerate
+numpy lapack: name=accelerate
+--- b2. Package wiring ---
+$ (from REPO) python -c 'import ofilt, ofilt.drift.io as io; print(ofilt.__file__, io._external_check_access)'
+/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/__init__.py None
+ofilt.__file__ under REPO: True
+io._external_check_access is None: True
+blind._external_check_access is None: True
+--- b3. Repository state ---
+$ git rev-parse HEAD
+c9cea24fba787efc6411131d4314aa7e2e29a331
+$ git rev-parse --abbrev-ref HEAD
+main
+$ git log -1 --format=%s
+checkpoint: P2-7 (Pass 2 complete)
+$ git status --porcelain (between markers)
+<<<
+>>>
+$ git tag -l
+pass1-final
+$ git rev-parse pass1-final
+81905c1b576d24bdac2c96e2ab76429e0a1d24d1
+$ git cat-file -t pass1-final
+commit
+$ git remote -v
+origin	https://github.com/IsaiahChoi/ofilt-study.git (fetch)
+origin	https://github.com/IsaiahChoi/ofilt-study.git (push)
+--- b4. Environment variables ---
+$ printenv OFILT_RUN_SEALED (between markers; exit code)
+<<<
+>>> exit=1
+$ printenv OFILT_SLOW (between markers; exit code)
+<<<
+>>> exit=1
+--- c. Hashes ---
+$ python /tmp/p3_0_hashes.py
+listed values parsed from the saved prompt (step c table): 1 rows
+
+`spec/analysis_spec_dev_v1.yaml`
+  computed (shasum -a 256): 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9
+  registry reports/C7_mc.json key.spec_sha256: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+  registry reports/C7_h1_same_dgp.json key.spec_sha256: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+  listed in prompt: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+
+DATA `panel_dev.csv`
+  computed (shasum -a 256): 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
+  registry spec data.dev_panel_sha256 (AM-04): 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68  equal_to_computed=True
+  registry PASS2_INPUTS.json pass2_outputs/panel_dev.csv/sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68  equal_to_computed=True
+  listed in prompt: None  equal_to_computed=False
+
+DATA `events_firm.csv`
+  computed (shasum -a 256): 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
+  registry PASS2_INPUTS.json event_files/events_firm.csv/sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c  equal_to_computed=True
+  registry spec data.events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c  equal_to_computed=True
+  listed in prompt: None  equal_to_computed=False
+
+DATA `events_boj.csv`
+  computed (shasum -a 256): 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99
+  registry PASS2_INPUTS.json event_files/events_boj.csv/sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99  equal_to_computed=True
+  registry spec data.events_boj_sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99  equal_to_computed=True
+  listed in prompt: None  equal_to_computed=False
+
+DATA `archive/panel_dev_736636031ca1.csv`
+  computed (shasum -a 256): 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42
+  registry PASS2_INPUTS.json baseline_outputs/panel_dev.csv/sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42  equal_to_computed=True
+  listed in prompt: None  equal_to_computed=False
+
+ALL THREE-WAY HASH CHECKS AGREE: False
+exit=1
+(note) The first run above printed 'listed in prompt: None' for the four DATA rows: the check script's table parser kept only rows starting with '| `' and so dropped rows starting with '| DATA'. Every computed-vs-registry comparison was True. Parser fixed to keep every table body row; rerun:
+$ python /tmp/p3_0_hashes.py (rerun, parser fixed)
+listed values parsed from the saved prompt (step c table): 5 rows
+
+`spec/analysis_spec_dev_v1.yaml`
+  computed (shasum -a 256): 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9
+  registry reports/C7_mc.json key.spec_sha256: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+  registry reports/C7_h1_same_dgp.json key.spec_sha256: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+  listed in prompt: 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9  equal_to_computed=True
+
+DATA `panel_dev.csv`
+  computed (shasum -a 256): 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
+  registry spec data.dev_panel_sha256 (AM-04): 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68  equal_to_computed=True
+  registry PASS2_INPUTS.json pass2_outputs/panel_dev.csv/sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68  equal_to_computed=True
+  listed in prompt: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68  equal_to_computed=True
+
+DATA `events_firm.csv`
+  computed (shasum -a 256): 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
+  registry PASS2_INPUTS.json event_files/events_firm.csv/sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c  equal_to_computed=True
+  registry spec data.events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c  equal_to_computed=True
+  listed in prompt: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c  equal_to_computed=True
+
+DATA `events_boj.csv`
+  computed (shasum -a 256): 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99
+  registry PASS2_INPUTS.json event_files/events_boj.csv/sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99  equal_to_computed=True
+  registry spec data.events_boj_sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99  equal_to_computed=True
+  listed in prompt: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99  equal_to_computed=True
+
+DATA `archive/panel_dev_736636031ca1.csv`
+  computed (shasum -a 256): 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42
+  registry PASS2_INPUTS.json baseline_outputs/panel_dev.csv/sha256: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42  equal_to_computed=True
+  listed in prompt: 736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42  equal_to_computed=True
+
+ALL THREE-WAY HASH CHECKS AGREE: True
+exit=0
+$ ls -la DATA
+total 8264
+drwxr-xr-x@  6 isaiahchoi  staff      192 Oct  5 22:12 .
+drwxr-xr-x  33 isaiahchoi  staff     1056 Oct  5 16:04 ..
+drwxr-xr-x   3 isaiahchoi  staff       96 Oct  5 22:12 archive
+-rw-r--r--@  1 isaiahchoi  staff     1096 Oct  5 15:22 events_boj.csv
+-rw-r--r--@  1 isaiahchoi  staff    11033 Oct  5 15:22 events_firm.csv
+-rw-r--r--   1 isaiahchoi  staff  4212164 Oct  5 22:12 panel_dev.csv
+$ ls -la DATA/archive
+total 5344
+drwxr-xr-x  3 isaiahchoi  staff       96 Oct  5 22:12 .
+drwxr-xr-x@ 6 isaiahchoi  staff      192 Oct  5 22:12 ..
+-rw-r--r--@ 1 isaiahchoi  staff  2734901 Oct  5 15:22 panel_dev_736636031ca1.csv
+names containing SEALED or confirm (case-insensitive), recursive name listing of DATA:
+  (end)
+regular files under DATA, excluding .DS_Store:
+  archive/panel_dev_736636031ca1.csv
+  events_boj.csv
+  events_firm.csv
+  panel_dev.csv
+  count: 4
+$ shasum -a 256 KIT3/PASS3_BUILDER_PROMPT_2026-10-06.md
+018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36  /Users/isaiahchoi/Desktop/FX_Project/files/pass3/PASS3_BUILDER_PROMPT_2026-10-06.md
+--- d. Counters ---
+$ python /tmp/p3_0_counters.py
+BLIND_FIT_LOG physical lines: 6; non-empty JSONL records: 6
+line | utc | provenance | panel_sha256[:12] | spec_sha256[:12] | n_rows_input | caller
+1 | 2026-10-01T17:40:23.770216+00:00 | dev_real | 736636031ca1 | e4f060ed9036 | 5124 | File "/usr/lib/python3.12/unittest/suite.py", line 166, in _handleClassSetUp |     setUpClass() |   File "/home/claude/ofilt_pass1/tests/test_sim_b5.py", line 215, in setUpClass |     cls.cal = S.DevCalibrator(dev, cls.spec) |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 193, in __init__ |     fit = _sealed_blind_fit(df, spec)
+2 | 2026-10-01T17:42:25.927878+00:00 | dev_real | 736636031ca1 | e4f060ed9036 | 5124 | File "/usr/lib/python3.12/unittest/suite.py", line 166, in _handleClassSetUp |     setUpClass() |   File "/home/claude/ofilt_pass1/tests/test_sim_b5.py", line 215, in setUpClass |     cls.cal = S.DevCalibrator(dev, cls.spec) |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 193, in __init__ |     fit = _sealed_blind_fit(df, spec)
+3 | 2026-10-01T17:47:20.112221+00:00 | dev_real | 736636031ca1 | e4f060ed9036 | 5124 | File "/usr/lib/python3.12/unittest/suite.py", line 166, in _handleClassSetUp |     setUpClass() |   File "/home/claude/ofilt_pass1/tests/test_sim_b5.py", line 238, in setUpClass |     cls.cal = S.DevCalibrator(dev, cls.spec) |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 197, in __init__ |     fit = _sealed_blind_fit(df, spec)
+4 | 2026-10-01T17:58:07.423955+00:00 | dev_real | 736636031ca1 | e4f060ed9036 | 5124 | File "/home/claude/ofilt_pass1/tools/report_B7.py", line 131, in <module> |     sys.exit(main()) |   File "/home/claude/ofilt_pass1/tools/report_B7.py", line 67, in main |     cal = S.DevCalibrator(base, spec)                       # the ONE sealed fit |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 200, in __init__ |     fit = _sealed_blind_fit(df, spec)
+5 | 2026-10-01T18:02:33.517001+00:00 | dev_real | 736636031ca1 | e4f060ed9036 | 5124 | File "/home/claude/ofilt_pass1/tools/report_B7.py", line 131, in <module> |     sys.exit(main()) |   File "/home/claude/ofilt_pass1/tools/report_B7.py", line 67, in main |     cal = S.DevCalibrator(base, spec)                       # the ONE sealed fit |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 200, in __init__ |     fit = _sealed_blind_fit(df, spec)
+6 | 2026-10-01T19:29:33.652504+00:00 | dev_real | 736636031ca1 | 9775a05ccf03 | 5124 | File "/home/claude/ofilt_pass1/tools/report_B7b.py", line 190, in <module> |     sys.exit(main()) |   File "/home/claude/ofilt_pass1/tools/report_B7b.py", line 98, in main |     cal = S.DevCalibrator(base, spec)                       # the ONE sealed fit |   File "/home/claude/ofilt_pass1/ofilt/drift/sim.py", line 200, in __init__ |     fit = _sealed_blind_fit(df, spec)
+distinct key sets: [['caller', 'n_rows_input', 'panel_sha256', 'provenance', 'spec_sha256', 'utc']]
+exactly 6 records: True
+all provenance dev_real: True
+all panel_sha256 == Pass 1 dev panel (registry baseline_outputs): True
+lines 1-3 caller contains test_sim_b5: True
+lines 4-5 caller contains report_B7.py: True
+line 6 caller contains report_B7b.py: True
+BLIND_FIT_LOG sha256 (baseline for every later 'unchanged' check): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0 | is 0: True
+STEP d ALL OK: True
+exit=0
+--- e1. Suite ---
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest discover -s tests -v  (full log /tmp/p3_0_suite.log)
+Ran 247 tests in 325.651s
+OK (skipped=5)
+exit=0 elapsed_s=328
+skipped tests:
+  test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+  test_draw_passes_guard_and_contract (test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_logged_and_silent (test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_first_reps_bit_identical (test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+  test_last_reps_bit_identical (test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+--- e2. B6 restoration ---
+$ git status --porcelain (after suite)
+<<<
+ M reports/B6_coverage.json
+>>>
+$ git checkout -- reports/B6_coverage.json
+exit=0
+$ git status --porcelain (after restore)
+<<<
+>>>
+--- e3. Slow tier ---
+$ env -u OFILT_RUN_SEALED OFILT_SLOW=1 OFILT_DATA_DIR=DATA python -m unittest tests.test_validation_c7 -v  (full log /tmp/p3_0_slow.log)
+  test_bands_consistency_and_staleness (tests.test_validation_c7.TestC7Report.test_bands_consistency_and_staleness) ... ok
+  test_linear_ladder_one_call (tests.test_validation_c7.TestForecastLookAhead.test_linear_ladder_one_call) ... ok
+  test_m7_with_m1 (tests.test_validation_c7.TestForecastLookAhead.test_m7_with_m1) ... ok
+  test_chunk_invariance_resume_and_stale_partial (tests.test_validation_c7.TestRunner.test_chunk_invariance_resume_and_stale_partial) ... ok
+  test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... ok
+  test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... ok
+Ran 6 tests in 32.037s
+OK
+exit=0 elapsed_s=35
+--- e4. After both runs ---
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+(baseline as printed by step d's script, compared by string)
+BLIND_FIT_LOG unchanged: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git status --porcelain
+<<<
+>>>
+--- f. Structure of the Pass 1 sealed-run reports (structure only; no values) ---
+$ git ls-files reports/
+reports/A_hedge_efficiency.md
+reports/A_hedge_efficiency_1306.md
+reports/A_hedge_efficiency_1306_supplement.md
+reports/B6_coverage.json
+reports/B7b_size_preview.json
+reports/B7b_size_preview.md
+reports/B_sim_pilot.json
+reports/B_sim_pilot.md
+reports/C7_h1_same_dgp.json
+reports/C7_mc.json
+reports/P2_1_inputs.md
+reports/P2_3b_d8_gate.md
+reports/P2_4_acceptance.md
+reports/P2_5_dev_checks.md
+reports/P2_5_resolutions.md
+$ python /tmp/p3_0_structure.py
+git ls-files reports/ entries matching the two scripts' output stems: ['reports/B7b_size_preview.json', 'reports/B7b_size_preview.md', 'reports/B_sim_pilot.json', 'reports/B_sim_pilot.md']
+
+=== reports/B7b_size_preview.json (3836 bytes) ===
+/: dict (12 keys)
+/label: str
+/source: str
+/T: int
+/T_source: int
+/lag: int
+/seed_base: int
+/cells: list len=4 element types=['dict']
+/cells[0]: dict (6 keys)
+/cells[0]/kind: str
+/cells[0]/b_sim: float
+/cells[0]/reps: int
+/cells[0]/seed0: int
+/cells[0]/reject_H1: dict (5 keys)
+/cells[0]/reject_H1/rate: float
+/cells[0]/reject_H1/k: int
+/cells[0]/reject_H1/n: int
+/cells[0]/reject_H1/mc_se: float
+/cells[0]/reject_H1/wilson95: list len=2 element types=['float']
+/cells[0]/reject_H3: dict (5 keys)
+/cells[0]/reject_H3/rate: float
+/cells[0]/reject_H3/k: int
+/cells[0]/reject_H3/n: int
+/cells[0]/reject_H3/mc_se: float
+/cells[0]/reject_H3/wilson95: list len=2 element types=['float']
+/cells[1]: dict (6 keys)
+/cells[1]/kind: str
+/cells[1]/b_sim: float
+/cells[1]/reps: int
+/cells[1]/seed0: int
+/cells[1]/reject_H1: dict (5 keys)
+/cells[1]/reject_H1/rate: float
+/cells[1]/reject_H1/k: int
+/cells[1]/reject_H1/n: int
+/cells[1]/reject_H1/mc_se: float
+/cells[1]/reject_H1/wilson95: list len=2 element types=['float']
+/cells[1]/reject_H3: dict (5 keys)
+/cells[1]/reject_H3/rate: float
+/cells[1]/reject_H3/k: int
+/cells[1]/reject_H3/n: int
+/cells[1]/reject_H3/mc_se: float
+/cells[1]/reject_H3/wilson95: list len=2 element types=['float']
+/cells[2]: dict (6 keys)
+/cells[2]/kind: str
+/cells[2]/b_sim: float
+/cells[2]/reps: int
+/cells[2]/seed0: int
+/cells[2]/reject_H1: dict (5 keys)
+/cells[2]/reject_H1/rate: float
+/cells[2]/reject_H1/k: int
+/cells[2]/reject_H1/n: int
+/cells[2]/reject_H1/mc_se: float
+/cells[2]/reject_H1/wilson95: list len=2 element types=['float']
+/cells[2]/reject_H3: dict (5 keys)
+/cells[2]/reject_H3/rate: float
+/cells[2]/reject_H3/k: int
+/cells[2]/reject_H3/n: int
+/cells[2]/reject_H3/mc_se: float
+/cells[2]/reject_H3/wilson95: list len=2 element types=['float']
+/cells[3]: dict (6 keys)
+/cells[3]/kind: str
+/cells[3]/b_sim: float
+/cells[3]/reps: int
+/cells[3]/seed0: int
+/cells[3]/reject_H1: dict (5 keys)
+/cells[3]/reject_H1/rate: float
+/cells[3]/reject_H1/k: int
+/cells[3]/reject_H1/n: int
+/cells[3]/reject_H1/mc_se: float
+/cells[3]/reject_H1/wilson95: list len=2 element types=['float']
+/cells[3]/reject_H3: dict (5 keys)
+/cells[3]/reject_H3/rate: float
+/cells[3]/reject_H3/k: int
+/cells[3]/reject_H3/n: int
+/cells[3]/reject_H3/mc_se: float
+/cells[3]/reject_H3/wilson95: list len=2 element types=['float']
+/elapsed_s: float
+/size_calibration: dict (2 keys)
+/size_calibration/H1: dict (7 keys)
+/size_calibration/H1/n: int
+/size_calibration/H1/coverage: dict (5 keys)
+/size_calibration/H1/coverage/rate: float
+/size_calibration/H1/coverage/k: int
+/size_calibration/H1/coverage/n: int
+/size_calibration/H1/coverage/mc_se: float
+/size_calibration/H1/coverage/wilson95: list len=2 element types=['float']
+/size_calibration/H1/sd: float
+/size_calibration/H1/mean_se: float
+/size_calibration/H1/se_over_sd: float
+/size_calibration/H1/bias: float
+/size_calibration/H1/bias_mc_se: float
+/size_calibration/H3: dict (7 keys)
+/size_calibration/H3/n: int
+/size_calibration/H3/coverage: dict (5 keys)
+/size_calibration/H3/coverage/rate: float
+/size_calibration/H3/coverage/k: int
+/size_calibration/H3/coverage/n: int
+/size_calibration/H3/coverage/mc_se: float
+/size_calibration/H3/coverage/wilson95: list len=2 element types=['float']
+/size_calibration/H3/sd: float
+/size_calibration/H3/mean_se: float
+/size_calibration/H3/se_over_sd: float
+/size_calibration/H3/bias: float
+/size_calibration/H3/bias_mc_se: float
+/pooled_calibration: dict (2 keys)
+/pooled_calibration/H1: dict (7 keys)
+/pooled_calibration/H1/n: int
+/pooled_calibration/H1/coverage: dict (5 keys)
+/pooled_calibration/H1/coverage/rate: float
+/pooled_calibration/H1/coverage/k: int
+/pooled_calibration/H1/coverage/n: int
+/pooled_calibration/H1/coverage/mc_se: float
+/pooled_calibration/H1/coverage/wilson95: list len=2 element types=['float']
+/pooled_calibration/H1/sd: float
+/pooled_calibration/H1/mean_se: float
+/pooled_calibration/H1/se_over_sd: float
+/pooled_calibration/H1/bias: float
+/pooled_calibration/H1/bias_mc_se: float
+/pooled_calibration/H3: dict (7 keys)
+/pooled_calibration/H3/n: int
+/pooled_calibration/H3/coverage: dict (5 keys)
+/pooled_calibration/H3/coverage/rate: float
+/pooled_calibration/H3/coverage/k: int
+/pooled_calibration/H3/coverage/n: int
+/pooled_calibration/H3/coverage/mc_se: float
+/pooled_calibration/H3/coverage/wilson95: list len=2 element types=['float']
+/pooled_calibration/H3/sd: float
+/pooled_calibration/H3/mean_se: float
+/pooled_calibration/H3/se_over_sd: float
+/pooled_calibration/H3/bias: float
+/pooled_calibration/H3/bias_mc_se: float
+/mde80: dict (3 keys)
+/mde80/probit_interpolated: float
+/mde80/normal_approx_sd: float
+/mde80/normal_approx_mean_se: float
+/flags: list len=0 element types=[]
+
+=== reports/B7b_size_preview.md (2410 bytes) ===
+markdown: 40 lines; 12 table lines; numeric tokens total 110; max numeric tokens on one line 9
+
+=== reports/B_sim_pilot.json (2992 bytes) ===
+/: dict (6 keys)
+/source: str
+/T_source: int
+/rows: list len=8 element types=['dict']
+/rows[0]: dict (13 keys)
+/rows[0]/T: int
+/rows[0]/b_sim: float
+/rows[0]/reps: int
+/rows[0]/lag: int
+/rows[0]/seed0: int
+/rows[0]/reject: float
+/rows[0]/reject_mcse: float
+/rows[0]/coverage: float
+/rows[0]/coverage_mcse: float
+/rows[0]/mean_b: float
+/rows[0]/sd_b: float
+/rows[0]/mean_se: float
+/rows[0]/se_over_sd: float
+/rows[1]: dict (13 keys)
+/rows[1]/T: int
+/rows[1]/b_sim: float
+/rows[1]/reps: int
+/rows[1]/lag: int
+/rows[1]/seed0: int
+/rows[1]/reject: float
+/rows[1]/reject_mcse: float
+/rows[1]/coverage: float
+/rows[1]/coverage_mcse: float
+/rows[1]/mean_b: float
+/rows[1]/sd_b: float
+/rows[1]/mean_se: float
+/rows[1]/se_over_sd: float
+/rows[2]: dict (13 keys)
+/rows[2]/T: int
+/rows[2]/b_sim: float
+/rows[2]/reps: int
+/rows[2]/lag: int
+/rows[2]/seed0: int
+/rows[2]/reject: float
+/rows[2]/reject_mcse: float
+/rows[2]/coverage: float
+/rows[2]/coverage_mcse: float
+/rows[2]/mean_b: float
+/rows[2]/sd_b: float
+/rows[2]/mean_se: float
+/rows[2]/se_over_sd: float
+/rows[3]: dict (13 keys)
+/rows[3]/T: int
+/rows[3]/b_sim: float
+/rows[3]/reps: int
+/rows[3]/lag: int
+/rows[3]/seed0: int
+/rows[3]/reject: float
+/rows[3]/reject_mcse: float
+/rows[3]/coverage: float
+/rows[3]/coverage_mcse: float
+/rows[3]/mean_b: float
+/rows[3]/sd_b: float
+/rows[3]/mean_se: float
+/rows[3]/se_over_sd: float
+/rows[4]: dict (13 keys)
+/rows[4]/T: int
+/rows[4]/b_sim: float
+/rows[4]/reps: int
+/rows[4]/lag: int
+/rows[4]/seed0: int
+/rows[4]/reject: float
+/rows[4]/reject_mcse: float
+/rows[4]/coverage: float
+/rows[4]/coverage_mcse: float
+/rows[4]/mean_b: float
+/rows[4]/sd_b: float
+/rows[4]/mean_se: float
+/rows[4]/se_over_sd: float
+/rows[5]: dict (13 keys)
+/rows[5]/T: int
+/rows[5]/b_sim: float
+/rows[5]/reps: int
+/rows[5]/lag: int
+/rows[5]/seed0: int
+/rows[5]/reject: float
+/rows[5]/reject_mcse: float
+/rows[5]/coverage: float
+/rows[5]/coverage_mcse: float
+/rows[5]/mean_b: float
+/rows[5]/sd_b: float
+/rows[5]/mean_se: float
+/rows[5]/se_over_sd: float
+/rows[6]: dict (13 keys)
+/rows[6]/T: int
+/rows[6]/b_sim: float
+/rows[6]/reps: int
+/rows[6]/lag: int
+/rows[6]/seed0: int
+/rows[6]/reject: float
+/rows[6]/reject_mcse: float
+/rows[6]/coverage: float
+/rows[6]/coverage_mcse: float
+/rows[6]/mean_b: float
+/rows[6]/sd_b: float
+/rows[6]/mean_se: float
+/rows[6]/se_over_sd: float
+/rows[7]: dict (13 keys)
+/rows[7]/T: int
+/rows[7]/b_sim: float
+/rows[7]/reps: int
+/rows[7]/lag: int
+/rows[7]/seed0: int
+/rows[7]/reject: float
+/rows[7]/reject_mcse: float
+/rows[7]/coverage: float
+/rows[7]/coverage_mcse: float
+/rows[7]/mean_b: float
+/rows[7]/sd_b: float
+/rows[7]/mean_se: float
+/rows[7]/se_over_sd: float
+/flags: list len=0 element types=[]
+/t_fit: float
+/t_cells: float
+
+=== reports/B_sim_pilot.md (2520 bytes) ===
+markdown: 39 lines; 10 table lines; numeric tokens total 133; max numeric tokens on one line 11
+
+numeric/boolean lists of length >= 500 (per-replication candidates): none
+exit=0
+f. Answers (from the structure output above and the scripts' code; no values read):
+  1. Per-replication arrays: none. No numeric or boolean list of length >= 500 in either JSON; the only lists are
+     the 2-element Wilson intervals, B7b's cells (4 dicts), B_sim_pilot's rows (8 dicts) and two empty flags lists.
+     The .md files hold 110 and 133 numeric tokens in total, at most 9 and 11 on one line (table rows), so they
+     cannot hold per-replication lists either. Both scripts keep per-replication values only in memory
+     (report_B7.py:36-42 est/ses lists; report_B7b.py:52-60 arrays) and write per-cell aggregates.
+     Note for the disclosure: the aggregates include per-cell means of the simulated estimates (B7 mean_b; B7b bias),
+     each one linear functional of the residual vector given the seeds; tens of such numbers, not per-replication values.
+  2. Other files: none. Each script writes only <stem>.md and <stem>.json (real: reports/B_sim_pilot.*,
+     reports/B7b_size_preview.*, all four tracked; synthetic: /tmp/*_DRYRUN.*, untracked). B7b's 'per-cell' save
+     rewrites the same reports/B7b_size_preview.json after each cell (report_B7b.py:111), not a separate file.
+     The sealed fit appends one line to BLIND_FIT_LOG (tracked).
+
+--- g. Code survey (read-only; file:line refs at HEAD c9cea24) ---
+
+Q1. The sealed fit's target.
+- Real path: tools/report_B7.py:62 and report_B7b.py:93 build base = TG.add_targets(IO.load_dev(), spec), then
+  DevCalibrator(base, spec) -> _sealed_blind_fit -> _design_core(target="abn_oc", exclude=None):
+    [ofilt/drift/sim.py:164-165]
+    |     d = _inf._design_core(df, spec, target="abn_oc", secondary=None, exclude=None,
+    |                           rv_threshold=None, provenance=prov)
+- Target: abn_oc = y_oc - beta * hedge, hedge = spec.hedge_oc_column = y_1306_oc (spec line 14, AM-03). beta =
+  targets.past_beta: method expanding, min_periods 250, lag_days 1, eligible = ~excl_inference (estimate_on
+  non_excluded_rows) and finite y_oc and hedge. Spec fields read: target.hedge_oc_column, target.beta.{method,
+  min_periods, lag_days, estimate_on}, sample.inference_exclude_rows_if. 'window' is an argument only (default None).
+    [ofilt/drift/targets.py:113-113]
+    |     hedge = spec.hedge_oc_column
+    [ofilt/drift/targets.py:119-120]
+    |     b = past_beta(df, y="y_oc", hedge=hedge, method=method, window=window, min_periods=mp,
+    |                   lag_days=bs.lag_days, eligible=elig)
+    [ofilt/drift/targets.py:125-125]
+    |     out["abn_oc"] = out["y_oc"] - b * out[hedge]
+- Estimation sample (_design_core): rows with earn_flag or news_flag dropped; then require_nonmissing [usdjpy_ret,
+  eurusd_ret, spy_oc, copx_oc, beta] + abn_oc + feature sources; so rows before beta exists (250 eligible rows, lag 1)
+  drop. Non-finite values raise DesignError (inference.py:130-131).
+    [ofilt/drift/inference.py:92-98]
+    |     excl_cols = list(spec.inference_exclusion_flags) if exclude is None else list(exclude)
+    |     need = list(dict.fromkeys(list(spec.require_nonmissing) + [target]
+    |                               + sorted(schema.feature_sources(fx + ctl + extra))))
+    |     missing = [c for c in excl_cols + need + ["date", "ticker"] if c not in df.columns]
+    |     if missing:
+    |         raise DesignError(f"panel lacks column(s) {missing}")
+    |     keep = ~df[excl_cols].astype(bool).any(axis=1) & df[need].notna().all(axis=1)
+- add_targets records attrs['targets'] = {method, window, estimate_on, hedge, lag_days, min_periods} (targets.py:130-131).
+- y_topix_oc on the real path: not as the target. It appears at io.py:105 (fingerprint registration at load),
+  targets.py:48 (HEDGE_GAP_FOR, fallback pair) and targets.py:62 (past_beta default, overridden by add_targets:119).
+  sim.py:102 names it only in synthetic_panel (synthetic, not the real path).
+
+Q2. DevCalibrator.
+- Constructor: DevCalibrator(df, spec=None, mean_block=5.0) (sim.py:198). It runs _sealed_blind_fit once (sim.py:200),
+  checks the key set, stores _pred, _fc, _resid (date-ordered), _bounds, T (source dates), mean_block, _cal (sim.py:203-212).
+- draw signature, SIM_COLUMNS (8 predictors: usdjpy_ret, eurusd_ret, spy_oc, copx_oc, window_hours, usdjpy_rv,
+  usdjpy_bv, usdjpy_bars), attrs, and the guard call:
+    [ofilt/drift/sim.py:137-139]
+    | PRED_COLUMNS = ("usdjpy_ret", "eurusd_ret", "spy_oc", "copx_oc",
+    |                 "window_hours", "usdjpy_rv", "usdjpy_bv", "usdjpy_bars")
+    | SIM_COLUMNS = ("date", "ticker") + PRED_COLUMNS + ("earn_flag", "news_flag", "beta", "y_sim")
+    [ofilt/drift/sim.py:217-218]
+    |     def draw(self, b_sim: float, a2_sim: float = 0.0, seed: int | None = None,
+    |              positions: np.ndarray | None = None, n_dates: int | None = None) -> pd.DataFrame:
+    [ofilt/drift/sim.py:235-238]
+    |         out.attrs = {"provenance": blind.SYNTHETIC,
+    |                      "truth": dict(b=float(b_sim), a2=float(a2_sim), seed=seed, mean_block=self.mean_block,
+    |                                    n_dates=n, source="dev_calibrated")}
+    |         blind.require_unblinded(out)   # condition (d): the fingerprint guard must pass
+- require_unblinded: not in the constructor (_sealed_blind_fit checks provenance itself: dev_real needs
+  OFILT_RUN_SEALED=1, no tag; it logs at entry, sim.py:157-163). Each draw calls blind.require_unblinded(out) exactly
+  once (sim.py:238). Synthetic provenance needs no tag (blind.py:60), so that call is the fingerprint check (Q3).
+  In B7/B7b each rep adds 3 more guard calls: build_design (inference.py:75), pooled_ols (:151), driscoll_kraay (:181).
+
+Q3. Fingerprint registry.
+- Module globals blind._REGISTRY, _ALL_KEYS, _ROW_KEYS (blind.py:79-81), filled by register_real_values (blind.py:125-139):
+  9-significant-digit mantissa keys (value set) and (date, ticker, mantissa) row codes.
+- Registered now: at load_dev/load_confirm, y_oc, y_topix_oc, y_1306_oc (P52); at add_targets on real provenance,
+  abn_oc, gap_abn, cc_abn, cc_raw (targets.py:133-136). Labels '<provenance>:<column>'. raw_oc is not registered (= y_oc).
+    [ofilt/drift/io.py:105-107]
+    |         for c in ("y_oc", "y_topix_oc", "y_1306_oc"):   # P52: y_1306_oc registered (label dev_real:y_1306_oc)
+    |             reg(df[c].to_numpy(dtype=float), label=f"{df.attrs.get('provenance')}:{c}",
+    |                 dates=df["date"], tickers=df["ticker"])
+- Per-call cost (check_no_real_values, blind.py:166-181): for every numeric column outside KEYS and FX_NAMES (on a
+  draw: spy_oc, copx_oc, window_hours, earn_flag, news_flag, beta, y_sim) row codes are rebuilt from the frame's dates
+  and tickers and tested with np.isin against _ROW_KEYS; columns outside VALUE_EXEMPT (earn_flag, news_flag, beta,
+  y_sim) are also tested against _ALL_KEYS. Cost grows with checked columns x (frame rows + registry size). With an
+  empty registry the np.isin steps return early, after the keys and row codes are built:
+    [ofilt/drift/blind.py:156-159]
+    |     rc = _row_codes(values, dates, tickers)
+    |     if rc is None or rc.size == 0 or _ROW_KEYS.size == 0:
+    |         return 0.0, 0 if rc is None else int(rc.size)
+    |     return float(np.isin(rc, _ROW_KEYS).mean()), int(rc.size)
+- report_B7.py --synthetic (and B7b, report_B7b.py:88-91): temp log, synthetic_panel stand-in; no load_dev or
+  add_targets runs in that process, so the registry is EMPTY (PASS1_STATUS B7b entry says the same).
+    [tools/report_B7.py:58-59]
+    |         S.BLIND_FIT_LOG_PATH = Path(tempfile.mkdtemp()) / "BLIND_FIT_LOG"
+    |         base = S.synthetic_panel(1708, b=0.4, a2=-0.2, seed=spec.seed + 7, p_excl=0.03)
+
+Q4. tools/report_B7.py and tools/report_B7b.py.
+- Synthetic mode: BLIND_FIT_LOG_PATH -> tempfile.mkdtemp()/BLIND_FIT_LOG; stand-in synthetic_panel(1708, b=0.4, a2=-0.2,
+  seed=spec.seed+7, p_excl=0.03); outputs /tmp/B_sim_pilot_DRYRUN.{md,json}, /tmp/B7b_size_preview_DRYRUN.{json,md}.
+  Real mode reads DATA via io.DATA_DIR = $OFILT_DATA_DIR (default /mnt/project; io.py:36).
+- Log growth: B7 compares line counts before the calibrator and after ALL cells (== 1 at the end only). B7b compares
+  immediately after construction, before any simulation. Neither checks absolute counts, nor the new line's panel
+  hash or caller, nor (B7b) the count at the end.
+    [tools/report_B7.py:75-77]
+    |     n_fits = len(log.read_text().splitlines()) - n_log0
+    |     if n_fits != 1:
+    |         raise SystemExit(f"expected exactly one sealed fit, log grew by {n_fits}")
+    [tools/report_B7b.py:96-100]
+    |     n0 = len(log.read_text().splitlines()) if log.exists() else 0
+    |     t0 = time.time()
+    |     cal = S.DevCalibrator(base, spec)                       # the ONE sealed fit
+    |     if len(log.read_text().splitlines()) - n0 != 1:
+    |         raise SystemExit("expected exactly one sealed fit")
+- Seeds. B7 (500 reps): spec.seed + 100_000*(1+ci) + 10_000*bi + r, ci in {0,1}, bi in {0..3} -> seed+100,000 .. +230,499.
+  B7b: spec.seed + 1_000_000 + 100_000*ci + r (5,000 reps in cell 0, 1,000 in cells 1-3) -> +1,000,000..+1,004,999,
+  +1,100,000..+1,100,999, +1,200,000..+1,200,999, +1,300,000..+1,300,999. (C7, synthetic: seed + 3,000,000 + 100,000c + r.)
+    [tools/report_B7.py:72-72]
+    |             rows.append(run_cell(cal, spec, a.reps, T_out, b, spec.seed + 100_000 * (1 + ci) + 10_000 * bi))
+    [tools/report_B7b.py:105-105]
+    |         seed0 = seed_base + 100_000 * ci
+- Writes. B7: <out>.md and <out>.json once, at the end (report_B7.py:122-125); prints one aggregate line per cell (:73)
+  and the markdown. B7b: <out>.json rewritten after every cell (:111) and at the end (:137); <out>.md at the end (:184);
+  prints one line per cell (:112) and the markdown. No other file, apart from the sealed fit's BLIND_FIT_LOG append.
+
+Q5. Primary inference.
+- Public H1 path: inference.build_design(df, spec, *, target='abn_oc', secondary, exclude, rv_threshold, provenance)
+  -> fit_dk(design, spec=None, lag=None) -> Result.param('usdjpy_ret') = {estimate, se, z, p, ci} (inference.py:71-77,
+  218-223, 203-215). Also fit_joint, decomposition, secondary_family_tests.
+- DK lag: Spec.dk_lag(int(d.T)) unless lag is given; d.T = unique dates of the estimation sample after exclusions
+  (inference.py:134-137); dk_lag = floor(4(T/100)^(2/9)) (spec.py:82-87).
+    [ofilt/drift/inference.py:182-182]
+    |     L = Spec.dk_lag(int(d.T)) if lag is None else lag
+- SIZE_RULE: spec.py:45 (validated against spec line 33 at spec.py:201). T_CONF = 1013: calendar.py:34.
+- Bootstrap for primary inference: none. Searched 'bootstrap' in ofilt/drift/*.py and models/*.py: only the simulator
+  (sim.stationary_bootstrap_positions, DevCalibrator).
+- Supplied critical value: none. Result.contrast fixes the normal quantile; spec.validate pins reference 'normal'
+  (spec.py:171-175).
+    [ofilt/drift/inference.py:208-212]
+    |         est, se = float(w @ self.coef), float(np.sqrt(w @ self.cov @ w))
+    |         z = est / se
+    |         q = stats.norm.ppf(1 - self.alpha / 2)
+    |         return dict(estimate=est, se=se, z=z, p=float(2 * stats.norm.sf(abs(z))),
+    |                     ci=(est - q * se, est + q * se))
+
+Q6. Equivalence.
+- tost(estimate, se, sesoi, alpha=0.05) (inference.py:333) takes the SESOI as an argument; normal reference; equivalent
+  iff max(p_lower, p_upper) < alpha. tost_result calls spec.sesoi() only when sesoi is None:
+    [ofilt/drift/inference.py:347-353]
+    | def tost_result(result: Result, param: str, spec: Spec | None = None, sesoi: float | None = None) -> dict:
+    |     """TOST on a fitted parameter. Without an explicit sesoi it uses spec.sesoi(),
+    |     which raises SpecPendingError while the spec says PENDING_COSTS."""
+    |     spec = spec or Spec.load()
+    |     sesoi = spec.sesoi() if sesoi is None else sesoi
+    |     p = result.param(param)
+    |     return tost(p["estimate"], p["se"], float(sesoi), float(spec.value("equivalence.alpha")))
+- The spec block, verbatim:
+    [spec/analysis_spec_dev_v1.yaml:49-49]
+    | equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
+- SpecPendingError is raised in Spec.sesoi; validate accepts PENDING_COSTS or a positive float (spec.py:208-209):
+    [ofilt/drift/spec.py:352-356]
+    |     def sesoi(self) -> float:
+    |         v = self.value("equivalence.sesoi")
+    |         if v == PENDING:
+    |             raise SpecPendingError("equivalence.sesoi is PENDING_COSTS; TOST viability is decided in Pass 4")
+    |         return float(v)
+- Other PENDING values: none. grep PENDING|TO_FILL|REQUIRES over the spec matches line 49 only.
+  Test pins: test_docs_d2.py:41-45 (sesoi PENDING_COSTS; 'Pass 4' in viability; sesoi() raises).
+
+Q7. Forecasting.
+- walk_forward(df, models, spec=None, *, target='abn_oc', provenance=None, seed=None, importance=None,
+  output_path=None) (forecast.py:203-205). target must be a column not in FORBIDDEN_TARGET_NAMES (:215-216); masks
+  REQUIRED_MASKS = (excl_inference, excl_forecast_eval) must be columns (:56, :217-219). Rows:
+    [ofilt/drift/forecast.py:231-233]
+    |     ok = np.isfinite(y_all) & df[need].notna().all(axis=1).to_numpy()
+    |     train_ok = ok & ~df["excl_inference"].astype(bool).to_numpy()
+    |     eval_ok = ok & ~df["excl_forecast_eval"].astype(bool).to_numpy()
+- Split (fold_starts, :101-114): first test date = first panel date after the 500th eligible training date; refit
+  every 21 PANEL dates; expanding; train on eligible rows dated before the fold start. No argument sets a later
+  evaluation start.
+- M2 = fe[t] + eurusd_ret + ticker-specific spy_oc, copx_oc; M3 = M2 + usdjpy_ret (models/linear.py:77-84; pooled OLS,
+  no intercept). CW: fctests.clark_west(preds, unrestricted, restricted, spec=None, *, provenance=None) (fctests.py:152):
+  one-sided; date means of f, NW at dk_lag(T), T = unique evaluation dates. pair() requires identical rows for both
+  models (fctests.py:97-111), so any row subset applied to both still pairs.
+- A DevCalibrator draw has every M2/M3 feature (usdjpy_ret, eurusd_ret, spy_oc, copx_oc) but neither mask column;
+  the caller must add them (P35: masks all False). y_sim is accepted as a target (B7 uses it with build_design).
+- Every call appends one registry line; for synthetic provenance to tempfile.gettempdir()/ofilt_RUN_REGISTRY_synthetic.jsonl
+  (registry.py:34, 41-46), holding data_sha256 of the input frame, the seed and per-fold row counts; it runs
+  'git rev-parse HEAD' and 'git status' each time (git_state, registry.py:87-90).
+- tools/c7_mc.py: 1,513 synthetic dates per panel; fold 0 trains on 500 eligible dates; CW on every forecast date
+  (T_eval tested within 1013 +/- 5); H1 on the last 1,013 dates of the same panel; masks = earn_flag (p_excl 0.02):
+    [tools/c7_mc.py:65-66]
+    |     last = df[df.date >= np.sort(df.date.unique())[-cfg["h1_dates"]]]
+    |     h1 = I.fit_dk(I.build_design(last, spec), spec).param(spec.h1_parameter)
+
+Q8. Tails.
+- Huber: inference.fit_huber(design, spec=None, *, c=None, lag=None, tol=1e-11, max_iter=1000) (inference.py:249-285):
+  c from robustness.huber.c (1.345); fixed scale from the OLS residuals; IRLS; DK sandwich at the same lag rule;
+  info.share_downweighted. It takes a Design, so it accepts a draw via build_design(draw, spec, target='y_sim').
+    [ofilt/drift/inference.py:260-262]
+    |     ols = pooled_ols(design)
+    |     r0 = ols.resid
+    |     scale = 1.4826 * float(np.median(np.abs(r0 - np.median(r0))))
+- Winsorisation: no routine applies the bounds. Searched 'winsor' in *.py: spec.py (validate; winsor_bounds()),
+  tools/fill_spec_A6.py and tests only. Spec.winsor_bounds() returns {usdjpy_ret, eurusd_ret: (lo, hi)} from spec line 40:
+    [ofilt/drift/spec.py:345-347]
+    |     def winsor_bounds(self) -> dict[str, tuple[float, float]]:
+    |         v = self.value("robustness.winsorize_fx.values")  # raises if TO_FILL
+    |         return {c: (float(lo), float(hi)) for c, (lo, hi) in v.items()}
+- Quantile source: tools/fill_spec_A6.py, numpy-linear quantiles at q = [0.005, 0.995] of usdjpy_ret and eurusd_ret,
+  one value per date (asserted identical across tickers), over ALL dev dates, no event exclusions (A6, Pass 1):
+    [tools/fill_spec_A6.py:42-42]
+    |     vals = {c: [float(np.quantile(d[c].to_numpy(float), q)) for q in w["q"]] for c in w["cols"]}
+  test_fill_A6.test_spec_filled_and_reproducible recomputes them from the current DATA dev panel (F.check, 10 sig.
+  digits); it passed in step e.
+- Draws carry usdjpy_ret and eurusd_ret (resampled dev values), so the bounds could be applied to them, but no function does.
+
+Q9. The overnight FX regressor e ('partialled overnight USD/JPY').
+- None found in code. Searched 'partial' (case-insensitive) in ofilt/, tools/, tests/ *.py: the only hits are C7's
+  resumable partial file. In docs the phrase occurs only at PLAN.md:291 (section 4.5). No code defines what e is
+  partialled on, its unit (row or date), or its sample.
+- Context only: the primary design's other regressors are fe[t], eurusd_ret and ticker-specific spy_oc, copx_oc
+  (inference.py:106-113); usdjpy_ret and eurusd_ret are per-date (fill_spec_A6.py:31-32 asserts this on dev).
+
+Q10. stationary_bootstrap_positions.
+    [ofilt/drift/sim.py:174-175]
+    | def stationary_bootstrap_positions(T: int, mean_block: float, rng: np.random.Generator,
+    |                                    n_out: int | None = None) -> np.ndarray:
+    [ofilt/drift/sim.py:181-187]
+    |     new = rng.random(n) < 1.0 / mean_block
+    |     starts = rng.integers(0, T, size=n)
+    |     pos = np.empty(n, dtype=np.int64)
+    |     pos[0] = starts[0]
+    |     for s in range(1, n):
+    |         pos[s] = starts[s] if new[s] else (pos[s - 1] + 1) % T
+    |     return pos
+- A pure function of (T, mean_block, rng, n_out): no guard, no data, no logging. It can generate positions over the
+  dates of any panel, including an inner bootstrap over a simulated panel's T dates. It lives in sim.py (C7-hashed):
+  callable as is; any change stales C7. The loop is per element in Python (O(n_out) interpreter steps per call).
+  DevCalibrator.positions wraps it (sim.py:214-215); draw accepts precomputed positions.
+
+Q11. Tests that pin sealed-fit state.
+    [tests/test_docs_d3.py:66-69]
+    |         self.assertEqual(len(lines), 6)                                          # "dev_real lines: 6"
+    |         self.assertTrue(all(x["provenance"] == B.DEV_REAL for x in lines))
+    |         dev = "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42"   # AM-04, P51: lines 1-6 are Pass 1 history (row 12)
+    |         self.assertTrue(all(x["panel_sha256"] == dev for x in lines))            # all on panel_dev.csv
+    [tests/test_docs_d3.py:71-73]
+    |         self.assertTrue(all("test_sim_b5" in c for c in callers[:3]))            # lines 1-3: B5 tests
+    |         self.assertTrue(all("report_B7.py" in c for c in callers[3:5]))          # lines 4-5: report_B7
+    |         self.assertIn("report_B7b.py", callers[5])                               # line 6: report_B7b
+    [tests/test_docs_d3b.py:40-42]
+    |         log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+    |         self.assertEqual(len(log), 6)                                           # only the sealed fits (P29)
+    |         self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+    [tests/test_importance_registry_c6.py:189-191]
+    |         real = ROOT / "RUN_REGISTRY.jsonl"
+    |         self.assertTrue(real.exists())
+    |         if self.spec.status == "DRAFT":                                       # no real forecast before the tags
+- Related pins: no spec-dev-v1/prereg-v1 tag (test_docs_d3.py:40-42; test_io.py:89-93 while DRAFT); spec status DRAFT
+  and AM headings exactly AM-01..AM-05 (test_docs_d3b.py:35, 38-39); sesoi PENDING_COSTS and 'Pass 4' in viability
+  (test_docs_d2.py:41-43). TestRealDev (test_sim_b5.py:252-256, skipped by default) checks growth n_before + 1 only.
+- Doc pins encoding 'no further sealed fit': DECISIONS_P14_onward.md is byte-pinned (test_docs_d1.py:24) and its P29
+  says 'No further real sealed fit is sanctioned until Pass 4'; PLAN.md (section 8 '6 sealed fits') is hash-pinned
+  (test_docs_p2.py:16, test_docs_d4.py:13); DECISIONS_P58_onward.md is hash-pinned (test_docs_p2.py:21).
+
+Q12. The tag guard.
+- blind._tag_ok (blind.py:185-196) and io._check_access (io.py:129-139) both call _guards_fallback (is_ancestor_tag /
+  check_access); the external guard is consulted only after the fallback grants (None here). Exact git commands:
+    [ofilt/drift/_guards_fallback.py:54-58]
+    |         r = _git(root, "rev-parse", "--verify", "--quiet", f"refs/tags/{tag}^{{commit}}")
+    |         if r.returncode != 0 or not r.stdout.strip():
+    |             return False
+    |         r2 = _git(root, "merge-base", "--is-ancestor", r.stdout.strip(), "HEAD")
+    |         return r2.returncode == 0
+  (repo root from 'git -C <dir> rev-parse --show-toplevel', _guards_fallback.py:29.)
+- Lightweight and annotated tags are both accepted: '^{commit}' peels an annotated tag. test_io.py:31 creates
+  'git tag -a annotated'; test_io.py:76-78 assert lightweight ancestor True, annotated True, side-branch False.
+- P46 tests: tests/test_guard_p46.py:63, 73, 80, 94 (external False denied; external None with the tag absent denied;
+  external raises denied; both satisfied granted). Also test_blind.py:163 (temp repo, side-branch tag denied).
+
+Q13. The C7 staleness key.
+    [tools/c7_mc.py:42-43]
+    | CODE_FILES = ("tools/c7_mc.py", "ofilt/drift/fctests.py", "ofilt/drift/forecast.py",
+    |               "ofilt/drift/models/linear.py", "ofilt/drift/sim.py", "ofilt/drift/inference.py")
+    [tools/c7_mc.py:73-74]
+    | def config_key(cfg: dict, spec: Spec) -> dict:
+    |     return dict(cfg=cfg, spec_seed=spec.seed, spec_sha256=spec.sha256, code=code_hashes())
+    [tests/test_validation_c7.py:41-44]
+    |         self.assertEqual(mc["key"]["code"], C.code_hashes(),
+    |                          "C7 report is STALE: code changed since the slow tier ran; rerun tools/c7_mc.py")
+    |         spec = Spec.load()
+    |         self.assertEqual(mc["key"], C.config_key(C.FULL, spec))
+- Stale if any of the 6 CODE_FILES, the spec bytes (spec_sha256), seeds.global or the FULL config changes. Not in the
+  key: blind.py, registry.py, schema.py, spec.py, targets.py, calendar.py, models/__init__.py.
+
+Q14. Existing cost or tick-size code; Flag 4.
+- No TSE tick-size schedule, spread, commission or price-grid code for the miners. Searched 'tick size|tick grid|
+  price grid|spread|commission|consolidat' in ofilt/, tools/, build/ *.py.
+- Grid code exists for the 1306 hedge only: tools/p2_5_tick_1306.py (reads RAW newbloombergdata_fixed.xlsx, :28) and
+  tools/p2_3b_d8_zero_gate.py (reads the OUT P2-4 dev panel, :27). Both inputs are outside Pass 3's scope.
+- Miner prices in the dev panel are PROVENANCE columns open, close, prev_close (schema.py:39-40, 'auction / target information').
+- Flag 4: PASS1_STATUS.md:203 (5706 coarse grid before its 1:10 consolidation of 2017-09-27) and :131 (extended to 5711
+  before 2016-09-28); DECISIONS_P14_onward.md:135 (P23) and :358-359 (P35 T5, T6); PLAN.md:454 (section 11).
+  Consolidation dates: DATA_PROVENANCE.md:67:
+    [docs/DATA_PROVENANCE.md:67-67]
+    | - **Capital changes are adjusted.** There are no price jumps at any of the four share-count changes in the dividend sheets: 5711 1:10 (2016-09-28), 5713 1:2 (2017-09-27), 5706 1:10 (2017-09-27), and 5706 10:1 (ex-date 2026-09-29).
+
+--- h. PASS3_STATUS.md created (by /tmp/p3_0_make_status.py from /tmp/p3_0_status_template.md) ---
+$ wc -l PASS3_STATUS.md
+     127 PASS3_STATUS.md
+$ grep -n '^## ' PASS3_STATUS.md
+5:## Progress
+12:## Next action
+16:## Decision log
+80:## Test results
+94:## Test changes
+98:## Flags
+111:## Blinding attestation
+124:## Deviations
+DQ1 block ( 59 lines ) present verbatim in PASS3_STATUS.md Decision log: True
+adoption line present: True
+Next action sentence present: True
+Flags lines marked (P3-0, for the supervisor): 10
+$ git status --porcelain
+?? PASS3_STATUS.md
+
+--- i. Checkpoint ---
+$ git log -3 --format=%B
+checkpoint: P2-7 (Pass 2 complete)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+checkpoint: P2-6 records (P58–P70; docs refresh; PLAN v2.4)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+checkpoint: P2-3b switch (AM-03, AM-04, AM-05; C7 rerun on the Mac)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-0 (setup, integrity, code survey; PASS3_STATUS created)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+before suite: git status --porcelain
+?? PASS3_STATUS.md
+----------------------------------------------------------------------
+Ran 247 tests in 271.813s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+?? PASS3_STATUS.md
+commit 2ac5a85b51d8604ccad84cf877baf45ff2d45f76
+checkpoint exit=0
+--- i. After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+2ac5a85b51d8604ccad84cf877baf45ff2d45f76 checkpoint: P3-0 (setup, integrity, code survey; PASS3_STATUS created)
+$ git log -1 --format=%B
+checkpoint: P3-0 (setup, integrity, code survey; PASS3_STATUS created)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 127 insertions(+)
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG unchanged vs step d baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+
+--- j. Planned STOP (supervisor review of P3-0) ---
+2026-10-06T18:51:37Z
+2ac5a85b51d8604ccad84cf877baf45ff2d45f76
+$ git status --porcelain (between markers)
+<<<
+>>>
