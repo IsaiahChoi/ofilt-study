@@ -1,13 +1,14 @@
-# Research Plan v2.3: Is overnight FX fully priced at the Tokyo open?
+# Research Plan v2.4: Is overnight FX fully priced at the Tokyo open?
 
 **Owner:** Isaiah Choi. **Executor:** Claude, with Isaiah as decision-maker.
 
-**Status:** 2026-10-05.
+**Status:** 2026-10-06.
 - Pass 1 (the analysis machine) is complete. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (2026-10-04/05). The rebuilt repository is the canonical study repository (P45).
 - Pass 2 inputs are pulled and verified. The pre-flight decisions of 2026-10-05 are recorded as P45–P57.
-- The Pass 2 build (rebuild) is next. It runs per `PASS2_HANDOFF.md`, as corrected by `PASS2_ADDENDUM.md`.
+- Pass 2 (data and rebuild) is complete: the 60-column panels were built on macOS arm64, the hedge is 1306 (AM-03), the switch commit applied AM-03 to AM-05, and the C7 rerun on the Mac reproduced every rejection decision (D16). Its decisions are P58–P70.
+- Pass 3 (calibration) is next.
 
-**Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all three. If any wording differs, the decision log (P01–P57) and `spec/SPEC_AMENDMENTS.md` govern.
+**Supersedes:** v2.3 (2026-10-05), which superseded v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all four. If any wording differs, the decision log (P01–P70) and `spec/SPEC_AMENDMENTS.md` govern.
 
 **Companion files:**
 
@@ -20,6 +21,7 @@
 | `DECISIONS_ADDENDUM.md` | P01–P13 |
 | `DECISIONS_P14_onward.md` | P14–P36 |
 | `DECISIONS_P37_onward.md` | P37–P57 |
+| `DECISIONS_P58_onward.md` | P58–P70 |
 | `PASS2_HANDOFF.md` | How to run Pass 2 |
 | `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; builder prompt A′; reference numbers B′ |
 | `PASS1_STATUS.md`, `REBUILD_VERIFICATION.md` | The Pass 1 build record, and the rebuilt repo checked against the adopted text |
@@ -70,7 +72,7 @@ $$r^{abn}_{i,t} = \alpha_i + b\,e_t + a_2\,\text{eur}_t + \theta_i^\top x_{i,t} 
 
 **Outcome:**
 - $y^{oc}$ is the open→close log return.
-- $h^{oc}$ is the **hedge** open→close return: the 1306 ETF after Pass 2 (P18); the TOPIX index is the placeholder until then.
+- $h^{oc}$ is the **hedge** open→close return: the 1306 ETF (P18; AM-03). The P18 fallback did not fire.
 - $\hat\beta_{i,t-1}$ is a past-only **expanding** β, estimated on non-excluded rows, lagged one day, and never restarted at the confirmation boundary (P17).
 
 **Regressors:**
@@ -136,7 +138,7 @@ A well-powered null is a finding: "the auction prices overnight FX for FX-expose
 
 ### 2.1 Panels
 
-`panel_dev.csv` and `panel_confirm_SEALED.csv` are built by `build_panel.py`.
+`panel_dev.csv` and `panel_confirm_SEALED.csv` are built by `build/pass2/build_panel_p2.py`, which runs the frozen `build/pass1/build_panel.py` and appends 19 columns (P51).
 - One row per stock per TSE trading day.
 - Every column belongs to exactly one schema group (`DATA_DICTIONARY.md`; `ofilt/drift/schema.py`).
 
@@ -146,17 +148,17 @@ A well-powered null is a finding: "the auction prices overnight FX for FX-expose
 | Confirmation | 2022-01-04 → 2026-03-05 | 1,019 days, 3,057 rows | Run once after `prereg-v1`. Sealed. Estimation dates T_conf = **1,013** (6 dates have all three tickers excluded; `calendar.py`). |
 | Forward holdout (P13a) | After 2026-03-05 | Grows | Pulled only after `prereg-v1`; evaluated once; a sanity check, not a second test |
 
-The sealed panel's hash (P10: `9c18a6c1…`) is **superseded by the Pass 2 rebuild**. The new hashes are recorded in a decision entry and an AM-xx. The sealed file's pre-existing columns must be unchanged (§8, Pass 2 acceptance).
+The sealed panel's hash (P10: `9c18a6c1…`) is **superseded by the Pass 2 rebuild**; the new hashes are in AM-04 (P67). Old columns (the hybrid, P59): dev's 41 are the original `736636…` strings; sealed's come from the frozen build run on the Mac (`138e5e21…`), because the original sealed file is not available on the Mac and the Mac cannot reproduce its bytes (Flag 16). Byte identity of the sealed old columns with `9c18a6c1…` cannot be demonstrated, and the pre-registration discloses this (§8, Pass 5).
 
 ### 2.2 Pass 2 inputs (pulled and verified 2026-10-04; DATA_PROVENANCE §4)
 
 | Input | Status | Role |
 |---|---|---|
-| 1306 ETF daily OHLC (Bloomberg) | Verified; calendar identical to the miners. Settings-check suffix **PENDING** (P39b) | **Primary hedge** (P18) |
+| 1306 ETF daily OHLC (Bloomberg) | Verified; calendar identical to the miners. Settings check resolved by attestation (D2; P60) | **Primary hedge** (P18; AM-03) |
 | 1306 dividends | Corrected copy (÷10, relabelled). The ÷10 factor is **confirmed** (P47): the issuer's 1:10 split took effect 2026-04-01, after the panel ends, and the ÷10 amounts equal Nomura's published distributions | Flag 6 fix on the hedge gap |
-| TOPIX total-return close | Verified; ticker PENDING | Fallback-path Flag 6 fix only (P40) |
+| TOPIX total-return close | Verified; TPXDDVD Index (D3; P60) | Fallback-path Flag 6 fix only (P40) |
 | XAU/USD 1-minute (Dukascopy, bid) | Verified | Robustness control (P41) |
-| Japan 225 CFD 1-minute (Dukascopy, bid) | Verified; **fresh only from about 2018-07-02** | Nikkei proxy for the exposure claim (P42) |
+| Japan 225 CFD 1-minute (Dukascopy, bid) | Verified; **08:59 JST price fresh from 2018-04-13** (DATA_PROVENANCE §4.3) | Nikkei proxy for the exposure claim (P42) |
 | USD/JPY and EUR/USD masters | Unchanged; offer side confirmed **bid** (P37) | Dark-window FX, plus the new session FX and US-session FX |
 
 Computed in Pass 2, with no new pulls:
@@ -178,9 +180,11 @@ The **open→close** relationship has never been examined on any data. The confi
 
 ### 3.1 Target
 
-The primary target is abnormal open→close with the 1306 hedge and an expanding past-only β (P17, P18). The β window was chosen on hedge efficiency alone, using no FX data and comparing all windows on common rows. Expanding won for all three tickers on the TOPIX hedge, and the comparison is **rerun on 1306 in Pass 2** with the same rule [P2].
+The primary target is abnormal open→close with the 1306 hedge and an expanding past-only β (P17, P18). The β window was chosen on hedge efficiency alone, using no FX data and comparing all windows on common rows. Expanding won for all three tickers on the TOPIX hedge. **Rerun on 1306 in Pass 2 (D9; P65):** on common rows, rolling-500 was marginally lower for 5706 and 5711; expanding was kept, and rolling-500 was added as a robustness row (`beta_rolling_500`, AM-05).
 
 **Fallback rule (P18, verbatim):** "If 1306 daily data cannot be obtained, or fails its Pass 2 checks (split/dividend adjustment, open-auction timing), the primary target switches to the raw open->close return before the spec-dev-v1 tag, never after. The abnormal target is then reported as secondary using the TOPIX index with the staleness caveat."
+
+The fallback did not fire: 1306 passed its Pass 2 checks (P47; D8 (a), P64).
 
 The raw target is a pre-registered secondary in every case.
 
@@ -268,6 +272,7 @@ These numbers come from the rebuilt repository (P54). The lost original run's fi
 - Clark–West size: **3.00%** (9/300, Wilson [1.59%, 5.60%]) at nominal 5% [original: 2.67%]. It is conservative (Flag 12).
 - Power: **89.5%** at b = 0.25 and 100% at b = 0.4 (identical in both runs).
 - On a common data-generating process, Clark–West rejects in 175 of 175 H1-significant runs [original: 170 of 175].
+- The Pass 2 rerun on the Mac (D16; P68) reproduced every rejection count and every per-replication rejection decision; in `C7_mc.json`, 2,772 of the 2,846 floats other than `runtime_s` differ only in the last bits (Flag 16).
 
 **Interim wording (verbatim):** "H1 and the CW forecast test may disagree; disagreement is not by itself evidence against H1. The expected joint behaviour is quantified in Pass 4."
 
@@ -289,7 +294,7 @@ SESOI = round-trip cost / mean |partialled overnight FX|. The denominator uses p
 
 ## 5. Power (PREVIEW; binding run in Pass 3)
 
-The B7b preview: dev-calibrated simulations, T_conf = 1,013, one sealed fit, on the TOPIX hedge.
+The B7b preview: dev-calibrated simulations, T_conf = 1,013, one sealed fit, on the TOPIX hedge. The binding Pass 3 run uses the 1306 hedge (AM-03).
 
 | b | 0 (size) | 0.10 | 0.25 | 0.40 |
 |---|---|---|---|---|
@@ -308,19 +313,19 @@ All of this is rerun in Pass 3 on the rebuilt panel with the 1306 hedge, and the
 2. Audit candidates excluded.
 3. Tail handling (§3.5): Huber, FX winsorized, the influence curve.
 4. FCX in place of COPX.
-5. Rolling-250 β in place of the expanding β.
+5. Rolling-250 β in place of the expanding β; and rolling-500 β (`beta_rolling_500`, AM-05; D9).
 6. The raw target, with the decomposition.
 7. Per-ticker slopes (Holm).
 8. Excluding BoJ days; excluding major SQ (futures settlement) days.
 9. **The post-2024-11-05 TSE session change** (confirmation only): design + post + e × post, reporting b_pre and b_post. Outside the Holm family. Implemented with the confirmation script before `prereg-v1`.
-10. **Yen-denominated EWJ** as an added control (after Pass 2; the US-session USD/JPY leg follows P49).
-11. **The XAU dark-window return** as an added control (P41).
-12. **The Nikkei proxy** (Japan 225 CFD dark-window return) as an added control, **only on nights where both window endpoints are at most 5 minutes stale** (P42, PROPOSED [P2]). Dev coverage is about 2018-07 → 2021-12, against near-complete coverage in confirmation. This check underwrites claim tier (ii). Its amendment compares b with and without the control on the same eligible nights, and states the operational tier-(ii) criterion before `spec-dev-v1` (P56).
-13. **The gotobi flag** (Tokyo-fix flow days) in the mechanism specification (§9.2). Definition (P48): the 5th, 10th, 15th, 20th, 25th and 30th, plus month-end; a nominal date that is not a trading day moves to the preceding trading day.
+10. **Yen-denominated EWJ** as an added control (after Pass 2; the US-session USD/JPY leg follows P49). AM-05: `ewj_oc_jpy` with ticker-specific slopes, on the primary rows where it is finite.
+11. **The XAU dark-window return** as an added control (P41). AM-05: `xau_ret` with ticker-specific slopes, on all primary rows, with no staleness filter.
+12. **The Nikkei proxy** (Japan 225 CFD dark-window return) as an added control, **only on nights where both window endpoints are at most 5 minutes stale** (P42, adopted, D7; P63): 929 of the 1,708 dev nights (40 in 2015-H1, the rest from 2018-04-13) and 999 of the 1,019 confirmation nights are eligible. This check underwrites claim tier (ii). Its amendment compares b with and without the control on the same eligible nights, and states the operational tier-(ii) criterion before `spec-dev-v1` (P56). AM-05: `n225_ret` with ticker-specific slopes, b reported with and without it on the eligible nights.
+13. **The gotobi flag** (Tokyo-fix flow days) in the mechanism specification (§9.2). Definition (P48): the 5th, 10th, 15th, 20th, 25th and 30th, plus month-end; a nominal date that is not a trading day moves to the preceding trading day. AM-05 (`mechanism_session_fx_gotobi`): adds `c_usdjpy_sess_ret` and `c_eurusd_sess_ret` (common slopes), `gotobi_day` (common) and `usdjpy_ret` × `gotobi_day` (common); descriptive, outside every claim tier and the Holm family.
 
 **Mechanism specification (not tradable):** primary + session USD/JPY and EUR/USD (09:00 → close). It separates "FX keeps moving and the stock follows contemporaneously" from "the stock lags FX" (problem 1.6 in the original analysis).
 
-**Every robustness amendment** (AM-05, AM-06) states its exact design, its slopes (common or ticker-specific) and its estimation sample before `spec-dev-v1` (P56).
+**Every robustness amendment** (AM-05) states its exact design, its slopes (common or ticker-specific) and its estimation sample before `spec-dev-v1` (P56).
 
 ---
 
@@ -377,11 +382,11 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 | Pass | Contents | Done when | Stop point |
 |---|---|---|---|
 | 1 | Analysis machine | **Complete** (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits. Stage C4–D rebuilt 2026-10-05 (P45): 205 tests, 4 skipped in the sandbox and 5 on the Mac; the same 6 sealed fits | — |
-| 2 | Data and rebuild (`PASS2_HANDOFF.md`) | See below; run as corrected by `PASS2_ADDENDUM.md` (P51) | Yes, at every decision point, including one combined decision checkpoint before the switch commit |
+| 2 | Data and rebuild (`PASS2_HANDOFF.md`) | **Complete** (2026-10-06): see below; run as corrected by `PASS2_ADDENDUM.md` (P51); decisions P58–P70 | Yes, at every decision point, including one combined decision checkpoint before the switch commit |
 | 3 | Calibration, dev still blinded | See below | Each AM-xx |
 | — | **Tag `spec-dev-v1`** | Inference and calibration **locked** | — |
 | 4 | Dev first look (exploratory) + P13(b) dry run | Confirmation script recovers a known b on simulated data, runs end to end on dev; post-2024 row implemented | Yes |
-| 5 | Pre-registration (S4) | Prior exposure disclosed, sealed hash recorded, advisor sign-off → **tag `prereg-v1`** | Yes |
+| 5 | Pre-registration (S4) | Prior exposure disclosed, sealed hash recorded, the sealed panel's old-column provenance disclosed (P59), advisor sign-off → **tag `prereg-v1`** | Yes |
 | 6 | Confirmation | Sealed panel opened once; every pre-registered output produced. Forward holdout after that (P13a) | — |
 
 **Pass 2 is done when:**
@@ -391,7 +396,7 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 - the sealed panel's dates are cross-checked against the calendar;
 - A7 is rerun on 1306 and the staleness test is run (both dev only; the staleness reading follows P55);
 - the hedge switch and the new hashes are recorded as AM-xx, approved at one decision checkpoint and applied in one switch commit (P51);
-- the C7 slow tier has been rerun once and has reproduced every replication bit for bit (P51);
+- the C7 slow tier has been rerun once and has reproduced every replication within the D16 criterion (P68), which replaces P51's "bit for bit" for this rerun because of Flag 16; on the Mac, the slow tier's two bit-identity tests pass against the Mac report;
 - the docs are updated.
 
 **Pass 3 is done when** the following are run on dev-calibrated simulations through **one** sanctioned sealed fit, with each outcome written as an AM-xx:
@@ -447,11 +452,12 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 | **Flag 12:** CW conservative (3.00% in the rebuild; 2.67% in the original run; P54) | As above |
 | **Flag 5:** guard signature | RESOLVED. The canonical repo has no external guard, and a conjunctive fail-closed adapter guards against one appearing (P45, P46) |
 | **Flags 2 and 4:** fingerprint check is a mislabelling net only; coarse early-dev ticks for 5706/5711 | Frozen; Flag 4 feeds the cost model and the Huber/winsor behaviour |
-| 1306 dividend factor (P39) | RESOLVED. Issuer documentation and published distributions confirm ÷10 (P47); the settings-check suffix is still pending (P39b) |
+| 1306 dividend factor (P39) | RESOLVED. Issuer documentation and published distributions confirm ÷10 (P47); the settings check is resolved by attestation (D2; P60) |
+| **Flag 16:** platform floating point (the Pass 1 panels were built on x86_64; the Mac differs in the last bit) | Hashes prove identity only on the same platform; across platforms, tolerance checks stated in advance (DATA_PROVENANCE §5.2; P58) |
 | Pass 1 verification tests pin Pass 1 state, and any spec amendment invalidates the C7 report | Test-change protocol, the `pass1-final` tag, one batched switch commit and one C7 rerun (P51) |
 | Exposure to sealed data through file viewers in an agentic session | No raw or sealed file is ever opened or printed; scripts print only counts, hashes and permitted dev statistics; sealed output lives outside the repo and the Project (P51) |
-| **Japan 225 coverage** (P42) | Pre-stated staleness rule; tier (ii) claims rest mainly on confirmation |
-| β or the hedge unstable across samples | Expanding β carried across samples; rolling-250 robustness |
+| **Japan 225 coverage** (P42) | P42 adopted (D7): 929 dev / 999 confirmation nights |
+| β or the hedge unstable across samples | Expanding β carried across samples; rolling-250 and rolling-500 robustness rows (AM-05) |
 | Unscheduled firm news left in the sample | Accepted by design (P08); audit-exclusion robustness |
 | Math component judged insufficient | Advisor questions in §7, raised early |
 | Forking paths | One primary test; pre-listed robustness; one-shot rule (P13c); run registry; calibration done before any dev result is seen (P36) |
@@ -482,6 +488,10 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 ---
 
 ## 13. Change log
+
+**v2.3 → v2.4 (2026-10-06)**
+- Pass 2 recorded as P58–P70: the environment and Flag 16 (P58); the old-column sources (P59); the settings check by attestation and the TOPIX total-return ticker (P60); the build and its acceptance (P61); corrected input records (P62); D7, D8, D9 and D10 (P63–P66); AM-03 to AM-05 and the switch (P67); the C7 rerun on the Mac (P68); the repository and the accepted deviations (P69); this refresh (P70).
+- The status block, the companion files and §1.2, §2.1, §2.2, §3.1, §4.4, §5, §6, §8, §11 updated to match: hedge 1306 (AM-03); the β comparison on 1306 and the `beta_rolling_500` row (D9); AM-05's design of the robustness rows; P42 adopted (D7); the C7 criterion (D16); the sealed old-column disclosure; a Flag 16 risk row.
 
 **v2.2 → v2.3 (2026-10-05)**
 - Pre-flight decisions recorded as P45–P57:

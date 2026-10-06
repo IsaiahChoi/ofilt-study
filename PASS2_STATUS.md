@@ -31,10 +31,11 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-3b item 3 (suite before the C7 rerun) | done | Ran 246 tests in 252.756s, FAILED (failures=1, skipped=5): only `test_bands_consistency_and_staleness`, as expected (the C7 key holds the spec's SHA-256) |
 | P2-3b item 4 (C7 rerun on the Mac, D16) | done; STOP at 4c, resolved | 4b: `tools/c7_mc.py --budget 90`, 4 chunks, COMPLETE. 4c: `tools/p2_3b_c7_compare.py` failed (iii) only through runtime_s (STOP; Flags); after the D16 amendment (runtime_s information only), (i)–(iv) PASS for both files. 4d: slow tier Ran 6 tests in 21.673s, OK, including the two bit-identity tests against the Mac report. tools/c7_mc.py was run once (D16) |
 | P2-3b item 5 (switch commit) | done | 5a suite: Ran 246 tests in 272.960s, OK (skipped=5). 5b: git status shows only the allowed files. 5c: `tools/checkpoint.sh "P2-3b switch (AM-03, AM-04, AM-05; C7 rerun on the Mac)"`; the commit hash is in the post-commit Test results row |
+| P2-6 (records) | done; approved with corrections (Isaiah, 2026-10-06); committed as `checkpoint: P2-6 records (P58–P70; docs refresh; PLAN v2.4)` | Register `files/PASS2_P2-6_RECORDS_REGISTER.md` hash-checked (`7d593b61d4356f0922eb795d603aecebe6a829f07c2f57cd4972b2ae7d76cdb1`). Its §2 drafts applied with the supervisor's overrides: DATA_PROVENANCE (DP-1–DP-12; §4.4 open-auction timing, corrected ex-date table and staleness result; new §5), PASS2_INPUTS.json (§2.2 table, by script; no existing key or sha256 changed; registry parser and every hash checked), README (R-1–R-12), PROJECT_SETUP (S-1–S-8), PLAN v2.4 (PL-1–PL-9 and the specifics). New `docs/DECISIONS_P58_onward.md` (P58–P70). Doc pins moved in test_docs_p2, test_docs_d4 and test_docs_d6. Suite: Ran 247 tests in 272.007s, OK (skipped=5). Corrections of the supervisor message of 2026-10-06, item 1 (a; b1–b8), applied; DECISIONS_P58_onward.md regenerated (decision coverage 46 / 43 / 3 agenda items); the pins moved to the final hashes |
 
 ## Next action
 
-STOP after P2-3b (report `/tmp/p2_3b_report.txt`; the item 4c STOP report is `/tmp/p2_3b_report_stop.txt`). P2-6 is not started.
+P2-7: the final suite, the slow tier and the final status (supervisor message of 2026-10-06, item 2).
 
 ## Decision log
 
@@ -101,6 +102,17 @@ STOP after P2-3b (report `/tmp/p2_3b_report.txt`; the item 4c STOP report is `/t
 - D16 criterion (iii) amended (Isaiah, 2026-10-05, on the supervisor's recommendation): the wall-clock field runtime_s, in both reports/C7_mc.json and reports/C7_h1_same_dgp.json, is information only and is excluded from (iii).
   - Reason: it records elapsed time (618.21 s in the sandbox, 316.75 s on the Mac), not a computed result, so no rerun can match it. The supervisor's criterion should have excluded it.
   - Every other value met the criterion as written: (i), (ii) and (iv) passed; in C7_mc.json, 2,772 of the 2,846 other floats differ only in the last bits (Flag 16), with a largest relative difference of 4.4e-11; in C7_h1_same_dgp.json, no other float differs.
+
+**P2-6 decisions (supervisor message of 2026-10-05, P2-6 records)**
+
+- P2-3b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation): commit b9bf6f3d2e7b11243af6d626713417b5c87423b8, including the row-21 citing comment and the other recorded deviations.
+- PLAN is refreshed to v2.4 in P2-6 (Isaiah, 2026-10-06, on the supervisor's recommendation).
+- The two supervisor files in the Claude Project, PASS2_SUPERVISOR_HANDOFF_2026-10-05.md and PASS2_P2-6_RECORDS_REGISTER.md, are retired from the Project at the Pass 2 upload (Isaiah, 2026-10-06, on the supervisor's recommendation).
+- The decision entries are numbered P58–P70, as outlined in item 2 of the P2-6 message (Isaiah, 2026-10-06, on the supervisor's recommendation).
+
+**P2-6 approval (supervisor message of 2026-10-06)**
+
+- P2-6 drafts approved (Isaiah, 2026-10-06, on the supervisor's recommendation), with the corrections in item 1 of the supervisor message of 2026-10-06. PASS2_SUPERVISOR_HANDOFF_P2-6.md is also retired from the Claude Project at the Pass 2 upload, with the two supervisor files already listed.
 
 **Open for the decision checkpoint** (all resolved 2026-10-05; outcomes above)
 
@@ -264,6 +276,11 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-3b item 4c (`tools/p2_3b_c7_compare.py`, old = HEAD's reports) | ofilt_p2 | As written: (i), (ii), (iv) PASS; (iii) FAIL in both files, only runtime_s (618.2086887359619 → 316.75257444381714; relative 0.48762840086981896) → STOP. Amended (runtime_s information only): (i)–(iv) PASS for both files. C7_mc.json: 2846 floats compared, 2772 differ, largest relative difference 4.418784327352831e-11; 2148 rejection flags and counts identical. C7_h1_same_dgp.json: 20 floats, 0 differ; 13 flags and counts identical. key.spec_sha256 = `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9` (the edited spec) |
 | P2-3b item 4d (`OFILT_SLOW=1 … unittest tests.test_validation_c7 -v`) | ofilt_p2 | Ran 6 tests in 21.673s, OK (6 of 6, including test_first_reps_bit_identical and test_last_reps_bit_identical against the Mac report) |
 | P2-3b item 5a (suite; `env -u OFILT_RUN_SEALED -u OFILT_SLOW`) | ofilt_p2 | Ran 246 tests in 272.960s, OK (skipped=5). B6 diff restored |
+| P2-3b checkpoint (`tools/checkpoint.sh "P2-3b switch (AM-03, AM-04, AM-05; C7 rerun on the Mac)"`) | ofilt_p2 | Ran 246 tests in 317.137s, OK (skipped=5). B6 diff restored by the script; committed `b9bf6f3d2e7b11243af6d626713417b5c87423b8` |
+| P2-6 targeted (test_docs_p2, test_docs_d4, test_docs_d6) | ofilt_p2 | Ran 10 tests, OK (skipped=1: the Project-only test_project_claims) |
+| P2-6 suite (`env -u OFILT_RUN_SEALED -u OFILT_SLOW`; drafts in the working tree, not committed) | ofilt_p2 | Ran 247 tests in 272.007s, OK (skipped=5). 247 = 246 + 1 (`test_docs_p2.test_p70_new_docs_pinned`, the new DECISIONS pin). B6 diff restored |
+| P2-6 PASS2_INPUTS.json check (`/tmp/p2_6/check_inputs.py`; `build_panel_p2` imported, the build not run) | ofilt_p2 | `real_expect()` loads the edited file, and its inputs, events, code, original-dev and Mac-baseline hashes equal the registry's. sha256 values in the file: 23; equal to the file on disk: 21; different: 0; no file to check: 2: `pull_dukascopy.py` (no copy in REPO, KIT or RAW) and the original sealed panel (not on the Mac) |
+| P2-6 corrections, suite before the commit (`env -u OFILT_RUN_SEALED -u OFILT_SLOW`) | ofilt_p2 | Ran 247 tests in 239.248s, OK (skipped=5). B6 diff restored |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -346,6 +363,26 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 
 Not changed: row 20 (`test_validation_c7`; its report was regenerated by the one C7 rerun, D16) and row 24 (`test_build_pass1_pin`). Rows 22 and 23 belong to P2-6. No test was deleted.
 
+**P2-6 records** (P70; doc pins and their text assertions only; every changed line carries a comment citing P70, and row 22 for test_docs_p2; line numbers after the change):
+
+| Test (line) | Old | New | Entry |
+|---|---|---|---|
+| `test_docs_p2` (11, `PINNED`) | `docs/DATA_PROVENANCE.md` `c9a6293bf7e965a0c0232e2c2317e3456b1014e87b406d321ce3040d2d081ae5` | `0efa0121cbd4f2d074b18eab3f776c3e7f58381c3db9623aaf662ba6d5f36aed` | P70 (row 22) |
+| `test_docs_p2` (15, `PINNED`) | `docs/PASS2_INPUTS.json` `5a5b353267260afdd95e4745b37cd76ece3f79a3d228cca8e9089153c27604a0` | `d697a93a337aa5dd5bbc04f8f67faa852aad3ddda3ad71b529575bdbc3761f56` | P70 (row 22) |
+| `test_docs_p2` (16, `PINNED`) | `docs/replacements/PLAN.md` `8030770119338ad852cbd6b9b0d132ac6b815e7c16438a21dfd4485798473fcb` | `641fb05f4ec6958a4e55672af00453b73da8f1388fd539c22d9d67c0f272e6c5` | P70 (row 22) |
+| `test_docs_p2` (17, `PINNED`) | `docs/replacements/PROJECT_SETUP.md` `c137831848fb39566eec6441979af9172b188c01e5e5499174896b8ea9881078` | `8b342d1ec69d6069476d4e8ec3478456298ca4d9c34a6b1f1f100143edc9d091` | P70 (row 22) |
+| `test_docs_p2` (18, `PINNED`) | `docs/replacements/README.md` `9596fe7d2de098c17b5be2b54ba249cafde9359b872e7e81ff29e9d95db4b9f6` | `4896b40905f4426c618085ea589a2dab9596f1f0187010aa879c653a08f6b48f` | P70 (row 22) |
+| `test_docs_p2` (20–21, 36–39), new | — | `NEW_PINNED`: `docs/DECISIONS_P58_onward.md` `e7874506706198850c9c680bf052859d6fcf453f511f6bc3ba5403dbef119131`; new method `test_p70_new_docs_pinned`. `test_the_eight_kit_docs` unchanged | P70 (row 22) |
+| `test_docs_d4` (13, `DOCS`) | README `9596fe7d2de098c1`; PLAN `8030770119338ad8` | README `4896b40905f4426c`; PLAN `641fb05f4ec6958a` | P70 |
+| `test_docs_d4` (33) | PLAN starts `# Research Plan v2.3` | starts `# Research Plan v2.4` | P70 |
+| `test_docs_d4` (36–37) | `Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, …)` | `Supersedes:** v2.3 (2026-10-05), which superseded v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, …) and v2.0` | P70 |
+| `test_docs_d6` (25) | PROJECT_SETUP prefix `c137831848fb3956` | `8b342d1ec69d6069` | P70 |
+| `test_docs_d6` (31) | title ends `(October 2026, after Pass 1; refreshed 2026-10-05)` | ends `(… refreshed 2026-10-06)` | P70 |
+| `test_docs_d6` (58) | `` `PLAN.md` (v2.3) `` | `` `PLAN.md` (v2.4) `` (Project-only test; skipped on the Mac) | P70 |
+| `test_docs_d6` (59) | Project PLAN starts `# Research Plan v2.3` | starts `# Research Plan v2.4` (Project-only; skipped on the Mac; the Project after the Pass 2 upload) | P70 |
+
+No other test changed. No test was deleted.
+
 ## Flags
 
 16. Platform floating point: the original panels were built on x86_64 with AVX-512; Mac rebuilds differ in the last bit (both Mac environments give identical panels); the B6 report differs under both Mac BLAS libraries.
@@ -390,6 +427,10 @@ Not changed: row 20 (`test_validation_c7`; its report was regenerated by the one
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 - (P2-3b, **4c STOP**, resolved) The C7 comparison (`tools/p2_3b_c7_compare.py`, the item 4 criterion as written) failed (iii) in both reports, only on runtime_s, the wall-clock seconds (618.2086887359619 → 316.75257444381714; relative 0.48762840086981896). (i), (ii) and (iv) passed, and no other float was beyond 1e-9. STOP report `/tmp/p2_3b_report_stop.txt`; nothing committed.
   - Resolution (Decision log, D16 criterion (iii) amended): runtime_s is information only. The tool now skips exactly the fields named runtime_s in (iii) and prints them separately; rerun on the same files: (i)–(iv) PASS for both. `tools/c7_mc.py` was not rerun.
+- (P2-6, for review) `test_docs_d6.test_project_claims` (Project-only; skipped on the Mac) still asserts that the Project PLAN starts with `# Research Plan v2.3`. It is left unchanged because the Project copy stays v2.3 until the Pass 2 upload; it moves to v2.4 with the upload. Until then, the Project byte comparisons (`test_docs_d4` for README and PLAN; `test_docs_d6` for PROJECT_SETUP) also fail wherever `/mnt/project` is mounted, as the register (§0) anticipates. **Resolved** (supervisor message of 2026-10-06, item 1 b1): the assertion now expects `# Research Plan v2.4`, because the Project-comparison tests describe the Project after the Pass 2 upload; left at v2.3, it would fail on the first mounted run after the upload.
+- (P2-6, for review) After PASS2_INPUTS.json is committed, a rerun of `tools/p2_4_accept.py` prints False on "build/ and docs/PASS2_INPUTS.json unchanged from the MANIFEST head to HEAD". The committed `reports/P2_4_acceptance.md` stays the run-time record (P2-4 entry), and the P2-4 MANIFEST keeps the pre-edit registry.
+- (P2-6, for review) DATA_PROVENANCE §4.2 now says, in the supervisor's words, that the XAU window endpoints are hours stale on the nights around Good Friday (§5.4). §5.4 gives the counts from `reports/P2_5_dev_checks.md` §2.4 (more than 60 minutes stale: dev 14 start and 15 end dates, 2–3 a year; sealed 8 and 8). The reports do not name these dates, and this message reads no panel data, so the Good Friday attribution was not checked here. **Resolved** (supervisor message of 2026-10-06, item 1 b6): DATA_PROVENANCE §5.4 now attributes the counts: "Each Good Friday closure and each Christmas closure leaves one window start and one window end more than 60 minutes stale. That accounts for all 14 dev start dates, 14 of the 15 dev end dates, and all 8 and 8 confirmation dates; the New Year closures fall while the TSE is closed. The remaining dev end date comes from a shorter outage, below the 6-hour gap threshold (supervisor, 2026-10-06; calendar arithmetic on the gap times and the TSE calendar; counts only)."
+- (P2-6, info) `pull_dukascopy.py` has no copy in REPO, KIT or RAW, so its registry hash was not rechecked in P2-6. The original sealed panel (`9c18a6c1…`) is not on the Mac. The Project copy equals the registry value (supervisor chats, 2026-10-05 and 2026-10-06).
 
 ## Blinding attestation
 
@@ -425,6 +466,7 @@ Not changed: row 20 (`test_validation_c7`; its report was regenerated by the one
   - items 3 and 5: the suite on the real dev panel (structural and target-only tests);
   - item 4: synthetic only (`tools/c7_mc.py` reads no real data; `tools/p2_3b_c7_compare.py` reads only the old and new synthetic C7 reports; the C7 tests are synthetic).
   - No computation related a predictor to a target. OFILT_RUN_SEALED unset; BLIND_FIT_LOG 6 dev_real lines; RUN_REGISTRY.jsonl 0 bytes.
+- **P2-6 (supervisor message of 2026-10-05, P2-6 records):** no panel and no raw file was opened or read. RAW, DATA and OUT files were hashed only (the PASS2_INPUTS.json check). `build_out/p2_20261006T002928Z/MANIFEST.json` was read by script, printing its structure, hashes, counts, spans, platform, git state and assertion names only. The committed reports and the register were read. `build/pass2/build_panel_p2.py` was imported, and its build was not run. The suite ran on the real dev panel (structural and target-only tests). No computation related a predictor to a target. OFILT_RUN_SEALED and OFILT_SLOW unset; BLIND_FIT_LOG 6 dev_real lines; RUN_REGISTRY.jsonl 0 bytes.
 - **Correction to P2-1 (found 2026-10-05, during P2-2):** the P2-1 report and the P2-1 line below say the fixed workbook's `README` sheet "was not read". In fact `pd.read_excel(sheet_name=None)` loaded it into memory with the other sheets (in P2-1's structure probe and in `tools/p2_1_inputs.py`), and its shape and dtypes were printed. Its contents were never printed or used. `build_panel_p2` reads only the `1306`, `1306 dividends` and `TOPIX optional` sheets.
 - **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.
@@ -458,3 +500,10 @@ Not changed: row 20 (`test_validation_c7`; its report was regenerated by the one
 - P2-3b, item 2e: some lines carry citing comments that the dry-run patch did not have (test_docs_d1 rows 7 and 9, test_docs_d5 row 13, test_lookahead row 16; listed in `/tmp/p2_3b/patch_compare.out`). Row 21's line in test_docs_d4 had no comment citing its entry, in the dry run and in item 2. The comment ("Isaiah 2026-10-05, row 21") was added after the 4c STOP; comment only.
 - P2-3b, item 4b: the four chunks ran in one foreground command, each as `env -u OFILT_RUN_SEALED OFILT_SLOW=1 OFILT_DATA_DIR=… python tools/c7_mc.py --budget 90` (the `env -u` keeps the rule's unset variable explicit).
 - P2-3b, item 4c: from its first version, the comparison tool also printed an information-only line (floats other than runtime_s). It changed no verdict.
+- P2-6, refresh date: the documents carry the local date of the edit, 2026-10-06 (`date`), as instructed; the decisions of the P2-6 message carry 2026-10-05, as given; corrected to 2026-10-06, the paste date, at review (supervisor message of 2026-10-06).
+- P2-6, PASS2_INPUTS.json: the new strings use ASCII ("2015-2025", "section 4.3", ">="), so `json.dumps(obj, indent=2)` writes no `\u` escapes; the meaning is the register's.
+- P2-6, README: beyond the literal R-rows, the "Current scope" decision-log list gains `DECISIONS_P58_onward.md` ("four parts"), and the Files table's PLAN row (v2.4) and PASS2_INPUTS.json row (the pending items are now empty) are updated to match.
+- P2-6, DATA_PROVENANCE §5: the heading's ⟨P2-4 date⟩ is filled with 2026-10-05 and MANIFEST's `built` timestamp (UTC 2026-10-06). §5.4 summarises the 72 assertion names by group, with the names left in MANIFEST.json, and adds the XAU staleness counts that DP-4's "(§5.4)" refers to. §4.4's D8 bullet quotes option (a) from PASS2_HANDOFF D8.
+- P2-6, PROJECT_SETUP S-4: "Replaced on ⟨date⟩" is filled as "replaced at the Pass 2 upload, after P2-7", because the upload date is not yet known.
+- P2-6, DECISIONS_P58_onward.md: each entry quotes the Decision log verbatim (42 of its 45 bullets; the other 3 are the resolved agenda items of "Open for the decision checkpoint"). P69 lists the P2-5 A7 parser-bug run as recorded, with no separate acceptance entry, rather than as accepted.
+- P2-6, test_docs_p2: the new pin is a separate `NEW_PINNED` dict with a new test method (247 tests), so `test_the_eight_kit_docs` stays unchanged.

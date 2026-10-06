@@ -1,11 +1,12 @@
 {
-  "_about": "Pass 2 input registry (2026-10-04; updated 2026-10-05). SHA-256 of every file the Pass 2 build reads: raw inputs, event files and the original build code. Raw files stay LOCAL (never in the Claude Project, never in git). The build must refuse to run if any hash differs.",
+  "_about": "Pass 2 input registry (2026-10-04; updated 2026-10-05). SHA-256 of every file the Pass 2 build reads: raw inputs, event files and the original build code. Raw files stay LOCAL (never in the Claude Project, never in git). The build must refuse to run if any hash differs. Updated 2026-10-06: local layout, statuses, Mac reference outputs, Pass 2 outputs.",
   "local_layout": {
-    "raw": "~/Desktop/FX Project/raw/ (flat; build_panel reads this directory). Checks in raw/checks/.",
-    "data": "~/Desktop/FX Project/data/ = OFILT_DATA_DIR: panel_dev.csv, events_firm.csv, events_boj.csv.",
-    "kit": "~/Desktop/FX Project/pass2_kit_2026-10-05/: updated docs, original build code, SHA256SUMS_2026-10-05.txt.",
-    "build_out": "~/Desktop/FX Project/build_out/: one subfolder per build run; outside the repo; holds sealed panels.",
-    "repo": "~/Desktop/FX Project/ofilt_pass1/ (canonical repo, DECISIONS P45). Paths are confirmed by Isaiah before the build."
+    "raw": "~/Desktop/FX_Project/raw/ (flat; build_panel reads this directory). Checks in raw/checks/. Organised by organize_raw_inputs.py; originals untouched.",
+    "data": "~/Desktop/FX_Project/data/ = OFILT_DATA_DIR: panel_dev.csv, events_firm.csv, events_boj.csv. Since the switch commit (P2-3b, b9bf6f3d2e7b11243af6d626713417b5c87423b8), panel_dev.csv is the Pass 2 dev panel (36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68; pass2_outputs); the Pass 1 dev panel (736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42; baseline_outputs) is archived as data/archive/panel_dev_736636031ca1.csv.",
+    "kit": "~/Desktop/FX_Project/files/pass2_kit_2026-10-05/: updated docs, original build code, SHA256SUMS_2026-10-05.txt.",
+    "build_out": "~/Desktop/FX_Project/build_out/: one subfolder per build run; outside the repo; holds sealed panels.",
+    "repo": "~/Desktop/FX_Project/ofilt_pass1/ (canonical repo, DECISIONS P45). Paths confirmed 2026-10-05.",
+    "venv": "~/venvs/ofilt_p2 (Python 3.12.4; versions in MANIFEST.json and DATA_PROVENANCE section 5.1)"
   },
   "inputs": {
     "Book2.xlsx": {
@@ -28,7 +29,7 @@
       "sha256": "ca51235b9f7aa8380b725984636bff5a3ae7db816e4ab0e904e70a3d0054370d",
       "source": "Bloomberg 1306 + TOPIX TR, corrected copy (dividends /10, type relabel; RAW sheet kept)",
       "role": "1306 hedge OHLC + dividends; TOPIX total return (fallback only)",
-      "status": "ACCEPTED (P39, P47): split ratio 10 confirmed by the issuer (record 2026-03-31, effective 2026-04-01) and by Nomura's published distributions; settings-check suffix PENDING (P39b)"
+      "status": "ACCEPTED (P39, P47): split ratio 10 confirmed by the issuer (record 2026-03-31, effective 2026-04-01) and by Nomura's published distributions. Settings check P39b resolved by attestation (D2, Isaiah 2026-10-05): Book2 and 1306 were pulled with the JT suffix and the Appendix E settings; the 1A re-pull was not run; the suffix is not identifiable from daily data. TOPIX total-return series: TPXDDVD Index (dividend-included, gross; D3, Isaiah 2026-10-05)."
     },
     "newbloombergdata.xlsx": {
       "sha256": "2d91c756a0fc64216bd6d1dea7850f98f9326b15e8fa7050cdf62dbbcbe531cc",
@@ -40,13 +41,13 @@
       "sha256": "219c58a9713b16dfb64ea1a967ca19a39095f9f6c9cc085b3405a72683d9dbaf",
       "source": "Dukascopy 1-min BID via patched pull_dukascopy.py",
       "role": "XAU dark-window return (robustness only, P34)",
-      "status": "verified (DECISIONS P41)"
+      "status": "verified (DECISIONS P41); gaps include the 11 Good Friday closures 2015-2025 (DATA_PROVENANCE section 4.2)"
     },
     "jpn225_dukascopy_2015-01-01_2026-03-05.csv.gz": {
       "sha256": "4490bb473dbb372a13515c5e8a5be8d341d59cbb01910a2cb0f664c8fa3b9cf1",
       "source": "Dukascopy 1-min BID (INSTRUMENT_IDX_ASIA_E_N225JAP)",
       "role": "overnight Nikkei proxy (exposure-claim robustness)",
-      "status": "verified with coverage limitation: fresh 08:59 JST price only from ~2018-07-02 (DECISIONS P42)"
+      "status": "verified with coverage limitation: 08:59 JST price fresh from 2018-04-13 (miners' calendar; trailing-60 changeover 2018-07-05) (DECISIONS P42; DATA_PROVENANCE section 4.3)"
     },
     "checks/usdjpy_dukascopy_2019-06-04_2019-06-04.csv.gz": {
       "sha256": "9c7bb9a063b98a5abdf57ca7aa419f6cc1b7b6f208968f0ac2cb5448c151b45e",
@@ -88,7 +89,7 @@
     }
   },
   "baseline_outputs": {
-    "_about": "Outputs of the original build (MANIFEST.json, 2026-10-01). P2-0b reproduces both; P2-4 checks the old-column projections against them.",
+    "_about": "Outputs of the original build (MANIFEST.json, 2026-10-01; Claude sandbox, x86_64). Not reproducible on macOS arm64 (Flag 16). P2-4 acceptance (a) checks the dev 41-column projection against panel_dev.csv here. The original sealed file is not available anywhere on the Mac, so this sealed hash can no longer be checked. The sealed reference is mac_frozen_build_outputs (the hybrid, Isaiah 2026-10-05), and the pre-registration discloses this.",
     "panel_dev.csv": {
       "sha256": "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42",
       "rows": 5124,
@@ -106,22 +107,85 @@
       ]
     }
   },
+  "mac_frozen_build_outputs": {
+    "_about": "The frozen build/pass1 code on macOS arm64, 2026-10-05 (P2-0b; OUT/baseline_20261005T214044Z). Deterministic across both Mac environments. The sealed hash is P2-4 acceptance (b).",
+    "panel_dev.csv": {
+      "sha256": "656d5117a7d0027f7ba7d2cc8d16236fcc9258af384363c8be4577ce15933bd4",
+      "rows": 5124,
+      "span": [
+        "2015-01-06",
+        "2021-12-30"
+      ]
+    },
+    "panel_confirm_SEALED.csv": {
+      "sha256": "138e5e2104d5ebf6e9616edc55ca00f548e38be604365bd47932e1716f4d9d19",
+      "rows": 3057,
+      "span": [
+        "2022-01-04",
+        "2026-03-05"
+      ]
+    }
+  },
+  "pass2_outputs": {
+    "_about": "Outputs of build/pass2/build_panel_p2.py (P2-4; build_out/p2_20261006T002928Z/; accepted 2026-10-05), from its MANIFEST.json. The panels have 60 columns: the 41 old ones (dev: the original panel_dev.csv strings; sealed: the Mac frozen build) plus 19 new ones (P50, P51).",
+    "manifest_sha256": "1345c0772777b87e9d5fcc01794340231c04068f383330762e68ff3ef468e8bd",
+    "built": "2026-10-06T00:30:20.330090+00:00",
+    "git_head": "34f61dbb49a14bdb1965e20fab71ded33057509b",
+    "platform": {
+      "platform": "macOS-26.6.2-arm64-arm-64bit",
+      "machine": "arm64"
+    },
+    "panel_dev.csv": {
+      "sha256": "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68",
+      "rows": 5124,
+      "columns": 60,
+      "span": [
+        "2015-01-06",
+        "2021-12-30"
+      ],
+      "old41_projection_sha256": "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42"
+    },
+    "panel_confirm_SEALED.csv": {
+      "sha256": "b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1",
+      "rows": 3057,
+      "columns": 60,
+      "span": [
+        "2022-01-04",
+        "2026-03-05"
+      ],
+      "old41_projection_sha256": "138e5e2104d5ebf6e9616edc55ca00f548e38be604365bd47932e1716f4d9d19"
+    }
+  },
   "verifications": [
     {
       "date": "2026-10-05",
       "by": "supervisor chat",
       "what": "Uploaded copies of newbloombergdata.xlsx, checks/usdjpy_dukascopy_2019-06-04_2019-06-04.csv.gz, xauusd_dukascopy_2015-01-01_2026-03-05.csv.gz, jpn225_dukascopy_2015-01-01_2026-03-05.csv.gz and pull_dukascopy.py hashed: all match this registry."
+    },
+    {
+      "date": "2026-10-05",
+      "by": "builder (P2-0)",
+      "what": "KIT SHA256SUMS_2026-10-05.txt: 21/21 OK. Every raw input, event file and build code file hash-verified against this registry (PASS2_STATUS, P2-0a)."
+    },
+    {
+      "date": "2026-10-05",
+      "by": "supervisor chats",
+      "what": "The Project copies hashed, all matching (DATA_PROVENANCE section 4.5)."
+    },
+    {
+      "date": "2026-10-05",
+      "by": "build_panel_p2.py (P2-4)",
+      "what": "Every input, event-file and code hash verified before reading; 72 build assertions passed (MANIFEST.json, build_out/p2_20261006T002928Z/, built 2026-10-06T00:30:20.330090+00:00)."
     }
   ],
-  "pending_before_pass2": [
-    "Settings check 1A (DECISIONS P39b): which suffix (JT/JP) reproduced Book2 exactly, and whether 1306 used it. BLOCKS P2-1's acceptance of 1306 and everything after it.",
-    "TOPIX total-return ticker (P40): records only. Not recoverable from the workbook (values only).",
-    "Raw files organised and hash-checked with organize_raw_inputs.sh (pre-flight item 8).",
-    "Mac environment: venv package versions; the data folder with panel_dev.csv and both event files (pre-flight item 9)."
-  ],
+  "pending_before_pass2": [],
   "resolved_2026_10_05": [
     "CACS split ratio: confirmed 10 by issuer documentation and published distributions (P47).",
     "Gotobi convention (P48).",
-    "Guard (Flag 5): no external guard in the canonical repo; conjunctive fail-closed adapter (P45, P46)."
+    "Guard (Flag 5): no external guard in the canonical repo; conjunctive fail-closed adapter (P45, P46).",
+    "Settings check (DECISIONS P39b): resolved by attestation (D2, Isaiah 2026-10-05); the 1A re-pull was not run.",
+    "TOPIX total-return ticker (P40): TPXDDVD Index (D3, Isaiah 2026-10-05).",
+    "Raw files organised and hash-checked with organize_raw_inputs.py (a recorded deviation from the .sh; originals untouched).",
+    "Mac environment: ~/venvs/ofilt_p2 (numpy >= 2; conda not used)."
   ]
 }

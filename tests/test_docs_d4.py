@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DOCS = {"README.md": ("README.md", "9596fe7d2de098c1"), "PLAN.md": ("PLAN.md", "8030770119338ad8")}  # P57: was dc7983326fc4964e / 220fc762a511b13a; Project name README__2_.md -> README.md (Isaiah 2026-10-05, row 21)
+DOCS = {"README.md": ("README.md", "4896b40905f4426c"), "PLAN.md": ("PLAN.md", "641fb05f4ec6958a")}  # P70: was 9596fe7d2de098c1 / 8030770119338ad8; P57: was dc7983326fc4964e / 220fc762a511b13a; Project name README__2_.md -> README.md (Isaiah 2026-10-05, row 21)
 
 
 def text(name):
@@ -30,10 +30,11 @@ class TestRestored(unittest.TestCase):
             src = Path("/mnt/project") / project_name
             if src.exists():
                 self.assertEqual(data, src.read_bytes(), name)
-        self.assertTrue(text("PLAN.md").startswith("# Research Plan v2.3"))      # P57: was v2.2
+        self.assertTrue(text("PLAN.md").startswith("# Research Plan v2.4"))      # P70: was v2.3; P57: was v2.2
         # P57: was "Supersedes:** v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)"
-        self.assertIn("Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, "
-                      "`docs/replacements/PLAN.md`)", text("PLAN.md"))
+        # P70: was "Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)"
+        self.assertIn("Supersedes:** v2.3 (2026-10-05), which superseded v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, "
+                      "`docs/replacements/PLAN.md`) and v2.0", text("PLAN.md"))
 
 
 class TestReadme(unittest.TestCase):
