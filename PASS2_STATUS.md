@@ -21,7 +21,8 @@ Pass 2 (data and rebuild), run per builder prompt A′ (`docs/PASS2_ADDENDUM.md`
 | P2-2 | done; accepted by Isaiah 2026-10-05 | `build/pass2/columns.py` (pure functions; frozen helpers reused by import) and `build/pass2/build_panel_p2.py` (append-only build; every A′ and Isaiah build-time assertion). Synthetic tests only (`tests/test_p2_columns.py`, `tests/test_p2_build.py`, helper `tests/p2_synth.py`); no real-data run. Checkpoint `checkpoint: P2-2` |
 | P2-2b | done | Amendment to `build/pass2/build_panel_p2.py` only: the amended usdjpy_us_ret rule (`check_us_ret`) with the per-panel MANIFEST count of session nights summing to exactly 0.0; MANIFEST records `git rev-parse HEAD` and whether `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty, and the command line refuses to run otherwise. 5 synthetic tests added. Checkpoint `checkpoint: P2-2b` |
 | P2-3a | done | `docs/P2_switch_drafts.md`: schema (P50), HEDGE_GAP_FOR / io / FX_NAMES (AM-03, P52), AM-03 to AM-06 in SPEC_AMENDMENTS JSONL form (AM-04 to be filled after P2-4; AM-05/06 skeletons per P56), the 60-column DATA_DICTIONARY, and the test-change table (24 rows). Nothing applied. Checkpoint `checkpoint: P2-3a` |
-| P2-4 | done; ACCEPTED; STOP for supervisor check | `build/pass2/build_panel_p2.py` on the committed tree (HEAD `34f61dbb49a14bdb1965e20fab71ded33057509b`) into `build_out/p2_20261006T002928Z/`: exit 0, 72 build-time assertions. `tools/p2_4_accept.py` → `reports/P2_4_acceptance.md`: (a)–(g) all True. AM-04's hashes filled in the drafts. Checkpoint `checkpoint: P2-4` |
+| P2-4 | done; accepted by Isaiah 2026-10-05 | `build/pass2/build_panel_p2.py` on the committed tree (HEAD `34f61dbb49a14bdb1965e20fab71ded33057509b`) into `build_out/p2_20261006T002928Z/`: exit 0, 72 build-time assertions. `tools/p2_4_accept.py` → `reports/P2_4_acceptance.md`: (a)–(g) all True. AM-04's hashes filled in the drafts. Checkpoint `checkpoint: P2-4` |
+| P2-4b | done | `tools/p2_4_accept.py`: the HEAD-equality check is replaced by "MANIFEST git head is an ancestor of HEAD" and "build/ and docs/PASS2_INPUTS.json unchanged from the MANIFEST head to HEAD" (both heads printed); it writes the report only with --write-report (never used). Rerun: exit 0, P2-4 ACCEPTED: True; the only difference from the committed report is the replaced head line. Full environment recorded. Checkpoint `checkpoint: P2-4b` |
 
 ## Next action
 
@@ -55,6 +56,11 @@ STOP after P2-4 (report `/tmp/p2_4_report.txt`). P2-5 starts only after the supe
 - usdjpy_us_ret assertion amended (Isaiah, 2026-10-05; replaces A′'s 'usdjpy_us_ret == 0.0 if and only if us_n_sessions == 0'): usdjpy_us_ret == 0.0 wherever us_n_sessions == 0, and finite wherever us_n_sessions > 0. Reason: on a night with US sessions the summed return is exactly 0.0 whenever the USD/JPY bid at the NY close equals the bid at the NY open, so the 'only if' half would fail on legitimate data. The zero-session nights stay pinned by the row-by-row check that the sessions summed equal us_n_sessions. MANIFEST reports, per panel, the number of nights with sessions whose sum is exactly 0.0 (a count).
 - XAU / Japan 225 ts_utc format (P2-2 flag, resolved by the supervisor): the registered pull_dukascopy.py (6d9464f8…) converts ts_utc to timezone-aware UTC before writing, the same form as the FX masters, so the frozen load_fx should read them. If not, P2-4 stops at load time; there is no silent path.
 
+- P2-4 accepted (Isaiah, 2026-10-05, on the supervisor's recommendation). Build build_out/p2_20261006T002928Z; MANIFEST git head 34f61dbb49a14bdb1965e20fab71ded33057509b (= checkpoint: P2-3a); dev 36f7dd69…, sealed b575272a… (full hashes in MANIFEST); old-column projections 736636… and 138e5e21…; 72 build assertions; acceptance (a)–(g) True. The committed reports/P2_4_acceptance.md stays the run-time record and is not regenerated.
+- Acceptance-tool fix adopted (Isaiah, 2026-10-05, on the supervisor's recommendation): in tools/p2_4_accept.py the check "MANIFEST git head is this checkout's HEAD" becomes two checks (the MANIFEST head is an ancestor of HEAD; build/ and docs/PASS2_INPUTS.json are unchanged from the MANIFEST head to HEAD), both heads printed; the tool writes reports/P2_4_acceptance.md only with an explicit --write-report flag, never used.
+- P2-5 operational details, fixed before any P2-5 script runs (Isaiah, 2026-10-05, on the supervisor's recommendation): as written in the supervisor message of 2026-10-05, item 2, including the P55 estimator (OLS with an intercept, centred R², Newey–West on the reverse slope), the one-row-per-date rule, the sample definitions, and the self-checks with their STOP rules.
+- The switch dry run asked about in docs/P2_switch_drafts.md §5 is adopted as P2-5b (Isaiah, 2026-10-05, on the supervisor's recommendation): a scratch clone with the drafts applied as written (AM-03 and AM-04 only; test-change rows 1–7, 9, 11–19 and 21) and the full suite run on the P2-4 dev panel. Nothing from it is committed.
+
 **Open for the decision checkpoint**
 
 - D7 (P42 rule; tier-(ii) criterion; yen-EWJ option), D8 (1306 open-auction timing; default (a)), D9 (A7 on 1306), D10 (staleness result, read per P55) and D12 (the exact AM-03 to AM-06 texts), as in PASS2_ADDENDUM §1 and §4.
@@ -78,6 +84,28 @@ STOP after P2-4 (report `/tmp/p2_4_report.txt`). P2-5 starts only after the supe
 | BLAS / LAPACK (numpy.show_config) | accelerate / accelerate | openblas64 0.3.23.dev / openblas64 |
 
 pip freeze of ofilt_p2: `OUT/env/pip_freeze_ofilt_p2_20261005T200424Z.txt` (written only).
+
+**Full environment of ofilt_p2** (P2-4b, Isaiah 2026-10-05; printed by script in the venv; the P2-4 MANIFEST, which lists 7 libraries and no BLAS, is not rebuilt):
+
+```
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+python: 3.12.4 (arm64; macOS-26.6.2-arm64-arm-64bit)
+pandas: 3.0.2
+numpy: 2.4.4
+scipy: 1.17.1
+scikit-learn: 1.8.0
+openpyxl: 3.1.5
+PyYAML: 6.0.3
+joblib: 1.5.3
+threadpoolctl: 3.6.0
+python-dateutil: 2.9.0.post0
+numpy show_config blas: name=accelerate version=unknown
+numpy show_config lapack: name=accelerate version=unknown
+scipy show_config blas: name=Accelerate version=unknown
+scipy show_config lapack: name=Accelerate version=unknown
+threadpoolctl.threadpool_info(): 1 entries
+  user_api=openmp internal_api=openmp version=None
+```
 
 **P2-0a integrity** (generated by script from the files and the registries):
 
@@ -174,6 +202,7 @@ The bytes equal the D1 ofilt_p2 run's, so the EXPLAINED dev comparison carries o
 | P2-2b targeted (synthetic only) | ofilt_p2 | test_p2_columns + test_p2_build: Ran 30 tests, OK (19 + 11) |
 | P2-2b checkpoint (`tools/checkpoint.sh "P2-2b"`) | ofilt_p2 | Ran 243 tests in 265.529s, OK (skipped=5). 243 = 238 + 5. B6 diff restored by the script; committed `564e254a6214c0cd1256ef978b6d9694392e95fa` |
 | P2-3a checkpoint (`tools/checkpoint.sh "P2-3a"`) | ofilt_p2 | Ran 243 tests in 275.205s, OK (skipped=5). B6 diff restored by the script; committed `34f61dbb49a14bdb1965e20fab71ded33057509b` |
+| P2-4 checkpoint (`tools/checkpoint.sh "P2-4"`) | ofilt_p2 | Ran 243 tests in 216.959s, OK (skipped=5). B6 diff restored by the script; committed `b61f341133baac68580701119609cb85c423338a` |
 
 After each full run the suite rewrote `reports/B6_coverage.json` (float noise; Flag 16); it was restored with `git checkout` (D3) or by `tools/checkpoint.sh`.
 
@@ -240,6 +269,7 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - (P2-2, risk at P2-4) `build/pass2` reads the XAU and Japan 225 files with the frozen `load_fx`, which needs timezone-aware `ts_utc` strings (as the USD/JPY master has). P2-1 parsed these files with `utc=True`, which accepts either form, so the format is untested until P2-4 (P2-2 has no real-data run). If they are naive, P2-4 stops at load time, and `load_fx` would need a tested re-implementation (Isaiah's rule 2a).
 - (P2-2, info) The frozen build writes `us_n_sessions` as "1.0" (a float column: joining on the calendar's first day introduces a NaN). `build_panel_p2` reads it as a number and asserts it is whole on every row.
 - (P2-4, info) The amended usdjpy_us_ret rule was needed: 4 dev and 2 sealed nights have US sessions whose summed return is exactly 0.0 (counts from MANIFEST).
+- (P2-4, for review) `tools/p2_4_accept.py` checks "MANIFEST git head is this checkout's HEAD". That holds only until the post-build commit. A rerun after `checkpoint: P2-4` gave False on that one line, and therefore "P2-4 ACCEPTED: False"; every other line was identical. The rerun also overwrote `reports/P2_4_acceptance.md`, which was restored from the commit with `git checkout`. Git shows that the build's commit (MANIFEST head `34f61db…`) is an ancestor of HEAD and that `build/` and `docs/PASS2_INPUTS.json` are unchanged between them. Proposed fix, not applied (stop after P2-4): check that ancestry and the unchanged paths instead of equality with HEAD.
 - (info) PASS2_INPUTS.json `local_layout` and A′'s paths name `~/Desktop/FX Project/…` (with a space) and the kit at the top level; on the Mac the folder is `FX_Project` and the kit is under `files/`. To correct at P2-6 (records).
 
 ## Blinding attestation
@@ -255,6 +285,7 @@ No test was deleted. Existing guard tests (`test_io`, `test_blind`, `test_docs_d
 - **Printed data:** none from RAW or OUT. Session 1 printed synthetic dates from a failing synthetic test (`masked_panel(800, seed=33)`).
 - **P2-2:** code and synthetic tests only; no real-data run. The tests generate synthetic inputs in temporary folders outside the repo and run the frozen build on them. No file under RAW, DATA or OUT was read.
 - **P2-4:** the build hash-verified every input, then read RAW, DATA's event files and the original dev panel, and wrote `build_out/p2_20261006T002928Z/`. Its printed output is hashes, rows, spans and a count. `tools/p2_4_accept.py` read both new panels in memory; for the sealed side it printed counts and booleans only (and the sealed span, from MANIFEST). It also hash-verified the raw Japan 225 file and read it for one dev date (2015-01-05). No panel value was printed; nothing related a predictor to a target.
+- **P2-4 acceptance rerun** (to capture its exit code for the report): read the same files in the same way, printing counts and booleans only.
 - **Correction to P2-1 (found 2026-10-05, during P2-2):** the P2-1 report and the P2-1 line below say the fixed workbook's `README` sheet "was not read". In fact `pd.read_excel(sheet_name=None)` loaded it into memory with the other sheets (in P2-1's structure probe and in `tools/p2_1_inputs.py`), and its shape and dtypes were printed. Its contents were never printed or used. `build_panel_p2` reads only the `1306`, `1306 dividends` and `TOPIX optional` sheets.
 - **P2-1:** `tools/p2_1_inputs.py` hash-verified each input, then read Book2 (calendar columns only), the fixed and original 1306 workbooks (the `README` sheet was not read), and the XAU and Japan 225 minute files. It printed only the report. Dev statistics are hedge-only (1306 dividends, yields, ex-day drops) or predictor-only (Japan 225 freshness shares). For 2022+, only dates, counts and booleans were printed: the 2022+ stale-row date was shown only as a boolean against DATA_PROVENANCE, and the outlier and gap timestamps are dates/times. A dev-only diagnostic run (Japan 225 freshness under alternative calendars and thresholds; dev half-years only) informed the script's final diagnostic rows. No target was read; nothing related a predictor to a target.
 - **P2-0b:** the frozen build read RAW and wrote `OUT/baseline_20261005T214044Z/`. Only its outputs block (hashes, rows, spans) and the acceptance booleans were printed, and both panels were hashed. No panel was opened. The dev comparison was rerun once for the regenerated P2-0 report (`/tmp/p2_0_report.txt`), with the same approved script and output.

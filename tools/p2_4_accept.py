@@ -2,7 +2,8 @@
 
 Reads a build folder (panel_dev.csv, panel_confirm_SEALED.csv, MANIFEST.json) and prints each
 acceptance item as True/False, with hashes for dev and counts only for the sealed side. Never prints
-a panel value. Writes the same text to reports/P2_4_acceptance.md.
+a panel value. Prints to stdout only; writes reports/P2_4_acceptance.md only with --write-report
+(P2-4b, Isaiah 2026-10-05: the committed report is the run-time record and is not regenerated).
 
 (a) dev 41-column projection hashes to 736636031ca1...   (b) sealed projection to 138e5e2104d5...
 (c) sealed dates = calendar.confirmation_calendar() (1,019); dev dates unchanged (1,708)
@@ -12,7 +13,7 @@ a panel value. Writes the same text to reports/P2_4_acceptance.md.
     (the panel has no row for 2015-01-05, accounted for explicitly); dates with an empty xau_ret
 (g) every new build-time assertion passed
 
-usage: python tools/p2_4_accept.py <build folder> <raw dir> <original dev panel> <build exit code>
+usage: python tools/p2_4_accept.py <build folder> <raw dir> <original dev panel> <build exit code> [--write-report]
 """
 from __future__ import annotations
 
@@ -52,7 +53,7 @@ def half(d: str) -> str:
     return f"{d[:4]}-H{1 if int(d[5:7]) <= 6 else 2}"
 
 
-def main(folder: Path, raw: Path, orig_dev: Path, build_rc: int) -> int:
+def main(folder: Path, raw: Path, orig_dev: Path, build_rc: int, write_report: bool = False) -> int:
     m = json.loads((folder / "MANIFEST.json").read_text(encoding="utf-8"))
     say(f"# P2-4 acceptance: `{folder.name}`")
     say()
@@ -61,7 +62,13 @@ def main(folder: Path, raw: Path, orig_dev: Path, build_rc: int) -> int:
     for f in (B.DEV_FILE, B.SEALED_FILE):
         ok.append(item(f"{f} hashes to its MANIFEST entry", B.sha256(folder / f) == m["outputs"][f]["sha256"]))
     head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-    ok.append(item("MANIFEST git head is this checkout's HEAD", m["git"]["head"] == head))
+    mh = m["git"]["head"]
+    say(f"- MANIFEST git head: {mh}; this checkout's HEAD: {head}")
+    anc = subprocess.run(["git", "-C", str(ROOT), "merge-base", "--is-ancestor", mh, "HEAD"]).returncode == 0
+    ok.append(item("MANIFEST git head is an ancestor of HEAD", anc))
+    same = subprocess.run(["git", "-C", str(ROOT), "diff", "--quiet", mh, "HEAD", "--", "build/",
+                           "docs/PASS2_INPUTS.json"]).returncode == 0
+    ok.append(item("build/ and docs/PASS2_INPUTS.json unchanged from the MANIFEST head to HEAD", same))
     ok.append(item("MANIFEST records build/ and docs/PASS2_INPUTS.json clean", m["git"]["build_and_inputs_registry_clean"]))
     ok.append(item("the original dev panel hashes to 736636031ca1...", B.sha256(orig_dev) == DEV_OLD))
 
@@ -154,12 +161,15 @@ def main(folder: Path, raw: Path, orig_dev: Path, build_rc: int) -> int:
     allok = all(ok) and a and b and c1 and c2 and d1 and d2 and all(e) and f_ok and g_ok
     say(f"**P2-4 ACCEPTED: {allok}**")
     text = "\n".join(out) + "\n"
-    (ROOT / "reports" / "P2_4_acceptance.md").write_text(text, encoding="utf-8")
+    if write_report:
+        (ROOT / "reports" / "P2_4_acceptance.md").write_text(text, encoding="utf-8")
     print(text)
     return 0 if allok else 1
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        sys.exit("usage: python tools/p2_4_accept.py <build folder> <raw dir> <original dev panel> <build exit code>")
-    sys.exit(main(Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3]), int(sys.argv[4])))
+    args = [a for a in sys.argv[1:] if a != "--write-report"]
+    if len(args) != 4:
+        sys.exit("usage: python tools/p2_4_accept.py <build folder> <raw dir> <original dev panel> <build exit code> "
+                 "[--write-report]")
+    sys.exit(main(Path(args[0]), Path(args[1]), Path(args[2]), int(args[3]), "--write-report" in sys.argv[1:]))
