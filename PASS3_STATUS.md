@@ -8,12 +8,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 |---|---|---|
 | P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
 | P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
-| P3-1 Cost model and SESOI | done | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
 | Pass 3 | in progress | |
 
 ## Next action
 
-P3-1 awaits the supervisor's review and Isaiah's approval of the computation (D2.9). P3-2 also waits for DQ3, DQ4 and DQ7.
+P3-2 waits for DQ3, DQ4 and DQ7, which the supervisor brings with the P3-1b probe's facts.
 
 ## Decision log
 
@@ -119,6 +120,15 @@ P3-1 awaits the supervisor's review and Isaiah's approval of the computation (D2
 >   - D2.8 Economic evaluation (P35 T5). The costs are the primary, low and high round trips of D2.3 to D2.5, with each confirmation row's own β. The break-even is the mean gross P&L per name-day, in bp, of the every-day, β-hedged, market-on-open to market-on-close strategy that trades the sign of the forecast, for M3 and for M2; their difference isolates `usdjpy_ret`. Threshold-trading variants are exploratory.
 >   - D2.9 Fixity. The SESOI is set by these definitions and inputs. Isaiah's approval at the P3-1 review checks the computation only. Any change to an input or a definition after the P3-1 report is a labelled deviation.
 
+> - P3-1 accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `8aba8df8ed33225071d4451741c2f7ab140ef18c`.
+>   - The acceptance covers the recorded deviations P3-1 d (the cost file's structure; every value as decided) and P3-1 g.3 (one text edit run with the system interpreter, outside the venv and without `env -u OFILT_RUN_SEALED`; it read no data), and the removal, before the real run, of one report line that was outside the Outputs list (the tests were rerun).
+>   - Every P3-1 gate passed: the sample (4,192 rows, 1,439 dates), the regressor set, and the conformity of all 5,124 dev opens and closes with the dev tick tables.
+> - SESOI approved as computed (Isaiah, 2026-10-06, on the supervisor's recommendation; D2.9). The supervisor recomputed every component from the report.
+>   - mean |ẽ| = 28.4288 bp; β̄ = 1.0333.
+>   - Mean round trip per name-day: primary 24.5961 bp, low 2.0333 bp, high 77.2878 bp.
+>   - SESOI: primary 0.8652, low 0.07152, high 2.719. These four-significant-digit values are the ones used in the run configuration and in the switch's amendment.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -198,6 +208,15 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
     - No `build_design`, `_design_core`, inference function, `walk_forward` or `DevCalibrator` was called on real data. No probability of equivalence, size or power was computed.
   - `tests/test_p3_1_sesoi.py` is synthetic only. The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout. BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-1b (supervisor message of 2026-10-06)**, by category:
+  - Records only, in PASS3_STATUS.md.
+  - The probe `/tmp/p3_1b_probe.py` (not committed) is synthetic only. It ran once, with `OFILT_DATA_DIR` pointed at an empty folder and `TMPDIR` at its own folder.
+    - It read no data file, constructed no `DevCalibrator`, called no `_sealed_blind_fit`, and ran no script's mode.
+    - It printed wall-clock times, counts, positions and booleans only.
+    - The in-process fingerprint registry was empty at every check.
+    - BLIND_FIT_LOG's SHA-256, RUN_REGISTRY.jsonl's size and the usual synthetic run registry's size were unchanged across the run. Both folders were deleted afterwards.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -210,3 +229,6 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
   - `_about` keys explain the shapes.
 - P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
