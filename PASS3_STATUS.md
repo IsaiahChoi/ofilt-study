@@ -13,12 +13,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
 | P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
 | P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
-| P3-2d Review changes R1, R2; structural check; rehearsal script | done | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
 | Pass 3 | in progress | |
 
 ## Next action
 
-P3-3: after the supervisor's review of P3-2d, Isaiah runs `tools/p3_3_rehearse.sh` (full) in his own Terminal; then the DQ5 test-change rehearsal and the DQ6 amendment drafts.
+P3-3b: the DQ6 amendment drafts (from the P3-3a listing), then P3-4, Isaiah's sanction.
 
 ## Decision log
 
@@ -231,6 +232,22 @@ P3-3: after the supervisor's review of P3-2d, Isaiah runs `tools/p3_3_rehearse.s
 >   - Its runtimes give the expected duration of the real run, stated before the sanction.
 > - The records rule (Isaiah, 2026-10-06, on the supervisor's recommendation): until the switch, no line added to PASS3_STATUS.md begins with a prefix from which the configuration's rules are copied, and every records step ends with `--check-config` printing valid: True.
 
+> - P3-2d accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `1c48d381bb794e65d6532ba915ea782761ba58b2`, including P3-2d's recorded deviations: the smoke rehearsal in a scratch clone; R2's scope; the structural check's draw length and private row bounds; the rehearsal script's summary line; and its missing shebang.
+>   - The structural check (R3) passed every boolean: `DevCalibrator` built on the real frame's structure, with synthetic targets, gave T = 1,439 and rows = 4,192.
+> - P3-2e (read-only; 2026-10-06), the last part of the real path not exercised before.
+>   - `_design_core` stores its `provenance` argument in the returned `Design` and nothing else (`inference.py:85`, `:136-138`). It calls no function of `blind`, `io`, `registry` or the guard, and its behaviour does not depend on provenance. `inference.py` and `sim.py` are unchanged since `pass1-final`.
+>   - `_sealed_blind_fit` refuses a wrong provenance, or a missing `OFILT_RUN_SEALED=1`, before it writes its log line, and it writes the line before the fit (`sim.py:157-163`).
+>   - Every way `_design_core` can fail after that line (a forbidden target, missing columns, an empty sample, non-finite values, a rank-deficient design) is ruled out on the real path. The structural check built the same columns, rows and design matrix, and P3-0b found every required value finite.
+> - The rehearsal (Isaiah's Terminal, 2026-10-07T00:12:19Z to 04:05:04Z, HEAD `1c48d38`): REHEARSAL PASSED (DQ1.5).
+>   - Two full `--rehearsal` runs completed with no error. Their outputs are identical apart from runtime.
+>   - BLIND_FIT_LOG, the configuration, RUN_REGISTRY.jsonl, the tool, `calib.py` and the usual temporary run registry were all unchanged, and the tree stayed clean.
+>   - Runtimes were 6,955.0 s and 7,004.9 s. **The expected duration of the real run is about 2 hours** (1.95 h), stated before the sanction as DQ1.5 requires.
+> - DQ5 (Isaiah, 2026-10-07, on the supervisor's recommendation): the test changes that the real line 7 requires.
+>   - A post-run checkpoint, the first commit after the real run, commits BLIND_FIT_LOG's line 7, `reports/P3_4_sealed_run.json` and `reports/P3_4_sealed_run.md`. It also applies, unchanged, the line-7 test changes in `docs/P3_DQ5_line7.patch`, which the supervisor reviews before the sanction.
+>   - Lines 1 to 6 stay pinned as Pass 1's history: the six-line prefix stays byte-identical, with SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`. Line 7 is pinned by its fields: provenance `dev_real`; panel hash `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`; spec hash `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9` (the configuration's `spec_sha256`); 5,124 input rows; and a caller naming `tools/p3_sealed_run.py`. Line 7's time and caller text cannot be known in advance, so no whole-file hash of the seven-line log is pinned.
+>   - The spec amendments (AM-07 onward) and their test changes come later, in the switch (DQ6).
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -288,6 +305,17 @@ P3-3: after the supervisor's review of P3-2d, Isaiah runs `tools/p3_3_rehearse.s
   - At these rates the full configuration projects to 6,914 s (1.92 h), against 1.54 h with an empty registry (P3-2b).
 - The full suite ran inside the P3-2d checkpoint; its result is in the P3-2d report (`/tmp/p3_2d.txt`).
 
+**P3-3a:**
+- The full rehearsal (Isaiah's Terminal, 2026-10-07T00:12:19Z to 04:05:04Z; `reports/P3_3_rehearsal.log`): REHEARSAL PASSED.
+  - Totals were 6,955.0 s and 7,004.9 s, and the two outputs are identical apart from runtime.
+  - Run 1's outputs are in `reports/P3_3_rehearsal_run1.json` and `.md`. The P3-2e report is in `reports/P3_2e_report.txt`.
+- Plausibility table of the rehearsal's synthetic outputs (information; checks P1–P10 in the P3-3a report): P1–P8 and P10 True; **P9 False**. On the early-window cells, OLS-DK and winsorised OLS-DK reject 33.7% and Huber-DK 20.2% at b = 0, with a mean bias of −0.094 (OLS) at both b = 0 and b = 0.25 (Flags).
+- The DQ5 patch, rehearsed in scratch clones:
+  - clone A, unpatched, with a dummy line 7: 2 failures, `test_docs_d3` and `test_docs_d3b`;
+  - clone B, patched, without line 7: 2 failures, only in the patched tests;
+  - clone B, patched, with line 7 and the stand-in outputs: 277 tests, OK (skipped=5).
+- The full suite ran inside the P3-3a checkpoint; its result is in the P3-3a report (`/tmp/p3_3a.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
@@ -300,6 +328,13 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 | new `tests/test_p3_sealed_run.py` | — | 9 tests, synthetic only (no data file read; no test sets `OFILT_RUN_SEALED`):<br>1. static checks (one `DevCalibrator(`; no banned import; one writing function; private attributes only in the row-count assertion);<br>2. the invariance of (b̂ − b)/se and t* across b, and `calib.bootstrap_t_given_fit` equal to `calib.bootstrap_t`;<br>3. the configuration (rebuilt equals committed; refusals);<br>4. real-mode refusals with no data read;<br>5. outputs whitelisted, no list over 20;<br>6. the run-registry directory;<br>7. seeds disjoint;<br>8. the 6 → 7 → 7 log checks;<br>9. determinism<br>P3-2c change: test 4's two in-process refusals have their stdout captured (`contextlib.redirect_stdout`), and the captured text must start with `REFUSED` (was: printed to the suite's stdout, uncaptured) | P3-2b (supervisor message, 2026-10-06); P3-2c (supervisor message, 2026-10-06) | P3-2b; P3-2c |
 | `tests/test_p3_sealed_run.py`: 4 tests added (existing tests unchanged) | 9 tests | 13 tests:<br>10. R1: the generalised log check (a synthetic line passes; a wrong count, provenance or caller fails) and the logged-panel check (provenance `dev_real` and the logged hash);<br>11. R2: the generic handlers in `main` and `_run` reference no exception message (AST);<br>12. R2: `_abort_text` gives `<class> at line <n>` without the message;<br>13. `tools/p3_3_rehearse.sh`, static: no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | P3-2d (supervisor message, 2026-10-06) | P3-2d |
 | new `tests/test_p3_2d_structural.py` | — | 1 test, synthetic only: the structural frame builder keeps exactly the stated columns, keeps the missing pattern of `abn_oc` and `beta`, replaces their present values, drops every `y_*`, `ao_*`, `open`, `close` and `prev_close` column, and labels the frame synthetic | P3-2d (supervisor message, 2026-10-06) | P3-2d |
+
+**Pending: applied at the post-run checkpoint (DQ5).** `docs/P3_DQ5_line7.patch` is applied unchanged in the first commit after the real run, together with BLIND_FIT_LOG's line 7 and `reports/P3_4_sealed_run.json` and `.md`. It was rehearsed in scratch clones at P3-3a: with a dummy line 7 and stand-in outputs the suite passes (277, OK); without them it fails only in these two tests.
+
+| Test (line) | Old | New | Entry | Phase |
+|---|---|---|---|---|
+| `test_docs_d3.TestP29Blinding.test_sealed_fit_opt_in_and_record` (65-73) | BLIND_FIT_LOG has 6 lines, all `dev_real`, all on the Pass 1 dev panel `7366…`, with callers B5 ×3, `report_B7.py` ×2 and `report_B7b.py` | 7 lines, all `dev_real`. The six-line prefix's SHA-256 is pinned (`dad93285…`, raw bytes). Lines 1–6 are on `7366…`, with the same callers. Line 7 is pinned by its fields: key set; panel hash `36f7dd69…` (AM-04); spec hash `0320d6aa…` (the configuration's); 5,124 input rows; and a caller naming `tools/p3_sealed_run.py`. No whole-file hash. Adds `import hashlib` | DQ5 (Isaiah, 2026-10-07) | post-run checkpoint |
+| `test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag` (41) | `len(log) == 6` | `len(log) == 7` (Pass 1's six and P3-4's line 7); `RUN_REGISTRY.jsonl` still empty | DQ5 (Isaiah, 2026-10-07) | post-run checkpoint |
 
 ## Flags
 
@@ -316,6 +351,13 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - (P3-0b, for the supervisor) DQ2, price units: the panel's miner prices are adjusted for capital changes and are on the basis after 5706's 10:1 split (ex-date 2026-09-29; DATA_PROVENANCE.md:67, :70; DATA_DICTIONARY.md:116). Read with B3's grids, panel prices therefore differ from the prices traded at the time by a factor: 5711 ×10 before 2016-09-28 (grid 10, a 1-yen tick); 5713 ×2 before 2017-09-27 (2016 grid 0.2, a 0.1-yen tick); 5706 ÷10 from 2017-09-27 (grid 0.1 or 0.5, a 1- or 5-yen tick). A TSE tick-size schedule applies to traded prices, so it cannot be applied to the panel prices as they stand. B4's ratio g / price does not depend on the factor.
 - (P3-0b, for the supervisor) DQ2, B4 as specified uses the finest grid detected in each (ticker, year, period) cell. Where a year spans TSE tick bands, rows in the coarser band have a larger tick than g, and B4 understates it. Example: 5706 in 2018 has 86.32% of its prices on 0.5, but its detected grid is 0.1. The g ≥ 0.99 column catches only cells that are almost entirely on one grid.
 - (P3-0b review, supervisor, 2026-10-06; a routing record, not a decision) The P3-0 and P3-0b flags: the `walk_forward` run-registry write → DQ4, with a DQ1.2 clarification; the static-test imports → a DQ1.3 clarification at P3-2 (the script's own import statements); the target pre-flight → resolved by P3-0b Part A (the four predictors remove no row: 4,192 rows, 1,439 dates); the T3 confirmation structure → DQ4; the SESOI denominator → resolved by D2.1; T6 winsorisation → DQ3 and DQ7 (a new module outside the C7 key); the T5 data source → resolved by D2.4 and D2.5 (the dev panel's open and close, as target-side price statistics); the DQ1.5 rehearsal contact → to be confirmed with P3-3; the pins → DQ5; the step f disclosure → resolved by the P3-0 step f decision (pre-registration carry list); price units and B4's understatement → resolved by D2.4 (the TSE tables applied row by row to traded prices).
+- (P3-3a, for the supervisor; before the sanction) The T6 early-window cells (D4.3; cells 7 and 8) are biased, and in the real run their outputs may depend on the real FX–target relation.
+  - In the rehearsal's synthetic outputs, the early-window cells show a mean bias of b̂ − b of −0.094 (OLS-DK and winsorised) and −0.074 (Huber), the same at b = 0 and b = 0.25, with se/sd near 1. Hence cell 7's rejection rates at b = 0 are 33.7%, 33.7% and 20.2%. The full-window cells 5 and 6 show no such bias.
+  - Reading (builder's algebra, not computed on any real data): `DevCalibrator`'s residuals are orthogonal to the design over the full estimation sample, not within a subset of its dates. With y_sim = fitted controls + b·e + residuals, OLS on draws resampled only from the first K source dates estimates b + c, where c is the coefficient on e of the full-sample residuals regressed on the design within those dates, which equals b̂(early dates) − b̂(full sample).
+  - On real data, cells 7 and 8's mean bias and rejection rates would therefore reflect the real b̂(before 2017-09-27) − b̂(full dev). That is a relation between predictors and real targets, which the P29 argument for full-window draws does not cover.
+  - The D4.3 flag rule would also flag every estimator as unreliable for this reason, not because of the coarse grids.
+  - Cells 0 to 6 and 9 to 11 resample all source dates and are not affected.
+  - Nothing was changed. The configuration and the tool stay as accepted.
 
 ## Blinding attestation
 
@@ -400,6 +442,18 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - Synthetic tests: `tests/test_p3_sealed_run.py` (including tiny synthetic runs) and `tests/test_p3_2d_structural.py`.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No `--real` run, and the full rehearsal was not started. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`; the rehearsal script was started under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3a (supervisor message of 2026-10-07)**, by category:
+  - The full rehearsal, run by Isaiah in his own Terminal (2026-10-07T00:12:19Z to 04:05:04Z), with synthetic stand-in draws.
+    - The dev panel was loaded (hash-checked; `io.load_dev`, `targets.add_targets`) only to populate the fingerprint registry (target-only; DQ1.5).
+    - The sealed fit in each run was the stand-in's, logged to a temporary file. Only aggregates were written, under `/tmp`.
+  - The copies into `reports/`: byte-for-byte copies of the rehearsal's log, run 1's outputs (synthetic aggregates) and the read-only P3-2e report.
+  - The plausibility table: computed by script from `reports/P3_3_rehearsal_run1.json` (synthetic aggregates).
+  - The clone suites (`/tmp/p3_3a_cloneA`, `/tmp/p3_3a_cloneB`, deleted):
+    - each clone held a dummy line 7 appended to its own copy of BLIND_FIT_LOG, and the stand-in outputs;
+    - no real fit was run, and the suite read `panel_dev.csv` only through its structural and target-only tests.
+  - Read-only listings: the spec, `spec.py`, tests and docs.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. The sealed-run tool was not run in any mode by the builder. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -447,3 +501,10 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-2d e, the structural check's draw used `n_dates` = T_conf (1,013), the sealed run's length, for the lag-6 gate (at the source length of 1,439 dates the DK lag would be 7). The check reads the calibrator's private row bounds for its row count; that tool is not the sealed-run tool.
 - P3-2d f, the rehearsal script's last summary line is "the larger total" of the two runs, as specified. In smoke mode that is the smoke total (105 s), not a full-count projection. The P3-2d report gives the per-task rates and the full-count projection (1.92 h), computed by script from the two runs' runtime sections.
 - P3-2d f, the script has no shebang line: its first line is `set -euo pipefail`, as specified, and it is run with `bash`.
+- P3-3a d, the first copy attempt: my copy script looped over "source destination" pairs with `set -- $pair`. The shell running it is zsh, which does not word-split an unquoted `$pair`, so every `cp` failed and nothing was copied (the tree was checked). Its "equal: True" lines compared two empty hashes and are spurious, and d.2 then failed on the missing copy. Fix: one explicit `cp -p` and hash comparison per file. The one rerun (rerun-once rule) copied all four files byte for byte, and d.2 found run 2 equal to run 1 apart from runtime. Both runs are in the P3-3a report.
+- P3-3a e, two readings the item left open:
+  - P4's "agree within 10%" is computed as max/min − 1 ≤ 0.10 over cells 0 to 4. The own-quantile intervals are reported as a count (10 of 10 contain the pooled value).
+  - P5's MDE80 agreement compares the probit value with both of B7b's normal approximations (sd(b̂) and mean se).
+- P3-3a e, the P9 context: beyond the table, the report prints cells 5 to 8's mean bias, sd and se/sd per estimator from the same JSON (synthetic aggregates), to support the P3-3a flag.
+- P3-3a f, the patch: made by a script (`/tmp/p3_3a_make_patch.py`, in the report) that reads the six-line prefix hash, the line-7 hashes and the row count from the registry files. The dummy line 7's caller text imitates `_log_blind_fit`'s format, with an invented line number. Both clones were taken from HEAD, so they lack this item's uncommitted files. Clone A's suite ran on HEAD plus the dummy line and the stand-ins.
+- P3-3a g, a flag beyond the listed edits: the early-window finding (P9) went into Flags, because it needs a decision before the sanction.

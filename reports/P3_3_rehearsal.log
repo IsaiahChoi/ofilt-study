@@ -1,0 +1,40 @@
+rehearsal mode: full
+utc: 2026-10-07T00:12:19Z
+HEAD: 1c48d381bb794e65d6532ba915ea782761ba58b2
+macOS: 26.6.2
+machine: arm64
+python: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+power: Now drawing from 'AC Power'
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals reports/P3_2b_smoke.md: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19300779
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+run start (/tmp/p3_3_rehearsal_1): 2026-10-07T00:12:20Z
+COMPLETE: /private/tmp/p3_3_rehearsal_1/P3_4_sealed_run.json and /private/tmp/p3_3_rehearsal_1/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_rehearsal_1): 2026-10-07T02:08:17Z; exit 0
+run start (/tmp/p3_3_rehearsal_2): 2026-10-07T02:08:17Z
+COMPLETE: /private/tmp/p3_3_rehearsal_2/P3_4_sealed_run.json and /private/tmp/p3_3_rehearsal_2/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_rehearsal_2): 2026-10-07T04:05:04Z; exit 0
+the two JSON outputs are identical apart from runtime: True
+task T1: run 1 1085.4 s, run 2 1075.1 s (5000 replications each)
+task T5_boundary: run 1 1075.6 s, run 2 1089.9 s (5000 replications each)
+task T2: run 1 671.2 s, run 2 657.0 s (3000 replications each)
+task pooled: run 1 0.0 s, run 2 0.0 s (0 replications each)
+task T6: run 1 900.4 s, run 2 887.5 s (4000 replications each)
+task T3: run 1 3222.1 s, run 2 3295.0 s (3000 replications each)
+calibrator: run 1 0.02 s, run 2 0.01 s
+totals: run 1 6955.0 s, run 2 7004.9 s
+projected duration of the real run (the larger total): 7005 s (1.95 h)
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals reports/P3_2b_smoke.md: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19300779
+hashes and sizes unchanged: True
+tree clean and HEAD unchanged: True
+utc: 2026-10-07T04:05:04Z
+REHEARSAL PASSED
