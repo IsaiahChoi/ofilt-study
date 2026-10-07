@@ -17,12 +17,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
 | P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
 | P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
-| P3-3d P3-3c accepted; read-only facts for DQ6 and the launcher | done | `checkpoint: P3-3d`. Report `/tmp/p3_3d.txt`; planned STOP: the supervisor reviews the report, then drafts P3-3e. P3-3c acceptance recorded, with its two post-checkpoint notes under Deviations. The P3-3c report copied to `reports/P3_reports/`. Read-only facts for DQ6 (`calib.py`'s functions; the readers of the spec fields DQ6 would change; the confirmation path; every pin a spec edit could touch; the amendment record format) and for the launcher (the real-mode refusals and log checks; `OFILT_RUN_SEALED=1`; PLAN's pins), in the P3-3d report. No code, test, spec or configuration changed |
+| P3-3d P3-3c accepted; read-only facts for DQ6 and the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3d`. Report `/tmp/p3_3d.txt`; planned STOP: the supervisor reviews the report, then drafts P3-3e. P3-3c acceptance recorded, with its two post-checkpoint notes under Deviations. The P3-3c report copied to `reports/P3_reports/`. Read-only facts for DQ6 (`calib.py`'s functions; the readers of the spec fields DQ6 would change; the confirmation path; every pin a spec edit could touch; the amendment record format) and for the launcher (the real-mode refusals and log checks; `OFILT_RUN_SEALED=1`; PLAN's pins), in the P3-3d report. No code, test, spec or configuration changed |
+| P3-3e P3-3d accepted; DQ6 drafts and dry switches | done | `checkpoint: P3-3e`. Report `/tmp/p3_3e.txt`; planned STOP: the supervisor reviews the report and the drafts; Isaiah decides on DQ6; then P3-3f. P3-3d acceptance and the DQ6 drafts' routing recorded. The P3-3d report copied to `reports/P3_reports/`. Read-only facts (the SESOIs; Clark-West in the sealed run; AM-04's record format; the stand-in values). `docs/P3_DQ6_drafts.md`: the supervisor's amendment texts (AM-07 to AM-10), the current lines and records, the `spec.py` validation diffs, the confirmation-code plan, the dry switches and a draft test-change table. Dry switches D1 to D3 in scratch clones (deleted). No code, test, spec or configuration changed in REPO |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-3d. Then P3-3e, the DQ6 amendment drafts (a document, not applied); then P3-3f, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
+The supervisor reviews P3-3e and the DQ6 drafts, and Isaiah decides on them. Then P3-3f, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
 
 ## Decision log
 
@@ -294,6 +295,12 @@ The supervisor reviews P3-3d. Then P3-3e, the DQ6 amendment drafts (a document, 
 >   - The plausibility table on rehearsal 2's run 1: P1 to P11 all True. P11 found no difference from rehearsal 1 outside `runtime`, `config_sha256`, `head` and cells 5 to 8 (13 top-level keys, with cells 0 to 4, compared exactly).
 >   - `z2` is `stats.norm.ppf(1 - alpha / 2)` with alpha 0.05, from the spec's `inference.alpha` through the configuration's `methods.alpha` (`tools/p3_sealed_run.py:397-398`): the quantile D4.3a states.
 
+> - P3-3d accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `1fd79933b16ae98344a9b58abd1f21a4e5dd8198`, including P3-3d's recorded deviations: the typed informational hash; the first listing run in a zsh loop; the typed hash in the C7 search; and the listings beyond the items.
+>   - The facts for DQ6: `inference.reference` is read only by `spec.validate`, and the normal reference is fixed in code (`inference.Result.contrast`, `inference.tost`, `fctests._differential_test`). No confirmation entry point exists yet. `calib.bootstrap_test` implements D3.1 for H1 only; `calib.rejects` and `calib.tost_declares` apply a supplied critical value; nothing yet applies a supplied Clark–West critical value.
+>   - The facts for the launcher: in real mode the tool refuses unless BLIND_FIT_LOG has 6 lines before the fit (after it loads the panel, before any write); its tree check counts tracked files only; it does not refuse existing outputs, which it overwrites; and no test scans `tools/` as a whole for `OFILT_RUN_SEALED=1`.
+> - The DQ6 drafts (a routing record, not a decision): P3-3e writes the supervisor's proposed amendment texts to `docs/P3_DQ6_drafts.md` and dry-runs them in scratch clones. Isaiah decides on them after the supervisor's review, before the sanction.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -396,6 +403,17 @@ The supervisor reviews P3-3d. Then P3-3e, the DQ6 amendment drafts (a document, 
 - The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_3c.txt` is byte-identical to `/tmp/p3_3c.txt` (SHA-256 equal: True).
 - Read-only facts for DQ6 and the launcher: in the P3-3d report (`/tmp/p3_3d.txt`), step c.
 - The full suite ran inside the P3-3d checkpoint; its result is in the P3-3d report (`/tmp/p3_3d.txt`).
+
+**P3-3e:**
+- The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_3d.txt` is byte-identical to `/tmp/p3_3d.txt` (SHA-256 equal: True).
+- Read-only facts: in the P3-3e report, step c.
+- The base (scratch clone at HEAD, with the DQ5 patch, a dummy line 7 and stand-in outputs): Ran 280 tests in 319.803s; `OK (skipped=5)`.
+- The dry switches (scratch clones of the base; no test changed). `Spec.load()` validated in all three, the spec kept its 70 lines, and the VERBATIM spec was unchanged:
+  - D1 (DK-normal, Clark-West normal, viable): Ran 276 tests in 334.439s; `FAILED (failures=8, errors=2, skipped=6)`. Failing: `test_3_configuration` (error), `TestTinyRuns.setUpClass` (error), `test_p23_tost_pending_costs`, `test_lock_amendments_and_nothing_real_before_the_tag`, `test_refusals_and_pending_sesoi`, `test_4_real_mode_refusals_read_no_data`, `test_default_spec_loads`, `test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines`, `test_sesoi_pending`, `test_bands_consistency_and_staleness`.
+  - D2 (bootstrap, Clark-West calibrated, viable): Ran 276 tests in 322.163s; `FAILED (failures=9, errors=2, skipped=6)`. Failing: `test_3_configuration` (error), `TestTinyRuns.setUpClass` (error), `test_p21_inference_size_rule_calendar`, `test_p23_tost_pending_costs`, `test_lock_amendments_and_nothing_real_before_the_tag`, `test_refusals_and_pending_sesoi`, `test_4_real_mode_refusals_read_no_data`, `test_default_spec_loads`, `test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines`, `test_sesoi_pending`, `test_bands_consistency_and_staleness`.
+  - D3 (calibrated, Clark-West calibrated, not viable): Ran 276 tests in 335.382s; `FAILED (failures=9, errors=2, skipped=6)`. Failing: `test_3_configuration` (error), `TestTinyRuns.setUpClass` (error), `test_p21_inference_size_rule_calendar`, `test_p23_tost_pending_costs`, `test_lock_amendments_and_nothing_real_before_the_tag`, `test_refusals_and_pending_sesoi`, `test_4_real_mode_refusals_read_no_data`, `test_default_spec_loads`, `test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines`, `test_sesoi_pending`, `test_bands_consistency_and_staleness`.
+- `docs/P3_DQ6_drafts.md`: SHA-256 `9ad9b0941952dbaee6b45e53940d5f1ed8b206abdacc2198d60733e04d3697c3`. Its checks by script (the supervisor's texts verbatim; the records' old and new lines; the three diffs pass `git apply --check`): True.
+- The full suite ran inside the P3-3e checkpoint; its result is in the P3-3e report (`/tmp/p3_3e.txt`).
 
 ## Test changes
 
@@ -569,6 +587,13 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The sealed-run tool ran only as `--check-config`.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3e (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy: a byte-for-byte copy of the P3-3d report into `reports/P3_reports/`.
+  - Read-only listings of code and documents, and values read from the synthetic rehearsal JSON (`reports/P3_3_rehearsal2_run1.json`).
+  - The drafts document `docs/P3_DQ6_drafts.md`: the supervisor's texts, and lines, records and diffs built by script from the spec, `spec.py` and the configuration.
+  - The scratch clones (`/tmp/p3_3e_clone` and one per dry switch; remote removed; never pushed; deleted): a dummy BLIND_FIT_LOG line 7; stand-in synthetic outputs and values; spec and validation edits in the clones only.
+  - The suites in the clones and in REPO (inside the checkpoint) read `panel_dev.csv` only through their structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -646,3 +671,20 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - c.6 adds `combo_refusal`, `registry.git_state` and the tests that scan whole directories of code.
   - c.7 notes test_docs_d4's text pins of PLAN.
   - Method: c.2's readers were found by regular expressions over `ofilt/` and `tools/` (printed with the listing), with the enclosing names from the AST. c.4 reports compiled `__pycache__` files that contain a term by name only.
+- P3-3e e, two shell loops in zsh, against the reminder to run loops in bash: the `for` that appended three scripts to the report (`cat` of literal paths), and the `for` that listed the four clones before their deletion. Both iterated over literal lists with no word-splitting step, and their output is complete in the report.
+- P3-3e d.3, AM-10: the drafts read AM-10 as needing no validation change, because `validate` already accepts FROZEN (spec.py:133). A FROZEN-only pin is described for the supervisor, not proposed, and not applied in the dry switches.
+- P3-3e d.3, the form of the `spec.py` changes:
+  - AM-08 replaces "normal" with the constant in `validate`'s `pinned` table, which compares by equality, rather than adding a separate check. It is the smaller change.
+  - The constants sit apart (AM-08's after `CANONICAL_LAG_RULE`, AM-09's after `FORBIDDEN_MODELS`), so that the diffs apply together in either order.
+- P3-3e d.2 and e, placeholder formats the texts leave open: `<R_dk>`, `<R_boot>` and `<R_cw>` are written to four decimals, as AM-07's note fixes for its rates.
+- P3-3e e, what the dry switches append to `spec/SPEC_AMENDMENTS.md`: the heading, the filled text, `**Lines (exact):**` and the record, but not the placeholder notes, which are guidance. The records are written with non-ASCII characters unescaped, as the existing records are.
+- P3-3e d.2, the document's layout:
+  - a title line above the six sections;
+  - headings, texts, templates and records in fenced code blocks, since bare placeholders would read as HTML;
+  - an amendment's shared text before its variants.
+  - `/tmp/p3_3e_dq6.py` was changed once after its first listing in the report, for that placement. Its final form is also printed.
+- P3-3e e, the dry switches:
+  - Each ran in its own clone of the base clone, committed locally.
+  - The dummy line 7's `utc` is the time of writing. Its caller text imitates `sim`'s format, with invented line numbers.
+  - 276 tests ran in each, not 280, because `TestTinyRuns.setUpClass` errored. The sixth skip was identified by a verbose run of two modules in the D1 clone.
+- P3-3e d.6, the three `tests/test_p3_sealed_run.py` rows: their proposals rest on the builder's reading of the tool after the switch's C7 rerun (the configuration would be refused for its `spec_sha256`). That state was not run.
