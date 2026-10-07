@@ -1,5 +1,5 @@
 spec_id: drift-dev-v1
-status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)
+status: FROZEN           # frozen at the Pass 3 switch (AM-10); Isaiah tags spec-dev-v1 on the final Pass 3 records commit
 data:
   dev_panel_sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
   events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
@@ -46,7 +46,7 @@ secondary_family_holm:      # each = primary design + one tested interaction (+ 
   fx_x_highrv: "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction"
   fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
   rv_per_bar_dev_median: 1.2950114214e-08
-equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
+equivalence: {test: TOST, alpha: 0.05, sesoi: 0.8652, viability: "viable (D2.6, P3-5): under dk_normal, P(equivalence | b = 0) = 1.0000 at the primary SESOI, and the rate at b = +SESOI is 0.0592; low and high SESOI 0.07152 and 2.719 reported"}
 forecast:
   scheme: expanding
   min_train_dates: 500
@@ -63,7 +63,7 @@ forecast:
     M5: {type: ridge, design: M4, fe: "unpenalized via in-fold within-ticker demeaning", alpha_grid: "n_train * [1e-4,1e-3,1e-2,1e-1,1]", tune: "last 250 dates of training fold"}
     M7: {type: HistGradientBoostingRegressor, features: "PRE_OPEN allowlist + ticker one-hot + N(0,1) noise column", grid: {max_depth: [2,3], max_iter: [50,100,200,400]}, fixed: {learning_rate: 0.03, min_samples_leaf: 100, l2_regularization: 1.0, early_stopping: false}, tune: "last 250 dates of training fold", status: exploratory}
   comparisons:
-    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}
+    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one, reference: calibrated, critical_value: 1.411608406163672}
     secondary: [[clark_west, M4, M3], [clark_west, M5, M3], [clark_west, M7, M1], [diebold_mariano, M7, M1]]
     report_all: [oos_r2_vs_M0, oos_r2_vs_M1, pesaran_timmermann_with_training_base_rate]
   importance: {method: permutation, unit: date, repeats: 20, calibration: noise_column}

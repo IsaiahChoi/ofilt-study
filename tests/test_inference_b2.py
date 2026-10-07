@@ -1,3 +1,4 @@
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -107,8 +108,9 @@ class TestTOST(unittest.TestCase):
                 I.tost(*args)
         spec = Spec.load()
         res = I.fit_dk(I.build_design(panel(n_dates=200, seed=4), spec), spec)
-        with self.assertRaises(SpecPendingError):
-            I.tost_result(res, "usdjpy_ret", spec)
+        r = I.tost_result(res, "usdjpy_ret", spec)                               # AM-07 (P3-6): the spec's SESOI and alpha
+        cfg = json.loads((Path(__file__).resolve().parents[1] / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+        self.assertEqual((r["sesoi"], r["alpha"]), (cfg["sesoi"]["primary"], 0.05))
         self.assertIn("equivalent", I.tost_result(res, "usdjpy_ret", spec, sesoi=0.5))
 
 

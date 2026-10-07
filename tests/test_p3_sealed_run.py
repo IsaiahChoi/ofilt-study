@@ -111,8 +111,12 @@ class TestInvariance(unittest.TestCase):
 
 class TestConfig(unittest.TestCase):
     def test_3_configuration(self):
-        self.assertEqual(P.CONFIG_PATH.read_text(encoding="utf-8"), P.config_text(P.build_config()))
-        self.assertEqual(P.validate_config(CFG), [])
+        # P3-6 (switch): the configuration is the sealed run's, bound to the pre-switch spec; a rebuild differs only there
+        run = json.loads((ROOT / "reports" / f"{P.REAL_STEM}.json").read_text(encoding="utf-8"))
+        self.assertEqual(run["config_sha256"], P.sha256_file(P.CONFIG_PATH))
+        line7 = json.loads((ROOT / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines()[6])
+        self.assertEqual(CFG["spec_sha256"], line7["spec_sha256"])
+        self.assertEqual(P.validate_config(CFG), ["key 'spec_sha256' differs from the registry"])
         bad = {k: v for k, v in CFG.items() if k != "seeds"}
         self.assertTrue(any("missing" in x for x in P.validate_config(bad)))
         changed = dict(CFG, dev_panel_sha256="0" * 64)
@@ -153,64 +157,25 @@ class TestRealRefusals(unittest.TestCase):
             r = subprocess.run([sys.executable, str(TOOL), "--real", "--expect-config-sha256", sha], cwd=str(ROOT),
                                env=env, capture_output=True, text=True, timeout=300)
             self.assertEqual(r.returncode, P.EXIT_REFUSED, r.stdout + r.stderr)
-            self.assertIn(f"REFUSED: --real needs {P.SEALED_ENV}=1", r.stdout)
+            self.assertIn("REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]", r.stdout)   # P3-6 (switch)
             self.assertEqual(list(tmp.iterdir()), [])                      # the run's directory removed
 
 
 class TestTinyRuns(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls._t = tempfile.TemporaryDirectory()
-        base = Path(cls._t.name)
-        cls.out, cls.tmp, cls.res = [], [], []
-        for i in (1, 2):
-            tm, nd = base / f"tmp{i}", base / f"nodata{i}"
+    """P3-6 (switch): the configuration now differs from a rebuild by its spec_sha256, so every synthetic run is refused
+    before it starts. The tiny runs' tests 5, 6, 9 and 15 retired at the switch (PASS3_STATUS, Test changes); test 17
+    asserts the refusal."""
+
+    def test_17_synthetic_run_refused_after_the_switch(self):
+        with tempfile.TemporaryDirectory() as t:
+            tm, nd = Path(t) / "tmp1", Path(t) / "nodata1"
             o = tm / "out"                                         # --out-dir must lie under TMPDIR or /tmp
             tm.mkdir(); nd.mkdir()
-            cls.res.append(tiny_run(o, tm, nd))
-            cls.out.append(o); cls.tmp.append(tm)
-        cls.js = [json.loads((o / f"{P.REAL_STEM}.json").read_text(encoding="utf-8")) for o in cls.out]
-
-    @classmethod
-    def tearDownClass(cls):
-        cls._t.cleanup()
-
-    def test_5_outputs_whitelisted_and_aggregates_only(self):
-        for r, j in zip(self.res, self.js):
-            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-            self.assertTrue(j["complete"])
-            self.assertEqual(j["errors"], [])
-            self.assertIsNone(j["aborted"])
-            self.assertEqual(P.check_output(j, set(CFG["outputs"])), [])
-            self.assertEqual(j["calibrator"], {"T_source": CFG["T_source"], "rows": CFG["rows"]})
-            self.assertEqual(sorted(p.name for p in self.out[0].iterdir()), [f"{P.REAL_STEM}.json", f"{P.REAL_STEM}.md"])
-
-    def test_6_registry_directory(self):
-        for j, tm in zip(self.js, self.tmp):
-            self.assertEqual(j["t3"]["walk_forward_calls"], 3 * 2)       # cells 9 to 11 at smoke 2
-            self.assertEqual(j["t3"]["registry_lines"], j["t3"]["walk_forward_calls"])
-            self.assertEqual([p.name for p in tm.iterdir()], ["out"])      # the run's own directory deleted
-
-    def test_9_determinism(self):
-        a, b = (dict(j) for j in self.js)
-        self.assertNotEqual(a["runtime"], None)
-        a.pop("runtime"); b.pop("runtime")
-        self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True))
-        ma, mb = ((o / f"{P.REAL_STEM}.md").read_text(encoding="utf-8").split("## Runtime")[0] for o in self.out)
-        self.assertEqual(ma, mb)
-
-    def test_15_t6_blocks_are_centred_only(self):                    # P3-3b: D4.3a
-        for j in self.js:
-            t6 = [c for c in j["cells"] if c["task"] == "T6"]
-            self.assertEqual([c["cell"] for c in t6], [5, 6, 7, 8])
-            for c in t6:
-                for name, blk in c["estimators"].items():
-                    want = {"centred_reject", "sd", "mean_se", "se_over_sd"}
-                    if name == "huber_dk":
-                        want |= {"mean_share_downweighted"}
-                    self.assertEqual(set(blk), want, (c["cell"], name))
-                    self.assertFalse({"estimates", "reject", "coverage"} & set(blk))
-                    self.assertEqual(set(blk["centred_reject"]), {"k", "n", "rate", "wilson95"})
+            r = tiny_run(o, tm, nd)
+            self.assertEqual(r.returncode, P.EXIT_REFUSED, r.stdout + r.stderr)
+            self.assertEqual(r.stdout.strip(), "REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]")
+            self.assertFalse(o.exists())                           # nothing written to --out-dir
+            self.assertEqual(list(tm.iterdir()), [])               # the run's own directory removed
 
 
 class TestSeedsAndLogs(unittest.TestCase):

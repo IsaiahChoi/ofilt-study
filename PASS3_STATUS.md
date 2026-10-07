@@ -23,12 +23,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-4 P3-3f accepted; Isaiah's sanction of the one real sealed fit | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4`, the sanction commit. Report `/tmp/p3_4.txt`; planned STOP: the supervisor confirms the report, then Isaiah runs the command printed in it. P3-3f acceptance and Isaiah's sanction of the one real sealed fit (DQ1.7) recorded. The P3-3f report copied to `reports/P3_reports/`. After the checkpoint: one launcher dry run at the sanction commit, with a data folder that does not exist, and the command for Isaiah, both in the P3-4 report. No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | P3-4b The real sealed fit on record; the post-run checkpoint | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4b`. Report `/tmp/p3_4b.txt`; planned STOP: the supervisor reviews the report, then gives P3-5. P3-4 acceptance and the real sealed fit recorded (Isaiah's Terminal, 2026-10-07T18:51:20Z to 20:45:12Z; COMPLETE, 0 errors; launcher exit 0). BLIND_FIT_LOG's line 7 and the two outputs committed as the run left them; the launcher's log and the P3-4 report copied into `reports/`; `docs/P3_DQ5_line7.patch` applied unchanged. The outputs read for six structural keys only |
 | P3-5 The pre-stated rules applied to the sealed run's outputs | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-5`. Report `/tmp/p3_5.txt` (continued after a STOP under the rerun-once rule); planned STOP: the supervisor reviews the application of the rules, Isaiah approves the selection, then P3-6. P3-4b acceptance recorded. D3.4, D2.6 and D4.3b applied by script to `reports/P3_4_sealed_run.json`: M = dk_normal; CW = calibrated; viable: True; D4.3b flags: none. The binding numbers, the switch's branch and its placeholder values in `reports/P3_5_selection.md` and `.json` (the second run's files; Deviations). Plausibility checks as information. The P3-4b report copied to `reports/P3_reports/` |
-| P3-6a P3-5 accepted; the selection approved; the switch rehearsed and written as a patch | done | `checkpoint: P3-6a`. Report `/tmp/p3_6a.txt`; planned STOP: the supervisor reviews the switch patch, then gives P3-6b. P3-5 acceptance, Isaiah's approval of the selection, the switch's C7 rerun (D16) and the patch's routing recorded. The P3-5 report copied to `reports/P3_reports/`. The switch (AM-07 ("viable"), AM-09, AM-10; `<date>` 2026-10-07) built in a scratch clone: the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). In the clone: the C7 rerun PASS under D16; the suite OK (skipped=6) on 285 tests; the slow tier OK. Written as `docs/P3_6_switch.patch` and checked in a second clone; both clones deleted. No spec, code or test changed in REPO |
+| P3-6a P3-5 accepted; the selection approved; the switch rehearsed and written as a patch | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-6a`. Report `/tmp/p3_6a.txt`; planned STOP: the supervisor reviews the switch patch, then gives P3-6b. P3-5 acceptance, Isaiah's approval of the selection, the switch's C7 rerun (D16) and the patch's routing recorded. The P3-5 report copied to `reports/P3_reports/`. The switch (AM-07 ("viable"), AM-09, AM-10; `<date>` 2026-10-07) built in a scratch clone: the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). In the clone: the C7 rerun PASS under D16; the suite OK (skipped=6) on 285 tests; the slow tier OK. Written as `docs/P3_6_switch.patch` and checked in a second clone; both clones deleted. No spec, code or test changed in REPO |
+| P3-6b The switch: AM-07, AM-09 and AM-10; the C7 rerun | done | `checkpoint: P3-6b`. Report `/tmp/p3_6b.txt`; planned STOP: the supervisor reviews the switch commit, then gives P3-7. P3-6a acceptance and the switch recorded. The P3-6a report copied to `reports/P3_reports/`. `docs/P3_6_switch.patch` applied unchanged in REPO (`git apply --check` and `git apply` exit 0; the eight files equal the rehearsal's first clone by SHA-256): the spec FROZEN, SHA-256 `feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`, with AM-07 ("viable"), AM-09 and AM-10 in `spec/SPEC_AMENDMENTS.md`; `spec.py`'s AM-09 validation; the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). The C7 rerun in REPO (4 chunks) passed D16 (C7_mc.json PASS; C7_h1_same_dgp.json PASS), 0 floats differing; the slow tier OK. `--check-config`: valid: False, exit 2, the one `spec_sha256` problem (DQ6). No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews the switch patch. Then P3-6b: the switch commit, with the patch applied unchanged and the C7 rerun in REPO under D16.
+The supervisor reviews P3-6b. Then P3-7: the final Pass 3 records (`docs/DECISIONS_P71_onward.md`, PLAN v2.5 and its pins, the final PASS3_STATUS.md, the pre-registration carry list and DATA_PROVENANCE §4.5), rehearsed in a scratch clone.
 
 ## Decision log
 
@@ -356,6 +357,15 @@ The supervisor reviews the switch patch. Then P3-6b: the switch commit, with the
 > - The switch's C7 rerun (Isaiah, 2026-10-07, on the supervisor's recommendation): D16's criterion, as amended at P68 (`runtime_s` excluded), applies to the one C7 rerun of the Pass 3 switch, with `key.spec_sha256` equal to the switched spec's SHA-256. It runs as at P2-3b: `tools/c7_mc.py --budget 90` in foreground chunks until complete, compared by `tools/p2_3b_c7_compare.py`, then the slow tier.
 > - The switch patch (a routing record, not a decision): P3-6a builds the switch in a scratch clone (the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes), rehearses it whole with the C7 rerun, and writes it to `docs/P3_6_switch.patch`. P3-6b applies it unchanged, after the supervisor's review, in the switch commit.
 
+> - P3-6a accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `6338409a30f57758523de8ec47a004774c45c0cd`, including P3-6a's recorded deviations and the notes in its report: the two zsh loops, the scratch clone's local commits, the `import json` choices, the sixth skip, the file-list check and its one rerun, and the records script's corrections before its run and its two formatting fixes after it.
+>   - The switch patch `docs/P3_6_switch.patch` (SHA-256 `cd9d317db33ee04c8c627d1386565e3c5ad19f9ddeb511286c576a946515281a`) is approved as rehearsed, to be applied unchanged. The supervisor checked the three spec lines and the three amendment records against the current lines, `spec.py`'s AM-09 change, and every test change against "never weaken a test" and PASS2_ADDENDUM §5, and recomputed the counts.
+>   - The sixth skip is by design: once the status is FROZEN, `tests/test_io.py`'s check that no unblinding tag exists while the spec is DRAFT skips (AM-10; `docs/P3_DQ6_drafts.md` section 6, "Not failures"). Access stays gated by the tag (P46). From the switch on, the expected suite result is OK with 6 skips; the 5 expected in P3-6a's step d.6 was an error in the supervisor's message.
+> - The switch on record (2026-10-07): `docs/P3_6_switch.patch`, applied unchanged in REPO in the switch commit (P3-6b).
+>   - The spec `spec/analysis_spec_dev_v1.yaml` is FROZEN, SHA-256 `feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`. AM-07 (variant "viable"), AM-09 and AM-10 are recorded in `spec/SPEC_AMENDMENTS.md`; AM-08 is unused. `spec.py` validates the amended primary comparison (AM-09).
+>   - The one C7 rerun of the Pass 3 switch passed D16's criterion (i) to (iv) for both reports, `runtime_s` excluded, with `key.spec_sha256` equal to the switched spec's SHA-256. The slow tier passed.
+>   - The configuration `docs/P3_RUN_CONFIG.json` (SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e`) is unchanged and differs from a rebuild only by its `spec_sha256` (DQ6). The sealed-run tool therefore refuses every run, real or synthetic (tests 4 and 17 of `tests/test_p3_sealed_run.py`).
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -574,9 +584,60 @@ The supervisor reviews the switch patch. Then P3-6b: the switch commit, with the
   - The gate (step 2's checks; the test changes; step 5 PASS; steps 6 and 7 OK; the patch applies and reproduces the clone): passed.
 - The full suite in REPO ran inside the P3-6a checkpoint; its result is in the P3-6a report (`/tmp/p3_6a.txt`).
 
+**P3-6b:**
+- The report copy (step b; bash, `cp -p /tmp/p3_6a.txt reports/P3_reports/p3_6a.txt`), checked by `/tmp/p3_6b_b.py`:
+  - copy   reports/P3_reports/p3_6a.txt sha256 f7f7ceec3aa248e5c3c6d5c7903a08eecc23a943d4f362b46a41287a3f4a9d9b
+  - source /tmp/p3_6a.txt sha256 f7f7ceec3aa248e5c3c6d5c7903a08eecc23a943d4f362b46a41287a3f4a9d9b
+  - copy equals source: True
+  - first two lines ['2026-10-07T21:50:34Z', '5b33bd0fb9b9b993105af0116d734918e606e120'] equal ['2026-10-07T21:50:34Z', '5b33bd0fb9b9b993105af0116d734918e606e120']: True
+  - last two non-empty lines ['2026-10-07T22:32:28Z', '6338409a30f57758523de8ec47a004774c45c0cd'] equal ['2026-10-07T22:32:28Z', '6338409a30f57758523de8ec47a004774c45c0cd']: True
+  - the line 'docs/P3_6_switch.patch sha256 cd9d317db33ee04c8c627d1386565e3c5ad19f9ddeb511286c576a946515281a; 288 lines' occurs exactly once (1): True
+  - B CHECK: True
+- d.1, the old C7 reports, copied to `/tmp/p3_6b_c7_old/` (`cp -p`, one per file), checked by `/tmp/p3_6b_d1.py`:
+  - /tmp/p3_6b_c7_old/C7_mc.json sha256 2c9277cf7c9f8f68a5fe6996d75d954341c3ed41c878b0783f7242e8cb09036f; equals step a.2's value: True
+  - /tmp/p3_6b_c7_old/C7_h1_same_dgp.json sha256 9c44e88fc963f744d6be554ba96366fb2f950cf6982fccbde66db95ed53e5fd6; equals step a.2's value: True
+  - D1 CHECK: True
+- d.2, the patch in REPO: `git apply --check docs/P3_6_switch.patch` exit 0; `git apply docs/P3_6_switch.patch` exit 0.
+- d.3, the checks (`/tmp/p3_6b_d3.py`):
+  - the patch's files (8) equal the message's eight (8), as sets: True
+  - status lines (9) equal exactly ' M' for the eight files and '?? reports/P3_reports/p3_6a.txt', as a set: True
+  - lines matching the regular expression in reports/P3_reports/p3_6a.txt: 8 (must be 8): True
+  - one line per file: their files equal the patch's eight, as a set: True
+  - ofilt/drift/spec.py sha256 1aa32e1798c76fce05448340d6d47d8c84e264525df27aae692112803a251fa9 equals the first clone's value: True
+  - spec/SPEC_AMENDMENTS.md sha256 c603206bd68ba225904fae8c30d25651c3c5c56afb8e8242f54cc52a85a52617 equals the first clone's value: True
+  - spec/analysis_spec_dev_v1.yaml sha256 feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26 equals the first clone's value: True
+  - tests/test_docs_d2.py sha256 8e15fb87f418352e41dd47a0f43acf12b95b2dc3440a63fda5408ac2de378c18 equals the first clone's value: True
+  - tests/test_docs_d3b.py sha256 9c46ae79ca5ccfc81fed4bb05e1c24b034c516452439c78971a6903661908e0d equals the first clone's value: True
+  - tests/test_inference_b2.py sha256 30e72bb5d79c3ab66a7d9b4bd87eb96e90facabf670fec4d59b5eedce695effd equals the first clone's value: True
+  - tests/test_p3_sealed_run.py sha256 2ea015b359a1d0af9af5dfd284dd18601a5436b3e57189df556c5632944cffa6 equals the first clone's value: True
+  - tests/test_spec.py sha256 3e48600364168f8574fa693d3efee68528af52ea6af0b6d6a2c7cd86cde5dd1f equals the first clone's value: True
+  - spec/analysis_spec_dev_v1.yaml sha256 feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26 equals the message's feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26: True
+  - ofilt.drift.spec imported from REPO (/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/spec.py): True
+  - Spec.load() validates (status 'FROZEN'; spec sha256 feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26): True
+  - status is FROZEN: True
+  - the spec has 70 lines (70): True
+  - git diff --quiet HEAD -- spec/analysis_spec_dev_v1.VERBATIM.yaml exits 0 (0): True
+  - git apply --reverse --check exits 0 (the tree holds exactly the patch's post-image): True
+  - D3 CHECK: True
+- d.4, the C7 rerun in REPO (`tools/c7_mc.py --budget 90`, foreground chunks, one command per chunk; no partial file before the first chunk: True):
+  - chunk 1: 2026-10-07T23:24:15Z to 2026-10-07T23:25:47Z, `PARTIAL {"size": 190, "power_040": 0, "power_025": 0}`, exit 0
+  - chunk 2: 2026-10-07T23:25:53Z to 2026-10-07T23:27:25Z, `PARTIAL {"size": 300, "power_040": 80, "power_025": 0}`, exit 0
+  - chunk 3: 2026-10-07T23:27:31Z to 2026-10-07T23:29:03Z, `PARTIAL {"size": 300, "power_040": 200, "power_025": 69}`, exit 0
+  - chunk 4: 2026-10-07T23:29:09Z to 2026-10-07T23:30:17Z, `COMPLETE`, exit 0
+  - the partial file afterwards: absent; status (as a set) equals step d.3's 9 lines (read from this report) plus ' M' for the two C7 reports: True
+- d.5, the comparison (`tools/p2_3b_c7_compare.py`, old copies against the new reports): `OVERALL (criterion as written): C7_mc.json PASS; C7_h1_same_dgp.json PASS`.
+  - `C7_mc.json`: float leaves compared 2846, differing at all 0; rejection flags and summary counts compared 2148, differences 0; the only non-float difference: `key.spec_sha256: old '0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9' -> new 'feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26'  [must equal SHA-256 of spec/analysis_spec_dev_v1.yaml: True]`. `runtime_s` (information only): 316.75257444381714 -> 336.3097012042999.
+  - `C7_h1_same_dgp.json`: float leaves compared 20, differing at all 0; rejection flags and summary counts compared 13, differences 0; the only non-float difference: `key.spec_sha256: old '0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9' -> new 'feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26'  [must equal SHA-256 of spec/analysis_spec_dev_v1.yaml: True]`. `runtime_s` (information only): 316.75257444381714 -> 336.3097012042999.
+  - `reports/C7_mc.json`: `key.spec_sha256` feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26, equal to the switched spec's SHA-256: True
+  - `reports/C7_h1_same_dgp.json`: `key.spec_sha256` feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26, equal to the switched spec's SHA-256: True
+  - The gate (`/tmp/p3_6b_d5.py`): True. The new reports' SHA-256: `reports/C7_mc.json` `72d4a6bc4ffa5084169cfa18534a7480c252afab1224b6dce5eb113d6a5d4b9a`; `reports/C7_h1_same_dgp.json` `5644e6168cd7c100a2fd01c6eaef3ecda9bb0542b30df34ff2a807e0a5ed7821`.
+- d.6, the slow tier (`tests.test_validation_c7`, `OFILT_SLOW=1`): `Ran 6 tests in 33.014s`, `OK`.
+- d.7, the configuration after the switch (`/tmp/p3_6b_cfg.py`): docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e is still ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True. `--check-config` (once): `config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False`, exit 2; `validate_config` of the committed configuration returns `["key 'spec_sha256' differs from the registry"]`.
+- The full suite ran inside the P3-6b checkpoint; its result is in the P3-6b report (`/tmp/p3_6b.txt`).
+
 ## Test changes
 
-Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
+Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No test that existed before Pass 3 was changed or deleted before the post-run checkpoint (P3-4b). Since then, such tests changed only through DQ5's patch (P3-4b) and the switch's patch (P3-6b), in the two tables below; changes to Pass 3's own tests are in their rows.
 
 | Test | Old | New | Entry | Phase |
 |---|---|---|---|---|
@@ -596,6 +657,22 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 |---|---|---|---|---|
 | `test_docs_d3.TestP29Blinding.test_sealed_fit_opt_in_and_record` (65-73) | BLIND_FIT_LOG has 6 lines, all `dev_real`, all on the Pass 1 dev panel `7366…`, with callers B5 ×3, `report_B7.py` ×2 and `report_B7b.py` | 7 lines, all `dev_real`. The six-line prefix's SHA-256 is pinned (`dad93285…`, raw bytes). Lines 1–6 are on `7366…`, with the same callers. Line 7 is pinned by its fields: key set; panel hash `36f7dd69…` (AM-04); spec hash `0320d6aa…` (the configuration's); 5,124 input rows; and a caller naming `tools/p3_sealed_run.py`. No whole-file hash. Adds `import hashlib` | DQ5 (Isaiah, 2026-10-07) | post-run checkpoint |
 | `test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag` (41) | `len(log) == 6` | `len(log) == 7` (Pass 1's six and P3-4's line 7); `RUN_REGISTRY.jsonl` still empty | DQ5 (Isaiah, 2026-10-07) | post-run checkpoint |
+
+**Applied unchanged at P3-6b, the switch commit (DQ6).**
+
+Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.py`, which ran two tiny synthetic runs of the sealed-run tool and checked their outputs (whitelisted aggregates, the run-registry directory, determinism, and T6's centred-only blocks). From the switch on, the configuration differs from a rebuild by its `spec_sha256`, so the tool refuses every run before it starts, and the tiny runs cannot run. Their properties were verified on the tool before the sealed run (P3-2b to P3-3c, and both rehearsals, which ran the same code), and the sealed run's own outputs were checked at P3-4b (six structural keys) and P3-5 (P9′, T6's D4.3a keys; P10). Test 17 asserts the refusal.
+
+| Test | Old | New | Entry | Phase |
+|---|---|---|---|---|
+| `test_docs_d2.TestP22toP25.test_p23_tost_pending_costs` | the SESOI is `PENDING_COSTS`; the viability contains "Pass 4"; `Spec.sesoi()` raises `SpecPendingError` | the SESOI equals the configuration's `sesoi.primary` (0.8652); the viability begins "viable (D2.6, P3-5)"; `Spec.sesoi()` returns the SESOI (AM-07) | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag` | status DRAFT; the YAML says "FROZEN only when Isaiah tags spec-dev-v1"; amendment headings AM-01 to AM-05 | status FROZEN; the YAML holds AM-10's comment "frozen at the Pass 3 switch (AM-10)"; headings AM-01 to AM-05, then AM-07, AM-09 and AM-10. The 7-line BLIND_FIT_LOG and empty-registry checks are unchanged | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_inference_b2.TestTOST.test_refusals_and_pending_sesoi` | `tost_result` without a SESOI raises `SpecPendingError` | `tost_result` without a SESOI uses the spec's: its `sesoi` equals the configuration's `sesoi.primary` and its `alpha` is 0.05 (AM-07); the file gains `import json`. The `PENDING_COSTS` refusal stays tested on a mutated spec (`test_spec.TestToFillRefusal.test_sesoi_pending`) | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_spec.TestSpecLoad.test_default_spec_loads` | status DRAFT | status FROZEN (AM-10) | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_spec.TestSpecLoad.test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines` | amended lines 4, 7, 14, 33, 42 to 46 and 62; record ids AM-01 to AM-05 | amended lines also 2, 49 and 66; ids also AM-07, AM-09 and AM-10. The record checks are unchanged and pass | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_spec.TestToFillRefusal.test_sesoi_pending` | `Spec.sesoi()` raises `SpecPendingError` | `Spec.sesoi()` equals the configuration's `sesoi.primary`, and a spec mutated back to `PENDING_COSTS` still raises `SpecPendingError` (AM-07) | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_p3_sealed_run.TestConfig.test_3_configuration` (test 3) | the configuration equals a rebuild; `validate_config` returns no problem | the configuration is the sealed run's (its SHA-256 equals the run's `config_sha256`), its `spec_sha256` equals BLIND_FIT_LOG line 7's, and `validate_config` returns exactly the `spec_sha256` difference (DQ6). The refusal checks that follow are unchanged | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_p3_sealed_run.TestRealRefusals.test_4_real_mode_refusals_read_no_data` (test 4) | a `--real` subprocess is refused for the sealed variable | a `--real` subprocess is refused for the configuration, before the mode check, and reads no data; the in-process refusal checks are unchanged | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
+| `test_p3_sealed_run.TestTinyRuns` (tests 5, 6, 9 and 15; test 17) | two tiny synthetic runs; test 5, the outputs whitelisted; test 6, the run-registry directory; test 9, determinism; test 15, T6's blocks centred only | tests 5, 6, 9 and 15 retired (above); new test 17: a synthetic run is refused for the configuration (exit 2, the exact refusal line), writes nothing to `--out-dir` and removes its own directory | DQ6 (P3-3f); the patch approved with P3-6a | the switch commit (P3-6b) |
 
 ## Flags
 
@@ -793,6 +870,12 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The patch document: `docs/P3_6_switch.patch`, the first clone's diff, checked in a second clone and, in REPO, with `git apply --check` only. Nothing was applied in REPO.
   - The suites in the clones and in REPO (inside the checkpoint) read `panel_dev.csv` only through their structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. `tools/p3_sealed_run.py` ran only with `--check-config`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-6b (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy (`reports/P3_reports/p3_6a.txt`, byte for byte). Read-only listings of PASS3_STATUS.md (step c), the P3-6a report, and code (`tools/p3_sealed_run.py`'s `main`; the imports of `tools/p2_3b_c7_compare.py` and `tests/test_p3_sealed_run.py`; `ofilt/drift/spec.py`'s `load` and `status`).
+  - The switch in REPO: the spec, `spec.py`'s validation and the tests changed only through `git apply docs/P3_6_switch.patch`, applied unchanged.
+  - The C7 rerun (`tools/c7_mc.py`, foreground chunks) and its comparison (`tools/p2_3b_c7_compare.py`): synthetic only; no data file read.
+  - The slow tier, and the full suite inside the checkpoint, read `panel_dev.csv` only through their structural and target-only tests.
+  - `tools/p3_sealed_run.py` ran only with `--check-config` (steps a.3 and d.7, and the records rule). No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -915,3 +998,6 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-6a d.4, choices beyond the rows' text: the tests read the configuration's SESOI with `json`, so `tests/test_inference_b2.py` gains `import json` at its top, and `tests/test_spec.py` imports it inside `test_sesoi_pending`. The tiny runs' class keeps its name, `TestTinyRuns`, and holds test 17 alone.
 - P3-6a d.3 and d.6, six skips where step d.6 expected five: after the switch, `tests/test_io.py:89-93` (`test_main_repo_has_no_unblinding_tags_while_draft`) skips once the status is FROZEN ("spec frozen; tags expected"), as `docs/P3_DQ6_drafts.md` section 6 notes under "Not failures". A verbose run of four modules in the clone showed the six skips. The result was OK, so the builder read the gate's "steps 6 and 7 OK" as met. After the switch commit, REPO's suite would skip six tests.
 - P3-6a d.9, the file-list check: its first form compared the list as `sort` printed it with a string in byte order. Under the user's locale, macOS `sort` placed `spec/SPEC_AMENDMENTS.md` after `spec/analysis_spec_dev_v1.yaml`, so the check printed False, although the patch's numstat listed exactly the eight expected files. The check was rewritten as a set comparison and run once more (rerun-once rule): True. The rerun's command line also held a redundant first `git apply --numstat`, piped into the venv's activation, which reads no input; it had no effect. Both runs are in the report.
+- P3-6a, notes in its report outside Deviations (recorded at P3-6b): /tmp/p3_6a_records.py had two parsing lines corrected before its only run; after it ran, two formatting slips it had written into the P3-6a Test results ("= 285.." and a Python list repr) were fixed by exact replacement; and after the checkpoint, step g printed four scripts into the report with a zsh for loop (echo, shasum and cat of literal paths only). None of them changed a result.
+- P3-6b d.4, the status check after the C7 rerun: it ran as an inline Python heredoc (`python -`), not as a saved script; the report prints it as it ran. It read the expected lines from the report's d.3 section. The bash command before it also defined a shell variable listing the expected lines, typed; that variable was never used.
+- P3-6b e, a formatting slip in the records script's output: the P3-6b Test results listed the line "copy equals source: True" twice, because the filter for the SHA-256 lines (lines beginning "copy " or "source ") also matched that check line. One copy was removed by exact replacement (`/tmp/p3_6b_fix.py`); the records script was not rerun. No result changed.

@@ -32,11 +32,11 @@ class TestP36(unittest.TestCase):
 
     def test_lock_amendments_and_nothing_real_before_the_tag(self):
         s = Spec.load()
-        self.assertEqual(s.status, "DRAFT")
-        self.assertIn("FROZEN only when Isaiah tags spec-dev-v1", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
+        self.assertEqual(s.status, "FROZEN")                                     # AM-10 (P3-6): frozen at the switch
+        self.assertIn("frozen at the Pass 3 switch (AM-10)", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
         self.assertIn("decided before tag", SIZE_RULE)                          # = before spec-dev-v1 (P36)
         heads = re.findall(r"^## (AM-\d\d) ", (ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(), re.M)
-        self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05"])   # AM-03, AM-04, AM-05 (row 27)
+        self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05", "AM-07", "AM-09", "AM-10"])   # + the switch (P3-6)
         log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
         self.assertEqual(len(log), 7)                                           # only the sealed fits (P29): Pass 1's six and P3-4's line 7 (DQ5)
         self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run

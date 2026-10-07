@@ -46,6 +46,10 @@ SIZE_RULE = 'Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_con
 M4_DEF = ("M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare"
           " + e*1[rv_per_bar > expanding past median] + min(e,0)")
 FORBIDDEN_MODELS = frozenset({"M6"})  # time-varying Kalman model: DROPPED
+PRIMARY_FORECAST = {  # AM-09 (2026-10-07): the primary comparison with the Clark-West critical value D3.4 selects
+    "test": "clark_west", "unrestricted": "M3", "restricted": "M2", "sided": "one",
+    "reference": "calibrated", "critical_value": 1.411608406163672,
+}
 _HEX64 = re.compile(r"^[0-9a-f]{64}$")
 _DAY_TOKEN = re.compile(r"^D(?:\+(\d+))?$")
 
@@ -220,7 +224,7 @@ def validate(d: dict) -> None:
     m7 = f["models"]["M7"]
     _require(m7["fixed"]["early_stopping"] is False, "M7 early_stopping must be explicitly false")
     pf = f["comparisons"]["primary_forecast"]
-    _require(pf == {"test": "clark_west", "unrestricted": "M3", "restricted": "M2", "sided": "one"},
+    _require(pf == PRIMARY_FORECAST,  # AM-09
              "primary forecast comparison must be one-sided Clark-West M3 vs M2")
     for comp in f["comparisons"]["secondary"]:
         _require(isinstance(comp, list) and len(comp) == 3 and comp[0] in ("clark_west", "diebold_mariano")

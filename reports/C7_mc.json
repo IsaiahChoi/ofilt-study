@@ -36,7 +36,7 @@
    "partial": "reports/C7_mc.partial.json"
   },
   "spec_seed": 20261001,
-  "spec_sha256": "0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9",
+  "spec_sha256": "feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26",
   "code": {
    "tools/c7_mc.py": "972422b06c6c25c573530486a6df894d67e493a1909aa277788871472fd5857d",
    "ofilt/drift/fctests.py": "b908b6dad0684a91b0fafea9a15ca13e538dc90bd0274579d26f7b1f61ed8066",
@@ -46,7 +46,7 @@
    "ofilt/drift/inference.py": "d040fc508d80fbd25619591de615137b9934a3089deeb5727a22fdae0801518b"
   }
  },
- "runtime_s": 316.75257444381714,
+ "runtime_s": 336.3097012042999,
  "label": "synthetic Gaussian DGP (P28); not binding",
  "cells": {
   "size": {

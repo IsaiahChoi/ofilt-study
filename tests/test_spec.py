@@ -29,7 +29,7 @@ class TestSpecLoad(unittest.TestCase):
     def test_default_spec_loads(self):
         sp = S.Spec.load()
         self.assertEqual(sp.spec_id, "drift-dev-v1")
-        self.assertEqual(sp.status, "DRAFT")
+        self.assertEqual(sp.status, "FROZEN")                                    # AM-10 (P3-6)
         self.assertEqual(len(sp.sha256), 64)
         self.assertEqual(sp.data_hash("dev_panel"),
                          "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68")   # AM-04 (row 1)
@@ -56,8 +56,8 @@ class TestSpecLoad(unittest.TestCase):
             if a != b and n not in amended:
                 self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
                 self.assertNotIn("TO_FILL", b)
-        self.assertEqual(sorted(amended), [4, 7, 14, 33, 42, 43, 44, 45, 46, 62])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3)
-        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05"})
+        self.assertEqual(sorted(amended), [2, 4, 7, 14, 33, 42, 43, 44, 45, 46, 49, 62, 66])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3); P3-6: AM-10 2, AM-07 49, AM-09 66
+        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05", "AM-07", "AM-09", "AM-10"})
 
     def test_am01_pins_reject_pre_amendment_text(self):
         import copy, yaml
@@ -134,9 +134,13 @@ class TestToFillRefusal(unittest.TestCase):
         self.assertEqual(sp.winsor_bounds()["eurusd_ret"], (-0.008, 0.009))
         self.assertEqual(sp.rv_per_bar_dev_median(), 1.5e-08)
 
-    def test_sesoi_pending(self):
+    def test_sesoi_pending(self):                                                # AM-07 (P3-6): set; PENDING_COSTS still refused
+        import json
+        cfg = json.loads((S.REPO_ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+        self.assertEqual(S.Spec.load().sesoi(), cfg["sesoi"]["primary"])
+        pending = _load_mutated(lambda d: d["equivalence"].__setitem__("sesoi", "PENDING_COSTS"))
         with self.assertRaises(S.SpecPendingError):
-            S.Spec.load().sesoi()
+            pending.sesoi()
 
 
 class TestLagRule(unittest.TestCase):

@@ -36,13 +36,13 @@ class TestP22toP25(unittest.TestCase):
         for crisis in ("2020-03", "2024-08-01", "2025-04-02", "crisis"):            # named windows removed
             self.assertNotIn(crisis, str(s.value("robustness")))
 
-    def test_p23_tost_pending_costs(self):
+    def test_p23_tost_pending_costs(self):                                       # AM-07 (P3-6): no longer pending
         s = Spec.load()
+        primary = json.loads((ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))["sesoi"]["primary"]
         self.assertEqual({k: s.value(f"equivalence.{k}") for k in ("test", "alpha", "sesoi")},
-                         {"test": "TOST", "alpha": 0.05, "sesoi": "PENDING_COSTS"})
-        self.assertIn("Pass 4", s.value("equivalence.viability"))
-        with self.assertRaises(SpecPendingError):
-            s.sesoi()
+                         {"test": "TOST", "alpha": 0.05, "sesoi": primary})
+        self.assertTrue(s.value("equivalence.viability").startswith("viable (D2.6, P3-5)"))
+        self.assertEqual(s.sesoi(), primary)
 
     def test_p24_fraction_unpriced(self):
         s = Spec.load()

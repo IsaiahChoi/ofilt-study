@@ -92,3 +92,30 @@ Common to every row below: the primary design, target, β, exclusions and infere
 ```jsonl
 {"id": "AM-05", "line": 42, "old": "  others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]", "new": "  others: [beta_rolling_250, beta_rolling_500, raw_target, copx_to_fcx, ewj_yen_denominated, xau_control, nikkei_proxy_p42, mechanism_session_fx_gotobi, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]"}
 ```
+
+## AM-07 (2026-10-07, Isaiah): the SESOI and TOST viability (D2.1 to D2.9; D2.6 applied at P3-5)
+
+Change. `equivalence.sesoi`: PENDING_COSTS becomes 0.8652, the primary SESOI of the cost model (D2.1 to D2.9; `reports/P3_1_sesoi.md`; approved by Isaiah 2026-10-06), exactly as the sealed run's configuration holds it. `equivalence.viability`: the outcome of D2.6 under the method that D3.4 selects. Reasons: P23 left both pending until costs were priced and the simulator run; Pass 3 did both, and D2.6 was fixed before the run. The low and high SESOIs, 0.07152 and 2.719, are reported beside the primary as sensitivity values.
+
+**Lines (exact):**
+```jsonl
+{"id": "AM-07", "line": 49, "old": "equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: \"decided in Pass 4 after costs priced and simulator run\"}", "new": "equivalence: {test: TOST, alpha: 0.05, sesoi: 0.8652, viability: \"viable (D2.6, P3-5): under dk_normal, P(equivalence | b = 0) = 1.0000 at the primary SESOI, and the rate at b = +SESOI is 0.0592; low and high SESOI 0.07152 and 2.719 reported\"}"}
+```
+
+## AM-09 (2026-10-07, Isaiah): the Clark–West critical value selected by D3.4
+
+Change. `forecast.comparisons.primary_forecast` gains its calibrated one-sided critical value. T3's normal-reference rate at b = 0 was 0.0330, outside [3.5%, 6.5%] (D3.4), so the primary comparison (M3 against M2) rejects if its Clark–West statistic exceeds 1.411608406163672, c_CW,cal (D3.3: T3's cell at b = 0). The statistic is the one the sealed run calibrated (P3-3e, step c.2). The secondary comparisons keep the normal reference.
+
+**Lines (exact):**
+```jsonl
+{"id": "AM-09", "line": 66, "old": "    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}", "new": "    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one, reference: calibrated, critical_value: 1.411608406163672}"}
+```
+
+## AM-10 (2026-10-07, Isaiah): the spec frozen for spec-dev-v1
+
+Change. `status`: DRAFT becomes FROZEN, in the switch commit, after the other amendments of the switch. Isaiah tags spec-dev-v1 on the final Pass 3 records commit.
+
+**Lines (exact):**
+```jsonl
+{"id": "AM-10", "line": 2, "old": "status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)", "new": "status: FROZEN           # frozen at the Pass 3 switch (AM-10); Isaiah tags spec-dev-v1 on the final Pass 3 records commit"}
+```
