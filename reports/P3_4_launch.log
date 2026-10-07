@@ -1,0 +1,32 @@
+Wed Oct  7 18:51:20 UTC 2026
+check 1, the arguments (--commit b634cc04a73502821cd27850282659d683015b32; --expect-config-sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; --data-dir /Users/isaiahchoi/Desktop/FX_Project/data; --dry-run 0): True
+check 2, OFILT_RUN_SEALED absent from the environment: True
+check 3, HEAD b634cc04a73502821cd27850282659d683015b32 equals --commit: True
+check 4, git status --porcelain --untracked-files=all empty: True
+check 5, --expect-config-sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e equals the rehearsed configuration SHA-256: True
+check 5, docs/P3_RUN_CONFIG.json ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+check 5, tools/p3_sealed_run.py bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837: True
+check 5, ofilt/drift/calib.py 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6: True
+check 5, spec/analysis_spec_dev_v1.yaml 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9: True
+check 6, BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301, 6 lines, equals the P3-0 baseline: True
+check 6, RUN_REGISTRY.jsonl 0 bytes; no ACCESS_LOG; neither output file exists: True
+check 7, power (Now drawing from 'AC Power'): True
+the interpreter, /Users/isaiahchoi/venvs/ofilt_p2/bin/python = $VIRTUAL_ENV/bin/python: True
+check 8, config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: True: True
+check 9, /Users/isaiahchoi/Desktop/FX_Project/data/panel_dev.csv exists: True
+the command: OFILT_RUN_SEALED=1 OFILT_DATA_DIR="$DATA_DIR" caffeinate -i "$PY" tools/p3_sealed_run.py --real --expect-config-sha256 "$EXPECT" 2>&1 | grep -E '^(COMPLETE|ABORTED|REFUSED)'
+  run from /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1, with DATA_DIR=/Users/isaiahchoi/Desktop/FX_Project/data, PY=/Users/isaiahchoi/venvs/ofilt_p2/bin/python, EXPECT=ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e
+LAUNCHING
+COMPLETE: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_4_sealed_run.json and /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_4_sealed_run.md; errors: 0
+the tool's exit code: 0
+BLIND_FIT_LOG has 7 lines: True
+BLIND_FIT_LOG's first six lines equal the P3-0 baseline: True
+reports/P3_4_sealed_run.json exists: True; sha256 65e68c8cf9a76afda05869e8772b345e49f30fa24bcad6790de28d6bcab58942
+reports/P3_4_sealed_run.md exists: True; sha256 8acbece13ff366ba39a097cf927e9c168471eff190f7dc4eb8b3307fc00c29a9
+git status --porcelain:
+ M BLIND_FIT_LOG
+?? reports/P3_4_sealed_run.json
+?? reports/P3_4_sealed_run.md
+LAUNCH FINISHED
+launcher exit: 0
+Wed Oct  7 20:45:12 UTC 2026
