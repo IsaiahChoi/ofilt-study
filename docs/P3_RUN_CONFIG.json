@@ -120,7 +120,7 @@
     "h3": "dk_normal as for H1; bootstrap at c_boot_h3(0.95), the order statistic of |t*_h3| pooled over pooled_cells (D3.5); H3 keeps the normal reference under c_cal",
     "mde80": "calib.mde80 over cells 0, 2, 3, 4 (b = 0, 0.10, 0.25, 0.40) per H1 method; cross-checks with sd(b_hat) and mean se pooled over pooled_cells",
     "order_statistics": "calib.order_stat (the ceil(level n)-th smallest) with calib.order_stat_interval",
-    "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference"
+    "t6": "D4.3a: OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw. Per cell and estimator only: the centred rejection rate, the share of draws with |b_hat - b_bar| > z se (z = scipy.stats.norm.ppf(1 - alpha/2); b_bar the cell's mean of b_hat, held in memory only), with its Wilson interval; sd(b_hat), mean se and se/sd; and Huber's mean share downweighted. No mean bias, uncentred rejection rate or coverage"
   },
   "n_dates_T3": 2452,
   "outputs": [
@@ -138,6 +138,7 @@
     "calibrator_seconds",
     "cell",
     "cells",
+    "centred_reject",
     "complete",
     "config_sha256",
     "coverage",
@@ -240,7 +241,7 @@
       ">     - The selected methods' numbers are the binding ones (power, MDE80, D2.6 and the T3 cross-tab). Every method's numbers are reported (DQ1.6)."
     ],
     "D4.3_flag": [
-      "If an estimator's rate at b = 0 on early-window draws lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods."
+      ">   - D4.3b The flag rule. If an estimator's centred rejection rate at b = 0 on early-window draws (cell 7) lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods. This replaces D4.3's flag sentence, and the configuration copies this line."
     ]
   },
   "seeds": {

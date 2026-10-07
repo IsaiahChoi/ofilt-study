@@ -1,0 +1,848 @@
+2026-10-06T22:44:28Z
+b94d8a48fdce45e424cb772ff77d7941d60dde0b
+=== P3-2d report ===
+--- a.1 Date gate ---
+$ date +%F
+2026-10-06
+--- a.2 State check (read-only) ---
+$ python /tmp/p3_2d_statecheck.py
+HEAD b94d8a48fdce45e424cb772ff77d7941d60dde0b == b94d8a48...: True
+git status --porcelain empty (tree clean): True
+tools/p3_sealed_run.py: computed 843a6547b0a8670353db8bec4dd7a292aa97842d786537b205f210f2317743f2; listed equal True; in the P3-2c report True
+docs/P3_RUN_CONFIG.json: computed 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; listed equal True; in the P3-2c report True
+STATE CHECK: True
+exit=0
+$ git tag -l
+pass1-final
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Read-only code facts ---
+b.1 ofilt/drift/sim.py (cat -n):
+  [lines 137-139: PRED_COLUMNS and SIM_COLUMNS]
+   137	PRED_COLUMNS = ("usdjpy_ret", "eurusd_ret", "spy_oc", "copx_oc",
+   138	                "window_hours", "usdjpy_rv", "usdjpy_bv", "usdjpy_bars")
+   139	SIM_COLUMNS = ("date", "ticker") + PRED_COLUMNS + ("earn_flag", "news_flag", "beta", "y_sim")
+  [lines 144-150: _log_blind_fit (called by _sealed_blind_fit)]
+   144	def _log_blind_fit(provenance: str, panel_sha: str | None, spec: Spec, n_rows_input: int) -> None:
+   145	    """One JSONL line per call; contains nothing derived from the target."""
+   146	    rec = {"utc": _dt.datetime.now(_dt.timezone.utc).isoformat(), "provenance": provenance,
+   147	           "panel_sha256": str(panel_sha or "none"), "spec_sha256": spec.sha256, "n_rows_input": int(n_rows_input),
+   148	           "caller": "".join(traceback.format_stack(limit=5)[:-2]).strip().replace("\n", " | ")[:400]}
+   149	    with open(BLIND_FIT_LOG_PATH, "a", encoding="utf-8") as fh:
+   150	        fh.write(json.dumps(rec) + "\n")
+  [lines 153-171: _sealed_blind_fit, in full]
+   153	def _sealed_blind_fit(df: pd.DataFrame, spec: Spec | None = None) -> dict:
+   154	    """Regress abn_oc on the FULL primary design and return EXACTLY
+   155	    {residuals, fitted_controls (FE + controls, no FX), row_index}. The coefficient
+   156	    vector exists only in this local scope. Refuses confirmation data."""
+   157	    prov = blind.provenance_of(df)
+   158	    if prov not in (blind.DEV_REAL, blind.SYNTHETIC):
+   159	        raise blind.BlindingError(f"sealed blind fit accepts dev_real or synthetic data only, not {prov!r}")
+   160	    if prov == blind.DEV_REAL and os.environ.get(SEALED_ENV) != "1":
+   161	        raise blind.BlindingError(f"the real-data sealed fit runs only when deliberately invoked ({SEALED_ENV}=1)")
+   162	    spec = spec or Spec.load()
+   163	    _log_blind_fit(prov, df.attrs.get("sha256"), spec, len(df))   # logged at ENTRY: failed calls count too
+   164	    d = _inf._design_core(df, spec, target="abn_oc", secondary=None, exclude=None,
+   165	                          rv_threshold=None, provenance=prov)
+   166	    nonfx = np.array([n not in spec.fx_block for n in d.names])
+   167	    coef = np.linalg.lstsq(d.X, d.y, rcond=None)[0]
+   168	    residuals = d.y - d.X @ coef
+   169	    fitted_controls = d.X[:, nonfx] @ coef[nonfx]
+   170	    del coef
+   171	    return {"residuals": residuals, "fitted_controls": fitted_controls, "row_index": d.index}
+  [lines 198-212: DevCalibrator.__init__]
+   198	    def __init__(self, df: pd.DataFrame, spec: Spec | None = None, mean_block: float = 5.0):
+   199	        spec = spec or Spec.load()
+   200	        fit = _sealed_blind_fit(df, spec)
+   201	        if set(fit) != FIT_KEYS:
+   202	            raise RuntimeError(f"sealed fit returned keys {sorted(fit)}")
+   203	        P = df.loc[fit["row_index"], ["date", "ticker", *PRED_COLUMNS]].reset_index(drop=True)
+   204	        codes = np.unique(P["date"].to_numpy(dtype="datetime64[ns]"), return_inverse=True)[1]
+   205	        perm = np.argsort(codes, kind="stable")
+   206	        self._pred = P.drop(columns="date").iloc[perm].reset_index(drop=True)
+   207	        self._fc = np.asarray(fit["fitted_controls"])[perm]
+   208	        self._resid = np.asarray(fit["residuals"])[perm]
+   209	        self._bounds = np.r_[0, np.cumsum(np.bincount(codes))]
+   210	        self.T = len(self._bounds) - 1
+   211	        self.mean_block = float(mean_block)
+   212	        self._cal = pd.bdate_range(SIM_CALENDAR_START, periods=self.T)
+  [lines 214-215: DevCalibrator.positions]
+   214	    def positions(self, rng: np.random.Generator, n: int | None = None) -> np.ndarray:
+   215	        return stationary_bootstrap_positions(self.T, self.mean_block, rng, n)
+b.2 ofilt/drift/io.py, load_dev's lines that set attrs:
+    85	def load_dev(path: str | Path | None = None, spec: Spec | None = None) -> pd.DataFrame:
+    86	    spec = spec or Spec.load()
+    87	    p = Path(path) if path is not None else DATA_DIR / DEV_FILE
+    88	    digest = _verify(p, spec.data_hash("dev_panel"), "dev panel")
+    89	    df = _read_panel(p)
+    90	    if not (df["date"] < DEV_END_EXCLUSIVE).all():
+    91	        raise DataScopeError("dev panel contains dates >= 2022-01-01")
+    92	    df.attrs.update(provenance="dev_real", sha256=digest, source=str(p))
+    93	    _register_real_targets(df)
+    94	    return df
+b.3 ofilt/drift/targets.py, add_targets' lines that carry attrs:
+   129	    out.attrs = dict(df.attrs)
+   130	    out.attrs["targets"] = dict(method=method, window=window, estimate_on=estimate_on,
+   131	                                hedge=hedge, lag_days=bs.lag_days, min_periods=mp)
+
+Statements:
+1. Before writing its log line, _sealed_blind_fit checks (sim.py:157-161): the frame's provenance, blind.provenance_of(df), is dev_real or synthetic (else BlindingError, sim.py:158-159); and, for dev_real, os.environ.get(SEALED_ENV) == "1" (else BlindingError, sim.py:160-161). It loads the spec if none is given (sim.py:162). It checks no hash and calls no guard before logging.
+2. It writes the line BEFORE the fit: _log_blind_fit at sim.py:163 ('logged at ENTRY: failed calls count too'); the design and the lstsq fit follow at sim.py:164-170.
+3. The line's panel_sha256 is produced by the expression str(panel_sha or "none") at sim.py:147, where panel_sha is the argument df.attrs.get("sha256") passed at sim.py:163; that is, str(df.attrs.get("sha256") or "none"). sim.py has no helper for it. For the real frame, io.load_dev sets attrs sha256 to the verified digest (io.py:92) and targets.add_targets copies the attrs (targets.py:129).
+
+--- c. Decisions recorded; targeted edits ---
+c.1 Progress: P3-2c status cell now 'done; accepted by Isaiah 2026-10-06'; P3-2d row added. c.2 Next action replaced.
+c.3 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-2c accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `b94d8a48fdce45e424cb772ff77d7941d60dde0b`, including the recorded deviation P3-2c d (the two imports the test change needs).
+>   - The remote was verified by Isaiah on 2026-10-06: `refs/heads/main` was `befb7da4a4d7fdd5fbcfca8a303110ee213e741e` and `refs/tags/pass1-final` was `81905c1b576d24bdac2c96e2ab76429e0a1d24d1`. This closes the push confirmation open since P3-0.
+> - The supervisor's review of the full sealed-run tool (Isaiah, 2026-10-06, on the supervisor's recommendation). Three changes come before any rehearsal; the configuration stays byte-identical.
+>   - R1. Every real-mode check on line 7 is rehearsed, and the panel hash is checked before the sealed fit.
+>     - In synthetic and rehearsal modes, the temporary log must hold exactly one line after the calibrator, with provenance `synthetic` and a caller that names this script.
+>     - In rehearsal and real modes, before the calibrator, the frame's provenance must be `dev_real`, and the panel hash that `sim._sealed_blind_fit` will log for it, computed by the same expression, must equal the configured dev-panel hash.
+>     - In rehearsal mode, the repository's BLIND_FIT_LOG must also pass the 6-line check, read only.
+>     - Any failure aborts the run. Before this change, these checks ran only in real mode, after line 7 had been written, so a format mismatch would have spent the sealed fit.
+>   - R2. No exception message or traceback is printed in any mode. An unexpected exception outside a task is recorded like a task's, by its class and line only; the run stops, and the outputs written so far are flushed with that record.
+>   - R3. A structural check of the real-data construction path, run once (`tools/p3_2d_structural.py`).
+>     - The dev panel is loaded with `io.load_dev` and `targets.add_targets`, which registers the real targets.
+>     - A frame is built from it that keeps only date, ticker, the exclusion flags and the predictor columns that `DevCalibrator` reads. The target and target-derived columns it needs are replaced by synthetic values on exactly the rows where the real ones are present, and every other column is dropped.
+>     - The frame is labelled synthetic, so the fingerprint guard checks it against the registered real targets. One `DevCalibrator` is constructed on it, with a temporary log. The check prints only booleans and counts.
+>     - No real target value enters any computation. This is the category of the existing guard test that relabels the dev frame synthetic after removing its targets (`test_blind.test_fx_columns_never_compared`).
+>   - The real-data construction path itself has not run since Pass 1, on a panel that has since changed (AM-03, AM-04). R3 exercises its code on the real frame's structure without a sealed fit.
+> - The rehearsal procedure (Isaiah, 2026-10-06, on the supervisor's recommendation; DQ1.5).
+>   - `tools/p3_3_rehearse.sh` runs the tool's `--rehearsal` mode twice, in sequence, with the checks of step f, and compares the two outputs.
+>   - Isaiah runs the full rehearsal in his own Terminal, after the supervisor has reviewed P3-2d: `caffeinate -i`, mains power, lid open, and no other heavy job running.
+>   - Its runtimes give the expected duration of the real run, stated before the sanction.
+> - The records rule (Isaiah, 2026-10-06, on the supervisor's recommendation): until the switch, no line added to PASS3_STATUS.md begins with a prefix from which the configuration's rules are copied, and every records step ends with `--check-config` printing valid: True.
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+| P3-2d Review changes R1, R2; structural check; rehearsal script | in progress | P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-3: after the supervisor's review of P3-2d, Isaiah runs `tools/p3_3_rehearse.sh` (full) in his own Terminal; then the DQ5 test-change rehearsal and the DQ6 amendment drafts.
+
+Records rule: lines added in this diff beginning with a reserved prefix: 0
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+exit=0
+
+--- d. The tool changes (R1, R2) in tools/p3_sealed_run.py ---
+$ diff -u /tmp/p3_2d_tool_before.py tools/p3_sealed_run.py   (the b94d8a4 version, saved before the edit), in full:
+--- /tmp/p3_2d_tool_before.py	2026-10-06 17:58:28
++++ tools/p3_sealed_run.py	2026-10-06 18:47:04
+@@ -244,14 +244,16 @@
+     return None
+ 
+ 
+-def check_log(path: Path, n_expected: int, panel_sha: str | None = None, caller: str | None = None) -> list:
+-    """Problems with BLIND_FIT_LOG: line count, all dev_real; and, if given, the last line's panel hash and caller."""
++def check_log(path: Path, n_expected: int, panel_sha: str | None = None, caller: str | None = None,
++              provenance: str = "dev_real") -> list:
++    """Problems with a BLIND_FIT_LOG: line count, every line of the given provenance (default dev_real); and, if given,
++    the last line's panel hash and caller."""
+     recs = [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()]
+     p = []
+     if len(recs) != n_expected:
+         p.append(f"{len(recs)} lines, expected {n_expected}")
+-    if any(r.get("provenance") != "dev_real" for r in recs):
+-        p.append("a line is not dev_real")
++    if any(r.get("provenance") != provenance for r in recs):
++        p.append(f"a line is not {provenance}")
+     if recs and panel_sha is not None and recs[-1].get("panel_sha256") != panel_sha:
+         p.append("the last line's panel hash differs")
+     if recs and caller is not None and caller not in str(recs[-1].get("caller", "")):
+@@ -293,6 +295,11 @@
+     return int((mine or tb)[-1].lineno) if tb else -1
+ 
+ 
++def _abort_text(e: BaseException) -> str:
++    """'<class> at line <n>': an exception's class and line only, never its message (R2)."""
++    return f"{type(e).__name__} at line {_script_line(e)}"
++
++
+ # ====================================================================== the run
+ def main(argv: list | None = None) -> int:
+     ap = argparse.ArgumentParser()
+@@ -346,6 +353,9 @@
+     except AbortRun as e:
+         print(f"ABORTED at line {_script_line(e)} (before the first flush)")
+         return EXIT_ABORTED
++    except Exception as e:                                                  # R2: class and line only
++        print(f"ABORTED: {_abort_text(e)}")
++        return EXIT_ABORTED
+     finally:
+         shutil.rmtree(run_tmp, ignore_errors=True)
+         tempfile.tempdir = previous
+@@ -358,6 +368,7 @@
+         raise AbortRun("registry.SYNTHETIC_PATH lies outside the run's temporary directory")
+     import numpy as np
+     from scipy import stats
++    from ofilt.drift import blind as B
+     from ofilt.drift import calib as C
+     from ofilt.drift import fctests as FT
+     from ofilt.drift import forecast as F
+@@ -419,6 +430,7 @@
+                 raise AbortRun("dev panel SHA-256 differs from the configuration")
+             base = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)
+             assert_am03_target(base, spec)
++            assert_logged_panel(base, cfg, B)                               # R1: before the sealed fit
+             log_path = S.BLIND_FIT_LOG_PATH
+             p = check_log(log_path, 6)
+             if p:
+@@ -433,7 +445,11 @@
+                     raise AbortRun("dev panel SHA-256 differs from the configuration")
+                 dev = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)   # registers real targets
+                 assert_am03_target(dev, spec)
++                assert_logged_panel(dev, cfg, B)                            # R1: rehearses the real-mode check
+                 del dev
++                p = check_log(real_log, 6)                                  # R1: read only
++                if p:
++                    raise AbortRun(f"repository BLIND_FIT_LOG: {p}")
+             base = stand_in(cfg, spec, S, np)
+         t0 = time.time()
+         cal = S.DevCalibrator(base, spec)                                   # the ONE sealed fit
+@@ -443,6 +459,10 @@
+             p = check_log(log_path, 7, panel_sha=cfg["dev_panel_sha256"], caller=SCRIPT_NAME)
+             if p:
+                 raise AbortRun(f"BLIND_FIT_LOG after the calibrator: {p}")
++        else:
++            p = check_log(run_tmp / "BLIND_FIT_LOG", 1, caller=SCRIPT_NAME, provenance="synthetic")   # R1
++            if p:
++                raise AbortRun(f"temporary BLIND_FIT_LOG after the calibrator: {p}")
+         assert_calibrator_shape(cal, cfg)
+         state["calibrator"] = {"T_source": int(cal.T), "rows": int(cfg["rows"])}
+         flush()
+@@ -661,6 +681,14 @@
+         except AbortRun:
+             pass
+         print(f"ABORTED at line {_script_line(e)}")
++        return EXIT_ABORTED
++    except Exception as e:                                                  # R2: class and line only
++        state["aborted"] = {"error_class": type(e).__name__, "line": _script_line(e)}
++        try:
++            flush()
++        except Exception:
++            pass
++        print(f"ABORTED: {_abort_text(e)}")
+         return EXIT_ABORTED
+ 
+ 
+@@ -676,6 +704,16 @@
+         raise AbortRun("the target is not AM-03's")
+ 
+ 
++def assert_logged_panel(frame, cfg, B) -> None:
++    """R1, before the sealed fit: the frame's provenance is dev_real, and the panel hash _sealed_blind_fit will log for
++    it, str(df.attrs.get("sha256") or "none") (sim.py:163 and sim.py:147; sim.py has no helper), equals the
++    configured dev-panel hash."""
++    if B.provenance_of(frame) != B.DEV_REAL:
++        raise AbortRun("the frame's provenance is not dev_real")
++    if str(frame.attrs.get("sha256") or "none") != cfg["dev_panel_sha256"]:
++        raise AbortRun("the panel hash the sealed fit would log differs from the configuration")
++
++
+ def assert_calibrator_shape(cal, cfg) -> None:
+     """Source dates == T_source and rows == rows; the rows are read from the calibrator's private row bounds, here
+     only."""
+$ shasum -a 256 tools/p3_sealed_run.py
+14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e  tools/p3_sealed_run.py
+docs/P3_RUN_CONFIG.json byte-identical to HEAD: True
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+Tests: $ diff (existing test file lines removed or changed): 0
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_p3_sealed_run tests.test_p3_2d_structural -v   (first run)
+test_3_configuration (tests.test_p3_sealed_run.TestConfig.test_3_configuration) ... ok
+test_2_invariance_and_given_fit (tests.test_p3_sealed_run.TestInvariance.test_2_invariance_and_given_fit) ... ok
+test_10_r1_log_check_and_logged_panel (tests.test_p3_sealed_run.TestP32d.test_10_r1_log_check_and_logged_panel) ... ok
+test_11_r2_generic_handlers_print_no_message (tests.test_p3_sealed_run.TestP32d.test_11_r2_generic_handlers_print_no_message) ... ok
+test_12_r2_abort_text (tests.test_p3_sealed_run.TestP32d.test_12_r2_abort_text) ... ok
+test_13_rehearsal_script_static (tests.test_p3_sealed_run.TestP32d.test_13_rehearsal_script_static) ... ok
+test_4_real_mode_refusals_read_no_data (tests.test_p3_sealed_run.TestRealRefusals.test_4_real_mode_refusals_read_no_data) ... ok
+test_7_seeds_disjoint (tests.test_p3_sealed_run.TestSeedsAndLogs.test_7_seeds_disjoint) ... ok
+test_8_log_checks (tests.test_p3_sealed_run.TestSeedsAndLogs.test_8_log_checks) ... ok
+test_1_static (tests.test_p3_sealed_run.TestStatic.test_1_static) ... ok
+test_5_outputs_whitelisted_and_aggregates_only (tests.test_p3_sealed_run.TestTinyRuns.test_5_outputs_whitelisted_and_aggregates_only) ... ok
+test_6_registry_directory (tests.test_p3_sealed_run.TestTinyRuns.test_6_registry_directory) ... ok
+test_9_determinism (tests.test_p3_sealed_run.TestTinyRuns.test_9_determinism) ... ok
+test_frame_builder (tests.test_p3_2d_structural.TestStructuralFrame.test_frame_builder) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 22.391s
+
+OK
+
+--- e. The structural check (R3): tools/p3_2d_structural.py ---
+$ shasum -a 256 tools/p3_2d_structural.py tests/test_p3_2d_structural.py
+860a08214dd277fe96c1a47e11899751aadd9fac451f4622cbf7a628c0f024de  tools/p3_2d_structural.py
+a0a62a09472e32129f4c75571bd7f7d8968519670afd840cc96419c8fa6e718d  tests/test_p3_2d_structural.py
+tools/p3_2d_structural.py in full:
+<<<<<<<<
+"""P3-2d R3: a structural check of the real-data construction path (PASS3_STATUS Decision log, the supervisor's review).
+
+The dev panel is hash-checked against the registry before it is read, loaded with io.load_dev and built with
+targets.add_targets (which registers the real targets in the fingerprint registry). A frame is built from it that
+keeps exactly the columns _sealed_blind_fit and DevCalibrator read:
+  date, ticker; the exclusion flags (spec.inference_exclusion_flags; inference.py:92 and :98);
+  spec.require_nonmissing and the target abn_oc (inference.py:93-94, target "abn_oc" at sim.py:164);
+  the predictors DevCalibrator copies (sim.PRED_COLUMNS, read at sim.py:203).
+Of these, abn_oc (a constructed target) and beta (estimated from the target) are replaced by synthetic values on exactly
+the rows where the real ones are present (seeded normal, sd 0.02, for abn_oc; 1.0 for beta), and stay missing elsewhere.
+Every other column is dropped, including every y_* and ao_* column, open, close and prev_close. The frame's attrs are
+replaced by provenance synthetic (blind.mark_synthetic), so the fingerprint guard checks the draw against the registered
+real targets. One DevCalibrator is constructed with sim.BLIND_FIT_LOG_PATH at /tmp/p3_2d_struct/BLIND_FIT_LOG.
+No real target value enters any computation. Prints only booleans and counts; writes reports/P3_2d_structural.md.
+usage: python tools/p3_2d_structural.py
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+from p3_0b_preflight import verify_panel  # noqa: E402
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import calib as C  # noqa: E402
+from ofilt.drift import io as IO  # noqa: E402
+from ofilt.drift import sim as S  # noqa: E402
+from ofilt.drift import targets as TG  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+TARGET = "abn_oc"
+REPLACED = ("abn_oc", "beta")
+ABN_SD = 0.02
+LOG_DIR = Path("/tmp/p3_2d_struct")
+SEED = 20261006
+
+
+def kept_columns(spec: Spec) -> list[str]:
+    """The columns _sealed_blind_fit and DevCalibrator read, in a fixed order."""
+    cols = ["date", "ticker"] + list(spec.inference_exclusion_flags) + list(spec.require_nonmissing) + [TARGET]
+    cols += list(S.PRED_COLUMNS)
+    return list(dict.fromkeys(cols))
+
+
+def build_structural_frame(df: pd.DataFrame, spec: Spec, rng: np.random.Generator) -> pd.DataFrame:
+    """The kept columns only; abn_oc and beta replaced by synthetic values where the real ones are present."""
+    out = df[kept_columns(spec)].copy()
+    out.attrs = {}
+    present = {c: out[c].notna().to_numpy() for c in REPLACED}
+    abn = np.full(len(out), np.nan)
+    abn[present[TARGET]] = rng.normal(0.0, ABN_SD, int(present[TARGET].sum()))
+    out[TARGET] = abn
+    out["beta"] = np.where(present["beta"], 1.0, np.nan)
+    return B.mark_synthetic(out)
+
+
+def sha_file(p: Path) -> str:
+    return hashlib.sha256(p.read_bytes()).hexdigest()
+
+
+def main(argv: list | None = None) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", type=Path, default=ROOT / "reports" / "P3_2d_structural.md")
+    a = ap.parse_args(argv)
+    spec = Spec.load()
+    cfg = json.loads((ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+    repo_log = ROOT / "BLIND_FIT_LOG"
+    log_sha0 = sha_file(repo_log)
+    path = IO.DATA_DIR / IO.DEV_FILE
+    digest = verify_panel(path, spec)                                    # before the file is read
+    dev = TG.add_targets(IO.load_dev(path, spec), spec)                  # registers the real targets
+    frame = build_structural_frame(dev, spec, np.random.default_rng(SEED))
+    del dev
+    dropped_ok = not any(c.startswith(("y_", "ao_")) or c in ("open", "close", "prev_close") for c in frame.columns)
+    LOG_DIR.mkdir(parents=True, exist_ok=False)
+    S.BLIND_FIT_LOG_PATH = LOG_DIR / "BLIND_FIT_LOG"
+    res = {}
+    try:
+        cal = S.DevCalibrator(frame, spec)                               # synthetic provenance: a temporary log line
+        res["construction succeeded"] = True
+    except Exception as e:                                               # class only
+        res["construction succeeded"] = False
+        res[f"construction error class {type(e).__name__}"] = False
+        cal = None
+    if cal is not None:
+        res[f"T == {cfg['T_source']} (T = {cal.T})"] = int(cal.T) == int(cfg["T_source"])
+        res[f"rows == {cfg['rows']} (rows = {int(cal._bounds[-1])})"] = int(cal._bounds[-1]) == int(cfg["rows"])
+        y = cal.draw(0.0, 0.0, seed=SEED + 1, n_dates=int(cfg["T_conf"]))
+        res["one draw (b = 0, seeded, n_dates = T_conf) passes the guard"] = B.require_unblinded(y) == B.SYNTHETIC
+        res["the draw has exactly SIM_COLUMNS"] = tuple(y.columns) == S.SIM_COLUMNS
+        f = C.fit_t(y, spec, "y_sim")
+        res[f"calib.fit_t on the draw reports lag 6 (lag = {f['lag']})"] = int(f["lag"]) == 6
+    recs = [json.loads(x) for x in S.BLIND_FIT_LOG_PATH.read_text(encoding="utf-8").splitlines() if x.strip()] \
+        if S.BLIND_FIT_LOG_PATH.exists() else []
+    res[f"the temporary log has 1 line with provenance synthetic ({len(recs)} line(s))"] = \
+        len(recs) == 1 and recs[0].get("provenance") == B.SYNTHETIC
+    res["the repository's BLIND_FIT_LOG is unchanged"] = sha_file(repo_log) == log_sha0
+    res["the frame holds no y_*, ao_*, open, close or prev_close column"] = dropped_ok
+    ok = all(res.values())
+    L = ["# P3-2d structural check of the real-data construction path (R3)", "",
+         f"Generated by `tools/p3_2d_structural.py`. Dev panel SHA-256 `{digest}` (checked against the registry before "
+         "it was read); targets built by `targets.add_targets`, which registered the real targets. The frame keeps "
+         f"{len(frame.columns)} columns ({', '.join(frame.columns)}); `abn_oc` and `beta` were replaced by synthetic "
+         "values on exactly the rows where the real ones are present; the frame is labelled synthetic; one "
+         "`DevCalibrator` was constructed with a temporary log. Booleans and counts only.", ""]
+    L += [f"- {k}: {v}" for k, v in res.items()]
+    L += ["", f"Gate (every boolean True): {ok}", ""]
+    md = "\n".join(L)
+    a.out.write_text(md, encoding="utf-8")
+    print(md, end="")
+    return 0 if ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+>>>>>>>>
+Columns cited: _design_core reads the exclusion flags, spec.require_nonmissing, the target and the feature sources (inference.py:92-98; target abn_oc at sim.py:164); DevCalibrator copies PRED_COLUMNS (sim.py:203; sim.py:137-138).
+$ ls -d /tmp/p3_2d_struct (before the run)
+ls: /tmp/p3_2d_struct: No such file or directory
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python tools/p3_2d_structural.py   (run once; exit 0)
+$ cmp /tmp/p3_2d_structural.out reports/P3_2d_structural.md
+printed == written: True
+reports/P3_2d_structural.md in full:
+<<<<<<<<
+# P3-2d structural check of the real-data construction path (R3)
+
+Generated by `tools/p3_2d_structural.py`. Dev panel SHA-256 `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68` (checked against the registry before it was read); targets built by `targets.add_targets`, which registered the real targets. The frame keeps 14 columns (date, ticker, earn_flag, news_flag, usdjpy_ret, eurusd_ret, spy_oc, copx_oc, beta, abn_oc, window_hours, usdjpy_rv, usdjpy_bv, usdjpy_bars); `abn_oc` and `beta` were replaced by synthetic values on exactly the rows where the real ones are present; the frame is labelled synthetic; one `DevCalibrator` was constructed with a temporary log. Booleans and counts only.
+
+- construction succeeded: True
+- T == 1439 (T = 1439): True
+- rows == 4192 (rows = 4192): True
+- one draw (b = 0, seeded, n_dates = T_conf) passes the guard: True
+- the draw has exactly SIM_COLUMNS: True
+- calib.fit_t on the draw reports lag 6 (lag = 6): True
+- the temporary log has 1 line with provenance synthetic (1 line(s)): True
+- the repository's BLIND_FIT_LOG is unchanged: True
+- the frame holds no y_*, ao_*, open, close or prev_close column: True
+
+Gate (every boolean True): True
+>>>>>>>>
+$ ls -A /tmp/p3_2d_struct (after)
+BLIND_FIT_LOG
+$ rm -r /tmp/p3_2d_struct; exit=0
+BLIND_FIT_LOG sha256 after: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+GATE e (every printed boolean True): PASSED.
+
+--- f. The rehearsal script; the smoke run ---
+The script refuses a dirty tree (step 2), and REPO holds this item's uncommitted files, so the smoke rehearsal runs from a scratch clone holding them in a local commit (no remote; deleted afterwards).
+REPO state before: HEAD b94d8a48fdce45e424cb772ff77d7941d60dde0b; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; RUN_REGISTRY.jsonl 0 bytes
+$ git -C REPO status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+ M tools/p3_sealed_run.py
+?? reports/P3_2d_structural.md
+?? tests/test_p3_2d_structural.py
+?? tools/p3_2d_structural.py
+?? tools/p3_3_rehearse.sh
+$ git clone --quiet REPO /tmp/p3_2d_clone: ok
+$ git -C /tmp/p3_2d_clone remote remove origin: ok; remotes now: []
+clone commit: 39a39cc970c918b9c57a01181e51f30a4ebfba3a (parent b94d8a48fdce45e424cb772ff77d7941d60dde0b)
+clone git status --porcelain: []
+files compared (REPO tracked + new): 134; differing: 0; clone file count: 134
+
+tools/p3_3_rehearse.sh in full (SHA-256 2b2669be4a39be5eae742e035154c06704940bcdce4b4aaa7a03bedd8709d4a5):
+<<<<<<<<
+set -euo pipefail
+# tools/p3_3_rehearse.sh: the P3-3 rehearsal (DQ1.5; PASS3_STATUS Decision log, "The rehearsal procedure").
+# usage:  bash tools/p3_3_rehearse.sh             the full rehearsal: two runs of the tool's rehearsal mode
+#         bash tools/p3_3_rehearse.sh --smoke N   the short one (every cell capped at N replications)
+# Capture the output with:  bash tools/p3_3_rehearse.sh 2>&1 | tee <log file>
+# The script never passes the tool's real-mode flag, never sets the sealed-run environment variable, and writes nothing
+# inside the repository. Any refusal prints "REHEARSAL REFUSED: <reason>" and exits 2; the end prints "REHEARSAL PASSED"
+# (exit 0) or "REHEARSAL FAILED: <reason>" (exit 1).
+
+refuse() { echo "REHEARSAL REFUSED: $1"; exit 2; }
+fail() { echo "REHEARSAL FAILED: $1"; exit 1; }
+
+# 1. The sealed-run environment variable must not be set at all (checked before any Python command).
+if [ -n "${OFILT_RUN_SEALED+x}" ]; then refuse "OFILT_RUN_SEALED is set"; fi
+
+MODE=full
+SMOKE=""
+if [ "$#" -gt 0 ]; then
+  if [ "$#" -eq 2 ] && [ "$1" = "--smoke" ] && [[ "$2" =~ ^[0-9]+$ ]]; then MODE=smoke; SMOKE="$2"
+  else refuse "usage: bash tools/p3_3_rehearse.sh [--smoke N]"; fi
+fi
+
+# 2. The repository root; the tree must be clean, untracked files included.
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
+[ -z "$(git status --porcelain)" ] || refuse "git status --porcelain is not empty"
+
+# 3. Header.
+echo "rehearsal mode: $MODE${SMOKE:+ (smoke $SMOKE)}"
+echo "utc: $(date -u +%FT%TZ)"
+HEAD0="$(git rev-parse HEAD)"
+echo "HEAD: $HEAD0"
+echo "macOS: $(sw_vers -productVersion)"
+echo "machine: $(uname -m)"
+
+# 4. The venv.
+set +u
+source "$HOME/venvs/ofilt_p2/bin/activate"
+set -u
+[ "$(command -v python)" = "$VIRTUAL_ENV/bin/python" ] || refuse "python is not \$VIRTUAL_ENV/bin/python"
+echo "python: $(command -v python)"
+
+# 5. Power.
+PS_OUT="$(pmset -g ps)"
+echo "power: $(printf '%s\n' "$PS_OUT" | head -1)"
+if [ "$MODE" = full ]; then printf '%s\n' "$PS_OUT" | grep -q "AC Power" || refuse "not on AC Power"; fi
+
+# 6. Baselines, read by script (the same script runs again after the runs).
+baseline() {
+  env -u OFILT_RUN_SEALED python - <<'PYEOF'
+import hashlib, os, re, tempfile
+from pathlib import Path
+R = Path.cwd()
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+p30 = re.search(r"^BLIND_FIT_LOG sha256 \(baseline[^\n]*?([0-9a-f]{64})$", (R / "reports/P3_0_report.txt").read_text(), re.M).group(1)
+smoke = re.search(r"^- Configuration: `docs/P3_RUN_CONFIG.json`, SHA-256 `([0-9a-f]{64})`", (R / "reports/P3_2b_smoke.md").read_text(), re.M).group(1)
+log, cfg = sha(R / "BLIND_FIT_LOG"), sha(R / "docs/P3_RUN_CONFIG.json")
+reg = (R / "RUN_REGISTRY.jsonl").stat().st_size
+syn = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+print(f"BLIND_FIT_LOG sha256 {log}; equals the P3-0 baseline: {log == p30}")
+print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals reports/P3_2b_smoke.md: {cfg == smoke}")
+print(f"RUN_REGISTRY.jsonl bytes {reg}; is 0: {reg == 0}")
+print(f"tools/p3_sealed_run.py sha256 {sha(R / 'tools/p3_sealed_run.py')}")
+print(f"ofilt/drift/calib.py sha256 {sha(R / 'ofilt/drift/calib.py')}")
+print(f"usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes {syn.stat().st_size if syn.exists() else 'absent'}")
+raise SystemExit(0 if (log == p30 and cfg == smoke and reg == 0) else 1)
+PYEOF
+}
+BASE0="$(baseline)" || { printf '%s\n' "$BASE0"; refuse "a baseline check failed"; }
+printf '%s\n' "$BASE0"
+
+# 7. The configuration validates.
+CHK="$(env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config)" || { printf '%s\n' "$CHK"; refuse "--check-config failed"; }
+printf '%s\n' "$CHK"
+printf '%s\n' "$CHK" | grep -q "valid: True" || refuse "the configuration is not valid"
+
+# 8. The output folders must not exist yet.
+if [ "$MODE" = full ]; then OUT1=/tmp/p3_3_rehearsal_1; OUT2=/tmp/p3_3_rehearsal_2; else OUT1=/tmp/p3_3_smoke_1; OUT2=/tmp/p3_3_smoke_2; fi
+for d in "$OUT1" "$OUT2"; do [ ! -e "$d" ] || refuse "$d exists"; done
+
+# The two runs, in sequence.
+run_one() {
+  local out="$1" rc
+  echo "run start ($out): $(date -u +%FT%TZ)"
+  set +e
+  if [ -n "$SMOKE" ]; then
+    RUN_OUT="$(env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" python tools/p3_sealed_run.py --rehearsal --smoke "$SMOKE" --out-dir "$out" 2>&1)"
+  else
+    RUN_OUT="$(env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" python tools/p3_sealed_run.py --rehearsal --out-dir "$out" 2>&1)"
+  fi
+  rc=$?
+  set -e
+  printf '%s\n' "$RUN_OUT"
+  echo "run end ($out): $(date -u +%FT%TZ); exit $rc"
+  [ "$rc" -eq 0 ] || fail "the run into $out exited $rc"
+  printf '%s\n' "$RUN_OUT" | grep -q -E "^COMPLETE: .*errors: 0$" || fail "the run into $out did not print COMPLETE ... errors: 0"
+}
+run_one "$OUT1"
+run_one "$OUT2"
+
+# After the runs: the outputs, the baselines, the tree, the timings.
+CMP="$(env -u OFILT_RUN_SEALED python - "$OUT1" "$OUT2" <<'PYEOF'
+import json, sys
+from pathlib import Path
+a, b = (json.loads((Path(d) / "P3_4_sealed_run.json").read_text()) for d in sys.argv[1:3])
+ra, rb = a.pop("runtime"), b.pop("runtime")
+same = json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
+print(f"the two JSON outputs are identical apart from runtime: {same}")
+for name in [t["task"] for t in ra["tasks"]]:
+    s = [next(t for t in r["tasks"] if t["task"] == name) for r in (ra, rb)]
+    print(f"task {name}: run 1 {s[0]['seconds']:.1f} s, run 2 {s[1]['seconds']:.1f} s ({s[0]['replications']} replications each)")
+print(f"calibrator: run 1 {ra['calibrator_seconds']:.2f} s, run 2 {rb['calibrator_seconds']:.2f} s")
+print(f"totals: run 1 {ra['total_seconds']:.1f} s, run 2 {rb['total_seconds']:.1f} s")
+m = max(ra["total_seconds"], rb["total_seconds"])
+print(f"projected duration of the real run (the larger total): {m:.0f} s ({m / 3600:.2f} h)")
+raise SystemExit(0 if same else 1)
+PYEOF
+)" || { printf '%s\n' "$CMP"; fail "the two outputs differ apart from runtime"; }
+printf '%s\n' "$CMP"
+BASE1="$(baseline)" || { printf '%s\n' "$BASE1"; fail "a baseline check failed after the runs"; }
+printf '%s\n' "$BASE1"
+[ "$BASE0" = "$BASE1" ] || fail "a hash or size changed during the rehearsal"
+echo "hashes and sizes unchanged: True"
+[ -z "$(git status --porcelain)" ] || fail "git status --porcelain is not empty after the runs"
+[ "$(git rev-parse HEAD)" = "$HEAD0" ] || fail "HEAD changed"
+echo "tree clean and HEAD unchanged: True"
+echo "utc: $(date -u +%FT%TZ)"
+echo "REHEARSAL PASSED"
+>>>>>>>>
+$ env -u OFILT_RUN_SEALED bash /tmp/p3_2d_clone/tools/p3_3_rehearse.sh --smoke 20 > /tmp/p3_2d_smoke.log 2>&1   (exit 0; 212 s)
+/tmp/p3_2d_smoke.log in full:
+<<<<<<<<
+rehearsal mode: smoke (smoke 20)
+utc: 2026-10-06T22:51:17Z
+HEAD: 39a39cc970c918b9c57a01181e51f30a4ebfba3a
+macOS: 26.6.2
+machine: arm64
+python: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+power: Now drawing from 'AC Power'
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals reports/P3_2b_smoke.md: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19094902
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+run start (/tmp/p3_3_smoke_1): 2026-10-06T22:51:17Z
+COMPLETE: /private/tmp/p3_3_smoke_1/P3_4_sealed_run.json and /private/tmp/p3_3_smoke_1/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_smoke_1): 2026-10-06T22:53:04Z; exit 0
+run start (/tmp/p3_3_smoke_2): 2026-10-06T22:53:04Z
+COMPLETE: /private/tmp/p3_3_smoke_2/P3_4_sealed_run.json and /private/tmp/p3_3_smoke_2/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_smoke_2): 2026-10-06T22:54:48Z; exit 0
+the two JSON outputs are identical apart from runtime: True
+task T1: run 1 4.3 s, run 2 4.2 s (20 replications each)
+task T5_boundary: run 1 4.3 s, run 2 4.2 s (20 replications each)
+task T2: run 1 12.9 s, run 2 12.6 s (60 replications each)
+task pooled: run 1 0.0 s, run 2 0.0 s (0 replications each)
+task T6: run 1 18.0 s, run 2 17.2 s (80 replications each)
+task T3: run 1 65.7 s, run 2 64.8 s (60 replications each)
+calibrator: run 1 0.01 s, run 2 0.02 s
+totals: run 1 105.4 s, run 2 103.1 s
+projected duration of the real run (the larger total): 105 s (0.03 h)
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals reports/P3_2b_smoke.md: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19094902
+hashes and sizes unchanged: True
+tree clean and HEAD unchanged: True
+utc: 2026-10-06T22:54:48Z
+REHEARSAL PASSED
+>>>>>>>>
+(note) The script's 'projected duration of the real run' line is the larger smoke-run total (105 s), not a full-count projection. Per-task rates and the full-count projection, computed by script from the two runs' runtime sections:
+Smoke rehearsal (--smoke 20; populated fingerprint registry): seconds per replication, and the full configuration projected at these rates
+  T1: run 1 0.2165 s, run 2 0.2083 s, mean 0.2124 s; full 5000 replications -> 1062 s
+  T5_boundary: run 1 0.2171 s, run 2 0.2114 s, mean 0.2142 s; full 5000 replications -> 1071 s
+  T2: run 1 0.2156 s, run 2 0.2094 s, mean 0.2125 s; full 3000 replications -> 638 s
+  T6: run 1 0.2254 s, run 2 0.2150 s, mean 0.2202 s; full 4000 replications -> 881 s
+  T3: run 1 1.0945 s, run 2 1.0808 s, mean 1.0877 s; full 3000 replications -> 3263 s
+  projected full configuration (tasks only): 6914 s (1.92 h)
+$ rm -r /tmp/p3_3_smoke_1 /tmp/p3_3_smoke_2 /tmp/p3_2d_clone; exit=0
+$ ls -d /tmp/p3_3_smoke_* /tmp/p3_2d_clone
+ls: /tmp/p3_2d_clone: No such file or directory
+ls: /tmp/p3_3_smoke_1: No such file or directory
+ls: /tmp/p3_3_smoke_2: No such file or directory
+$ ls -d "${TMPDIR:-/tmp}"/p3_sealed_run_* (the tool's own directories, deleted by it)
+(eval):25: no matches found: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//p3_sealed_run_*
+REPO state after: HEAD b94d8a48fdce45e424cb772ff77d7941d60dde0b; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; RUN_REGISTRY.jsonl 0 bytes
+$ git status --porcelain (REPO)
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+ M tools/p3_sealed_run.py
+?? reports/P3_2d_structural.md
+?? tests/test_p3_2d_structural.py
+?? tools/p3_2d_structural.py
+?? tools/p3_3_rehearse.sh
+GATE f: REHEARSAL PASSED.
+
+--- g.1 PASS3_STATUS edits ---
+Test changes: rows for the 4 tests added to tests/test_p3_sealed_run.py and for tests/test_p3_2d_structural.py. Test results: the P3-2d block. Blinding attestation: P3-2d. Deviations: P3-2d f (scratch clone), d (R2's scope), e (the draw length; private row bounds), f (the summary line), f (no shebang). Progress: the P3-2d row set to done. All edits by the Edit tool or a shell heredoc (no Python).
+Records rule: lines added to PASS3_STATUS.md (whole item) beginning with a reserved prefix: 0
+--- g.2 --check-config (records rule) ---
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+exit=0
+$ git diff --stat
+ PASS3_STATUS.md             | 62 ++++++++++++++++++++++++++++++++++--
+ tests/test_p3_sealed_run.py | 76 +++++++++++++++++++++++++++++++++++++++++++++
+ tools/p3_sealed_run.py      | 46 ++++++++++++++++++++++++---
+ 3 files changed, 178 insertions(+), 6 deletions(-)
+$ git status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+ M tools/p3_sealed_run.py
+?? reports/P3_2d_structural.md
+?? tests/test_p3_2d_structural.py
+?? tools/p3_2d_structural.py
+?? tools/p3_3_rehearse.sh
+
+--- g.3 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-2c (records; tool listing; test output hygiene)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-2d (review changes R1 R2; structural check; rehearsal script)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 30fd7613c1d9011995a2e4fb123fa5245d80b08a718212e67f7109a2489e3279
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+ M tools/p3_sealed_run.py
+?? reports/P3_2d_structural.md
+?? tests/test_p3_2d_structural.py
+?? tools/p3_2d_structural.py
+?? tools/p3_3_rehearse.sh
+----------------------------------------------------------------------
+Ran 277 tests in 347.497s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+ M tools/p3_sealed_run.py
+?? reports/P3_2d_structural.md
+?? tests/test_p3_2d_structural.py
+?? tools/p3_2d_structural.py
+?? tools/p3_3_rehearse.sh
+commit 1c48d381bb794e65d6532ba915ea782761ba58b2
+checkpoint exit=0
+
+--- g.4 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+1c48d381bb794e65d6532ba915ea782761ba58b2 checkpoint: P3-2d (review changes R1 R2; structural check; rehearsal script)
+$ git log -1 --format=%B
+checkpoint: P3-2d (review changes R1 R2; structural check; rehearsal script)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md                |  62 +++++++++++++++++++-
+ reports/P3_2d_structural.md    |  15 +++++
+ tests/test_p3_2d_structural.py |  54 +++++++++++++++++
+ tests/test_p3_sealed_run.py    |  76 ++++++++++++++++++++++++
+ tools/p3_2d_structural.py      | 123 +++++++++++++++++++++++++++++++++++++++
+ tools/p3_3_rehearse.sh         | 128 +++++++++++++++++++++++++++++++++++++++++
+ tools/p3_sealed_run.py         |  46 +++++++++++++--
+ 7 files changed, 498 insertions(+), 6 deletions(-)
+$ shasum -a 256 tools/p3_sealed_run.py ofilt/drift/calib.py tools/p3_3_rehearse.sh docs/P3_RUN_CONFIG.json
+14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e  tools/p3_sealed_run.py
+31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6  ofilt/drift/calib.py
+2b2669be4a39be5eae742e035154c06704940bcdce4b4aaa7a03bedd8709d4a5  tools/p3_3_rehearse.sh
+645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa  docs/P3_RUN_CONFIG.json
+docs/P3_RUN_CONFIG.json still 645ef80e...: True (compared with reports/P3_2b_smoke.md)
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+P3-0 baseline (read by script from reports/P3_0_report.txt): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+The five skips (the module check used before):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 24.458s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- h. PASS3_STATUS.md Deviations, final (as committed in 1c48d38), verbatim ---
+<<<<<<<<
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
+- P3-2b g, the tests' first run: 6 of the tests passed, and `setUpClass` of the tiny-run tests errored.
+  - The cause was a bug in the test's setup, not in the tool. The test set each subprocess's `TMPDIR` to its own folder and passed an `--out-dir` outside it, which the tool refuses by design.
+  - Diagnosis before the one rerun: the tool was run directly once (synthetic, `--smoke 2`, contained in `/tmp/p3_2b_dbg_*`) and completed with no error. One refusal check confirmed that an `--out-dir` outside the temporary locations is refused and nothing is written.
+  - The test alone was fixed: `--out-dir` now lies inside the run's `TMPDIR`. The one rerun passed (9 of 9). Both runs, the diagnosis and the diff are in the P3-2b report.
+- P3-2b f, the tree check in real mode (for the supervisor). DQ1.3 forbids the script to import `subprocess`, so it checks the tree with `registry.git_state()`, which runs `git status --porcelain --untracked-files=no` (registry.py:87-90). A modified tracked file refuses the run; an untracked file does not. A stricter check needs a decision before P3-4.
+- P3-2b f, other design choices the item did not fix (for review):
+  - `--out-dir` in synthetic modes may lie under `/tmp` or under the system temporary directory (needed for the tests' temporary folders on macOS). Never inside the repository.
+  - The configuration has two keys beyond step e's list: `stand_in`, which describes the stand-in (with its counts read from `reports/P3_0b_preflight.md`), and `early_window_before` (K's cut date, read from `reports/P3_2b_preflight.md`).
+  - The `rules` are stored as the Decision-log lines with their `> ` markers.
+  - MDE80 per method uses cells 0, 2, 3 and 4 (b = 0, 0.10, 0.25 and 0.40, as B7b). Its cross-checks use sd(b̂) and the mean se pooled over cells 0 to 4.
+  - H3's bootstrap decision uses c_boot_h3, the 0.95 order statistic of |t*_h3| pooled over cells 0 to 4 (D3.5).
+  - A task's exception is recorded with the line number of its innermost frame in this script.
+  - Real mode takes no `--out-dir`.
+- P3-2b g, test 4: the real-mode conditions are tested on the pure function `mode_refusal`, with the sealed value passed as an argument. No test sets the `OFILT_RUN_SEALED` environment variable; the subprocess test removes it from the child's environment.
+- P3-2b, the optional reuse-the-first-fit variant: the tool uses `calib.bootstrap_t_given_fit`, a new function appended to `calib.py`, to avoid refitting each draw a second time. Test 2 shows it returns exactly `calib.bootstrap_t`'s t*. Every existing function of `calib.py` is unchanged: the P3-2a file is a byte prefix of the new one.
+- P3-2c d: besides the test 4 change, the diff adds the two imports it needs (`import contextlib` and `from io import StringIO`). Nothing else in the file changed.
+- P3-2d f, where the smoke rehearsal ran: `tools/p3_3_rehearse.sh` refuses a dirty tree (its step 2), and REPO held this item's uncommitted files.
+  - It ran from a scratch clone, `/tmp/p3_2d_clone`: a local clone of HEAD `b94d8a4` with no remote, plus this item's files in one local commit (`39a39cc…`, never pushed).
+  - All 134 files were byte-identical to REPO's working tree, and the clone's tree was clean.
+  - The clone and the outputs were deleted afterwards. REPO's HEAD, BLIND_FIT_LOG and RUN_REGISTRY.jsonl were unchanged, as was the usual temporary run registry.
+- P3-2d d, R2's scope: the generic handlers print only `<class> at line <n>`, and the `AbortRun` handlers print only a line number. The `Refused` handler still prints its reason. That reason is a refusal message the tool composes itself (a mode combination, the sealed variable, the configuration SHA-256, the tree, or `validate_config`'s key names), with no data value; test 4, which this item leaves unchanged, asserts it.
+- P3-2d e, the structural check's draw used `n_dates` = T_conf (1,013), the sealed run's length, for the lag-6 gate (at the source length of 1,439 dates the DK lag would be 7). The check reads the calibrator's private row bounds for its row count; that tool is not the sealed-run tool.
+- P3-2d f, the rehearsal script's last summary line is "the larger total" of the two runs, as specified. In smoke mode that is the smoke total (105 s), not a full-count projection. The P3-2d report gives the per-task rates and the full-count projection (1.92 h), computed by script from the two runs' runtime sections.
+- P3-2d f, the script has no shebang line: its first line is `set -euo pipefail`, as specified, and it is run with `bash`.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review of P3-2d; then Isaiah starts the full rehearsal) ---
+2026-10-06T23:02:59Z
+1c48d381bb794e65d6532ba915ea782761ba58b2
+$ git status --porcelain (between markers)
+<<<
+>>>

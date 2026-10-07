@@ -1,8 +1,9 @@
 set -euo pipefail
 # tools/p3_3_rehearse.sh: the P3-3 rehearsal (DQ1.5; PASS3_STATUS Decision log, "The rehearsal procedure").
-# usage:  bash tools/p3_3_rehearse.sh             the full rehearsal: two runs of the tool's rehearsal mode
-#         bash tools/p3_3_rehearse.sh --smoke N   the short one (every cell capped at N replications)
-# Capture the output with:  bash tools/p3_3_rehearse.sh 2>&1 | tee <log file>
+# usage:  bash tools/p3_3_rehearse.sh --expect-config-sha256 <hash>             the full rehearsal: two runs
+#         bash tools/p3_3_rehearse.sh --smoke N --expect-config-sha256 <hash>   the short one (cells capped at N)
+# <hash> is docs/P3_RUN_CONFIG.json's SHA-256 (64 lowercase hex); the script refuses unless the file matches it.
+# Capture the output with:  bash tools/p3_3_rehearse.sh --expect-config-sha256 <hash> 2>&1 | tee <log file>
 # The script never passes the tool's real-mode flag, never sets the sealed-run environment variable, and writes nothing
 # inside the repository. Any refusal prints "REHEARSAL REFUSED: <reason>" and exits 2; the end prints "REHEARSAL PASSED"
 # (exit 0) or "REHEARSAL FAILED: <reason>" (exit 1).
@@ -15,15 +16,24 @@ if [ -n "${OFILT_RUN_SEALED+x}" ]; then refuse "OFILT_RUN_SEALED is set"; fi
 
 MODE=full
 SMOKE=""
-if [ "$#" -gt 0 ]; then
-  if [ "$#" -eq 2 ] && [ "$1" = "--smoke" ] && [[ "$2" =~ ^[0-9]+$ ]]; then MODE=smoke; SMOKE="$2"
-  else refuse "usage: bash tools/p3_3_rehearse.sh [--smoke N]"; fi
-fi
+EXPECT=""
+USAGE="usage: bash tools/p3_3_rehearse.sh [--smoke N] --expect-config-sha256 <64 lowercase hex>"
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --smoke) { [ "$#" -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]]; } || refuse "$USAGE"; MODE=smoke; SMOKE="$2"; shift 2 ;;
+    --expect-config-sha256) [ "$#" -ge 2 ] || refuse "$USAGE"; EXPECT="$2"; shift 2 ;;
+    *) refuse "$USAGE" ;;
+  esac
+done
+[[ "$EXPECT" =~ ^[0-9a-f]{64}$ ]] || refuse "--expect-config-sha256 <64 lowercase hex> is required (missing or malformed)"
 
 # 2. The repository root; the tree must be clean, untracked files included.
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 [ -z "$(git status --porcelain)" ] || refuse "git status --porcelain is not empty"
+CFG_SHA="$(shasum -a 256 docs/P3_RUN_CONFIG.json | cut -d' ' -f1)"
+[ "$CFG_SHA" = "$EXPECT" ] || refuse "docs/P3_RUN_CONFIG.json's SHA-256 differs from --expect-config-sha256"
+echo "configuration sha256: $CFG_SHA (equals --expect-config-sha256)"
 
 # 3. Header.
 echo "rehearsal mode: $MODE${SMOKE:+ (smoke $SMOKE)}"
@@ -47,23 +57,23 @@ if [ "$MODE" = full ]; then printf '%s\n' "$PS_OUT" | grep -q "AC Power" || refu
 
 # 6. Baselines, read by script (the same script runs again after the runs).
 baseline() {
-  env -u OFILT_RUN_SEALED python - <<'PYEOF'
-import hashlib, os, re, tempfile
+  env -u OFILT_RUN_SEALED python - "$EXPECT" <<'PYEOF'
+import hashlib, os, re, sys, tempfile
 from pathlib import Path
 R = Path.cwd()
 sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
 p30 = re.search(r"^BLIND_FIT_LOG sha256 \(baseline[^\n]*?([0-9a-f]{64})$", (R / "reports/P3_0_report.txt").read_text(), re.M).group(1)
-smoke = re.search(r"^- Configuration: `docs/P3_RUN_CONFIG.json`, SHA-256 `([0-9a-f]{64})`", (R / "reports/P3_2b_smoke.md").read_text(), re.M).group(1)
+exp = sys.argv[1]
 log, cfg = sha(R / "BLIND_FIT_LOG"), sha(R / "docs/P3_RUN_CONFIG.json")
 reg = (R / "RUN_REGISTRY.jsonl").stat().st_size
 syn = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
 print(f"BLIND_FIT_LOG sha256 {log}; equals the P3-0 baseline: {log == p30}")
-print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals reports/P3_2b_smoke.md: {cfg == smoke}")
+print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals --expect-config-sha256: {cfg == exp}")
 print(f"RUN_REGISTRY.jsonl bytes {reg}; is 0: {reg == 0}")
 print(f"tools/p3_sealed_run.py sha256 {sha(R / 'tools/p3_sealed_run.py')}")
 print(f"ofilt/drift/calib.py sha256 {sha(R / 'ofilt/drift/calib.py')}")
 print(f"usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes {syn.stat().st_size if syn.exists() else 'absent'}")
-raise SystemExit(0 if (log == p30 and cfg == smoke and reg == 0) else 1)
+raise SystemExit(0 if (log == p30 and cfg == exp and reg == 0) else 1)
 PYEOF
 }
 BASE0="$(baseline)" || { printf '%s\n' "$BASE0"; refuse "a baseline check failed"; }

@@ -1,0 +1,1301 @@
+2026-10-06T22:18:08Z
+befb7da4a4d7fdd5fbcfca8a303110ee213e741e
+=== P3-2c report ===
+--- a.1 Date gate ---
+$ date +%F
+2026-10-06
+--- a.2 State check (read-only) ---
+$ python /tmp/p3_2c_statecheck.py
+HEAD befb7da4a4d7fdd5fbcfca8a303110ee213e741e == befb7da4...: True
+git status --porcelain empty (tree clean): True
+tools/p3_sealed_run.py: computed 843a6547b0a8670353db8bec4dd7a292aa97842d786537b205f210f2317743f2; listed equal True; P3-2b report ['843a6547b0a8670353db8bec4dd7a292aa97842d786537b205f210f2317743f2'] equal True
+docs/P3_RUN_CONFIG.json: computed 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; listed equal True; P3-2b report ['645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa'] equal True
+STATE CHECK: True
+exit=0
+$ git tag -l
+pass1-final
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Decisions recorded; targeted edits ---
+b.1 Progress: P3-2b status cell now 'done; accepted by Isaiah 2026-10-06'; P3-2c row added. b.2 Next action replaced.
+b.3 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-2b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `befb7da4a4d7fdd5fbcfca8a303110ee213e741e`. The configuration `docs/P3_RUN_CONFIG.json` has SHA-256 `645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa`; it is not yet sanctioned (DQ1.7).
+>   - The acceptance covers P3-2b's recorded deviations: the tests' setup bug and its one rerun; the design choices listed for review; test 4's use of the pure function `mode_refusal`; and the reuse-the-first-fit variant `calib.bootstrap_t_given_fit`, appended to `calib.py` with every existing function unchanged.
+>   - The warp-path gate passed. The warp-speed and inner draws come from the same `calib.bootstrap_t` path, and all 9 seeded identity checks were True. The two high values of q_warp in P3-2a were therefore chance, and the open point of the P3-2a acceptance is closed.
+>   - K_early = 409 (K16 = 165). The two smoke runs were identical apart from runtime and project 1.54 hours for the full configuration at empty-registry rates.
+> - DQ1.3 clarification (Isaiah, 2026-10-06, on the supervisor's recommendation): the clean-tree check. The script may not import subprocess, so its own check (`registry.git_state`) covers tracked files only. The P3-4 launch command therefore begins with a shell check that `git status --porcelain` prints nothing, untracked files included, and does not start the run otherwise.
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | in progress | P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-3: Isaiah runs the two full rehearsals (`--rehearsal`) in his own Terminal; then the DQ5 test-change rehearsal in a scratch clone and the DQ6 amendment drafts.
+
+$ git diff --stat
+ PASS3_STATUS.md | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+--- c. Read-only listing for the supervisor's review ---
+c.1 tools/p3_sealed_run.py, in full (cat -n; SHA-256 843a6547b0a8670353db8bec4dd7a292aa97842d786537b205f210f2317743f2):
+<<<<<<<<
+     1	"""P3 sealed-run tool (DQ1, DQ3, DQ4; PASS3_STATUS Decision log, "Design of the sealed-run tool").
+     2	
+     3	Modes (one of):
+     4	  --synthetic (default)  a synthetic stand-in with a temporary BLIND_FIT_LOG, as tools/report_B7.py --synthetic;
+     5	  --rehearsal            synthetic, and also loads the dev panel (io.load_dev, targets.add_targets) to populate the
+     6	                         fingerprint registry (DQ1.5; P3-3 only);
+     7	  --real                 the one sanctioned sealed fit: only if OFILT_RUN_SEALED=1 is set for that command, the tree
+     8	                         is clean and --expect-config-sha256 equals docs/P3_RUN_CONFIG.json's SHA-256 (DQ1.7);
+     9	  --smoke N              synthetic only: every cell capped at N replications.
+    10	Utilities: --write-config writes docs/P3_RUN_CONFIG.json from the registry; --check-config validates it.
+    11	
+    12	Start-up order: (1) the run's own temporary directory, set as tempfile.tempdir before any ofilt module is imported,
+    13	and registry.SYNTHETIC_PATH asserted inside it (DQ1.2); (2) the configuration validated (rebuilt from the registry
+    14	and compared) and, in real mode, the mode conditions checked before any data file is read; (3) exactly one
+    15	DevCalibrator. Tasks then run in the configured order (T1, T5 boundary, T2, the pooled critical values, T6, T3);
+    16	an exception in a task is recorded by class and line only and the next task runs; a failed assertion aborts.
+    17	Outputs: aggregates only (the configured whitelist), JSON and markdown rewritten after each flush, with runtime
+    18	fields in their own `runtime` section. No per-replication value is written or printed. No decision rule is applied.
+    19	"""
+    20	from __future__ import annotations
+    21	
+    22	import argparse
+    23	import hashlib
+    24	import json
+    25	import os
+    26	import re
+    27	import shutil
+    28	import sys
+    29	import tempfile
+    30	import time
+    31	import traceback
+    32	from pathlib import Path
+    33	
+    34	ROOT = Path(__file__).resolve().parents[1]
+    35	sys.path.insert(0, str(ROOT))                    # path only: no ofilt module is imported here
+    36	sys.path.insert(0, str(ROOT / "tools"))
+    37	CONFIG_PATH = ROOT / "docs" / "P3_RUN_CONFIG.json"
+    38	STATUS_PATH = ROOT / "PASS3_STATUS.md"
+    39	SPEC_PATH = ROOT / "spec" / "analysis_spec_dev_v1.yaml"
+    40	REAL_OUT = ROOT / "reports"
+    41	REAL_STEM = "P3_4_sealed_run"
+    42	SEALED_ENV = "OFILT_RUN_SEALED"
+    43	SCRIPT_NAME = "p3_sealed_run.py"
+    44	EXIT_REFUSED, EXIT_ABORTED = 2, 3
+    45	MAX_LIST = 20
+    46	REQUIRED_KEYS = ("T_conf", "T_source", "K_early", "a2", "cells", "cw_cal_cell", "dev_panel_sha256", "expected_lag",
+    47	                 "mean_block", "methods", "n_dates_T3", "outputs", "pooled_cells", "rows", "rules", "seeds", "sesoi",
+    48	                 "spec_sha256", "stand_in", "task_order")
+    49	OUTPUT_KEYS = sorted({
+    50	    "tool", "mode", "smoke", "config_sha256", "spec_sha256", "dev_panel_sha256", "head", "calibrator", "T_source",
+    51	    "rows", "cells", "cell", "task", "b", "replications", "n_dates", "window", "lag", "estimates", "mean_bias", "sd",
+    52	    "mean_se", "se_over_sd", "dk_normal", "bootstrap", "calibrated", "reject", "coverage", "tost", "primary", "low",
+    53	    "high", "k", "n", "rate", "wilson95", "h3", "own_quantiles", "c_boot", "c_cal", "c_boot_h3", "q95", "q90", "value",
+    54	    "interval", "rank", "rank_interval", "pooled", "estimators", "ols_dk", "huber_dk", "winsorised_ols_dk",
+    55	    "mean_share_downweighted", "mde80", "probit_interpolated", "normal_approx_sd", "normal_approx_mean_se", "t3",
+    56	    "c_cw_cal", "cw", "normal", "h1", "crosstab", "h1_method", "cw_method", "both", "h1_only", "cw_only", "neither",
+    57	    "walk_forward_calls", "registry_lines", "errors", "error_class", "line", "complete", "aborted", "runtime",
+    58	    "tasks", "seconds", "seconds_per_replication", "calibrator_seconds", "total_seconds"})
+    59	
+    60	
+    61	class AbortRun(Exception):
+    62	    """A failed run assertion: the run stops (DQ1.3, DQ1.4)."""
+    63	
+    64	
+    65	class Refused(Exception):
+    66	    """The run refuses to start (mode, configuration or tree)."""
+    67	
+    68	
+    69	# ====================================================================== pure helpers (no ofilt import)
+    70	def sha256_bytes(data: bytes) -> str:
+    71	    return hashlib.sha256(data).hexdigest()
+    72	
+    73	
+    74	def sha256_file(path: Path) -> str:
+    75	    return sha256_bytes(Path(path).read_bytes())
+    76	
+    77	
+    78	def _write_file(path: Path, text: str) -> None:
+    79	    """The only function that writes a file (it creates the parent directory if needed)."""
+    80	    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    81	    Path(path).write_text(text, encoding="utf-8")
+    82	
+    83	
+    84	def _rule_lines() -> dict:
+    85	    """Rules copied verbatim from PASS3_STATUS.md's Decision log, and AM-02 from the spec (inference.size_rule)."""
+    86	    import yaml
+    87	    lines = STATUS_PATH.read_text(encoding="utf-8").splitlines()
+    88	
+    89	    def one(prefix: str) -> str:
+    90	        hit = [l for l in lines if l.startswith(prefix)]
+    91	        if len(hit) != 1:
+    92	            raise ValueError(f"rule line {prefix!r} found {len(hit)} times")
+    93	        return hit[0]
+    94	
+    95	    def block(prefix: str, sub: str) -> list:
+    96	        i = lines.index(one(prefix))
+    97	        out = [lines[i]]
+    98	        while i + 1 < len(lines) and lines[i + 1].startswith(sub):
+    99	            i += 1
+   100	            out.append(lines[i])
+   101	        return out
+   102	
+   103	    d43 = one(">   - D4.3 T6.")
+   104	    flag = re.search(r"If an estimator's rate at b = 0 on early-window draws lies outside \[3\.5%, 6\.5%\], the "
+   105	                     r"pre-registration flags that robustness row as unreliable on coarse-grid periods\.", d43)
+   106	    if flag is None:
+   107	        raise ValueError("D4.3 flag sentence not found")
+   108	    spec = yaml.safe_load(SPEC_PATH.read_text(encoding="utf-8"))
+   109	    return {"D2.6": [one(">   - D2.6 Viability")], "D2.7": [one(">   - D2.7 Claim wording")],
+   110	            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [flag.group(0)],
+   111	            "D3.2_D3.3_amended": block("> - D3.2 and D3.3 amended", ">   - "),
+   112	            "AM-02": [spec["inference"]["size_rule"]]}
+   113	
+   114	
+   115	def build_config() -> dict:
+   116	    """docs/P3_RUN_CONFIG.json's content, every registry value read by script."""
+   117	    import yaml
+   118	    from ofilt.drift import calendar as CAL                 # lazy: build/check only, never in run start-up
+   119	    spec_bytes = SPEC_PATH.read_bytes()
+   120	    spec_sha = sha256_bytes(spec_bytes)
+   121	    spec = yaml.safe_load(spec_bytes.decode("utf-8"))
+   122	    c7 = json.loads((ROOT / "reports" / "C7_mc.json").read_text(encoding="utf-8"))["key"]["spec_sha256"]
+   123	    if spec_sha != c7:
+   124	        raise ValueError("spec SHA-256 differs from the C7 key's (registry)")
+   125	    reg = json.loads((ROOT / "docs" / "PASS2_INPUTS.json").read_text(encoding="utf-8"))
+   126	    dev = reg["pass2_outputs"]["panel_dev.csv"]["sha256"]
+   127	    if dev != spec["data"]["dev_panel_sha256"]:
+   128	        raise ValueError("dev-panel hash: PASS2_INPUTS.json and the spec disagree")
+   129	    p0b = (ROOT / "reports" / "P3_0b_preflight.md").read_text(encoding="utf-8")
+   130	    t_source = int(re.search(r"^- Kept unique dates \(T_source\): \*\*(\d+)\*\*$", p0b, re.M).group(1))
+   131	    rows = int(re.search(r"^- Kept rows: \*\*(\d+)\*\*$", p0b, re.M).group(1))
+   132	    m = re.search(r"^- Kept dates with 1, 2 and 3 tickers: 1: (\d+), 2: (\d+), 3: (\d+)$", p0b, re.M)
+   133	    one_t, two_t, three_t = (int(x) for x in m.groups())
+   134	    p2b = (ROOT / "reports" / "P3_2b_preflight.md").read_text(encoding="utf-8")
+   135	    km = re.search(r"^- K, kept unique dates before (\d{4}-\d{2}-\d{2}): \*\*(\d+)\*\*$", p2b, re.M)
+   136	    k_early, k_date = int(km.group(2)), km.group(1)
+   137	    s1 = (ROOT / "reports" / "P3_1_sesoi.md").read_text(encoding="utf-8")
+   138	    sesoi = {c: float(re.search(rf"^\| {c} \|.*\| \*\*([0-9.eE+-]+)\*\* \|$", s1, re.M).group(1))
+   139	             for c in ("primary", "low", "high")}
+   140	    if sesoi != {"primary": 0.8652, "low": 0.07152, "high": 2.719}:      # approved four-significant-digit values
+   141	        raise ValueError(f"SESOI values {sesoi} differ from the approved ones")
+   142	    t_conf = int(CAL.T_CONF)
+   143	    n3 = t_source + t_conf
+   144	    cells = [dict(id=0, task="T1", b=0.0, replications=5000, n_dates=t_conf, window="full"),
+   145	             dict(id=1, task="T5_boundary", b=sesoi["primary"], replications=5000, n_dates=t_conf, window="full"),
+   146	             dict(id=2, task="T2", b=0.10, replications=1000, n_dates=t_conf, window="full"),
+   147	             dict(id=3, task="T2", b=0.25, replications=1000, n_dates=t_conf, window="full"),
+   148	             dict(id=4, task="T2", b=0.40, replications=1000, n_dates=t_conf, window="full"),
+   149	             dict(id=5, task="T6", b=0.0, replications=1000, n_dates=t_conf, window="full"),
+   150	             dict(id=6, task="T6", b=0.25, replications=1000, n_dates=t_conf, window="full"),
+   151	             dict(id=7, task="T6", b=0.0, replications=1000, n_dates=t_conf, window="early"),
+   152	             dict(id=8, task="T6", b=0.25, replications=1000, n_dates=t_conf, window="early"),
+   153	             dict(id=9, task="T3", b=0.0, replications=2000, n_dates=n3, window="full"),
+   154	             dict(id=10, task="T3", b=0.10, replications=500, n_dates=n3, window="full"),
+   155	             dict(id=11, task="T3", b=0.25, replications=500, n_dates=n3, window="full")]
+   156	    return {
+   157	        "spec_sha256": spec_sha, "dev_panel_sha256": dev, "T_source": t_source, "rows": rows,
+   158	        "K_early": k_early, "T_conf": t_conf, "n_dates_T3": n3, "sesoi": sesoi, "cells": cells,
+   159	        "mean_block": 5.0, "a2": 0, "expected_lag": 6, "pooled_cells": [0, 1, 2, 3, 4], "cw_cal_cell": 9,
+   160	        "stand_in": {
+   161	            "dates": t_source, "one_ticker_dates": one_t, "two_ticker_dates": two_t, "three_ticker_dates": three_t,
+   162	            "panel": "sim.synthetic_panel(T_source, b=0.4, a2=-0.2, seed=spec seed + 7, p_excl=0) as "
+   163	                     "tools/report_B7.py's stand-in, then abn_oc set missing on seeded rows "
+   164	                     "(numpy.random.default_rng(spec seed + 8)) so that the dates keep 1, 2 and 3 tickers as counted",
+   165	            "source": "reports/P3_0b_preflight.md (Part A)"},
+   166	        "seeds": {
+   167	            "spec_seed": int(spec["seeds"]["global"]), "outer_offset": 5000000, "cell_stride": 100000,
+   168	            "warp_offset": 50000,
+   169	            "outer": "spec seed + 5,000,000 + 100,000 * cell + replication (D4.5)",
+   170	            "warp": "outer seed + 50,000: calib.bootstrap_t_given_fit(draw, ..., numpy.random.default_rng(warp), "
+   171	                    "B=1) for cells 0 to 4",
+   172	            "early_window_positions": "calib.window_positions(K_early, n_dates, numpy.random.default_rng(outer seed))",
+   173	            "draw": "DevCalibrator.draw(b, 0.0, seed=outer seed, ...) creates numpy.random.default_rng(seed) "
+   174	                    "(sim.py:221) and uses it for the stationary-bootstrap positions only when positions is None "
+   175	                    "(sim.py:222); when positions are given (T6's early window) the generator is unused and the seed "
+   176	                    "is only recorded in attrs['truth'] (sim.py:235-237)",
+   177	            "walk_forward": "forecast.walk_forward(..., seed=outer seed) (M2 and M3 do not use it)"},
+   178	        "methods": {
+   179	            "alpha": float(spec["inference"]["alpha"]),
+   180	            "h1": {
+   181	                "dk_normal": "reject if |t| > z = scipy.stats.norm.ppf(1 - alpha/2), the quantile of "
+   182	                             "inference.Result.contrast (inference.py:208-212, whose p = 2 sf(|z|) < alpha is the "
+   183	                             "same decision); interval b +/- z se; TOST at scipy.stats.norm.ppf(1 - alpha), as "
+   184	                             "inference.tost (inference.py:341)",
+   185	                "bootstrap": "reject if |t| > c_boot(0.95), the order statistic of |t*| pooled over pooled_cells "
+   186	                             "(D3.1, D3.2 amended); interval b +/- c_boot(0.95) se; TOST at c_boot(0.90)",
+   187	                "calibrated": "reject if |t| > c_cal(0.95), the order statistic of |(b_hat - b)/se| pooled over "
+   188	                              "pooled_cells (D3.3 amended); interval b +/- c_cal(0.95) se; TOST at c_cal(0.90)"},
+   189	            "cw": {"normal": "one-sided: reject if p = scipy.stats.norm.sf(stat) < alpha (fctests.py:146-147)",
+   190	                   "calibrated": "reject if stat > c_CW,cal, the 0.95 order statistic of the Clark-West statistic "
+   191	                                 "over cw_cal_cell (D3.3)"},
+   192	            "h3": "dk_normal as for H1; bootstrap at c_boot_h3(0.95), the order statistic of |t*_h3| pooled over "
+   193	                  "pooled_cells (D3.5); H3 keeps the normal reference under c_cal",
+   194	            "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c "
+   195	                  "and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference",
+   196	            "mde80": "calib.mde80 over cells 0, 2, 3, 4 (b = 0, 0.10, 0.25, 0.40) per H1 method; cross-checks "
+   197	                     "with sd(b_hat) and mean se pooled over pooled_cells",
+   198	            "order_statistics": "calib.order_stat (the ceil(level n)-th smallest) with calib.order_stat_interval"},
+   199	        "outputs": OUTPUT_KEYS,
+   200	        "rules": _rule_lines(),
+   201	        "task_order": [{"task": "T1", "cells": [0]}, {"task": "T5_boundary", "cells": [1]},
+   202	                       {"task": "T2", "cells": [2, 3, 4]}, {"task": "T6", "cells": [5, 6, 7, 8]},
+   203	                       {"task": "T3", "cells": [9, 10, 11]}],
+   204	        "early_window_before": k_date,
+   205	    }
+   206	
+   207	
+   208	def config_text(cfg: dict) -> str:
+   209	    return json.dumps(cfg, indent=2, sort_keys=True, ensure_ascii=True) + "\n"
+   210	
+   211	
+   212	def validate_config(cfg: dict) -> list:
+   213	    """Problems with a configuration: missing keys, or any difference from the configuration rebuilt now."""
+   214	    missing = [k for k in REQUIRED_KEYS if k not in cfg]
+   215	    if missing:
+   216	        return [f"missing key(s) {missing}"]
+   217	    rebuilt = build_config()
+   218	    return [f"key {k!r} differs from the registry" for k in sorted(set(rebuilt) | set(cfg)) if cfg.get(k) != rebuilt.get(k)]
+   219	
+   220	
+   221	def combo_refusal(*, real: bool, smoke, rehearsal: bool) -> str | None:
+   222	    """Mode combinations, checked first (before any import of ofilt or any data)."""
+   223	    if real and smoke is not None:
+   224	        return "--real cannot be combined with --smoke"
+   225	    if real and rehearsal:
+   226	        return "--real cannot be combined with --rehearsal"
+   227	    if smoke is not None and smoke < 2:
+   228	        return "--smoke needs N >= 2"
+   229	    return None
+   230	
+   231	
+   232	def mode_refusal(*, real: bool, smoke, rehearsal: bool, sealed_value, config_sha: str, expected_sha, dirty) -> str | None:
+   233	    """The reason to refuse, or None: the mode combinations, then, in real mode, the sealed environment variable,
+   234	    the expected configuration SHA-256 and the tree, in that order. It reads nothing itself."""
+   235	    reason = combo_refusal(real=real, smoke=smoke, rehearsal=rehearsal)
+   236	    if reason or not real:
+   237	        return reason
+   238	    if sealed_value != "1":
+   239	        return f"--real needs {SEALED_ENV}=1 for this command"
+   240	    if expected_sha is None or expected_sha != config_sha:
+   241	        return "--expect-config-sha256 does not equal the configuration file's SHA-256"
+   242	    if dirty:
+   243	        return "the working tree is dirty"
+   244	    return None
+   245	
+   246	
+   247	def check_log(path: Path, n_expected: int, panel_sha: str | None = None, caller: str | None = None) -> list:
+   248	    """Problems with BLIND_FIT_LOG: line count, all dev_real; and, if given, the last line's panel hash and caller."""
+   249	    recs = [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()]
+   250	    p = []
+   251	    if len(recs) != n_expected:
+   252	        p.append(f"{len(recs)} lines, expected {n_expected}")
+   253	    if any(r.get("provenance") != "dev_real" for r in recs):
+   254	        p.append("a line is not dev_real")
+   255	    if recs and panel_sha is not None and recs[-1].get("panel_sha256") != panel_sha:
+   256	        p.append("the last line's panel hash differs")
+   257	    if recs and caller is not None and caller not in str(recs[-1].get("caller", "")):
+   258	        p.append("the last line's caller does not name this script")
+   259	    return p
+   260	
+   261	
+   262	def seed_ranges(cfg: dict) -> list:
+   263	    """(lo, hi) offsets from the spec seed, inclusive, of every configured seed (outer and warp)."""
+   264	    s = cfg["seeds"]
+   265	    out = []
+   266	    for c in cfg["cells"]:
+   267	        lo = s["outer_offset"] + s["cell_stride"] * c["id"]
+   268	        out.append((lo, lo + c["replications"] - 1))
+   269	        if c["id"] in cfg["pooled_cells"]:
+   270	            out.append((lo + s["warp_offset"], lo + s["warp_offset"] + c["replications"] - 1))
+   271	    return out
+   272	
+   273	
+   274	def check_output(obj, allowed: set, path: str = "") -> list:
+   275	    """Problems: keys outside the whitelist, or lists longer than MAX_LIST."""
+   276	    p = []
+   277	    if isinstance(obj, dict):
+   278	        for k, v in obj.items():
+   279	            if k not in allowed:
+   280	                p.append(f"key {path}/{k} not in the whitelist")
+   281	            p += check_output(v, allowed, f"{path}/{k}")
+   282	    elif isinstance(obj, list):
+   283	        if len(obj) > MAX_LIST:
+   284	            p.append(f"list {path} has {len(obj)} entries")
+   285	        for i, v in enumerate(obj):
+   286	            p += check_output(v, allowed, f"{path}[{i}]")
+   287	    return p
+   288	
+   289	
+   290	def _script_line(e: BaseException) -> int:
+   291	    tb = traceback.extract_tb(e.__traceback__)
+   292	    mine = [f for f in tb if f.filename.endswith(SCRIPT_NAME)]
+   293	    return int((mine or tb)[-1].lineno) if tb else -1
+   294	
+   295	
+   296	# ====================================================================== the run
+   297	def main(argv: list | None = None) -> int:
+   298	    ap = argparse.ArgumentParser()
+   299	    g = ap.add_mutually_exclusive_group()
+   300	    g.add_argument("--synthetic", action="store_true")
+   301	    g.add_argument("--real", action="store_true")
+   302	    ap.add_argument("--rehearsal", action="store_true")
+   303	    ap.add_argument("--smoke", type=int, default=None)
+   304	    ap.add_argument("--expect-config-sha256", default=None)
+   305	    ap.add_argument("--out-dir", type=Path, default=None)
+   306	    ap.add_argument("--write-config", action="store_true")
+   307	    ap.add_argument("--check-config", action="store_true")
+   308	    a = ap.parse_args(argv)
+   309	    if a.write_config or a.check_config:
+   310	        cfg = build_config()
+   311	        if a.write_config:
+   312	            if CONFIG_PATH.exists():
+   313	                print(f"REFUSED: {CONFIG_PATH} exists")
+   314	                return EXIT_REFUSED
+   315	            _write_file(CONFIG_PATH, config_text(cfg))
+   316	        problems = validate_config(json.loads(CONFIG_PATH.read_text(encoding="utf-8")))
+   317	        print(f"config {CONFIG_PATH.relative_to(ROOT)} SHA-256 {sha256_file(CONFIG_PATH)}; valid: {not problems}")
+   318	        return 0 if not problems else EXIT_REFUSED
+   319	    reason = combo_refusal(real=a.real, smoke=a.smoke, rehearsal=a.rehearsal)
+   320	    if reason:
+   321	        print(f"REFUSED: {reason}")
+   322	        return EXIT_REFUSED
+   323	    sys_tmp = Path(tempfile.gettempdir()).resolve()
+   324	    if a.real:
+   325	        if a.out_dir is not None:
+   326	            print("REFUSED: --real writes reports/P3_4_sealed_run.* and takes no --out-dir")
+   327	            return EXIT_REFUSED
+   328	        out_dir = REAL_OUT
+   329	    else:
+   330	        if a.out_dir is None:
+   331	            print("REFUSED: synthetic modes need --out-dir under /tmp")
+   332	            return EXIT_REFUSED
+   333	        out_dir = a.out_dir.resolve()
+   334	        if not (out_dir.is_relative_to(Path("/tmp").resolve()) or out_dir.is_relative_to(sys_tmp)):
+   335	            print("REFUSED: --out-dir must lie under /tmp (or the system temporary directory)")
+   336	            return EXIT_REFUSED
+   337	    # (1) the run's own temporary directory, before any ofilt import (DQ1.2)
+   338	    run_tmp = Path(tempfile.mkdtemp(prefix="p3_sealed_run_")).resolve()
+   339	    previous = tempfile.tempdir
+   340	    tempfile.tempdir = str(run_tmp)
+   341	    try:
+   342	        return _run(a, run_tmp, out_dir)
+   343	    except Refused as e:
+   344	        print(f"REFUSED: {e}")
+   345	        return EXIT_REFUSED
+   346	    except AbortRun as e:
+   347	        print(f"ABORTED at line {_script_line(e)} (before the first flush)")
+   348	        return EXIT_ABORTED
+   349	    finally:
+   350	        shutil.rmtree(run_tmp, ignore_errors=True)
+   351	        tempfile.tempdir = previous
+   352	
+   353	
+   354	def _run(a, run_tmp: Path, out_dir: Path) -> int:
+   355	    import importlib
+   356	    R = importlib.import_module("ofilt.drift.registry")
+   357	    if Path(R.SYNTHETIC_PATH).resolve().parent != run_tmp:
+   358	        raise AbortRun("registry.SYNTHETIC_PATH lies outside the run's temporary directory")
+   359	    import numpy as np
+   360	    from scipy import stats
+   361	    from ofilt.drift import calib as C
+   362	    from ofilt.drift import fctests as FT
+   363	    from ofilt.drift import forecast as F
+   364	    from ofilt.drift import inference as I
+   365	    from ofilt.drift import io as IO
+   366	    from ofilt.drift import sim as S
+   367	    from ofilt.drift import targets as TG
+   368	    from ofilt.drift.models import M2, M3
+   369	    from ofilt.drift.spec import Spec
+   370	    from p3_0b_preflight import verify_panel
+   371	
+   372	    # (2) configuration and mode conditions, before any data file is read
+   373	    cfg_bytes = CONFIG_PATH.read_bytes()
+   374	    cfg_sha = sha256_bytes(cfg_bytes)
+   375	    cfg = json.loads(cfg_bytes.decode("utf-8"))
+   376	    problems = validate_config(cfg)
+   377	    if problems:
+   378	        raise Refused(f"configuration: {problems}")
+   379	    head, dirty = R.git_state()
+   380	    if a.real:
+   381	        reason = mode_refusal(real=True, smoke=a.smoke, rehearsal=a.rehearsal,
+   382	                              sealed_value=os.environ.get(SEALED_ENV), config_sha=cfg_sha,
+   383	                              expected_sha=a.expect_config_sha256, dirty=dirty)
+   384	        if reason:
+   385	            raise Refused(reason)
+   386	    spec = Spec.load()
+   387	    alpha = float(cfg["methods"]["alpha"])
+   388	    z2, z1 = float(stats.norm.ppf(1 - alpha / 2)), float(stats.norm.ppf(1 - alpha))
+   389	    lag6, h1n = int(cfg["expected_lag"]), spec.h1_parameter
+   390	    mode = "real" if a.real else ("rehearsal" if a.rehearsal else "synthetic")
+   391	    paths = (out_dir / f"{REAL_STEM}.json", out_dir / f"{REAL_STEM}.md")
+   392	    allowed = set(cfg["outputs"])
+   393	    t_start = time.time()
+   394	    state = {"tool": f"tools/{SCRIPT_NAME}", "mode": mode, "smoke": a.smoke, "config_sha256": cfg_sha,
+   395	             "spec_sha256": cfg["spec_sha256"], "dev_panel_sha256": cfg["dev_panel_sha256"], "head": head,
+   396	             "calibrator": None, "cells": [], "pooled": None, "mde80": None, "t3": None, "errors": [],
+   397	             "complete": False, "aborted": None, "runtime": {"tasks": [], "calibrator_seconds": None,
+   398	                                                              "total_seconds": None}}
+   399	
+   400	    def flush():
+   401	        state["runtime"]["total_seconds"] = time.time() - t_start
+   402	        p = check_output(state, allowed)
+   403	        if p:
+   404	            raise AbortRun(f"output check: {p[:3]}")
+   405	        _write_file(paths[0], json.dumps(state, indent=1, sort_keys=True, allow_nan=False) + "\n")
+   406	        _write_file(paths[1], render_md(state))
+   407	
+   408	    def assert_lag(lag, what):
+   409	        if int(lag) != lag6:
+   410	            raise AbortRun(f"{what}: lag {lag} != {lag6}")
+   411	
+   412	    try:
+   413	        # ------------------------------------------------ data and the ONE calibrator
+   414	        if a.real:
+   415	            if spec.sha256 != cfg["spec_sha256"]:
+   416	                raise AbortRun("spec SHA-256 differs from the configuration")
+   417	            digest = verify_panel(IO.DATA_DIR / IO.DEV_FILE, spec)
+   418	            if digest != cfg["dev_panel_sha256"]:
+   419	                raise AbortRun("dev panel SHA-256 differs from the configuration")
+   420	            base = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)
+   421	            assert_am03_target(base, spec)
+   422	            log_path = S.BLIND_FIT_LOG_PATH
+   423	            p = check_log(log_path, 6)
+   424	            if p:
+   425	                raise AbortRun(f"BLIND_FIT_LOG before: {p}")
+   426	        else:
+   427	            real_log = ROOT / "BLIND_FIT_LOG"
+   428	            real_log_sha = sha256_file(real_log)
+   429	            S.BLIND_FIT_LOG_PATH = run_tmp / "BLIND_FIT_LOG"
+   430	            if a.rehearsal:
+   431	                digest = verify_panel(IO.DATA_DIR / IO.DEV_FILE, spec)
+   432	                if digest != cfg["dev_panel_sha256"]:
+   433	                    raise AbortRun("dev panel SHA-256 differs from the configuration")
+   434	                dev = TG.add_targets(IO.load_dev(IO.DATA_DIR / IO.DEV_FILE, spec), spec)   # registers real targets
+   435	                assert_am03_target(dev, spec)
+   436	                del dev
+   437	            base = stand_in(cfg, spec, S, np)
+   438	        t0 = time.time()
+   439	        cal = S.DevCalibrator(base, spec)                                   # the ONE sealed fit
+   440	        state["runtime"]["calibrator_seconds"] = time.time() - t0
+   441	        del base
+   442	        if a.real:
+   443	            p = check_log(log_path, 7, panel_sha=cfg["dev_panel_sha256"], caller=SCRIPT_NAME)
+   444	            if p:
+   445	                raise AbortRun(f"BLIND_FIT_LOG after the calibrator: {p}")
+   446	        assert_calibrator_shape(cal, cfg)
+   447	        state["calibrator"] = {"T_source": int(cal.T), "rows": int(cfg["rows"])}
+   448	        flush()
+   449	
+   450	        cells = {c["id"]: c for c in cfg["cells"]}
+   451	        smoke = a.smoke
+   452	
+   453	        def reps(c):
+   454	            return c["replications"] if smoke is None else min(c["replications"], smoke)
+   455	
+   456	        def seed(c, r):
+   457	            s = cfg["seeds"]
+   458	            return spec.seed + s["outer_offset"] + s["cell_stride"] * c["id"] + r
+   459	
+   460	        mem = {}                                                            # per-replication values, memory only
+   461	
+   462	        def run_task(name, fn, n_cells):
+   463	            t = time.time()
+   464	            n_reps = 0
+   465	            try:
+   466	                n_reps = fn()
+   467	            except AbortRun:
+   468	                raise
+   469	            except Exception as e:                                          # class and line only (DQ1.4)
+   470	                state["errors"].append({"task": name, "error_class": type(e).__name__, "line": _script_line(e)})
+   471	            sec = time.time() - t
+   472	            state["runtime"]["tasks"].append({"task": name, "seconds": sec, "replications": n_reps,
+   473	                                              "seconds_per_replication": sec / n_reps if n_reps else None})
+   474	            flush()
+   475	
+   476	        # ------------------------------------------------ cells 0 to 4 (T1, T5 boundary, T2)
+   477	        def h1_cell(cid):
+   478	            c = cells[cid]
+   479	            n = reps(c)
+   480	            v = {k: np.empty(n) for k in ("b", "se", "t", "t3", "ts", "ts3")}
+   481	            for r in range(n):
+   482	                s = seed(c, r)
+   483	                y = cal.draw(c["b"], float(cfg["a2"]), seed=s, n_dates=c["n_dates"])
+   484	                f = C.fit_t(y, spec, "y_sim")
+   485	                assert_lag(f["lag"], f"cell {cid} fit")
+   486	                w = C.bootstrap_t_given_fit(y, spec, np.random.default_rng(s + cfg["seeds"]["warp_offset"]),
+   487	                                            "y_sim", 1, f, cfg["mean_block"])
+   488	                v["b"][r], v["se"][r], v["t"][r], v["t3"][r] = f["b"], f["se"], f["t"], f["t_h3"]
+   489	                v["ts"][r], v["ts3"][r] = w["t_star"][0], w["t_star_h3"][0]
+   490	            mem[cid] = v
+   491	            out = cell_head(c, n)
+   492	            out["estimates"] = est_summary(v["b"], v["se"], c["b"])
+   493	            out["dk_normal"] = method_block(v, c["b"], z2, z1, cfg, cid, C)
+   494	            if cid == 0:
+   495	                out["h3"] = {"dk_normal": rate(int((np.abs(v["t3"]) > z2).sum()), n, C), "bootstrap": None}
+   496	            state["cells"].append(out)
+   497	            return n
+   498	
+   499	        def task_cells(ids):
+   500	            def fn():
+   501	                tot = 0
+   502	                for cid in ids:
+   503	                    tot += h1_cell(cid)
+   504	                    flush()
+   505	                return tot
+   506	            return fn
+   507	
+   508	        run_task("T1", task_cells([0]), 1)
+   509	        run_task("T5_boundary", task_cells([1]), 1)
+   510	        run_task("T2", task_cells([2, 3, 4]), 3)
+   511	
+   512	        # ------------------------------------------------ pooled critical values (D3.2, D3.3 amended)
+   513	        def pooled():
+   514	            ids = cfg["pooled_cells"]
+   515	            if not all(i in mem for i in ids):
+   516	                raise RuntimeError("pooled cells incomplete")
+   517	            ts = np.abs(np.concatenate([mem[i]["ts"] for i in ids]))
+   518	            zc = np.abs(np.concatenate([(mem[i]["b"] - cells[i]["b"]) / mem[i]["se"] for i in ids]))
+   519	            ts3 = np.abs(np.concatenate([mem[i]["ts3"] for i in ids]))
+   520	            pool = {"cells": list(ids), "c_boot": qpair(ts, C), "c_cal": qpair(zc, C),
+   521	                    "c_boot_h3": {"q95": os_summary(ts3, 0.95, C)}}
+   522	            state["pooled"] = pool
+   523	            cb95, cb90 = pool["c_boot"]["q95"]["value"], pool["c_boot"]["q90"]["value"]
+   524	            cc95, cc90 = pool["c_cal"]["q95"]["value"], pool["c_cal"]["q90"]["value"]
+   525	            for out in state["cells"]:
+   526	                cid = out["cell"]
+   527	                if cid not in ids:
+   528	                    continue
+   529	                v, b = mem[cid], cells[cid]["b"]
+   530	                out["bootstrap"] = method_block(v, b, cb95, cb90, cfg, cid, C)
+   531	                out["calibrated"] = method_block(v, b, cc95, cc90, cfg, cid, C)
+   532	                out["own_quantiles"] = {"c_boot": qpair(np.abs(v["ts"]), C),
+   533	                                        "c_cal": qpair(np.abs((v["b"] - b) / v["se"]), C)}
+   534	                if cid == 0:
+   535	                    out["h3"]["bootstrap"] = rate(int((np.abs(v["t3"]) > pool["c_boot_h3"]["q95"]["value"]).sum()),
+   536	                                                  len(v["t3"]), C)
+   537	            mde_ids = [0, 2, 3, 4]
+   538	            sd = float(np.std(np.concatenate([mem[i]["b"] - cells[i]["b"] for i in ids]), ddof=1))
+   539	            mse = float(np.mean(np.concatenate([mem[i]["se"] for i in ids])))
+   540	            by = {o["cell"]: o for o in state["cells"]}
+   541	            state["mde80"] = {"cells": mde_ids}
+   542	            for m in ("dk_normal", "bootstrap", "calibrated"):
+   543	                state["mde80"][m] = C.mde80([cells[i]["b"] for i in mde_ids],
+   544	                                            [by[i][m]["reject"]["rate"] for i in mde_ids], sd=sd, mean_se=mse)
+   545	            return 0
+   546	
+   547	        run_task("pooled", pooled, 0)
+   548	
+   549	        # ------------------------------------------------ T6 (cells 5 to 8)
+   550	        def t6():
+   551	            tot = 0
+   552	            for cid in (5, 6, 7, 8):
+   553	                c = cells[cid]
+   554	                n = reps(c)
+   555	                v = {k: np.empty(n) for k in ("ob", "ose", "hb", "hse", "hsh", "wb", "wse")}
+   556	                for r in range(n):
+   557	                    s = seed(c, r)
+   558	                    if c["window"] == "early":
+   559	                        pos = C.window_positions(cfg["K_early"], c["n_dates"], np.random.default_rng(s),
+   560	                                                 cfg["mean_block"])
+   561	                        y = cal.draw(c["b"], float(cfg["a2"]), seed=s, positions=pos, n_dates=c["n_dates"])
+   562	                    else:
+   563	                        y = cal.draw(c["b"], float(cfg["a2"]), seed=s, n_dates=c["n_dates"])
+   564	                    f = C.fit_t(y, spec, "y_sim")
+   565	                    h = I.fit_huber(I.build_design(y, spec, target="y_sim"), spec)
+   566	                    fw = C.fit_t(C.winsorise_fx(y, spec), spec, "y_sim")
+   567	                    assert_lag(f["lag"], f"cell {cid} OLS")
+   568	                    assert_lag(h.lag, f"cell {cid} Huber")
+   569	                    assert_lag(fw["lag"], f"cell {cid} winsorised")
+   570	                    ph = h.param(h1n)
+   571	                    v["ob"][r], v["ose"][r] = f["b"], f["se"]
+   572	                    v["hb"][r], v["hse"][r], v["hsh"][r] = ph["estimate"], ph["se"], h.info["share_downweighted"]
+   573	                    v["wb"][r], v["wse"][r] = fw["b"], fw["se"]
+   574	                out = cell_head(c, n)
+   575	                out["estimators"] = {
+   576	                    "ols_dk": t6_block(v["ob"], v["ose"], c["b"], z2, C),
+   577	                    "huber_dk": dict(t6_block(v["hb"], v["hse"], c["b"], z2, C),
+   578	                                     mean_share_downweighted=float(np.mean(v["hsh"]))),
+   579	                    "winsorised_ols_dk": t6_block(v["wb"], v["wse"], c["b"], z2, C)}
+   580	                state["cells"].append(out)
+   581	                flush()
+   582	                tot += n
+   583	            return tot
+   584	
+   585	        run_task("T6", t6, 4)
+   586	
+   587	        # ------------------------------------------------ T3 (cells 9 to 11)
+   588	        wf_calls = [0]
+   589	
+   590	        def t3():
+   591	            pool = state["pooled"]
+   592	            cb95 = pool["c_boot"]["q95"]["value"] if pool else None
+   593	            cc95 = pool["c_cal"]["q95"]["value"] if pool else None
+   594	            state["t3"] = {"c_cw_cal": None, "cells": [], "walk_forward_calls": 0, "registry_lines": None}
+   595	            tot, ccw = 0, None
+   596	            for cid in (9, 10, 11):
+   597	                c = cells[cid]
+   598	                n = reps(c)
+   599	                v = {k: np.empty(n) for k in ("b", "se", "t", "cw", "cwp")}
+   600	                for r in range(n):
+   601	                    s = seed(c, r)
+   602	                    y = cal.draw(c["b"], float(cfg["a2"]), seed=s, n_dates=c["n_dates"])
+   603	                    y["excl_inference"] = False
+   604	                    y["excl_forecast_eval"] = False
+   605	                    preds, _ = F.walk_forward(y, {"M2": M2, "M3": M3}, spec, target="y_sim", seed=s)
+   606	                    wf_calls[0] += 1
+   607	                    state["t3"]["walk_forward_calls"] = wf_calls[0]
+   608	                    cut = np.sort(y["date"].unique())[-cfg["T_conf"]]
+   609	                    sub = preds[preds["date"] >= cut]
+   610	                    FT.pair(sub, "M3", "M2")
+   611	                    cw = FT.clark_west(sub, "M3", "M2", spec)
+   612	                    assert_lag(cw["lag"], f"cell {cid} Clark-West")
+   613	                    f = C.fit_t(y[y["date"] >= cut], spec, "y_sim")
+   614	                    assert_lag(f["lag"], f"cell {cid} H1")
+   615	                    v["b"][r], v["se"][r], v["t"][r], v["cw"][r], v["cwp"][r] = f["b"], f["se"], f["t"], cw["stat"], cw["p"]
+   616	                if cid == cfg["cw_cal_cell"]:
+   617	                    state["t3"]["c_cw_cal"] = os_summary(v["cw"], 0.95, C)
+   618	                    ccw = state["t3"]["c_cw_cal"]["value"]
+   619	                h1 = {"dk_normal": np.abs(v["t"]) > z2,
+   620	                      "bootstrap": None if cb95 is None else np.abs(v["t"]) > cb95,
+   621	                      "calibrated": None if cc95 is None else np.abs(v["t"]) > cc95}
+   622	                cwd = {"normal": v["cwp"] < alpha, "calibrated": None if ccw is None else v["cw"] > ccw}
+   623	                out = cell_head(c, n)
+   624	                out["estimates"] = est_summary(v["b"], v["se"], c["b"])
+   625	                out["h1"] = {m: None if d is None else rate(int(d.sum()), n, C) for m, d in h1.items()}
+   626	                out["cw"] = {m: None if d is None else rate(int(d.sum()), n, C) for m, d in cwd.items()}
+   627	                out["crosstab"] = [{"h1_method": hm, "cw_method": cm, "both": int((hd & cd).sum()),
+   628	                                    "h1_only": int((hd & ~cd).sum()), "cw_only": int((~hd & cd).sum()),
+   629	                                    "neither": int((~hd & ~cd).sum())}
+   630	                                   for hm, hd in h1.items() if hd is not None
+   631	                                   for cm, cd in cwd.items() if cd is not None]
+   632	                state["t3"]["cells"].append(out)
+   633	                flush()
+   634	                tot += n
+   635	            return tot
+   636	
+   637	        run_task("T3", t3, 3)
+   638	
+   639	        # ------------------------------------------------ the run-registry directory (DQ1.2)
+   640	        reg = Path(R.SYNTHETIC_PATH)
+   641	        n_lines = len(reg.read_text(encoding="utf-8").splitlines()) if reg.exists() else 0
+   642	        others = sorted(p.name for p in run_tmp.iterdir() if p != reg and p.name != "BLIND_FIT_LOG")
+   643	        if n_lines != wf_calls[0] or others or (a.real and (run_tmp / "BLIND_FIT_LOG").exists()):
+   644	            raise AbortRun(f"run-registry directory: {n_lines} lines for {wf_calls[0]} calls; other entries {len(others)}")
+   645	        if state["t3"] is not None:
+   646	            state["t3"]["registry_lines"] = n_lines
+   647	        if a.real:
+   648	            p = check_log(log_path, 7, panel_sha=cfg["dev_panel_sha256"], caller=SCRIPT_NAME)
+   649	            if p:
+   650	                raise AbortRun(f"BLIND_FIT_LOG at the end: {p}")
+   651	        elif sha256_file(real_log) != real_log_sha:
+   652	            raise AbortRun("the repository's BLIND_FIT_LOG changed during a non-real run")
+   653	        state["complete"] = True
+   654	        flush()
+   655	        print(f"COMPLETE: {paths[0]} and {paths[1]}; errors: {len(state['errors'])}")
+   656	        return 0
+   657	    except AbortRun as e:
+   658	        state["aborted"] = {"error_class": "AbortRun", "line": _script_line(e)}
+   659	        try:
+   660	            flush()
+   661	        except AbortRun:
+   662	            pass
+   663	        print(f"ABORTED at line {_script_line(e)}")
+   664	        return EXIT_ABORTED
+   665	
+   666	
+   667	# ====================================================================== helpers used by the run
+   668	def assert_am03_target(df, spec) -> None:
+   669	    """The sealed fit's target is AM-03's: abn_oc on the spec's hedge (y_1306_oc) with the expanding past-only beta on
+   670	    non-excluded rows (targets.add_targets' record, targets.py:130-131)."""
+   671	    bs = spec.beta
+   672	    want = dict(method=bs.method, window=None, estimate_on=bs.estimate_on, hedge=spec.hedge_oc_column,
+   673	                lag_days=bs.lag_days, min_periods=bs.min_periods)
+   674	    if df.attrs.get("targets") != want or spec.hedge_oc_column != "y_1306_oc" or bs.method != "expanding" \
+   675	            or bs.estimate_on != "non_excluded_rows":
+   676	        raise AbortRun("the target is not AM-03's")
+   677	
+   678	
+   679	def assert_calibrator_shape(cal, cfg) -> None:
+   680	    """Source dates == T_source and rows == rows; the rows are read from the calibrator's private row bounds, here
+   681	    only."""
+   682	    if int(cal.T) != int(cfg["T_source"]) or int(cal._bounds[-1]) != int(cfg["rows"]):
+   683	        raise AbortRun("calibrator shape differs from the configured T_source and rows")
+   684	
+   685	
+   686	def stand_in(cfg, spec, S, np):
+   687	    """sim.synthetic_panel(T_source) with abn_oc removed on seeded rows: the configured 1-, 2- and 3-ticker dates."""
+   688	    st = cfg["stand_in"]
+   689	    df = S.synthetic_panel(int(st["dates"]), b=0.4, a2=-0.2, seed=spec.seed + 7, p_excl=0.0)
+   690	    rng = np.random.default_rng(spec.seed + 8)
+   691	    dates = np.sort(df["date"].unique())
+   692	    order = rng.permutation(len(dates))
+   693	    n1, n2 = int(st["one_ticker_dates"]), int(st["two_ticker_dates"])
+   694	    tick = df["ticker"].astype(str).to_numpy()
+   695	    tickers = sorted(set(tick))
+   696	    dvals = df["date"].to_numpy()
+   697	    drop = np.zeros(len(df), dtype=bool)
+   698	    for j, d in enumerate(dates[order[: n1 + n2]]):
+   699	        on = dvals == d
+   700	        pick = tickers[int(rng.integers(0, len(tickers)))]
+   701	        drop |= on & ((tick != pick) if j < n1 else (tick == pick))
+   702	    df.loc[drop, "abn_oc"] = np.nan
+   703	    return df
+   704	
+   705	
+   706	def rate(k: int, n: int, C) -> dict:
+   707	    lo, hi = C.wilson(int(k), int(n))
+   708	    return {"k": int(k), "n": int(n), "rate": k / n, "wilson95": [lo, hi]}
+   709	
+   710	
+   711	def os_summary(x, level: float, C) -> dict:
+   712	    k, lo, hi = C.order_stat_ranks(len(x), level)
+   713	    il, ih = C.order_stat_interval(x, level)
+   714	    return {"value": C.order_stat(x, level), "interval": [il, ih], "rank": k, "rank_interval": [lo, hi],
+   715	            "n": int(len(x))}
+   716	
+   717	
+   718	def qpair(x, C) -> dict:
+   719	    return {"q95": os_summary(x, 0.95, C), "q90": os_summary(x, 0.90, C)}
+   720	
+   721	
+   722	def est_summary(bhat, se, b) -> dict:
+   723	    import numpy as np
+   724	    sd = float(np.std(bhat, ddof=1))
+   725	    return {"mean_bias": float(np.mean(bhat - b)), "sd": sd, "mean_se": float(np.mean(se)),
+   726	            "se_over_sd": float(np.mean(se) / sd)}
+   727	
+   728	
+   729	def method_block(v, b, c95, c90, cfg, cid, C) -> dict:
+   730	    import numpy as np
+   731	    n = len(v["b"])
+   732	    out = {"reject": rate(int((np.abs(v["t"]) > c95).sum()), n, C),
+   733	           "coverage": rate(int((np.abs(v["b"] - b) <= c95 * v["se"]).sum()), n, C), "tost": None}
+   734	    if cid in (0, 1):
+   735	        out["tost"] = {k: rate(int(C.tost_declares(v["b"], v["se"], s, c90).sum()), n, C)
+   736	                       for k, s in cfg["sesoi"].items()}
+   737	    return out
+   738	
+   739	
+   740	def t6_block(bhat, se, b, z2, C) -> dict:
+   741	    import numpy as np
+   742	    n = len(bhat)
+   743	    return {"reject": rate(int((np.abs(bhat / se) > z2).sum()), n, C),
+   744	            "coverage": rate(int((np.abs(bhat - b) <= z2 * se).sum()), n, C),
+   745	            "estimates": est_summary(bhat, se, b)}
+   746	
+   747	
+   748	def cell_head(c, n) -> dict:
+   749	    return {"cell": c["id"], "task": c["task"], "b": c["b"], "replications": int(n), "n_dates": c["n_dates"],
+   750	            "window": c["window"], "lag": 6, "estimates": None, "dk_normal": None, "bootstrap": None,
+   751	            "calibrated": None}
+   752	
+   753	
+   754	def _f(x) -> str:
+   755	    return "-" if x is None else (f"{x:.4f}" if isinstance(x, float) else str(x))
+   756	
+   757	
+   758	def _r(d) -> str:
+   759	    return "-" if d is None else f"{d['k']}/{d['n']} = {d['rate']:.4f} [{d['wilson95'][0]:.4f}, {d['wilson95'][1]:.4f}]"
+   760	
+   761	
+   762	def render_md(state: dict) -> str:
+   763	    """Markdown view of the JSON aggregates; the runtime section comes last."""
+   764	    smoke = "" if state["smoke"] is None else f", smoke {state['smoke']}"
+   765	    L = [f"# P3 sealed run ({state['mode']}{smoke})", "",
+   766	         f"Generated by `{state['tool']}`. Configuration SHA-256 `{state['config_sha256']}`; spec "
+   767	         f"`{state['spec_sha256']}`; dev panel `{state['dev_panel_sha256']}`; HEAD `{state['head']}`. "
+   768	         "Aggregates only; no decision rule is applied here.", ""]
+   769	    if state["calibrator"]:
+   770	        L += [f"Calibrator: T_source {state['calibrator']['T_source']}, rows {state['calibrator']['rows']}.", ""]
+   771	    L += ["## Cells 0 to 4 (T1, T5 boundary, T2) and T6", "",
+   772	          "| Cell | Task | b | Reps | Window | DK-normal reject | Bootstrap reject | Calibrated reject | mean bias | sd | "
+   773	          "mean se | se/sd |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+   774	    for o in state["cells"]:
+   775	        e = o.get("estimates") or {}
+   776	        if "estimators" in o:
+   777	            for name, blk in o["estimators"].items():
+   778	                es = blk["estimates"]
+   779	                L.append(f"| {o['cell']} | {o['task']} {name} | {o['b']} | {o['replications']} | {o['window']} | "
+   780	                         f"{_r(blk['reject'])} | - | - | {_f(es['mean_bias'])} | {_f(es['sd'])} | {_f(es['mean_se'])} | "
+   781	                         f"{_f(es['se_over_sd'])} |")
+   782	            continue
+   783	        L.append(f"| {o['cell']} | {o['task']} | {o['b']} | {o['replications']} | {o['window']} | "
+   784	                 f"{_r((o.get('dk_normal') or {}).get('reject'))} | {_r((o.get('bootstrap') or {}).get('reject'))} | "
+   785	                 f"{_r((o.get('calibrated') or {}).get('reject'))} | {_f(e.get('mean_bias'))} | {_f(e.get('sd'))} | "
+   786	                 f"{_f(e.get('mean_se'))} | {_f(e.get('se_over_sd'))} |")
+   787	    L.append("")
+   788	    if state["pooled"]:
+   789	        p = state["pooled"]
+   790	        L += ["## Pooled critical values (cells " + ", ".join(map(str, p["cells"])) + ")", ""]
+   791	        for k in ("c_boot", "c_cal"):
+   792	            for q in ("q95", "q90"):
+   793	                s = p[k][q]
+   794	                L.append(f"- {k} {q}: {s['value']:.6f} (rank {s['rank']} of {s['n']}; interval "
+   795	                         f"[{s['interval'][0]:.6f}, {s['interval'][1]:.6f}])")
+   796	        s = p["c_boot_h3"]["q95"]
+   797	        L += [f"- c_boot_h3 q95: {s['value']:.6f} (rank {s['rank']} of {s['n']})", ""]
+   798	    if state["mde80"]:
+   799	        L += ["## MDE80", ""] + [f"- {m}: {state['mde80'][m]}" for m in ("dk_normal", "bootstrap", "calibrated")] + [""]
+   800	    for o in state["cells"]:
+   801	        if o.get("dk_normal") and o["dk_normal"].get("tost"):
+   802	            L.append(f"TOST, cell {o['cell']}: " + "; ".join(
+   803	                f"{m}: " + ", ".join(f"{k} {_r(v)}" for k, v in (o[m] or {}).get("tost", {}).items())
+   804	                for m in ("dk_normal", "bootstrap", "calibrated") if o.get(m)))
+   805	        if o.get("h3"):
+   806	            L.append(f"H3, cell {o['cell']}: dk_normal {_r(o['h3']['dk_normal'])}; bootstrap {_r(o['h3']['bootstrap'])}")
+   807	    L.append("")
+   808	    if state["t3"]:
+   809	        t3 = state["t3"]
+   810	        L += ["## T3", "", f"c_CW,cal: {t3['c_cw_cal']}", f"walk_forward calls: {t3['walk_forward_calls']}; "
+   811	              f"registry lines: {t3['registry_lines']}", ""]
+   812	        for o in t3["cells"]:
+   813	            L.append(f"- cell {o['cell']} (b {o['b']}, {o['replications']} reps): H1 " + "; ".join(
+   814	                f"{m} {_r(v)}" for m, v in o["h1"].items()) + "; CW " + "; ".join(f"{m} {_r(v)}" for m, v in o["cw"].items()))
+   815	            for x in o["crosstab"]:
+   816	                L.append(f"  - {x['h1_method']} x {x['cw_method']}: both {x['both']}, H1 only {x['h1_only']}, "
+   817	                         f"CW only {x['cw_only']}, neither {x['neither']}")
+   818	        L.append("")
+   819	    L += ["## Status", "", f"- complete: {state['complete']}; aborted: {state['aborted']}; errors: {state['errors']}", "",
+   820	          "## Runtime", ""]
+   821	    rt = state["runtime"]
+   822	    L.append(f"- calibrator: {_f(rt['calibrator_seconds'])} s; total: {_f(rt['total_seconds'])} s")
+   823	    for t in rt["tasks"]:
+   824	        L.append(f"- {t['task']}: {_f(t['seconds'])} s for {t['replications']} replications "
+   825	                 f"({_f(t['seconds_per_replication'])} s each)")
+   826	    return "\n".join(L) + "\n"
+   827	
+   828	
+   829	if __name__ == "__main__":
+   830	    sys.exit(main())
+>>>>>>>>
+
+c.2 tests/test_p3_sealed_run.py (as committed at befb7da; SHA-256 bac79fae46e3d42d7e4dd62d0680d822e012dac41356e4411f07691f81a57740): tests 2, 4, 5, 6 and 8 with the helpers they call (cat -n; line ranges selected):
+  [lines 1-48: module docstring, imports, TOOL, CFG and the helper tiny_run, used by tests 5 and 6 through setUpClass]
+     1	"""P3-2b (supervisor message of 2026-10-06): tests of tools/p3_sealed_run.py and docs/P3_RUN_CONFIG.json.
+     2	Synthetic only; no data file is read. No test sets the OFILT_RUN_SEALED environment variable: the real-mode checks are
+     3	tested on the pure refusal function, and subprocess runs have the variable removed from their environment.
+     4	
+     5	1. Static (AST): one DevCalibrator( call; no banned import; files written by one function; the calibrator's private
+     6	   attributes only in the row-count assertion.
+     7	2. Invariance (D3.2, D3.3 amended): (b_hat - b)/se and t* agree at b = 0, 0.25 and 0.8652 (1e-10); and
+     8	   calib.bootstrap_t_given_fit returns exactly calib.bootstrap_t's t* for the same frame and seed.
+     9	3. Configuration: the committed file is the rebuilt configuration and validates; a missing key, a changed hash or an
+    10	   --expect-config-sha256 mismatch is refused.
+    11	4. Real-mode refusals with no data read (io.load_dev mocked to fail).
+    12	5. Outputs of a tiny synthetic run: every key whitelisted; no list longer than 20.
+    13	6. The run-registry directory: one line per walk_forward call; the run's directory deleted.
+    14	7. Seeds: disjoint from each other and from the B7, B7b, C7 and P3-2a blocks.
+    15	8. Logs: the 6 -> 7 -> 7 checks.
+    16	9. Determinism: two tiny synthetic runs identical apart from `runtime`.
+    17	"""
+    18	import ast
+    19	import json
+    20	import os
+    21	import subprocess
+    22	import sys
+    23	import tempfile
+    24	import unittest
+    25	from pathlib import Path
+    26	from unittest import mock
+    27	
+    28	import numpy as np
+    29	
+    30	ROOT = Path(__file__).resolve().parents[1]
+    31	sys.path.insert(0, str(ROOT))
+    32	sys.path.insert(0, str(ROOT / "tools"))
+    33	import p3_sealed_run as P  # noqa: E402
+    34	from ofilt.drift import calib as C  # noqa: E402
+    35	from ofilt.drift import io as IO  # noqa: E402
+    36	from ofilt.drift import sim as S  # noqa: E402
+    37	from ofilt.drift.spec import Spec  # noqa: E402
+    38	
+    39	TOOL = ROOT / "tools" / "p3_sealed_run.py"
+    40	CFG = json.loads(P.CONFIG_PATH.read_text(encoding="utf-8"))
+    41	
+    42	
+    43	def tiny_run(out_dir: Path, tmp_dir: Path, nodata: Path, smoke: int = 2) -> subprocess.CompletedProcess:
+    44	    env = {k: v for k, v in os.environ.items() if k != P.SEALED_ENV}
+    45	    env.update(OFILT_DATA_DIR=str(nodata), TMPDIR=str(tmp_dir))
+    46	    return subprocess.run([sys.executable, str(TOOL), "--synthetic", "--smoke", str(smoke), "--out-dir", str(out_dir)],
+    47	                          cwd=str(ROOT), env=env, capture_output=True, text=True, timeout=900)
+    48	
+  [lines 83-108: test 2]
+    83	class TestInvariance(unittest.TestCase):
+    84	    def test_2_invariance_and_given_fit(self):
+    85	        spec = Spec.load()
+    86	        df = S.synthetic_panel(300, b=0.4, a2=-0.2, seed=91, tails="t5")
+    87	        with tempfile.TemporaryDirectory() as t, mock.patch.object(S, "BLIND_FIT_LOG_PATH", Path(t) / "LOG"):
+    88	            cal = S.DevCalibrator(df, spec)
+    89	        pos = cal.positions(np.random.default_rng(5), 300)
+    90	        z, ts, ts3 = [], [], []
+    91	        for b in (0.0, 0.25, 0.8652):
+    92	            y = cal.draw(b, 0.0, seed=7, positions=pos)
+    93	            f = C.fit_t(y, spec, "y_sim")
+    94	            z.append((f["b"] - b) / f["se"])
+    95	            w = C.bootstrap_t(y, spec, np.random.default_rng(11), "y_sim", 1)
+    96	            ts.append(w["t_star"][0])
+    97	            ts3.append(w["t_star_h3"][0])
+    98	            g = C.bootstrap_t_given_fit(y, spec, np.random.default_rng(11), "y_sim", 1, f)
+    99	            self.assertTrue(np.array_equal(g["t_star"], w["t_star"]))          # exactly bootstrap_t's t*
+   100	            self.assertTrue(np.array_equal(g["t_star_h3"], w["t_star_h3"]))
+   101	        for vals in (z, ts, ts3):
+   102	            self.assertLess(max(vals) - min(vals), 1e-10, vals)
+   103	        y = cal.draw(0.25, 0.0, seed=8)
+   104	        f = C.fit_t(y, spec, "y_sim")
+   105	        w3 = C.bootstrap_t(y, spec, np.random.default_rng(12), "y_sim", 3)
+   106	        g3 = C.bootstrap_t_given_fit(y, spec, np.random.default_rng(12), "y_sim", 3, f)
+   107	        self.assertTrue(np.array_equal(w3["t_star"], g3["t_star"]))
+   108	
+  [lines 128-152: test 4]
+   128	class TestRealRefusals(unittest.TestCase):
+   129	    def test_4_real_mode_refusals_read_no_data(self):
+   130	        sha = P.sha256_file(P.CONFIG_PATH)
+   131	        with mock.patch.object(IO, "load_dev", side_effect=AssertionError("data read")) as ld:
+   132	            self.assertIn(P.SEALED_ENV, P.mode_refusal(real=True, smoke=None, rehearsal=False, sealed_value=None,
+   133	                                                       config_sha=sha, expected_sha=sha, dirty=False))
+   134	            self.assertIn("dirty", P.mode_refusal(real=True, smoke=None, rehearsal=False, sealed_value="1",
+   135	                                                   config_sha=sha, expected_sha=sha, dirty=True))
+   136	            self.assertIn("expect-config-sha256", P.mode_refusal(real=True, smoke=None, rehearsal=False,
+   137	                                                                 sealed_value="1", config_sha=sha,
+   138	                                                                 expected_sha=sha[::-1], dirty=False))
+   139	            self.assertEqual(P.main(["--real", "--smoke", "5"]), P.EXIT_REFUSED)
+   140	            self.assertEqual(P.main(["--real", "--rehearsal"]), P.EXIT_REFUSED)
+   141	            ld.assert_not_called()
+   142	        with tempfile.TemporaryDirectory() as t:                       # a fresh process, the variable removed
+   143	            nodata, tmp = Path(t) / "nodata", Path(t) / "tmp"
+   144	            nodata.mkdir(); tmp.mkdir()
+   145	            env = {k: v for k, v in os.environ.items() if k != P.SEALED_ENV}
+   146	            env.update(OFILT_DATA_DIR=str(nodata), TMPDIR=str(tmp))
+   147	            r = subprocess.run([sys.executable, str(TOOL), "--real", "--expect-config-sha256", sha], cwd=str(ROOT),
+   148	                               env=env, capture_output=True, text=True, timeout=300)
+   149	            self.assertEqual(r.returncode, P.EXIT_REFUSED, r.stdout + r.stderr)
+   150	            self.assertIn(f"REFUSED: --real needs {P.SEALED_ENV}=1", r.stdout)
+   151	            self.assertEqual(list(tmp.iterdir()), [])                      # the run's directory removed
+   152	
+  [lines 154-187: class TestTinyRuns: setUpClass, tearDownClass, test 5 and test 6 (test 9, lines 188-195, uses the same runs)]
+   154	class TestTinyRuns(unittest.TestCase):
+   155	    @classmethod
+   156	    def setUpClass(cls):
+   157	        cls._t = tempfile.TemporaryDirectory()
+   158	        base = Path(cls._t.name)
+   159	        cls.out, cls.tmp, cls.res = [], [], []
+   160	        for i in (1, 2):
+   161	            tm, nd = base / f"tmp{i}", base / f"nodata{i}"
+   162	            o = tm / "out"                                         # --out-dir must lie under TMPDIR or /tmp
+   163	            tm.mkdir(); nd.mkdir()
+   164	            cls.res.append(tiny_run(o, tm, nd))
+   165	            cls.out.append(o); cls.tmp.append(tm)
+   166	        cls.js = [json.loads((o / f"{P.REAL_STEM}.json").read_text(encoding="utf-8")) for o in cls.out]
+   167	
+   168	    @classmethod
+   169	    def tearDownClass(cls):
+   170	        cls._t.cleanup()
+   171	
+   172	    def test_5_outputs_whitelisted_and_aggregates_only(self):
+   173	        for r, j in zip(self.res, self.js):
+   174	            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+   175	            self.assertTrue(j["complete"])
+   176	            self.assertEqual(j["errors"], [])
+   177	            self.assertIsNone(j["aborted"])
+   178	            self.assertEqual(P.check_output(j, set(CFG["outputs"])), [])
+   179	            self.assertEqual(j["calibrator"], {"T_source": CFG["T_source"], "rows": CFG["rows"]})
+   180	            self.assertEqual(sorted(p.name for p in self.out[0].iterdir()), [f"{P.REAL_STEM}.json", f"{P.REAL_STEM}.md"])
+   181	
+   182	    def test_6_registry_directory(self):
+   183	        for j, tm in zip(self.js, self.tmp):
+   184	            self.assertEqual(j["t3"]["walk_forward_calls"], 3 * 2)       # cells 9 to 11 at smoke 2
+   185	            self.assertEqual(j["t3"]["registry_lines"], j["t3"]["walk_forward_calls"])
+   186	            self.assertEqual([p.name for p in tm.iterdir()], ["out"])      # the run's own directory deleted
+   187	
+  [lines 197 and 211-233: class TestSeedsAndLogs, test 8]
+   197	class TestSeedsAndLogs(unittest.TestCase):
+   211	    def test_8_log_checks(self):
+   212	        dev = CFG["dev_panel_sha256"]
+   213	        line = lambda prov, panel, caller: json.dumps({"utc": "x", "provenance": prov, "panel_sha256": panel,
+   214	                                                       "spec_sha256": "s", "n_rows_input": 1, "caller": caller})
+   215	        with tempfile.TemporaryDirectory() as t:
+   216	            log = Path(t) / "BLIND_FIT_LOG"
+   217	            six = [line("dev_real", "736636031ca1", "test_sim_b5") for _ in range(6)]
+   218	            log.write_text("\n".join(six) + "\n", encoding="utf-8")
+   219	            self.assertEqual(P.check_log(log, 6), [])
+   220	            caller = f'File "/x/tools/{P.SCRIPT_NAME}", line 1, in _run | cal = S.DevCalibrator(base, spec)'
+   221	            log.write_text("\n".join(six + [line("dev_real", dev, caller)]) + "\n", encoding="utf-8")
+   222	            self.assertEqual(P.check_log(log, 7, panel_sha=dev, caller=P.SCRIPT_NAME), [])
+   223	            self.assertTrue(P.check_log(log, 6))                                        # wrong count
+   224	            log.write_text("\n".join(six + [line("dev_real", "0" * 64, caller)]) + "\n", encoding="utf-8")
+   225	            self.assertTrue(P.check_log(log, 7, panel_sha=dev, caller=P.SCRIPT_NAME))     # wrong hash
+   226	            log.write_text("\n".join(six + [line("dev_real", dev, "report_B7b.py")]) + "\n", encoding="utf-8")
+   227	            self.assertTrue(P.check_log(log, 7, panel_sha=dev, caller=P.SCRIPT_NAME))     # wrong caller
+   228	            log.write_text("\n".join(six + [line("synthetic", dev, caller)]) + "\n", encoding="utf-8")
+   229	            self.assertTrue(P.check_log(log, 7, panel_sha=dev, caller=P.SCRIPT_NAME))     # not dev_real
+   230	
+   231	
+   232	if __name__ == "__main__":
+   233	    unittest.main()
+
+c.3 ofilt/drift/sim.py (unchanged): the lines that read or write BLIND_FIT_LOG_PATH, and DevCalibrator.draw (cat -n):
+$ grep -n BLIND_FIT_LOG_PATH ofilt/drift/sim.py
+135:BLIND_FIT_LOG_PATH = REPO_ROOT / "BLIND_FIT_LOG"
+149:    with open(BLIND_FIT_LOG_PATH, "a", encoding="utf-8") as fh:
+  [line 135: the module constant (read by _log_blind_fit; tools/p3_sealed_run.py sets it to its own temporary file in non-real modes, and tests patch it)]
+   135	BLIND_FIT_LOG_PATH = REPO_ROOT / "BLIND_FIT_LOG"
+  [lines 144-150: _log_blind_fit, which appends to it]
+   144	def _log_blind_fit(provenance: str, panel_sha: str | None, spec: Spec, n_rows_input: int) -> None:
+   145	    """One JSONL line per call; contains nothing derived from the target."""
+   146	    rec = {"utc": _dt.datetime.now(_dt.timezone.utc).isoformat(), "provenance": provenance,
+   147	           "panel_sha256": str(panel_sha or "none"), "spec_sha256": spec.sha256, "n_rows_input": int(n_rows_input),
+   148	           "caller": "".join(traceback.format_stack(limit=5)[:-2]).strip().replace("\n", " | ")[:400]}
+   149	    with open(BLIND_FIT_LOG_PATH, "a", encoding="utf-8") as fh:
+   150	        fh.write(json.dumps(rec) + "\n")
+  [lines 217-239: DevCalibrator.draw]
+   217	    def draw(self, b_sim: float, a2_sim: float = 0.0, seed: int | None = None,
+   218	             positions: np.ndarray | None = None, n_dates: int | None = None) -> pd.DataFrame:
+   219	        """One simulated panel of n_dates dates (default: T, the source length)."""
+   220	        n = self.T if n_dates is None else int(n_dates)
+   221	        rng = np.random.default_rng(seed)
+   222	        pos = self.positions(rng, n) if positions is None else np.asarray(positions, dtype=np.int64)
+   223	        if pos.shape != (n,) or pos.min() < 0 or pos.max() >= self.T:
+   224	            raise ValueError("positions must be n_dates source-date codes in [0, T)")
+   225	        lens = np.diff(self._bounds)[pos]
+   226	        offs = np.r_[0, np.cumsum(lens)[:-1]]
+   227	        src = np.repeat(self._bounds[pos] - offs, lens) + np.arange(int(lens.sum()))
+   228	        out = self._pred.iloc[src].reset_index(drop=True)
+   229	        cal = self._cal if n == self.T else pd.bdate_range(SIM_CALENDAR_START, periods=n)
+   230	        out.insert(0, "date", np.repeat(cal.to_numpy(), lens))
+   231	        e, eur = out["usdjpy_ret"].to_numpy(), out["eurusd_ret"].to_numpy()
+   232	        out["earn_flag"], out["news_flag"], out["beta"] = 0, 0, 1.0
+   233	        out["y_sim"] = self._fc[src] + b_sim * e + a2_sim * eur + self._resid[src]
+   234	        out = out[list(SIM_COLUMNS)]
+   235	        out.attrs = {"provenance": blind.SYNTHETIC,
+   236	                     "truth": dict(b=float(b_sim), a2=float(a2_sim), seed=seed, mean_block=self.mean_block,
+   237	                                   n_dates=n, source="dev_calibrated")}
+   238	        blind.require_unblinded(out)   # condition (d): the fingerprint guard must pass
+   239	        return out
+Other readers or writers of BLIND_FIT_LOG_PATH in the repository (name only):
+  ofilt/drift/sim.py:135:BLIND_FIT_LOG_PATH = REPO_ROOT / "BLIND_FIT_LOG"
+  ofilt/drift/sim.py:149:    with open(BLIND_FIT_LOG_PATH, "a", encoding="utf-8") as fh:
+  tools/p3_sealed_run.py:422:            log_path = S.BLIND_FIT_LOG_PATH
+  tools/p3_sealed_run.py:429:            S.BLIND_FIT_LOG_PATH = run_tmp / "BLIND_FIT_LOG"
+  tools/report_B7b.py:89:        S.BLIND_FIT_LOG_PATH = Path(tempfile.mkdtemp()) / "BLIND_FIT_LOG"
+  tools/report_B7b.py:95:    log = S.BLIND_FIT_LOG_PATH
+  tools/report_B7.py:58:        S.BLIND_FIT_LOG_PATH = Path(tempfile.mkdtemp()) / "BLIND_FIT_LOG"
+  tools/report_B7.py:64:    log = S.BLIND_FIT_LOG_PATH
+  tests/test_p3_sealed_run.py:87:        with tempfile.TemporaryDirectory() as t, mock.patch.object(S, "BLIND_FIT_LOG_PATH", Path(t) / "LOG"):
+  tests/test_sim_b5.py:119:        self.patch = mock.patch.object(S, "BLIND_FIT_LOG_PATH", self.log)
+  tests/test_sim_b5.py:243:        log = S.BLIND_FIT_LOG_PATH
+
+--- d. Test output hygiene: tests/test_p3_sealed_run.py ---
+$ diff -u /tmp/p3_2c_test_before.py tests/test_p3_sealed_run.py   (the befb7da version, saved before the edit)
+--- /tmp/p3_2c_test_before.py	2026-10-06 18:00:38
++++ tests/test_p3_sealed_run.py	2026-10-06 18:19:09
+@@ -16,12 +16,14 @@
+ 9. Determinism: two tiny synthetic runs identical apart from `runtime`.
+ """
+ import ast
++import contextlib
+ import json
+ import os
+ import subprocess
+ import sys
+ import tempfile
+ import unittest
++from io import StringIO
+ from pathlib import Path
+ from unittest import mock
+ 
+@@ -136,8 +138,12 @@
+             self.assertIn("expect-config-sha256", P.mode_refusal(real=True, smoke=None, rehearsal=False,
+                                                                  sealed_value="1", config_sha=sha,
+                                                                  expected_sha=sha[::-1], dirty=False))
+-            self.assertEqual(P.main(["--real", "--smoke", "5"]), P.EXIT_REFUSED)
+-            self.assertEqual(P.main(["--real", "--rehearsal"]), P.EXIT_REFUSED)
++            for argv in (["--real", "--smoke", "5"], ["--real", "--rehearsal"]):
++                buf = StringIO()
++                with contextlib.redirect_stdout(buf):                       # keep the suite output clean
++                    rc = P.main(argv)
++                self.assertEqual(rc, P.EXIT_REFUSED)
++                self.assertTrue(buf.getvalue().startswith("REFUSED"), buf.getvalue())
+             ld.assert_not_called()
+         with tempfile.TemporaryDirectory() as t:                       # a fresh process, the variable removed
+             nodata, tmp = Path(t) / "nodata", Path(t) / "tmp"
+$ shasum -a 256 tests/test_p3_sealed_run.py
+e86c629b61c368758b398e7fa13c079aac091cb5c16d12f77b9908aca2ff2740  tests/test_p3_sealed_run.py
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_p3_sealed_run -v
+test_3_configuration (tests.test_p3_sealed_run.TestConfig.test_3_configuration) ... ok
+test_2_invariance_and_given_fit (tests.test_p3_sealed_run.TestInvariance.test_2_invariance_and_given_fit) ... ok
+test_4_real_mode_refusals_read_no_data (tests.test_p3_sealed_run.TestRealRefusals.test_4_real_mode_refusals_read_no_data) ... ok
+test_7_seeds_disjoint (tests.test_p3_sealed_run.TestSeedsAndLogs.test_7_seeds_disjoint) ... ok
+test_8_log_checks (tests.test_p3_sealed_run.TestSeedsAndLogs.test_8_log_checks) ... ok
+test_1_static (tests.test_p3_sealed_run.TestStatic.test_1_static) ... ok
+test_5_outputs_whitelisted_and_aggregates_only (tests.test_p3_sealed_run.TestTinyRuns.test_5_outputs_whitelisted_and_aggregates_only) ... ok
+test_6_registry_directory (tests.test_p3_sealed_run.TestTinyRuns.test_6_registry_directory) ... ok
+test_9_determinism (tests.test_p3_sealed_run.TestTinyRuns.test_9_determinism) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 21.642s
+
+OK
+REFUSED lines in this test output: 0
+tools/p3_sealed_run.py and docs/P3_RUN_CONFIG.json unchanged: True
+
+--- e.1 PASS3_STATUS edits ---
+Test changes: the tests/test_p3_sealed_run.py row updated with the P3-2c change. Test results: the P3-2c block. Blinding attestation: P3-2c. Deviations: P3-2c d (the two imports). Progress: the P3-2c row set to done. All edits by the Edit tool or a shell heredoc (no Python).
+$ git diff --stat
+ PASS3_STATUS.md             | 24 +++++++++++++++++++++---
+ tests/test_p3_sealed_run.py | 10 ++++++++--
+ 2 files changed, 29 insertions(+), 5 deletions(-)
+$ git status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+
+--- e.2 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-2b (sealed-run tool, configuration, smoke run)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-2c (records; tool listing; test output hygiene)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 39e4b537369d7738dbc01a1bc01cf7250fb23ecca8dee9aed67c08b678efcd64
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+----------------------------------------------------------------------
+Ran 272 tests in 306.797s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+ M tests/test_p3_sealed_run.py
+commit b94d8a48fdce45e424cb772ff77d7941d60dde0b
+checkpoint exit=0
+
+--- e.3 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+b94d8a48fdce45e424cb772ff77d7941d60dde0b checkpoint: P3-2c (records; tool listing; test output hygiene)
+$ git log -1 --format=%B
+checkpoint: P3-2c (records; tool listing; test output hygiene)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md             | 24 +++++++++++++++++++++---
+ tests/test_p3_sealed_run.py | 10 ++++++++--
+ 2 files changed, 29 insertions(+), 5 deletions(-)
+Step a hashes still hold (by script: computed vs the P3-2c message's listed values, as at a.2):
+  tools/p3_sealed_run.py: 843a6547b0a8670353db8bec4dd7a292aa97842d786537b205f210f2317743f2; equal to step a: True
+  docs/P3_RUN_CONFIG.json: 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equal to step a: True
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+P3-0 baseline (read by script from reports/P3_0_report.txt): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+The five skips (the module check used before):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 17.740s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- f. PASS3_STATUS.md Deviations, final (as committed in b94d8a4), verbatim ---
+<<<<<<<<
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
+- P3-2b g, the tests' first run: 6 of the tests passed, and `setUpClass` of the tiny-run tests errored.
+  - The cause was a bug in the test's setup, not in the tool. The test set each subprocess's `TMPDIR` to its own folder and passed an `--out-dir` outside it, which the tool refuses by design.
+  - Diagnosis before the one rerun: the tool was run directly once (synthetic, `--smoke 2`, contained in `/tmp/p3_2b_dbg_*`) and completed with no error. One refusal check confirmed that an `--out-dir` outside the temporary locations is refused and nothing is written.
+  - The test alone was fixed: `--out-dir` now lies inside the run's `TMPDIR`. The one rerun passed (9 of 9). Both runs, the diagnosis and the diff are in the P3-2b report.
+- P3-2b f, the tree check in real mode (for the supervisor). DQ1.3 forbids the script to import `subprocess`, so it checks the tree with `registry.git_state()`, which runs `git status --porcelain --untracked-files=no` (registry.py:87-90). A modified tracked file refuses the run; an untracked file does not. A stricter check needs a decision before P3-4.
+- P3-2b f, other design choices the item did not fix (for review):
+  - `--out-dir` in synthetic modes may lie under `/tmp` or under the system temporary directory (needed for the tests' temporary folders on macOS). Never inside the repository.
+  - The configuration has two keys beyond step e's list: `stand_in`, which describes the stand-in (with its counts read from `reports/P3_0b_preflight.md`), and `early_window_before` (K's cut date, read from `reports/P3_2b_preflight.md`).
+  - The `rules` are stored as the Decision-log lines with their `> ` markers.
+  - MDE80 per method uses cells 0, 2, 3 and 4 (b = 0, 0.10, 0.25 and 0.40, as B7b). Its cross-checks use sd(b̂) and the mean se pooled over cells 0 to 4.
+  - H3's bootstrap decision uses c_boot_h3, the 0.95 order statistic of |t*_h3| pooled over cells 0 to 4 (D3.5).
+  - A task's exception is recorded with the line number of its innermost frame in this script.
+  - Real mode takes no `--out-dir`.
+- P3-2b g, test 4: the real-mode conditions are tested on the pure function `mode_refusal`, with the sealed value passed as an argument. No test sets the `OFILT_RUN_SEALED` environment variable; the subprocess test removes it from the child's environment.
+- P3-2b, the optional reuse-the-first-fit variant: the tool uses `calib.bootstrap_t_given_fit`, a new function appended to `calib.py`, to avoid refitting each draw a second time. Test 2 shows it returns exactly `calib.bootstrap_t`'s t*. Every existing function of `calib.py` is unchanged: the P3-2a file is a byte prefix of the new one.
+- P3-2c d: besides the test 4 change, the diff adds the two imports it needs (`import contextlib` and `from io import StringIO`). Nothing else in the file changed.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review of the full tool before the rehearsal) ---
+2026-10-06T22:25:54Z
+b94d8a48fdce45e424cb772ff77d7941d60dde0b
+$ git status --porcelain (between markers)
+<<<
+>>>

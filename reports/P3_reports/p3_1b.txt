@@ -1,0 +1,379 @@
+2026-10-06T19:54:28Z
+8aba8df8ed33225071d4451741c2f7ab140ef18c
+=== P3-1b report ===
+--- a. Date gate ---
+$ date +%F
+2026-10-06
+--- state at start ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+8aba8df8ed33225071d4451741c2f7ab140ef18c checkpoint: P3-1 (cost model and SESOI)
+$ git tag -l
+pass1-final
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Decisions recorded; targeted edits ---
+b.1 Progress: P3-1 status cell now 'done; accepted by Isaiah 2026-10-06' (the checkpoint name stays at the start of Notes); P3-1b row added. b.2 Next action replaced.
+b.3 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-1 accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `8aba8df8ed33225071d4451741c2f7ab140ef18c`.
+>   - The acceptance covers the recorded deviations P3-1 d (the cost file's structure; every value as decided) and P3-1 g.3 (one text edit run with the system interpreter, outside the venv and without `env -u OFILT_RUN_SEALED`; it read no data), and the removal, before the real run, of one report line that was outside the Outputs list (the tests were rerun).
+>   - Every P3-1 gate passed: the sample (4,192 rows, 1,439 dates), the regressor set, and the conformity of all 5,124 dev opens and closes with the dev tick tables.
+> - SESOI approved as computed (Isaiah, 2026-10-06, on the supervisor's recommendation; D2.9). The supervisor recomputed every component from the report.
+>   - mean |ẽ| = 28.4288 bp; β̄ = 1.0333.
+>   - Mean round trip per name-day: primary 24.5961 bp, low 2.0333 bp, high 77.2878 bp.
+>   - SESOI: primary 0.8652, low 0.07152, high 2.719. These four-significant-digit values are the ones used in the run configuration and in the switch's amendment.
+
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | in progress | P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-2 waits for DQ3, DQ4 and DQ7, which the supervisor brings with the P3-1b probe's facts.
+
+$ git diff --stat
+ PASS3_STATUS.md | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- c. Synthetic timing and feasibility probe ---
+Containment, BEFORE the probe:
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18271394
+
+Probe script in full (/tmp/p3_1b_probe.py):
+$ shasum -a 256 /tmp/p3_1b_probe.py
+78460f5d19a20771cefcef9b1c764e426ea778052b1a6f0e33b24d0aa987ccd5  /tmp/p3_1b_probe.py
+<<<<<<<<
+"""P3-1b synthetic timing and feasibility probe (supervisor message of 2026-10-06). NOT COMMITTED. Synthetic only.
+
+Calls existing code only. Loads no data file (OFILT_DATA_DIR is an empty folder), constructs no DevCalibrator, calls
+no _sealed_blind_fit, runs no script's mode. Prints only wall-clock times, counts, positions and booleans: no
+estimate, standard error, test statistic, p-value or rejection.
+
+Panels (seeds from 9,000,000 upward):
+  A: sim.synthetic_panel, 1,013 dates (the H1 shape at T_conf), seed 9,000,000.
+  B: 2,452 dates (1,439 + 1,013), built as tools/c7_mc.py:54-58 builds its panels (synthetic_panel(n_dates, b=b,
+     seed=seed, p_excl=...), the two masks, mark_synthetic), with excl_inference and excl_forecast_eval all False;
+     b = 0 and p_excl = 0 (C7 uses 0.02), so earn_flag is 0 everywhere, as in a DevCalibrator draw. Seed 9,000,001.
+walk_forward is called as tools/c7_mc.py:63 calls it: F.walk_forward(df, {"M2": M2, "M3": M3}, spec).
+"""
+import os
+import statistics
+import sys
+import tempfile
+import time
+from pathlib import Path
+
+import numpy as np
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+sys.path.insert(0, str(REPO))
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import fctests as FT  # noqa: E402
+from ofilt.drift import forecast as F  # noqa: E402
+from ofilt.drift import inference as I  # noqa: E402
+from ofilt.drift import io as IO  # noqa: E402
+from ofilt.drift import registry as R  # noqa: E402
+from ofilt.drift import sim as S  # noqa: E402
+from ofilt.drift.models import M2, M3  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+NODATA, PTMP = Path("/tmp/p3_1b_nodata"), Path("/tmp/p3_1b_tmp")
+T_SRC, T_CONF = 1439, 1013
+N_B = T_SRC + T_CONF
+reg_checks = []
+
+
+def reg_empty() -> bool:
+    """Read-only: the in-process fingerprint registry holds nothing."""
+    ok = len(B._REGISTRY) == 0 and B._ALL_KEYS.size == 0 and B._ROW_KEYS.size == 0
+    reg_checks.append(ok)
+    return ok
+
+
+def report(name: str, ts: list) -> None:
+    print(f"timing {name}: runs {len(ts)}, median {statistics.median(ts):.4f} s, max {max(ts):.4f} s", flush=True)
+
+
+# ---------------------------------------------------------------- containment (booleans)
+print("containment: io.DATA_DIR is /tmp/p3_1b_nodata:", IO.DATA_DIR == NODATA)
+print("containment: /tmp/p3_1b_nodata is empty:", not any(NODATA.iterdir()))
+print("containment: tempfile.gettempdir() is /tmp/p3_1b_tmp:", Path(tempfile.gettempdir()) == PTMP)
+print("containment: registry.SYNTHETIC_PATH is under /tmp/p3_1b_tmp:", R.SYNTHETIC_PATH.parent == PTMP)
+print("containment: /tmp/p3_1b_tmp is empty at start:", not any(PTMP.iterdir()))
+spec = Spec.load()
+reg_empty()
+
+# ---------------------------------------------------------------- panels
+A = S.synthetic_panel(T_CONF, seed=9_000_000)                                 # provenance synthetic
+Bp = S.synthetic_panel(N_B, b=0.0, seed=9_000_001, p_excl=0.0)               # as c7_mc.py:55, p_excl 0
+Bp["excl_inference"] = False                                                  # c7_mc.py:56-57, all False
+Bp["excl_forecast_eval"] = False
+Bp = B.mark_synthetic(Bp)                                                     # c7_mc.py:58
+dates_B = np.sort(Bp["date"].unique())
+print(f"panel A: dates {A['date'].nunique()}, rows {len(A)}; panel B: dates {len(dates_B)}, rows {len(Bp)}; "
+      f"B earn_flag all 0: {bool((Bp['earn_flag'] == 0).all())}")
+reg_empty()
+
+# ---------------------------------------------------------------- 1. build_design + fit_dk on A
+ts = []
+for _ in range(20):
+    t0 = time.perf_counter()
+    I.fit_dk(I.build_design(A, spec), spec)
+    ts.append(time.perf_counter() - t0)
+report("1 build_design + fit_dk on A (1,013 dates)", ts)
+reg_empty()
+
+# ---------------------------------------------------------------- 2. fit_huber on A's design
+dA = I.build_design(A, spec)
+ts = []
+for _ in range(5):
+    t0 = time.perf_counter()
+    I.fit_huber(dA, spec)
+    ts.append(time.perf_counter() - t0)
+report("2 fit_huber on A's design", ts)
+reg_empty()
+
+# ---------------------------------------------------------------- 3. stationary bootstrap positions
+ts, ok_pos = [], []
+for i in range(20):
+    rng = np.random.default_rng(9_000_100 + i)
+    t0 = time.perf_counter()
+    pos = S.stationary_bootstrap_positions(T_SRC, 5.0, rng, n_out=T_CONF)
+    ts.append(time.perf_counter() - t0)
+    ok_pos.append(pos.shape == (T_CONF,) and int(pos.min()) >= 0 and int(pos.max()) < T_SRC)
+report("3 stationary_bootstrap_positions (T 1,439, mean block 5.0, n_out 1,013)", ts)
+print("3 every positions vector has 1,013 entries in [0, 1,439):", all(ok_pos))
+reg_empty()
+
+# ---------------------------------------------------------------- 4 and 5. walk_forward on B; CW and H1 on the last 1,013 dates
+cut = dates_B[-T_CONF]
+t_wf, t_cw, t_h1 = [], [], []
+facts, attrs_kept = [], []
+for k in range(3):
+    t0 = time.perf_counter()
+    preds, _ = F.walk_forward(Bp, {"M2": M2, "M3": M3}, spec)                 # as c7_mc.py:63
+    t_wf.append(time.perf_counter() - t0)
+    fdates = np.sort(preds["date"].unique())
+    first_pos = int(np.searchsorted(dates_B, fdates[0])) + 1
+    last_all = bool(np.isin(dates_B[-T_CONF:], fdates).all())
+    facts.append((first_pos, len(fdates), last_all))
+    sub = preds[preds["date"] >= cut]
+    attrs_kept.append(sub.attrs.get("provenance") == B.SYNTHETIC)
+    t0 = time.perf_counter()
+    FT.pair(sub, "M3", "M2", provenance=B.SYNTHETIC)
+    FT.clark_west(sub, "M3", "M2", spec, provenance=B.SYNTHETIC)
+    t_cw.append(time.perf_counter() - t0)
+    last = Bp[Bp["date"] >= cut]
+    t0 = time.perf_counter()
+    I.fit_dk(I.build_design(last, spec), spec)
+    t_h1.append(time.perf_counter() - t0)
+    reg_empty()
+report("4 walk_forward on B with {M2, M3}", t_wf)
+report("5a pair + clark_west on the rows of B's last 1,013 dates", t_cw)
+report("5b build_design + fit_dk on B's last 1,013 dates", t_h1)
+for k, (fp, nf, la) in enumerate(facts, 1):
+    print(f"fact run {k}: first forecast date at position {fp} of {len(dates_B)} (1-based, B's date order); "
+          f"forecast dates {nf}; every one of B's last 1,013 dates is a forecast date: {la}")
+print("fact: the three runs agree on these:", len(set(facts)) == 1)
+print("fact: the row subset of the predictions kept attrs['provenance'] in every run:", all(attrs_kept))
+
+# ---------------------------------------------------------------- registry and temp folder
+reg_file = PTMP / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+n_lines = len(reg_file.read_text(encoding="utf-8").splitlines()) if reg_file.exists() else 0
+others = [p for p in PTMP.rglob("*") if p != reg_file]
+print(f"fact: lines in /tmp/p3_1b_tmp/ofilt_RUN_REGISTRY_synthetic.jsonl: {n_lines} (expect 3)")
+print(f"fact: other entries under /tmp/p3_1b_tmp: {len(others)}; any: {bool(others)}")
+print(f"fact: in-process fingerprint registry empty at every check: {all(reg_checks)} ({len(reg_checks)} checks)")
+>>>>>>>>
+$ mkdir /tmp/p3_1b_nodata /tmp/p3_1b_tmp && env -u OFILT_RUN_SEALED OFILT_DATA_DIR=/tmp/p3_1b_nodata TMPDIR=/tmp/p3_1b_tmp python /tmp/p3_1b_probe.py   (exit 0; run once)
+Probe output in full:
+<<<<<<<<
+containment: io.DATA_DIR is /tmp/p3_1b_nodata: True
+containment: /tmp/p3_1b_nodata is empty: True
+containment: tempfile.gettempdir() is /tmp/p3_1b_tmp: True
+containment: registry.SYNTHETIC_PATH is under /tmp/p3_1b_tmp: True
+containment: /tmp/p3_1b_tmp is empty at start: True
+panel A: dates 1013, rows 3039; panel B: dates 2452, rows 7356; B earn_flag all 0: True
+timing 1 build_design + fit_dk on A (1,013 dates): runs 20, median 0.0246 s, max 0.0413 s
+timing 2 fit_huber on A's design: runs 5, median 0.0074 s, max 0.0075 s
+timing 3 stationary_bootstrap_positions (T 1,439, mean block 5.0, n_out 1,013): runs 20, median 0.0002 s, max 0.0002 s
+3 every positions vector has 1,013 entries in [0, 1,439): True
+timing 4 walk_forward on B with {M2, M3}: runs 3, median 0.9185 s, max 0.9300 s
+timing 5a pair + clark_west on the rows of B's last 1,013 dates: runs 3, median 0.0333 s, max 0.0343 s
+timing 5b build_design + fit_dk on B's last 1,013 dates: runs 3, median 0.0267 s, max 0.0449 s
+fact run 1: first forecast date at position 501 of 2452 (1-based, B's date order); forecast dates 1952; every one of B's last 1,013 dates is a forecast date: True
+fact run 2: first forecast date at position 501 of 2452 (1-based, B's date order); forecast dates 1952; every one of B's last 1,013 dates is a forecast date: True
+fact run 3: first forecast date at position 501 of 2452 (1-based, B's date order); forecast dates 1952; every one of B's last 1,013 dates is a forecast date: True
+fact: the three runs agree on these: True
+fact: the row subset of the predictions kept attrs['provenance'] in every run: True
+fact: lines in /tmp/p3_1b_tmp/ofilt_RUN_REGISTRY_synthetic.jsonl: 3 (expect 3)
+fact: other entries under /tmp/p3_1b_tmp: 0; any: False
+fact: in-process fingerprint registry empty at every check: True (8 checks)
+>>>>>>>>
+Containment, AFTER the probe:
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18271394
+  $ diff (before vs after containment lines)
+  containment unchanged: True
+  git status --porcelain after the probe:
+  <<<
+ M PASS3_STATUS.md
+  >>>
+$ ls -la /tmp/p3_1b_tmp /tmp/p3_1b_nodata (names and sizes)
+/tmp/p3_1b_nodata:
+total 0
+drwxr-xr-x    2 isaiahchoi  wheel    64 Oct  6 15:56 .
+drwxrwxrwt  155 root        wheel  4960 Oct  6 15:56 ..
+
+/tmp/p3_1b_tmp:
+total 272
+drwxr-xr-x    3 isaiahchoi  wheel      96 Oct  6 15:56 .
+drwxrwxrwt  155 root        wheel    4960 Oct  6 15:56 ..
+-rw-r--r--    1 isaiahchoi  wheel  105744 Oct  6 15:56 ofilt_RUN_REGISTRY_synthetic.jsonl
+Code read:
+  registry.py resolves the synthetic path at IMPORT time: the module constant (registry.py:34) calls tempfile.gettempdir() once when the module is imported;
+  registry_path() (registry.py:41-46) returns that constant at call time, and record_run() looks it up per call (registry.py:95):
+    | SYNTHETIC_PATH = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+    | def registry_path(provenance: str) -> Path:
+    |     if provenance == blind.SYNTHETIC:
+    |         return SYNTHETIC_PATH
+    |     path = registry_path(provenance)
+  fit_dk (inference.py:218-223) returns inference.Result, a frozen dataclass (inference.py:188-197) with fields:
+    |     names: tuple[str, ...]
+    |     coef: np.ndarray
+    |     cov: np.ndarray
+    |     lag: int
+    |     T: int
+    |     n: int
+    |     alpha: float
+    |     info: dict | None = None
+$ rm -r /tmp/p3_1b_tmp /tmp/p3_1b_nodata; exit=0
+$ ls -d /tmp/p3_1b_tmp /tmp/p3_1b_nodata
+ls: /tmp/p3_1b_nodata: No such file or directory
+ls: /tmp/p3_1b_tmp: No such file or directory
+(both gone if 'No such file or directory' twice)
+
+--- d.1 PASS3_STATUS edits ---
+Blinding attestation (P3-1b) added; Deviations: one P3-1b c note added (panel B p_excl = 0; explicit provenance on pair and clark_west); P3-1b Progress row set to done. All edits by the Edit tool or a shell heredoc (no Python).
+$ git diff --stat
+ PASS3_STATUS.md | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+
+--- d.2 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-1 (cost model and SESOI)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-1b (records; synthetic timing probe)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 c1378a567aea191cb484548186e2badb5ee0aa08806a88b70c78439b96965a8d
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+----------------------------------------------------------------------
+Ran 255 tests in 272.793s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+commit 87aff1406356701396a3e99b7b2923257ba81d62
+checkpoint exit=0
+
+--- d.3 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+87aff1406356701396a3e99b7b2923257ba81d62 checkpoint: P3-1b (records; synthetic timing probe)
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md | 26 ++++++++++++++++++++++++--
+ 1 file changed, 24 insertions(+), 2 deletions(-)
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+P3-0 baseline (read by script from reports/P3_0_report.txt): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+The five skips (the checkpoint's suite has no -v; the P3-0b module check):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 18.419s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- e. PASS3_STATUS.md Deviations, final (as committed in 87aff14), verbatim ---
+<<<<<<<<
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review; DQ3, DQ4 and DQ7) ---
+2026-10-06T20:02:30Z
+87aff1406356701396a3e99b7b2923257ba81d62
+$ git status --porcelain (between markers)
+<<<
+>>>

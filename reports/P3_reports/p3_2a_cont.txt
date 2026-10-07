@@ -1,0 +1,430 @@
+2026-10-06T21:01:09Z
+87aff1406356701396a3e99b7b2923257ba81d62
+=== P3-2a continuation report (after the G2 STOP) ===
+--- a. Date gate ---
+$ date +%F
+2026-10-06
+--- b. State check (read-only) ---
+$ python /tmp/p3_2a_cont_statecheck.py
+HEAD 87aff1406356701396a3e99b7b2923257ba81d62 == 87aff140...: True
+git status --porcelain: [' M PASS3_STATUS.md', '?? ofilt/drift/calib.py', '?? reports/P3_2a_warp_check.md', '?? tests/test_p3_calib.py', '?? tools/p3_2a_warp_check.py']
+equals the expected five lines exactly: True
+ofilt/drift/calib.py: computed de85c312c4652c41d4ad4beb6b9913ae14d986a66438fc83ad8ffdb68bce3e04; listed equal True; STOP report ['de85c312c4652c41d4ad4beb6b9913ae14d986a66438fc83ad8ffdb68bce3e04'] equal True
+tests/test_p3_calib.py: computed 39cb74fd4964ec88db62d2b0bce4d991836a85b65bc891485869f7d2a9bd3757; listed equal True; STOP report ['39cb74fd4964ec88db62d2b0bce4d991836a85b65bc891485869f7d2a9bd3757'] equal True
+tools/p3_2a_warp_check.py: computed 499379fa7215f4ec345fe94a87d3e13ba8cd7c5bdf01a585e9396a2d213cd24f; listed equal True; STOP report ['499379fa7215f4ec345fe94a87d3e13ba8cd7c5bdf01a585e9396a2d213cd24f'] equal True
+reports/P3_2a_warp_check.md: computed ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134; listed equal True; STOP report ['ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134'] equal True
+P3-2a decision block: lines 133-166 (34 lines)
+  first: > - P3-1b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+  last:  >   - DQ1.5. The rehearsal loads the dev panel with `io.load_dev` and `targets.add_targets` to populate the fingerprint registry. This is target-only contact: nothing is printed, and no `DevCalibrator` is constructed on real data.
+  last line is the DQ1.5 clarification: True
+STATE CHECK: True
+exit=0
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- c. Decisions recorded (after the P3-2a block) ---
+Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-2a step e, the G2 STOP (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Run 1 (R = 200, B = 99, seeds from the spec seed + 4,000,000): G1 passed; G2 failed (n10 = 0, n01 = 9).
+>   - The gate was mis-specified by the supervisor. McNemar's test assumes independent discordant pairs, but every warp-speed decision shares one critical value estimated from 200 draws, so the discordances run one way whenever that estimate lands high. q_warp(0.95) = 2.2356 lay about 1.9 standard errors above q_full(0.95) = 1.9751; a 95% quantile estimated from 200 draws has a standard error of about 0.14. With q_full, the pooled-quantile test rejected 14 of 200 replications, against the per-replication bootstrap's 15. The failure measures the Monte Carlo noise of q_warp at R = 200, not a defect of the method or of the code.
+>   - Run 1's report is kept as `reports/P3_2a_warp_check_run1.md`.
+>   - Before run 2, G2 is replaced by G2′: McNemar between the per-replication full bootstrap decisions and the decisions at q_full(0.95), whose critical value is estimated from 19,800 draws. G2′ passes if |n10′ − n01′| ≤ 1.959964·√(n10′ + n01′), or if n10′ + n01′ = 0.
+>   - Run 2 uses fresh seeds (spec seed + 4,100,000 + r) and is judged on G1 and G2′.
+> - D3.2 and D3.3 amended (Isaiah, 2026-10-06, on the supervisor's recommendation): pooled critical values.
+>   - In the sealed run's draws, y_sim = fitted controls + b·e + a₂·eur + residuals, and the fitted controls lie in the design's column space. So (b̂ − b)/se and the recentred t* = (b̂* − b̂)/se* do not depend on b: their distributions are the same in every cell of full 1,013-date draws.
+>   - c_boot at 0.95 and 0.90 is therefore the order statistic of |t*| pooled over cells 0 to 4 (13,000 warp-speed draws). c_cal(α) is the order statistic of |(b̂ − b)/se| pooled over the same cells. Each is reported with its 95% order-statistic interval.
+>   - Both apply to cells 0 to 4 and to T3's H1 column, because the last 1,013 dates of a stationary-bootstrap draw are distributed as a 1,013-date draw. The noise these critical values add to a rejection rate falls to about ±0.2 percentage points, from about ±0.3 with 5,000 draws and about ±1 with 500.
+>   - Each cell's own quantiles are reported for information, as a check of the invariance. P3-2b adds a synthetic test that, with identical positions and seeds, (b̂ − b)/se is the same at every b to 1e-10.
+>   - Clark–West's c_CW,cal stays as D3.3 defines it (T3's cell at b = 0), because its statistic is not invariant to b.
+>>>>>>>>
+$ git diff --stat
+ PASS3_STATUS.md | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 51 insertions(+), 2 deletions(-)
+
+--- d. Keep run 1's report ---
+$ git mv is not used (the file is untracked); $ mv reports/P3_2a_warp_check.md reports/P3_2a_warp_check_run1.md
+exit=0
+$ shasum -a 256 reports/P3_2a_warp_check_run1.md
+ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134  reports/P3_2a_warp_check_run1.md
+STOP report's hash of reports/P3_2a_warp_check.md: ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134
+run 1 report unchanged by the rename: True
+$ ls reports/P3_2a_warp_check*
+reports/P3_2a_warp_check_run1.md
+
+--- e. Changes to tools/p3_2a_warp_check.py (only those listed) ---
+Applied by /tmp/p3_2a_edit_tool.py (14 exact single replacements). --out already existed with the default reports/P3_2a_warp_check.md and is unchanged; --seed-base added (default 4,000,000). Offsets (+50,000 warp, +60,000 inner), R, B and the containment unchanged.
+$ shasum -a 256 /tmp/p3_2a_tool_stopversion.py tools/p3_2a_warp_check.py
+499379fa7215f4ec345fe94a87d3e13ba8cd7c5bdf01a585e9396a2d213cd24f  /tmp/p3_2a_tool_stopversion.py
+d26b2546a5cdce50e29048a515012df18b457744d1aea444348bc97e094df5ac  tools/p3_2a_warp_check.py
+$ diff -u /tmp/p3_2a_tool_stopversion.py tools/p3_2a_warp_check.py   (the STOP version, saved before the edit)
+--- /tmp/p3_2a_tool_stopversion.py	2026-10-06 16:26:55
++++ tools/p3_2a_warp_check.py	2026-10-06 17:02:08
+@@ -2,12 +2,13 @@
+ no DevCalibrator; calls ofilt.drift.calib, which calls existing code.
+ 
+ Design: R = 200 outer replications; replication r is sim.synthetic_panel(1013, b=0, tails="t5", seed=s_r) with
+-s_r = spec seed + 4,000,000 + r. For each r: t_r from calib.fit_t; one warp-speed resample (seed s_r + 50,000) giving
++s_r = spec seed + seed base + r (--seed-base, default 4,000,000). For each r: t_r from calib.fit_t; one warp-speed resample (seed s_r + 50,000) giving
+ t*_r; a full inner bootstrap of B = 99 resamples (seed s_r + 60,000) giving p_r = (1 + #{|t*| >= |t_r|}) / (B + 1);
+ the replication's full test rejects if p_r <= 0.05. The warp-speed test rejects if |t_r| > q_warp, the 0.95 order
+ statistic of the R values |t*_r|; q_full is the 0.95 order statistic of all R x B inner |t*|.
+-Gates, fixed in advance: G1, q_full(0.95) lies inside q_warp(0.95)'s 95% order-statistic interval;
+-G2, |n10 - n01| <= 1.959964 sqrt(n10 + n01) (passes if n10 + n01 = 0).
++Gates: G1, q_full(0.95) lies inside q_warp(0.95)'s 95% order-statistic interval; G2' (replaces G2 after run 1;
++PASS3_STATUS Decision log), |n10' - n01'| <= 1.959964 sqrt(n10' + n01') (passes if n10' + n01' = 0), with n10' =
++#(full rejects, q_full test does not) and n01' the reverse. The superseded G2 (warp vs full) is still printed.
+ 
+ Chunking as tools/c7_mc.py:102-133: --budget seconds per invocation; state after every replication in --state (under
+ /tmp/p3_2a only); a later invocation resumes, refusing a state written under another configuration or other code;
+@@ -39,15 +40,16 @@
+ CODE_FILES = ("ofilt/drift/calib.py", "tools/p3_2a_warp_check.py")
+ 
+ 
+-def config_key(R: int, B: int, spec: Spec) -> dict:
++def config_key(R: int, B: int, spec: Spec, seed_base: int = SEED_OFFSET) -> dict:
+     code = {f: hashlib.sha256((ROOT / f).read_bytes()).hexdigest() for f in CODE_FILES}
+     return dict(R=R, B=B, n_dates=N_DATES, tails="t5", b=0.0, target=TARGET,
+-                seeds="s_r = spec seed + 4,000,000 + r; warp s_r + 50,000; inner s_r + 60,000",
++                seed_base=seed_base,
++                seeds=f"s_r = spec seed + {seed_base:,} + r; warp s_r + {WARP_OFFSET:,}; inner s_r + {INNER_OFFSET:,}",
+                 spec_seed=spec.seed, spec_sha256=spec.sha256, code=code)
+ 
+ 
+-def one_rep(r: int, B: int, spec: Spec) -> dict:
+-    s = spec.seed + SEED_OFFSET + r
++def one_rep(r: int, B: int, spec: Spec, seed_base: int = SEED_OFFSET) -> dict:
++    s = spec.seed + seed_base + r
+     df = S.synthetic_panel(N_DATES, b=0.0, tails="t5", seed=s)
+     t0 = time.perf_counter()
+     f = C.fit_t(df, spec, TARGET)
+@@ -82,6 +84,10 @@
+     n01 = int((~rej_warp & rej_full).sum())
+     g1 = iw95[0] <= qf95 <= iw95[1]
+     g2 = (n10 + n01 == 0) or abs(n10 - n01) <= 1.959964 * math.sqrt(n10 + n01)
++    n10p = int((rej_full & ~rej_qfull).sum())
++    n01p = int((~rej_full & rej_qfull).sum())
++    g2p = (n10p + n01p == 0) or abs(n10p - n01p) <= 1.959964 * math.sqrt(n10p + n01p)
++    rej_lo, rej_hi = int(C.rejects(t, iw95[0]).sum()), int(C.rejects(t, iw95[1]).sum())
+     k95, lo95, hi95 = C.order_stat_ranks(R, 0.95)
+     k90, lo90, hi90 = C.order_stat_ranks(R, 0.90)
+     L = ["# P3-2a: warp-speed check (synthetic only)", "",
+@@ -107,14 +113,20 @@
+          "|---|---|---|",
+          f"| warp-speed (|t_r| > q_warp(0.95)) | {int(rej_warp.sum())} | {R} |",
+          f"| per-replication full bootstrap (p_r <= 0.05) | {int(rej_full.sum())} | {R} |",
+-         f"| with q_full (|t_r| > q_full(0.95)) | {int(rej_qfull.sum())} | {R} |", "",
++         f"| with q_full (|t_r| > q_full(0.95)) | {int(rej_qfull.sum())} | {R} |",
++         f"| for information: |t_r| > the lower end of q_warp(0.95)'s interval ({iw95[0]:.6f}) | {rej_lo} | {R} |",
++         f"| for information: |t_r| > the upper end of q_warp(0.95)'s interval ({iw95[1]:.6f}) | {rej_hi} | {R} |", "",
+          f"Paired (warp-speed vs per-replication full): n10 (warp rejects, full does not) = {n10}; n01 (the reverse) "
+-         f"= {n01}.", "",
++         f"= {n01}.",
++         f"Paired (per-replication full vs the q_full test): n10' (full rejects, q_full test does not) = {n10p}; "
++         f"n01' (the reverse) = {n01p}.", "",
+          "## Gates (fixed in advance)", "",
+          f"- G1: q_full(0.95) = {qf95:.6f} lies inside q_warp(0.95)'s 95% order-statistic interval "
+          f"[{iw95[0]:.6f}, {iw95[1]:.6f}]: **{g1}**",
+-         f"- G2: |n10 - n01| = {abs(n10 - n01)} <= 1.959964 sqrt(n10 + n01) = "
+-         f"{1.959964 * math.sqrt(n10 + n01):.4f} (passes if n10 + n01 = 0): **{g2}**", "",
++         f"- G2': |n10' - n01'| = {abs(n10p - n01p)} <= 1.959964 sqrt(n10' + n01') = "
++         f"{1.959964 * math.sqrt(n10p + n01p):.4f} (passes if n10' + n01' = 0): **{g2p}**",
++         f"- G2, superseded (mis-specified; see the Decision log): |n10 - n01| = {abs(n10 - n01)} <= 1.959964 "
++         f"sqrt(n10 + n01) = {1.959964 * math.sqrt(n10 + n01):.4f}: {g2}", "",
+          "## Runtime", "",
+          f"- Median time per fit (`calib.fit_t`: build_design + fit_dk), over the {R} replications' original fits: "
+          f"{statistics.median([x['sec_fit'] for x in reps]):.4f} s",
+@@ -124,11 +136,11 @@
+     return "\n".join(L)
+ 
+ 
+-def run(R: int, B: int, budget: float, state_path: Path, out: Path) -> bool:
++def run(R: int, B: int, budget: float, state_path: Path, out: Path, seed_base: int = SEED_OFFSET) -> bool:
+     if not str(state_path).startswith(STATE_PREFIX):
+         raise SystemExit(f"state must live under {STATE_PREFIX}*")
+     spec = Spec.load()
+-    key = config_key(R, B, spec)
++    key = config_key(R, B, spec, seed_base)
+     if state_path.exists():
+         state = json.loads(state_path.read_text())
+         if state["key"] != key:
+@@ -143,7 +155,7 @@
+         state_path.write_text(json.dumps(state, allow_nan=False))
+ 
+     while len(state["reps"]) < R and time.time() - t0 < budget:
+-        state["reps"].append(one_rep(len(state["reps"]), B, spec))
++        state["reps"].append(one_rep(len(state["reps"]), B, spec, seed_base))
+         save()
+     save()
+     if len(state["reps"]) < R:
+@@ -158,10 +170,11 @@
+     ap.add_argument("--R", type=int, default=200)
+     ap.add_argument("--B", type=int, default=99)
+     ap.add_argument("--budget", type=float, default=float("inf"))
++    ap.add_argument("--seed-base", type=int, default=SEED_OFFSET)
+     ap.add_argument("--state", type=Path, default=Path("/tmp/p3_2a_warp_state.json"))
+     ap.add_argument("--out", type=Path, default=ROOT / "reports" / "P3_2a_warp_check.md")
+     a = ap.parse_args()
+-    done = run(a.R, a.B, a.budget, a.state, a.out)
++    done = run(a.R, a.B, a.budget, a.state, a.out, a.seed_base)
+     if done:
+         print("COMPLETE", flush=True)
+         print(a.out.read_text(encoding="utf-8"), end="")
+
+Containment, BEFORE the equivalence check and run 2:
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18477271
+Chunking equivalence check (small R = 4, B = 99, --seed-base 4100000; same containment):
+== A: unchunked, R=4, B=99, --seed-base 4100000
+exit=0 elapsed_s=33; first line: COMPLETE
+== B: chunked, R=4, B=99, --seed-base 4100000, --budget 1 (repeated until COMPLETE)
+invocation 1: PARTIAL 1 of 4
+invocation 2: PARTIAL 2 of 4
+invocation 3: PARTIAL 3 of 4
+invocation 4: COMPLETE
+== compare the two reports, Runtime section excluded
+$ cmp /tmp/p3_2a_eqA_noruntime.md /tmp/p3_2a_eqB_noruntime.md
+identical apart from the Runtime section: True
+$ diff /tmp/p3_2a_eqA.md /tmp/p3_2a_eqB.md (full files; only Runtime lines may differ)
+42,44c42,44
+< - Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 4 replications' original fits: 0.0452 s
+< - Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0738 s
+< - Total runtime over 1 chunk(s): 30.4 s
+---
+> - Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 4 replications' original fits: 0.0472 s
+> - Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0737 s
+> - Total runtime over 4 chunk(s): 30.9 s
+seeds line of A: - Seeds: s_r = spec seed + 4,100,000 + r; warp s_r + 50,000; inner s_r + 60,000 (spec seed 20261001).
+$ ls /tmp/p3_2a_eqA_state.json /tmp/p3_2a_eqB_state.json (deleted on completion)
+ls: /tmp/p3_2a_eqA_state.json: No such file or directory
+ls: /tmp/p3_2a_eqB_state.json: No such file or directory
+$ ls -A /tmp/p3_2a_tmp /tmp/p3_2a_nodata
+/tmp/p3_2a_nodata:
+
+/tmp/p3_2a_tmp:
+
+--- f. Run 2 (R = 200, B = 99, --seed-base 4100000) ---
+In foreground chunks, each as:
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=/tmp/p3_2a_nodata TMPDIR=/tmp/p3_2a_tmp python tools/p3_2a_warp_check.py --seed-base 4100000 --budget 420
+  chunk 1: PARTIAL 54 of 200
+  chunk 2: PARTIAL 109 of 200
+  chunk 3: PARTIAL 163 of 200
+  chunk 4: COMPLETE
+$ tail -n +2 /tmp/p3_2a_run2_chunk4.out | cmp - reports/P3_2a_warp_check.md
+printed report == written report: True
+$ shasum -a 256 reports/P3_2a_warp_check.md reports/P3_2a_warp_check_run1.md
+7ac83f52f01caa6ddda3864156087f0d8d212f17b7acd1cf5a528c4171b49499  reports/P3_2a_warp_check.md
+ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134  reports/P3_2a_warp_check_run1.md
+Run 2's report, reports/P3_2a_warp_check.md, in full:
+<<<<<<<<
+# P3-2a: warp-speed check (synthetic only)
+
+Generated by `tools/p3_2a_warp_check.py`, using `ofilt/drift/calib.py` (DQ3, D3.1 and D3.2). Synthetic aggregates only.
+
+## Design
+
+- R = 200 outer replications; replication r is `sim.synthetic_panel(1013, b=0, tails="t5", seed=s_r)`.
+- Seeds: s_r = spec seed + 4,100,000 + r; warp s_r + 50,000; inner s_r + 60,000 (spec seed 20261001).
+- Per replication: t_r from `calib.fit_t` (target `abn_oc`); one warp-speed resample giving t*_r; a full inner bootstrap of B = 99 resamples giving p_r = (1 + #{|t*| >= |t_r|}) / (B + 1); the full test rejects if p_r <= 0.05. Every fit's DK lag is 6 (asserted).
+- The warp-speed test rejects if |t_r| > q_warp(0.95), the order statistic of the 200 values |t*_r|; q_full is the order statistic of all 200 x 99 = 19800 inner |t*|.
+
+## Critical values (order statistics)
+
+| Quantity | Level | Rank k of n | Value | 95% order-statistic interval (ranks) |
+|---|---|---|---|---|
+| q_warp | 0.95 | 190 of 200 | 2.196604 | [1.865872, 2.357308] (183, 197) |
+| q_warp | 0.90 | 180 of 200 | 1.771738 | [1.615518, 2.065675] (171, 189) |
+| q_full | 0.95 | 18810 of 19800 | 1.976905 | |
+| q_full | 0.90 | 17820 of 19800 | 1.667231 | |
+
+## Rejections at b = 0
+
+| Test | Rejections | of R |
+|---|---|---|
+| warp-speed (|t_r| > q_warp(0.95)) | 5 | 200 |
+| per-replication full bootstrap (p_r <= 0.05) | 9 | 200 |
+| with q_full (|t_r| > q_full(0.95)) | 8 | 200 |
+| for information: |t_r| > the lower end of q_warp(0.95)'s interval (1.865872) | 10 | 200 |
+| for information: |t_r| > the upper end of q_warp(0.95)'s interval (2.357308) | 2 | 200 |
+
+Paired (warp-speed vs per-replication full): n10 (warp rejects, full does not) = 1; n01 (the reverse) = 5.
+Paired (per-replication full vs the q_full test): n10' (full rejects, q_full test does not) = 2; n01' (the reverse) = 1.
+
+## Gates (fixed in advance)
+
+- G1: q_full(0.95) = 1.976905 lies inside q_warp(0.95)'s 95% order-statistic interval [1.865872, 2.357308]: **True**
+- G2': |n10' - n01'| = 1 <= 1.959964 sqrt(n10' + n01') = 3.3948 (passes if n10' + n01' = 0): **True**
+- G2, superseded (mis-specified; see the Decision log): |n10 - n01| = 4 <= 1.959964 sqrt(n10 + n01) = 4.8009: True
+
+## Runtime
+
+- Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 200 replications' original fits: 0.0461 s
+- Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0750 s
+- Total runtime over 4 chunk(s): 1559.1 s
+>>>>>>>>
+Containment, BEFORE: see step e above. Containment, AFTER:
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18477271
+  $ diff (before vs after containment lines)
+  containment unchanged: True
+$ ls -A /tmp/p3_2a_tmp /tmp/p3_2a_nodata (before deletion)
+/tmp/p3_2a_nodata:
+
+/tmp/p3_2a_tmp:
+$ ls /tmp/p3_2a_warp_state.json (deleted by the tool on completion)
+ls: /tmp/p3_2a_warp_state.json: No such file or directory
+$ rm -r /tmp/p3_2a_tmp /tmp/p3_2a_nodata; exit=0
+$ ls -d /tmp/p3_2a_tmp /tmp/p3_2a_nodata
+ls: /tmp/p3_2a_nodata: No such file or directory
+ls: /tmp/p3_2a_tmp: No such file or directory
+Gates: G1 True; G2' True (the superseded G2, printed for information: True).
+
+--- g.1 PASS3_STATUS edits ---
+Test changes: rows for tests/test_p3_calib.py and (a records correction, see Deviations) tests/test_p3_1_sesoi.py. Test results: P3-2a block. Blinding attestation: P3-2a. Deviations: the three listed at the STOP, the STOP itself, and the records correction. Progress: P3-2a row set to done, citing both runs. All edits by the Edit tool or a shell heredoc (no Python).
+$ git diff --stat
+ PASS3_STATUS.md | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 77 insertions(+), 2 deletions(-)
+$ git status --porcelain
+ M PASS3_STATUS.md
+?? ofilt/drift/calib.py
+?? reports/P3_2a_warp_check.md
+?? reports/P3_2a_warp_check_run1.md
+?? tests/test_p3_calib.py
+?? tools/p3_2a_warp_check.py
+
+--- g.2 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-1b (records; synthetic timing probe)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-2a (DQ3, DQ4, DQ7; calibration module; warp-speed check)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 a159214fbe3bff7a3559f69ade5b9aeea764b678c78564e156fc8f57b08bf730
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+?? ofilt/drift/calib.py
+?? reports/P3_2a_warp_check.md
+?? reports/P3_2a_warp_check_run1.md
+?? tests/test_p3_calib.py
+?? tools/p3_2a_warp_check.py
+----------------------------------------------------------------------
+Ran 263 tests in 282.848s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+?? ofilt/drift/calib.py
+?? reports/P3_2a_warp_check.md
+?? reports/P3_2a_warp_check_run1.md
+?? tests/test_p3_calib.py
+?? tools/p3_2a_warp_check.py
+commit 8bced4b38ff1365d15344267a6f57d38f270ee08
+checkpoint exit=0
+
+--- g.3 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+8bced4b38ff1365d15344267a6f57d38f270ee08 checkpoint: P3-2a (DQ3, DQ4, DQ7; calibration module; warp-speed check)
+$ git log -1 --format=%B
+checkpoint: P3-2a (DQ3, DQ4, DQ7; calibration module; warp-speed check)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md                  |  79 ++++++++++++++++-
+ ofilt/drift/calib.py             | 177 +++++++++++++++++++++++++++++++++++++
+ reports/P3_2a_warp_check.md      |  44 ++++++++++
+ reports/P3_2a_warp_check_run1.md |  40 +++++++++
+ tests/test_p3_calib.py           | 161 ++++++++++++++++++++++++++++++++++
+ tools/p3_2a_warp_check.py        | 182 +++++++++++++++++++++++++++++++++++++++
+ 6 files changed, 681 insertions(+), 2 deletions(-)
+$ git show --name-only --format= HEAD | sort
+ofilt/drift/calib.py
+PASS3_STATUS.md
+reports/P3_2a_warp_check_run1.md
+reports/P3_2a_warp_check.md
+tests/test_p3_calib.py
+tools/p3_2a_warp_check.py
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+P3-0 baseline (read by script from reports/P3_0_report.txt): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+The five skips (the checkpoint's suite has no -v; the module check used before):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 21.802s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- h. PASS3_STATUS.md Deviations, final (as committed in 8bced4b), verbatim ---
+<<<<<<<<
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review of P3-2a) ---
+2026-10-06T21:36:49Z
+8bced4b38ff1365d15344267a6f57d38f270ee08
+$ git status --porcelain (between markers)
+<<<
+>>>

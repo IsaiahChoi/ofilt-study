@@ -1,0 +1,716 @@
+2026-10-06T19:36:28Z
+022260254ff9b76739120fd51eed8d0e22656397
+=== P3-1 report ===
+--- a. Date gate ---
+$ date +%F
+2026-10-06
+--- state at start ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+022260254ff9b76739120fd51eed8d0e22656397 checkpoint: P3-0b (records; pre-flight facts)
+$ git tag -l
+pass1-final
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Read-only checks of the P3-0b records ---
+b.1 $ python /tmp/p3_1_gate_b.py
+issued lines: 11
+contiguous match with '> ' on every line, at PASS3_STATUS.md line(s): [81]
+contiguous match with '> ' absent on every line, at line(s): []
+GATE b.1: True
+exit=0
+
+b.2 $ git show --format= 022260254ff9b76739120fd51eed8d0e22656397 -- PASS3_STATUS.md
+diff --git a/PASS3_STATUS.md b/PASS3_STATUS.md
+index 1c6d14c..665e12e 100644
+--- a/PASS3_STATUS.md
++++ b/PASS3_STATUS.md
+@@ -6,7 +6,8 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
+ 
+ | Item | Status | Notes |
+ |---|---|---|
+-| P3-0 Setup, integrity, code survey | done; `checkpoint: P3-0` | Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
++| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
++| P3-0b Records and pre-flight facts | done; `checkpoint: P3-0b` | Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+ | Pass 3 | in progress | |
+ 
+ ## Next action
+@@ -77,6 +78,18 @@ P3-1 (cost model and SESOI) waits for Isaiah's cost inputs and the open design q
+ 
+ - Pass 3 builder prompt adopted (Isaiah, 2026-10-06).
+ 
++> - P3-0 accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
++>   - Checkpoint `2ac5a85b51d8604ccad84cf877baf45ff2d45f76`.
++>   - This includes the step c deviation. On the first run, the hash-check script's table parser dropped the rows beginning `| DATA`, so it printed "AGREE: False", although every computed-versus-registry comparison was True. The parser was fixed, and the rerun agreed three ways.
++>   - The deviation is accepted as recorded, as P69 did for the P2-5 parser bug.
++> - Standing rule (Isaiah, 2026-10-06, on the supervisor's recommendation): rerun once after a script bug.
++>   - If one of the builder's own check scripts fails because of a bug in that script, rather than because of the condition it checks, the builder may fix the script and rerun it once.
++>   - Both runs and the fix are recorded in the report and in Deviations.
++>   - A failure on the rerun is a STOP.
++> - P3-0 step f (Isaiah, 2026-10-06, on the supervisor's recommendation): the Pass 1 sealed-run reports.
++>   - The committed B7 and B7b reports hold per-cell aggregates only, with no per-replication values.
++>   - The pre-registration states this; nothing needs remedying.
++
+ ## Test results
+ 
+ **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
+@@ -91,9 +104,15 @@ P3-1 (cost model and SESOI) waits for Isaiah's cost inputs and the open design q
+ - Slow tier (`OFILT_SLOW=1 … python -m unittest tests.test_validation_c7 -v`): `Ran 6 tests in 32.037s`; `OK`. The prompt expects about 21 s.
+ - After both runs: BLIND_FIT_LOG SHA-256 unchanged, RUN_REGISTRY.jsonl 0 bytes, `git status --porcelain` empty.
+ 
++**P3-0b e:** the new tests alone (`python -m unittest tests.test_p3_0b_preflight -v`): 3 tests, OK, on the first run. The full suite ran inside the P3-0b checkpoint; its result is in the P3-0b report (`/tmp/p3_0b.txt`).
++
+ ## Test changes
+ 
+-None.
++Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
++
++| Test | Old | New | Entry | Phase |
++|---|---|---|---|---|
++| new `tests/test_p3_0b_preflight.py` | — | 3 tests, synthetic only: the Part A sample rule keeps exactly `inference.build_design`'s rows on three injected `synthetic_panel` frames; the grid detector on hand-built series (including a grid change mid-sample); the tool refuses a panel whose hash does not match the registry, before reading it | P3-0b (supervisor message, 2026-10-06) | P3-0b |
+ 
+ ## Flags
+ 
+@@ -107,6 +126,8 @@ None.
+ - (P3-0, for the supervisor) DQ1.5 rehearsal: a populated fingerprint registry needs `io.load_dev` and `targets.add_targets` in the rehearsal process. That means real target contact: β and the constructed targets are computed on the dev panel and registered, never printed. It needs confirming as sanctioned for P3-3.
+ - (P3-0, for the supervisor) Pins that line 7 and the AM-07 switch will break, to be listed as P3-6 test-change rows: `test_docs_d3.py:66` (6 lines) and `:69` (every panel hash is the Pass 1 dev hash); `test_docs_d3b.py:41` (6 lines) and `:39` (AM-01..AM-05 only); `test_docs_d2.py:41-43` (`PENDING_COSTS`; "Pass 4" in viability), if the SESOI or viability text changes; and the C7 key, on any spec edit. The byte- or hash-pinned documents (`DECISIONS_P14_onward.md`, `PLAN.md`, `DECISIONS_P58_onward.md`) state the six sealed fits.
+ - (P3-0, for the supervisor) DQ1.2 disclosure (step f): the committed B7 and B7b reports hold no per-replication values, only per-cell aggregates. These include per-cell means of the simulated estimates (B7 `mean_b`, B7b `bias`), each one linear functional of the residual vector given the seeds.
++- (P3-0b, for the supervisor) DQ2, price units: the panel's miner prices are adjusted for capital changes and are on the basis after 5706's 10:1 split (ex-date 2026-09-29; DATA_PROVENANCE.md:67, :70; DATA_DICTIONARY.md:116). Read with B3's grids, panel prices therefore differ from the prices traded at the time by a factor: 5711 ×10 before 2016-09-28 (grid 10, a 1-yen tick); 5713 ×2 before 2017-09-27 (2016 grid 0.2, a 0.1-yen tick); 5706 ÷10 from 2017-09-27 (grid 0.1 or 0.5, a 1- or 5-yen tick). A TSE tick-size schedule applies to traded prices, so it cannot be applied to the panel prices as they stand. B4's ratio g / price does not depend on the factor.
++- (P3-0b, for the supervisor) DQ2, B4 as specified uses the finest grid detected in each (ticker, year, period) cell. Where a year spans TSE tick bands, rows in the coarser band have a larger tick than g, and B4 understates it. Example: 5706 in 2018 has 86.32% of its prices on 0.5, but its detected grid is 0.1. The g ≥ 0.99 column catches only cells that are almost entirely on one grid.
+ 
+ ## Blinding attestation
+ 
+@@ -120,8 +141,18 @@ None.
+   - KIT3: the saved prompt was hashed and its step c table parsed for the listed hashes.
+   - `OFILT_RUN_SEALED` was unset throughout: `printenv` printed nothing, and every Python command ran under `env -u OFILT_RUN_SEALED`. No script's real mode was run.
+   - No computation related a predictor to a target. BLIND_FIT_LOG still has 6 dev_real lines (SHA-256 unchanged), and RUN_REGISTRY.jsonl is 0 bytes.
++- **P3-0b (supervisor message of 2026-10-06)**, by category:
++  - Records: document edits to PASS3_STATUS.md; the P3-0 report copied into `reports/` and hashed.
++  - `tools/p3_0b_preflight.py`, run once on the real dev panel. It hashed `panel_dev.csv` against both registry entries before reading it, then loaded it with `io.load_dev` (which registers the real targets in the in-process fingerprint registry) and built targets with `targets.add_targets` (target-only).
++    - Part A used the exclusion flags, the non-missingness of `beta`, `abn_oc` and the four predictors, and one boolean for finiteness (see Deviations). It also used dates and tickers.
++    - Part B used the target-side price columns `open` and `close` only.
++    - It printed and wrote counts, dates, price quantiles, grid shares and tick ratios only. No statistic of any predictor's values was computed, and nothing combined predictor values with target values. No `build_design`, `_design_core`, inference function or `walk_forward` was called on real data. No cost, SESOI or mean |e| was computed.
++  - `tests/test_p3_0b_preflight.py` is synthetic only. The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
++  - RAW and OUT: untouched. No data file was opened by any viewer. `OFILT_RUN_SEALED` was unset throughout (every Python command ran under `env -u OFILT_RUN_SEALED`).
+ 
+ ## Deviations
+ 
+ - P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+ - P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
++- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
++- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+
+b.3 $ cat tests/test_p3_0b_preflight.py
+"""P3-0b (supervisor message of 2026-10-06): tests of tools/p3_0b_preflight.py. Synthetic only; no data are read.
+
+1. The Part A sample rule keeps exactly the (date, ticker) rows of inference.build_design on synthetic panels with
+   injected exclusions and missing values (beta, predictors, the target).
+2. The grid detector on hand-built price series with known grids, including a grid change mid-sample.
+3. The tool refuses a panel whose SHA-256 does not match the registry, before reading it."""
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+import numpy as np
+import pandas as pd
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+import p3_0b_preflight as P  # noqa: E402
+from ofilt.drift import inference as I  # noqa: E402
+from ofilt.drift import io as IO  # noqa: E402
+from ofilt.drift import sim as S  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+
+def injected(n_dates, seed, p_excl, nan_cols, tails="gaussian"):
+    """synthetic_panel with news_flag exclusions, a beta warm-up and scattered NaNs injected."""
+    df = S.synthetic_panel(n_dates, seed=seed, p_excl=p_excl, tails=tails)
+    rng = np.random.default_rng(seed + 1)
+    n = len(df)
+    df.loc[rng.random(n) < 0.03, "news_flag"] = 1
+    df["beta"] = df["beta"].astype(float)
+    first = df.groupby("ticker").cumcount() < 25                    # beta warm-up: NaN on each ticker's first rows
+    df.loc[first | (rng.random(n) < 0.02), "beta"] = np.nan
+    dates = df["date"].unique()
+    for c in nan_cols:
+        if c in ("usdjpy_ret", "eurusd_ret"):                       # FX is per date: missing on every ticker row
+            gone = rng.choice(dates, size=5, replace=False)
+            df.loc[df["date"].isin(gone), c] = np.nan
+        else:
+            df.loc[rng.random(n) < 0.02, c] = np.nan
+    return df
+
+
+class TestP30bPreflight(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.spec = Spec.load()
+
+    def test_sample_rule_equals_build_design(self):
+        frames = {
+            "excl+beta+usdjpy+spy+abn": injected(320, 11, 0.05, ["usdjpy_ret", "spy_oc", "abn_oc"]),
+            "t5 excl+beta+eurusd+copx": injected(260, 12, 0.10, ["eurusd_ret", "copx_oc"], tails="t5"),
+            "heavy excl+beta+all four": injected(400, 13, 0.25, ["usdjpy_ret", "eurusd_ret", "spy_oc", "copx_oc"]),
+        }
+        for name, df in frames.items():
+            with self.subTest(frame=name):
+                keep = P.sample_keep(df, self.spec)
+                self.assertTrue(0 < int(keep.sum()) < len(df))                  # the injections bite
+                d = I.build_design(df, self.spec)                               # synthetic provenance
+                self.assertTrue(np.array_equal(df.index[keep.to_numpy()], d.index))
+                rule_rows = df.loc[keep, ["date", "ticker"]].reset_index(drop=True)
+                design_rows = df.loc[d.index, ["date", "ticker"]].reset_index(drop=True)
+                pd.testing.assert_frame_equal(rule_rows, design_rows)
+                self.assertTrue(P.sample_steps(df, self.spec)[-1][1].equals(keep))
+                self.assertEqual(int(keep.sum()), len(d.y))
+                self.assertEqual(df.loc[keep, "date"].nunique(), d.T)          # T_source = unique kept dates
+
+    def test_grid_detector(self):
+        self.assertEqual(P.detect_grid(np.array([101.0, 203.0, 305.0, 1007.0, 2009.0])), (1.0, 1.0))
+        halves = np.arange(3400, 3600, 5) / 10.0                                 # 340.0, 340.5, ... (float noise)
+        self.assertEqual(P.detect_grid(halves), (0.5, 0.5))
+        self.assertEqual(P.detect_grid(np.arange(1, 50) * 20.0)[0], 20.0)
+        near = np.r_[5.0 * (2 * np.arange(995) + 1), [1001.0, 1002.0, 1003.0, 1004.0, 1006.0]]
+        self.assertEqual(P.detect_grid(near), (1.0, 5.0))                        # 99.5% on 5, all on 1
+        self.assertEqual(P.detect_grid(np.array([0.123, 0.456, 0.789])), (None, None))
+        self.assertEqual(P.grid_shares(np.array([2.0, 4.0, 5.0, 7.0]))[2.0], 0.5)
+        # Grid change mid-sample: 5711 on a 10-yen grid before 2016-09-28, on a 1-yen grid from then.
+        dates = pd.bdate_range("2016-06-01", "2016-12-30")
+        before = dates < pd.Timestamp("2016-09-28")
+        rng = np.random.default_rng(5)
+        o = np.where(before, 10.0 * rng.integers(250, 400, len(dates)), 1.0 * rng.integers(2500, 4000, len(dates)))
+        c = np.where(before, 10.0 * rng.integers(250, 400, len(dates)), 1.0 * rng.integers(2500, 4000, len(dates)))
+        px = pd.DataFrame({"date": dates, "ticker": "5711", "open": o, "close": c})
+        cells = {(r["year"], r["period"]): r["grid"] for r in P.grid_table(px)}
+        self.assertEqual(cells, {(2016, "before 2016-09-28"): 10.0, (2016, "from 2016-09-28"): 1.0})
+        self.assertEqual(P.detect_grid(np.r_[o, c])[0], 1.0)                    # pooled: the finer grid
+
+    def test_refuses_unregistered_panel(self):
+        with tempfile.TemporaryDirectory() as t:
+            fake, out = Path(t) / "panel_dev.csv", Path(t) / "out.md"
+            fake.write_text("date,ticker\n2015-01-05,5706\n", encoding="utf-8")
+            with mock.patch.object(IO, "load_dev", side_effect=AssertionError("panel read")) as ld:
+                with self.assertRaises(SystemExit) as cm:
+                    P.main(["--panel", str(fake), "--out", str(out)])
+            self.assertTrue(str(cm.exception.code).startswith("REFUSED"))
+            ld.assert_not_called()
+            self.assertFalse(out.exists())
+
+
+if __name__ == "__main__":
+    unittest.main()
+(end of b.3)
+
+--- c. Decisions recorded; targeted edits ---
+c.1 Progress: P3-0b status cell now 'done; accepted by Isaiah 2026-10-06' (checkpoint name moved to the start of Notes, as for P3-0); P3-1 row added.
+c.2 Flags: the routing-record bullet appended verbatim. c.3 Next action replaced.
+c.4 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-0b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `022260254ff9b76739120fd51eed8d0e22656397`.
+>   - The acceptance covers the recorded deviations P3-0 e (an unused shell variable holding a hand-typed hash), P3-0b d (the finiteness boolean, mirroring `inference.py:130-131`) and P3-0b b.1 (the checkpoint name moved to the Notes cell).
+>   - Part A: 4,192 kept rows on 1,439 dates (equal to Pass 1's B7 T_source), from 2016-01-26 to 2021-12-30. The four predictors remove no row, so the target-only pre-flight count equals the sealed fit's sample. The sealed run asserts these two numbers.
+>   - Part B: every detected grid agrees with the TSE tick tables applied to traded prices, where stored price = traded price × f: f = 10 for 5711 before 2016-09-28; f = 2 for 5713 before 2017-09-27; f = 1 for 5706 before 2017-09-27 and f = 1/10 from that date (because of 5706's 10:1 split, ex-date 2026-09-29); f = 1 otherwise. 5711 and 5706 follow the standard table and 5713 the TOPIX100 table.
+> - Cost inputs (Isaiah, 2026-10-06). Primary / low / high, fixed on economic grounds before any SESOI ingredient was computed:
+>   1. Notional per name: JPY 10,000,000 / 1,000,000 / 100,000,000 (assumption).
+>   2. Commission per side, miners, consumption tax included: 4.3 / 0 / 8 bp. Primary: IBKR Japan Tiered, blended across Tier I (0.05%) and Tier II (0.04%) at the strategy's own monthly volume, plus the TSE exchange and clearing fees (about 0.27 bp). Low: SBI "Zero Revolution" or Rakuten's zero course. High: IBKR Fixed (0.08%).
+>   3. Commission per side, 1306: the same as item 2.
+>   4. Auction impact per side, miners: 2 / 0.5 / 8 bp (assumption, checked against JPX closing-auction shares and square-root-law evidence on TSE data).
+>   5. Auction impact per side, 1306: 1.5 / 0.5 / 4 bp (assumption).
+>   6. Intraday short cost per day: 0 / 0 / 1 bp (day-trade margin at SBI, Rakuten and Matsui: 0% interest and 0% lending fee; the high covers standard margin at 1.10% a year and special short fees).
+>   - Source: Isaiah's cost note of 2026-10-06. It stays outside the repository and the Claude Project because it quotes post-dev prices.
+>   - Note (supervisor): the primary pairs IBKR commissions with a zero-cost day-trade short. A single-account primary would differ by at most 1 bp a day (item 6's range).
+> - DQ2 (Isaiah, 2026-10-06, on the supervisor's recommendation): the cost model and the SESOI, defined before any of their ingredients is computed.
+>   - D2.1 The overnight FX regressor. ẽ is the OLS residual of `usdjpy_ret` on the primary design's other regressors (ticker fixed effects, `eurusd_ret`, and ticker-specific `spy_oc` and `copx_oc`), fitted once on the AM-03 estimation sample (the P3-0b Part A rule). The SESOI denominator is mean |ẽ| over those rows (row weighting). This is a predictor-only regression; target columns select rows only through availability.
+>   - D2.2 The hedge ratio. β̄ is the mean of the expanding past-only β over the same rows (target-only). Because the cost is linear in β, the mean per-row cost equals the cost at β̄.
+>   - D2.3 The round trip per name-day: RT = 2·(c_m + x_m) + β·2·(c_h + x_h) + s, with c the commission per side, x the execution cost per side and s the short cost (m: miner; h: 1306). SESOI = mean RT / mean |ẽ| over the D2.1 rows (a ratio of means). It is the ratio of two marginal statistics; nothing in it depends on the joint distribution of predictors and targets.
+>   - D2.4 The tick term for the miners. TSE tables apply to traded prices (stored price ÷ f).
+>     - Primary: x_m = max(stated impact, ½ tick), averaged per ticker over its kept rows outside the Flag 4 windows (5711 before 2016-09-28; 5706 before 2017-09-27) and over the open and close sides, under the fine table (up to JPY 1,000: 0.1; to 3,000: 0.5; to 10,000: 1; to 30,000: 5). That table covered TOPIX100 constituents from 2015-09-24 and TOPIX500 constituents from September 2023 at the latest, including the three miners (Isaiah's cost note), so it governs most of the confirmation period. The consolidations raised traded prices tenfold for good, so the coarse grids cannot recur in the confirmation; Flag 4 enters through the high case.
+>     - Low: no tick term; x_m = stated impact.
+>     - High: x_m = stated impact + ½ tick on every kept row, including the Flag 4 windows, under the tables in force during dev (the standard table for 5711 and 5706; the TOPIX100 table for 5713).
+>   - D2.5 The 1306 tick, with no RAW read. Half a tick of 1306 is an assumption: primary 1.25 bp (½ × JPY 0.5 on about JPY 2,000; the TOPIX100 table applies to ETFs from 2021-11-29, as P2-5c's 0.05 steps on stored prices in 2021 show); high 4.2 bp (½ × JPY 1 on about JPY 1,200, the dev table at dev lows). Primary x_h = max(impact, ½ tick); low x_h = impact; high x_h = impact + ½ tick.
+>   - D2.6 Viability (the spec's `equivalence.viability`, written in the switch). TOST is viable at T_conf if, under the primary inference method that the T1 and T4 rules select, (i) the probability of declaring equivalence at b = 0 is at least 0.80 at the primary SESOI, and (ii) the rate of declaring equivalence at b = +SESOI (primary) is at most 6.5%. The run also reports (i) at the low and high SESOI, under every DQ1.6 method. If TOST is not viable, it is reported as descriptive only, the equivalence wording is not used, and a null H1 is read against MDE80.
+>   - D2.7 Claim wording. The equivalence wording ("no drift exploitable net of costs") is used only if TOST declares equivalence at the primary SESOI, and the report states next to it whether it also does at the low SESOI. It is an economic statement; MDE80 remains the statement about informational pricing.
+>   - D2.8 Economic evaluation (P35 T5). The costs are the primary, low and high round trips of D2.3 to D2.5, with each confirmation row's own β. The break-even is the mean gross P&L per name-day, in bp, of the every-day, β-hedged, market-on-open to market-on-close strategy that trades the sign of the forecast, for M3 and for M2; their difference isolates `usdjpy_ret`. Threshold-trading variants are exploratory.
+>   - D2.9 Fixity. The SESOI is set by these definitions and inputs. Isaiah's approval at the P3-1 review checks the computation only. Any change to an input or a definition after the P3-1 report is a labelled deviation.
+
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | in progress | P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) writes `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-1 awaits the supervisor's review and Isaiah's approval of the computation (D2.9). P3-2 also waits for DQ3, DQ4 and DQ7.
+
+$ git diff --stat
+ PASS3_STATUS.md | 34 ++++++++++++++++++++++++++++++++--
+ 1 file changed, 32 insertions(+), 2 deletions(-)
+
+--- d. docs/P3_COST_INPUTS.json (written by /tmp/p3_1_make_inputs.py; json.dumps(indent=2, ensure_ascii=True)) ---
+$ shasum -a 256 docs/P3_COST_INPUTS.json
+a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6  docs/P3_COST_INPUTS.json
+(printed in full in reports/P3_1_sesoi.md, output (f))
+
+--- e. The tool: tools/p3_1_sesoi.py ---
+$ shasum -a 256 tools/p3_1_sesoi.py tests/test_p3_1_sesoi.py docs/P3_COST_INPUTS.json
+9826e3aa4979deb2e89bd3f6d46c6e736d28258b371a926f04a76be1a6ef6af4  tools/p3_1_sesoi.py
+f9b1b32f933f7c30629285556df68dc6cba3149424f1f220bffa8ec3c7be9719  tests/test_p3_1_sesoi.py
+a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6  docs/P3_COST_INPUTS.json
+$ grep -n -E 'build_design|_design_core|walk_forward|fit_dk|fit_huber|pooled_ols|driscoll_kraay|DevCalibrator|OFILT_RUN_SEALED|from ofilt.drift import inference|import sim' tools/p3_1_sesoi.py
+129:    """The primary design's column names as inference._design_core builds them (inference.py:90, 106-113)."""
+(the one match is a docstring citation, not a call; the tool imports io, targets and spec from ofilt.drift, and sample_keep and verify_panel from tools/p3_0b_preflight.py)
+$ grep -n -E '^from|^import' tools/p3_1_sesoi.py
+23:from __future__ import annotations
+25:import argparse
+26:import json
+27:import math
+28:import re
+29:import sys
+30:from fractions import Fraction
+31:from pathlib import Path
+33:import numpy as np
+34:import pandas as pd
+39:from p3_0b_preflight import sample_keep, verify_panel  # noqa: E402  (the P3-0b Part A rule and hash check)
+40:from ofilt.drift import io as IO  # noqa: E402
+41:from ofilt.drift import targets as TG  # noqa: E402
+42:from ofilt.drift.spec import Spec  # noqa: E402
+Cited lines at HEAD (inference.py:90 and 106-113):
+    |     fx, ctl, h1 = list(spec.fx_block), list(spec.controls), spec.h1_parameter
+    |     for t in utick:
+    |         cols.append((tick == t).astype(float)); names.append(f"fe[{t}]")
+    |     fx_terms = (["e_pos", "e_neg"] + [c for c in fx if c != h1]) if secondary == "fx_asymmetry" else fx
+    |     for c in fx_terms:
+    |         cols.append(feats[c].to_numpy()); names.append(c)
+    |     for c in ctl:
+    |         for t in utick:
+    |             cols.append(feats[c].to_numpy() * (tick == t)); names.append(f"{c}:{t}")
+
+--- f. Tests (synthetic only) ---
+First run (before the real run):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_p3_1_sesoi -v
+test_conformity (tests.test_p3_1_sesoi.TestP31Sesoi.test_conformity) ... ok
+test_cost_arithmetic (tests.test_p3_1_sesoi.TestP31Sesoi.test_cost_arithmetic) ... ok
+test_fwl_residual (tests.test_p3_1_sesoi.TestP31Sesoi.test_fwl_residual) ... ok
+test_refusals (tests.test_p3_1_sesoi.TestP31Sesoi.test_refusals) ... ok
+test_tick_tables_and_factors (tests.test_p3_1_sesoi.TestP31Sesoi.test_tick_tables_and_factors) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.102s
+
+OK
+(note) After the first run, one output line was removed from the tool's report section (e) before the real run: an 'Inputs per case' line restating values printed in (f), outside the item's Outputs list. Tests re-run, before the real run:
+test_conformity (tests.test_p3_1_sesoi.TestP31Sesoi.test_conformity) ... ok
+test_cost_arithmetic (tests.test_p3_1_sesoi.TestP31Sesoi.test_cost_arithmetic) ... ok
+test_fwl_residual (tests.test_p3_1_sesoi.TestP31Sesoi.test_fwl_residual) ... ok
+test_refusals (tests.test_p3_1_sesoi.TestP31Sesoi.test_refusals) ... ok
+test_tick_tables_and_factors (tests.test_p3_1_sesoi.TestP31Sesoi.test_tick_tables_and_factors) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.091s
+
+OK
+
+--- g.2 The tool, once on the real dev panel ---
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python tools/p3_1_sesoi.py > /tmp/p3_1_tool_run.out   (exit 0)
+$ cmp /tmp/p3_1_tool_run.out reports/P3_1_sesoi.md
+identical: True
+$ shasum -a 256 reports/P3_1_sesoi.md
+1932c6ac43237e99551cd145f62ac5827b97a46b6ce2e9f79ef54533a210be51  reports/P3_1_sesoi.md
+reports/P3_1_sesoi.md in full:
+<<<<<<<<
+# P3-1: the SESOI (DQ2; dev only)
+
+## (a) Hash check, sample and regressors
+
+- Dev panel SHA-256 `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`: equal to the spec's dev-panel hash (AM-04) and to `docs/PASS2_INPUTS.json`, checked before the file was read.
+- Step 1 (the P3-0b Part A rule, imported from `tools/p3_0b_preflight.py`): kept rows 4192, T_source 1439; `reports/P3_0b_preflight.md` says 4192 and 1439. Gate: True.
+- Step 2: the primary design's regressors, from `spec.fx_block`, `spec.controls` and `spec.h1_parameter` as `ofilt/drift/inference.py:90` reads them, named as at `inference.py:106-113`: ['fe[5706]', 'fe[5711]', 'fe[5713]', 'usdjpy_ret', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']. The partialling set (the design minus `usdjpy_ret`): ['fe[5706]', 'fe[5711]', 'fe[5713]', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']. Equals {ticker fixed effects, eurusd_ret, ticker-specific spy_oc and copx_oc}: True.
+
+## (b) Conformity of all dev opens and closes with the dev tick tables (traded price = stored / f)
+
+A price conforms if it is an integer multiple of its dev-table tick at its traded price (|p/t - round(p/t)| < 1e-06); 'Above bound' counts traded prices above the table's last bound.
+
+| Ticker | Year | Period | Prices | Conforming share | Above bound |
+|---|---|---|---|---|---|
+| 5706 | 2015 | before 2017-09-27 | 486 | 1 | 0 |
+| 5706 | 2016 | before 2017-09-27 | 490 | 1 | 0 |
+| 5706 | 2017 | before 2017-09-27 | 364 | 1 | 0 |
+| 5706 | 2017 | from 2017-09-27 | 130 | 1 | 0 |
+| 5706 | 2018 | from 2017-09-27 | 490 | 1 | 0 |
+| 5706 | 2019 | from 2017-09-27 | 482 | 1 | 0 |
+| 5706 | 2020 | from 2017-09-27 | 484 | 1 | 0 |
+| 5706 | 2021 | from 2017-09-27 | 490 | 1 | 0 |
+| 5711 | 2015 | before 2016-09-28 | 486 | 1 | 0 |
+| 5711 | 2016 | before 2016-09-28 | 362 | 1 | 0 |
+| 5711 | 2016 | from 2016-09-28 | 128 | 1 | 0 |
+| 5711 | 2017 | from 2016-09-28 | 494 | 1 | 0 |
+| 5711 | 2018 | from 2016-09-28 | 490 | 1 | 0 |
+| 5711 | 2019 | from 2016-09-28 | 482 | 1 | 0 |
+| 5711 | 2020 | from 2016-09-28 | 484 | 1 | 0 |
+| 5711 | 2021 | from 2016-09-28 | 490 | 1 | 0 |
+| 5713 | 2015 | before 2017-09-27 | 486 | 1 | 0 |
+| 5713 | 2016 | before 2017-09-27 | 490 | 1 | 0 |
+| 5713 | 2017 | before 2017-09-27 | 364 | 1 | 0 |
+| 5713 | 2017 | from 2017-09-27 | 130 | 1 | 0 |
+| 5713 | 2018 | from 2017-09-27 | 490 | 1 | 0 |
+| 5713 | 2019 | from 2017-09-27 | 482 | 1 | 0 |
+| 5713 | 2020 | from 2017-09-27 | 484 | 1 | 0 |
+| 5713 | 2021 | from 2017-09-27 | 490 | 1 | 0 |
+
+Gate (every share exactly 1, no price above a bound): True.
+
+## (c) The denominator and the hedge ratio
+
+- mean |e~| over the 4192 step 1 rows: **28.4288 bp** (D2.1; `numpy.linalg.lstsq`, 10 regressors, no global intercept)
+- beta-bar over the same rows: **1.0333** (D2.2)
+- Rows per ticker: 5706 1400, 5711 1390, 5713 1402
+
+## (d) The miner execution cost per ticker (bp per side)
+
+| Ticker | Rows for the primary x_m (outside Flag 4 windows) | Primary x_m | Share of sides with 1/2 tick > stated impact (primary table) | High: mean x_m over all kept rows |
+|---|---|---|---|---|
+| 5706 | 1002 | 2.0000 | 0.0000 | 16.9017 |
+| 5711 | 1230 | 2.0000 | 0.0000 | 13.9102 |
+| 5713 | 1402 | 2.0148 | 0.0770 | 9.4111 |
+
+## (e) Round trips and the SESOI
+
+RT = 2 (c_m + x_m) + beta 2 (c_h + x_h) + s per name-day; components are means over the step 1 rows (bp). SESOI = mean RT / mean |e~|.
+
+| Case | Miner commission 2 c_m | Miner execution mean 2 x_m | Hedge leg beta-bar 2 (c_h + x_h) | Short s | Mean RT | SESOI |
+|---|---|---|---|---|---|---|
+| primary | 8.6000 | 4.0099 | 11.9862 | 0.0000 | 24.5961 | **0.8652** |
+| low | 0.0000 | 1.0000 | 1.0333 | 0.0000 | 2.0333 | **0.07152** |
+| high | 16.0000 | 26.8091 | 33.4787 | 1.0000 | 77.2878 | **2.719** |
+
+## (f) `docs/P3_COST_INPUTS.json`
+
+```json
+{
+  "decided": "Isaiah, 2026-10-06; PASS3_STATUS Decision log (P3-1)",
+  "notional_jpy": {
+    "primary": 10000000,
+    "low": 1000000,
+    "high": 100000000
+  },
+  "commission_miners_bp": {
+    "primary": 4.3,
+    "low": 0,
+    "high": 8
+  },
+  "commission_1306_bp": {
+    "primary": 4.3,
+    "low": 0,
+    "high": 8
+  },
+  "impact_miners_bp": {
+    "primary": 2,
+    "low": 0.5,
+    "high": 8
+  },
+  "impact_1306_bp": {
+    "primary": 1.5,
+    "low": 0.5,
+    "high": 4
+  },
+  "short_cost_per_day_bp": {
+    "primary": 0,
+    "low": 0,
+    "high": 1
+  },
+  "half_tick_1306_bp": {
+    "primary": 1.25,
+    "low": null,
+    "high": 4.2
+  },
+  "price_factor": {
+    "_about": "stored price = traded price x f; f parsed with fractions.Fraction. Segments: each applies from 'start' (inclusive; null = from the start of the panel) until the next segment's start.",
+    "5711": [
+      {
+        "start": null,
+        "f": "10"
+      },
+      {
+        "start": "2016-09-28",
+        "f": "1"
+      }
+    ],
+    "5713": [
+      {
+        "start": null,
+        "f": "2"
+      },
+      {
+        "start": "2017-09-27",
+        "f": "1"
+      }
+    ],
+    "5706": [
+      {
+        "start": null,
+        "f": "1"
+      },
+      {
+        "start": "2017-09-27",
+        "f": "1/10"
+      }
+    ]
+  },
+  "tick_tables": {
+    "_about": "traded yen; each row is [inclusive upper bound, tick]; a traded price above the last bound is refused",
+    "standard": {
+      "rows": [
+        [
+          3000,
+          1
+        ],
+        [
+          5000,
+          5
+        ],
+        [
+          30000,
+          10
+        ]
+      ]
+    },
+    "topix100_phase2": {
+      "in_force": "2014-07-22 to 2015-09-23",
+      "rows": [
+        [
+          1000,
+          0.1
+        ],
+        [
+          5000,
+          0.5
+        ],
+        [
+          10000,
+          1
+        ]
+      ]
+    },
+    "fine": {
+      "in_force": "TOPIX100 from 2015-09-24; TOPIX500 from September 2023 at the latest",
+      "rows": [
+        [
+          1000,
+          0.1
+        ],
+        [
+          3000,
+          0.5
+        ],
+        [
+          10000,
+          1
+        ],
+        [
+          30000,
+          5
+        ]
+      ]
+    }
+  },
+  "dev_table": {
+    "_about": "the table in force during dev; segments as in price_factor",
+    "5711": [
+      {
+        "start": null,
+        "table": "standard"
+      }
+    ],
+    "5706": [
+      {
+        "start": null,
+        "table": "standard"
+      }
+    ],
+    "5713": [
+      {
+        "start": null,
+        "table": "topix100_phase2"
+      },
+      {
+        "start": "2015-09-24",
+        "table": "fine"
+      }
+    ]
+  },
+  "primary_table": {
+    "5706": "fine",
+    "5711": "fine",
+    "5713": "fine"
+  },
+  "flag4_windows": {
+    "_about": "kept rows dated before the date are inside the window",
+    "5711": {
+      "before": "2016-09-28"
+    },
+    "5706": {
+      "before": "2017-09-27"
+    }
+  },
+  "sources": [
+    "JPX, tick sizes for TOPIX100 constituents, Phase III (effective 2015-09-24)",
+    "JPX leaflet, sub-yen tick sizes for TOPIX100 stocks (from 2014-07-22)",
+    "JPX market news of 2021-11-25 (the TOPIX100 table for ETFs from 2021-11-29)",
+    "JPX market news of 2023-09-05 and later (narrow tick sizes applied to TOPIX500 constituents)",
+    "docs/DATA_PROVENANCE.md lines 67 and 70 and docs/replacements/DATA_DICTIONARY.md line 116 (capital-change adjustment; 5706 on the post-split basis)",
+    "Isaiah's cost note of 2026-10-06 (kept outside the repository and the Claude Project): IBKR Japan Tiered (Tier I 0.05%, Tier II 0.04%) plus TSE exchange and clearing fees (about 0.27 bp); SBI 'Zero Revolution' or Rakuten's zero course; IBKR Fixed (0.08%); JPX closing-auction shares and square-root-law evidence on TSE data; day-trade margin at SBI, Rakuten and Matsui (0% interest, 0% lending fee); standard margin at 1.10% a year and special short fees"
+  ]
+}
+```
+>>>>>>>>
+
+--- g.3 PASS3_STATUS edits ---
+Test results (P3-1 lines), the Blinding attestation (P3-1), Deviations (P3-1 d: the JSON's structure; P3-1 g.3: one text edit run with system python3, without the venv and without env -u OFILT_RUN_SEALED; recorded), and the P3-1 Progress row set to done.
+$ git diff --stat
+ PASS3_STATUS.md | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 56 insertions(+), 2 deletions(-)
+
+--- g.4 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-0b (records; pre-flight facts)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-1 (cost model and SESOI)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 53ec437d7b158d8444a5e0d73877ec1a04081d70ab354aba022b70f828b2a0b9
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+?? docs/P3_COST_INPUTS.json
+?? reports/P3_1_sesoi.md
+?? tests/test_p3_1_sesoi.py
+?? tools/p3_1_sesoi.py
+----------------------------------------------------------------------
+Ran 255 tests in 267.724s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+?? docs/P3_COST_INPUTS.json
+?? reports/P3_1_sesoi.md
+?? tests/test_p3_1_sesoi.py
+?? tools/p3_1_sesoi.py
+commit 8aba8df8ed33225071d4451741c2f7ab140ef18c
+checkpoint exit=0
+
+--- g.5 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+8aba8df8ed33225071d4451741c2f7ab140ef18c checkpoint: P3-1 (cost model and SESOI)
+$ git log -1 --format=%B
+checkpoint: P3-1 (cost model and SESOI)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md          |  58 +++++++-
+ docs/P3_COST_INPUTS.json | 175 ++++++++++++++++++++++
+ reports/P3_1_sesoi.md    | 244 +++++++++++++++++++++++++++++++
+ tests/test_p3_1_sesoi.py | 181 +++++++++++++++++++++++
+ tools/p3_1_sesoi.py      | 368 +++++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 1024 insertions(+), 2 deletions(-)
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+P3-0 baseline (read by script from reports/P3_0_report.txt): dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+BLIND_FIT_LOG equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0
+$ git tag -l
+pass1-final
+The five skips (the checkpoint's suite has no -v; the P3-0b module check):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 18.862s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- h. PASS3_STATUS.md Flags and Deviations, final (as committed in 8aba8df), verbatim ---
+<<<<<<<<
+## Flags
+
+- (P3-0, for the supervisor) T3 and DQ1.2: every `walk_forward` call appends one line to a run registry. For synthetic provenance, which DevCalibrator draws carry, the line goes to `<system temp>/ofilt_RUN_REGISTRY_synthetic.jsonl` (registry.py:34, 41-46). It holds the input frame's `data_sha256` (the frame contains `y_sim`), the seed and per-fold row counts, and each call runs `git rev-parse HEAD` and `git status` (registry.py:87-90). In the real run, that is a per-replication write outside DQ1.2's list of outputs.
+- (P3-0, for the supervisor) DQ1.3 static test: importing the analysis modules loads `joblib`, `multiprocessing` and `concurrent.futures` (`ofilt.drift.models` imports `gbm`, which imports sklearn). `registry.py` and `_guards_fallback.py` import `subprocess`. "Imports none of …" can therefore only be tested on the script's own import statements, not on `sys.modules`.
+- (P3-0, for the supervisor) DQ1.3 target pre-flight: the sealed fit's estimation sample also requires `usdjpy_ret`, `eurusd_ret`, `spy_oc` and `copx_oc` to be non-missing (`spec.require_nonmissing` and the feature sources, inference.py:93-98), not only the exclusions, β and `abn_oc`. A strictly target-only count reproduces the sample only if those predictors are never missing where the target and β exist. A count that combines the predictor-missingness mask with the target mask needs a ruling. The calibrator exposes its source-date count as `T`; its row count is reachable only through private attributes.
+- (P3-0, for the supervisor) T3 confirmation structure: `walk_forward` always starts forecasting after the 500th eligible training date (`forecast.min_train_dates`) and has no argument for a later evaluation start; `tools/c7_mc.py` trains its first fold on 500 dates. A dev-length history with evaluation on T_conf dates needs a stated arrangement (`fctests.pair` accepts any row subset applied to both models).
+- (P3-0, for the supervisor) SESOI denominator: no code defines the "partialled overnight USD/JPY" of PLAN §4.5. Its regressors, unit (row or date) and sample need a definition before P3-1.
+- (P3-0, for the supervisor) T6: no routine applies the spec's FX winsorisation bounds (only `Spec.winsor_bounds()`). Huber exists (`inference.fit_huber`, which takes a Design built from a draw). Where a winsorised fit lives needs a decision; `inference.py` is C7-hashed.
+- (P3-0, for the supervisor) T5 data: there is no tick-size, spread or cost code for the miners. The only price-grid tools (`tools/p2_5_tick_1306.py`, `tools/p2_3b_d8_zero_gate.py`) cover the 1306 hedge and read RAW or OUT, both outside Pass 3's scope. Miner price levels in DATA are the PROVENANCE columns `open`, `close` and `prev_close` (target-input prices), so the source of T5's tick sizes and grids needs a decision.
+- (P3-0, for the supervisor) DQ1.5 rehearsal: a populated fingerprint registry needs `io.load_dev` and `targets.add_targets` in the rehearsal process. That means real target contact: β and the constructed targets are computed on the dev panel and registered, never printed. It needs confirming as sanctioned for P3-3.
+- (P3-0, for the supervisor) Pins that line 7 and the AM-07 switch will break, to be listed as P3-6 test-change rows: `test_docs_d3.py:66` (6 lines) and `:69` (every panel hash is the Pass 1 dev hash); `test_docs_d3b.py:41` (6 lines) and `:39` (AM-01..AM-05 only); `test_docs_d2.py:41-43` (`PENDING_COSTS`; "Pass 4" in viability), if the SESOI or viability text changes; and the C7 key, on any spec edit. The byte- or hash-pinned documents (`DECISIONS_P14_onward.md`, `PLAN.md`, `DECISIONS_P58_onward.md`) state the six sealed fits.
+- (P3-0, for the supervisor) DQ1.2 disclosure (step f): the committed B7 and B7b reports hold no per-replication values, only per-cell aggregates. These include per-cell means of the simulated estimates (B7 `mean_b`, B7b `bias`), each one linear functional of the residual vector given the seeds.
+- (P3-0b, for the supervisor) DQ2, price units: the panel's miner prices are adjusted for capital changes and are on the basis after 5706's 10:1 split (ex-date 2026-09-29; DATA_PROVENANCE.md:67, :70; DATA_DICTIONARY.md:116). Read with B3's grids, panel prices therefore differ from the prices traded at the time by a factor: 5711 ×10 before 2016-09-28 (grid 10, a 1-yen tick); 5713 ×2 before 2017-09-27 (2016 grid 0.2, a 0.1-yen tick); 5706 ÷10 from 2017-09-27 (grid 0.1 or 0.5, a 1- or 5-yen tick). A TSE tick-size schedule applies to traded prices, so it cannot be applied to the panel prices as they stand. B4's ratio g / price does not depend on the factor.
+- (P3-0b, for the supervisor) DQ2, B4 as specified uses the finest grid detected in each (ticker, year, period) cell. Where a year spans TSE tick bands, rows in the coarser band have a larger tick than g, and B4 understates it. Example: 5706 in 2018 has 86.32% of its prices on 0.5, but its detected grid is 0.1. The g ≥ 0.99 column catches only cells that are almost entirely on one grid.
+- (P3-0b review, supervisor, 2026-10-06; a routing record, not a decision) The P3-0 and P3-0b flags: the `walk_forward` run-registry write → DQ4, with a DQ1.2 clarification; the static-test imports → a DQ1.3 clarification at P3-2 (the script's own import statements); the target pre-flight → resolved by P3-0b Part A (the four predictors remove no row: 4,192 rows, 1,439 dates); the T3 confirmation structure → DQ4; the SESOI denominator → resolved by D2.1; T6 winsorisation → DQ3 and DQ7 (a new module outside the C7 key); the T5 data source → resolved by D2.4 and D2.5 (the dev panel's open and close, as target-side price statistics); the DQ1.5 rehearsal contact → to be confirmed with P3-3; the pins → DQ5; the step f disclosure → resolved by the P3-0 step f decision (pre-registration carry list); price units and B4's understatement → resolved by D2.4 (the TSE tables applied row by row to traded prices).
+
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review; Isaiah's approval of the computation, D2.9) ---
+2026-10-06T19:48:36Z
+8aba8df8ed33225071d4451741c2f7ab140ef18c
+$ git status --porcelain (between markers)
+<<<
+>>>

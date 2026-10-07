@@ -51,7 +51,7 @@ OUTPUT_KEYS = sorted({
     "rows", "cells", "cell", "task", "b", "replications", "n_dates", "window", "lag", "estimates", "mean_bias", "sd",
     "mean_se", "se_over_sd", "dk_normal", "bootstrap", "calibrated", "reject", "coverage", "tost", "primary", "low",
     "high", "k", "n", "rate", "wilson95", "h3", "own_quantiles", "c_boot", "c_cal", "c_boot_h3", "q95", "q90", "value",
-    "interval", "rank", "rank_interval", "pooled", "estimators", "ols_dk", "huber_dk", "winsorised_ols_dk",
+    "interval", "rank", "rank_interval", "pooled", "estimators", "ols_dk", "huber_dk", "winsorised_ols_dk", "centred_reject",
     "mean_share_downweighted", "mde80", "probit_interpolated", "normal_approx_sd", "normal_approx_mean_se", "t3",
     "c_cw_cal", "cw", "normal", "h1", "crosstab", "h1_method", "cw_method", "both", "h1_only", "cw_only", "neither",
     "walk_forward_calls", "registry_lines", "errors", "error_class", "line", "complete", "aborted", "runtime",
@@ -100,14 +100,9 @@ def _rule_lines() -> dict:
             out.append(lines[i])
         return out
 
-    d43 = one(">   - D4.3 T6.")
-    flag = re.search(r"If an estimator's rate at b = 0 on early-window draws lies outside \[3\.5%, 6\.5%\], the "
-                     r"pre-registration flags that robustness row as unreliable on coarse-grid periods\.", d43)
-    if flag is None:
-        raise ValueError("D4.3 flag sentence not found")
     spec = yaml.safe_load(SPEC_PATH.read_text(encoding="utf-8"))
     return {"D2.6": [one(">   - D2.6 Viability")], "D2.7": [one(">   - D2.7 Claim wording")],
-            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [flag.group(0)],
+            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [one(">   - D4.3b The flag rule.")],
             "D3.2_D3.3_amended": block("> - D3.2 and D3.3 amended", ">   - "),
             "AM-02": [spec["inference"]["size_rule"]]}
 
@@ -191,8 +186,12 @@ def build_config() -> dict:
                                  "over cw_cal_cell (D3.3)"},
             "h3": "dk_normal as for H1; bootstrap at c_boot_h3(0.95), the order statistic of |t*_h3| pooled over "
                   "pooled_cells (D3.5); H3 keeps the normal reference under c_cal",
-            "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c "
-                  "and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference",
+            "t6": "D4.3a: OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; "
+                  "c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw. Per cell and estimator "
+                  "only: the centred rejection rate, the share of draws with |b_hat - b_bar| > z se (z = "
+                  "scipy.stats.norm.ppf(1 - alpha/2); b_bar the cell's mean of b_hat, held in memory only), with "
+                  "its Wilson interval; sd(b_hat), mean se and se/sd; and Huber's mean share downweighted. No mean "
+                  "bias, uncentred rejection rate or coverage",
             "mde80": "calib.mde80 over cells 0, 2, 3, 4 (b = 0, 0.10, 0.25, 0.40) per H1 method; cross-checks "
                      "with sd(b_hat) and mean se pooled over pooled_cells",
             "order_statistics": "calib.order_stat (the ceil(level n)-th smallest) with calib.order_stat_interval"},
@@ -592,11 +591,11 @@ def _run(a, run_tmp: Path, out_dir: Path) -> int:
                     v["hb"][r], v["hse"][r], v["hsh"][r] = ph["estimate"], ph["se"], h.info["share_downweighted"]
                     v["wb"][r], v["wse"][r] = fw["b"], fw["se"]
                 out = cell_head(c, n)
-                out["estimators"] = {
-                    "ols_dk": t6_block(v["ob"], v["ose"], c["b"], z2, C),
-                    "huber_dk": dict(t6_block(v["hb"], v["hse"], c["b"], z2, C),
+                out["estimators"] = {                                   # D4.3a: centred outputs only
+                    "ols_dk": centred_block(v["ob"], v["ose"], z2, C),
+                    "huber_dk": dict(centred_block(v["hb"], v["hse"], z2, C),
                                      mean_share_downweighted=float(np.mean(v["hsh"]))),
-                    "winsorised_ols_dk": t6_block(v["wb"], v["wse"], c["b"], z2, C)}
+                    "winsorised_ols_dk": centred_block(v["wb"], v["wse"], z2, C)}
                 state["cells"].append(out)
                 flush()
                 tot += n
@@ -775,12 +774,16 @@ def method_block(v, b, c95, c90, cfg, cid, C) -> dict:
     return out
 
 
-def t6_block(bhat, se, b, z2, C) -> dict:
+def centred_block(bhat, se, z, C) -> dict:
+    """D4.3a, one T6 estimator: the centred rejection rate (|b_hat - b_bar| > z se, b_bar the mean of b_hat, held here
+    only) with its Wilson interval, sd(b_hat), mean se and se/sd. No mean bias, uncentred rejection or coverage; adding
+    a constant to every b_hat leaves the output unchanged."""
     import numpy as np
-    n = len(bhat)
-    return {"reject": rate(int((np.abs(bhat / se) > z2).sum()), n, C),
-            "coverage": rate(int((np.abs(bhat - b) <= z2 * se).sum()), n, C),
-            "estimates": est_summary(bhat, se, b)}
+    bhat, se = np.asarray(bhat, dtype=float), np.asarray(se, dtype=float)
+    bbar = float(np.mean(bhat))
+    sd = float(np.std(bhat, ddof=1))
+    return {"centred_reject": rate(int((np.abs(bhat - bbar) > z * se).sum()), len(bhat), C),
+            "sd": sd, "mean_se": float(np.mean(se)), "se_over_sd": float(np.mean(se) / sd)}
 
 
 def cell_head(c, n) -> dict:
@@ -812,11 +815,12 @@ def render_md(state: dict) -> str:
     for o in state["cells"]:
         e = o.get("estimates") or {}
         if "estimators" in o:
-            for name, blk in o["estimators"].items():
-                es = blk["estimates"]
-                L.append(f"| {o['cell']} | {o['task']} {name} | {o['b']} | {o['replications']} | {o['window']} | "
-                         f"{_r(blk['reject'])} | - | - | {_f(es['mean_bias'])} | {_f(es['sd'])} | {_f(es['mean_se'])} | "
-                         f"{_f(es['se_over_sd'])} |")
+            for name, blk in o["estimators"].items():                    # D4.3a: centred rejection, sd, se
+                share = "" if "mean_share_downweighted" not in blk else \
+                    f" (share downweighted {_f(blk['mean_share_downweighted'])})"
+                L.append(f"| {o['cell']} | {o['task']} {name}{share} | {o['b']} | {o['replications']} | {o['window']} | "
+                         f"centred {_r(blk['centred_reject'])} | - | - | - | {_f(blk['sd'])} | {_f(blk['mean_se'])} | "
+                         f"{_f(blk['se_over_sd'])} |")
             continue
         L.append(f"| {o['cell']} | {o['task']} | {o['b']} | {o['replications']} | {o['window']} | "
                  f"{_r((o.get('dk_normal') or {}).get('reject'))} | {_r((o.get('bootstrap') or {}).get('reject'))} | "

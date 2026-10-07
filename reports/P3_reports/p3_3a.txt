@@ -1,0 +1,1587 @@
+2026-10-07T04:20:54Z
+1c48d381bb794e65d6532ba915ea782761ba58b2
+=== P3-3a report ===
+--- a.1 Date gate ---
+$ date +%F
+2026-10-07
+--- a.2 State check (read-only) ---
+$ python /tmp/p3_3a_statecheck.py
+HEAD 1c48d381bb794e65d6532ba915ea782761ba58b2 == 1c48d381...: True
+tree clean: True
+tools/p3_sealed_run.py: 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e; equals the listed value: True
+docs/P3_RUN_CONFIG.json: 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals the listed value: True
+BLIND_FIT_LOG: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0; is 0: True
+/tmp/p3_3_rehearsal.log exists and its last line is 'REHEARSAL PASSED': True
+/tmp/p3_3_rehearsal.log: exists True; sha256 5307a283f8b123d61854104d77bed4960413288a153228c7357840ae689cea69
+/tmp/p3_3_rehearsal_1/P3_4_sealed_run.json: exists True; sha256 510d1ea202283a28164ba424c0cba6f5c6cf654f50ec580890721840bd3222e5
+/tmp/p3_3_rehearsal_1/P3_4_sealed_run.md: exists True; sha256 2d5e3043038ce380f4f41c7dbad91b39cbfc0f2e1cd07133f76da9c152c0c69c
+/tmp/p3_3_rehearsal_2/P3_4_sealed_run.json: exists True; sha256 baa711edb1647b4056ec435e69055f99ecaa37251ede9c23e88484bd6b82cb73
+/tmp/p3_3_rehearsal_2/P3_4_sealed_run.md: exists True; sha256 5f03c01fe36a1d3dd00689aa48ad9c9dd63013c55b5fc908b0c00d2bcc4735f8
+/tmp/p3_2e.txt: exists True; sha256 11b26fedd6aebf6a9955368d7ae95f9c78e46591005cce632f9776efa31163d0
+STATE CHECK: True
+exit=0
+$ git tag -l
+pass1-final
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Decisions: hash check before copying ---
+DQ5 bullet spec hash == configuration spec_sha256: True
+DQ5 bullet panel hash == configuration dev_panel_sha256: True
+(information) DQ5 bullet six-line prefix hash == the P3-0 BLIND_FIT_LOG baseline: True
+exit=0
+b.1 Progress: P3-2d status cell now 'done; accepted by Isaiah 2026-10-07'; P3-3a row added. b.2 Next action replaced.
+b.3 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-2d accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `1c48d381bb794e65d6532ba915ea782761ba58b2`, including P3-2d's recorded deviations: the smoke rehearsal in a scratch clone; R2's scope; the structural check's draw length and private row bounds; the rehearsal script's summary line; and its missing shebang.
+>   - The structural check (R3) passed every boolean: `DevCalibrator` built on the real frame's structure, with synthetic targets, gave T = 1,439 and rows = 4,192.
+> - P3-2e (read-only; 2026-10-06), the last part of the real path not exercised before.
+>   - `_design_core` stores its `provenance` argument in the returned `Design` and nothing else (`inference.py:85`, `:136-138`). It calls no function of `blind`, `io`, `registry` or the guard, and its behaviour does not depend on provenance. `inference.py` and `sim.py` are unchanged since `pass1-final`.
+>   - `_sealed_blind_fit` refuses a wrong provenance, or a missing `OFILT_RUN_SEALED=1`, before it writes its log line, and it writes the line before the fit (`sim.py:157-163`).
+>   - Every way `_design_core` can fail after that line (a forbidden target, missing columns, an empty sample, non-finite values, a rank-deficient design) is ruled out on the real path. The structural check built the same columns, rows and design matrix, and P3-0b found every required value finite.
+> - The rehearsal (Isaiah's Terminal, 2026-10-07T00:12:19Z to 04:05:04Z, HEAD `1c48d38`): REHEARSAL PASSED (DQ1.5).
+>   - Two full `--rehearsal` runs completed with no error. Their outputs are identical apart from runtime.
+>   - BLIND_FIT_LOG, the configuration, RUN_REGISTRY.jsonl, the tool, `calib.py` and the usual temporary run registry were all unchanged, and the tree stayed clean.
+>   - Runtimes were 6,955.0 s and 7,004.9 s. **The expected duration of the real run is about 2 hours** (1.95 h), stated before the sanction as DQ1.5 requires.
+> - DQ5 (Isaiah, 2026-10-07, on the supervisor's recommendation): the test changes that the real line 7 requires.
+>   - A post-run checkpoint, the first commit after the real run, commits BLIND_FIT_LOG's line 7, `reports/P3_4_sealed_run.json` and `reports/P3_4_sealed_run.md`. It also applies, unchanged, the line-7 test changes in `docs/P3_DQ5_line7.patch`, which the supervisor reviews before the sanction.
+>   - Lines 1 to 6 stay pinned as Pass 1's history: the six-line prefix stays byte-identical, with SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`. Line 7 is pinned by its fields: provenance `dev_real`; panel hash `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`; spec hash `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9` (the configuration's `spec_sha256`); 5,124 input rows; and a caller naming `tools/p3_sealed_run.py`. Line 7's time and caller text cannot be known in advance, so no whole-file hash of the seven-line log is pinned.
+>   - The spec amendments (AM-07 onward) and their test changes come later, in the switch (DQ6).
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+| P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | in progress | P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-3b: the DQ6 amendment drafts (from the P3-3a listing), then P3-4, Isaiah's sanction.
+
+Records rule: lines added beginning with a reserved prefix: 0
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+
+--- c. Read-only listing for DQ6 ---
+c.1 spec/analysis_spec_dev_v1.yaml, in full (cat -n; SHA-256 0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9):
+<<<<<<<<
+     1	spec_id: drift-dev-v1
+     2	status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)
+     3	data:
+     4	  dev_panel_sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
+     5	  events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
+     6	  events_boj_sha256: 8950b3c7add8b406727ed53b8e822153d67e343bfb65dc8f323328b0f372aa99
+     7	  sealed_panel_sha256: b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1   # AM-04: Pass 2 rebuild (60 columns); supersedes 9c18a6c1… (P10)
+     8	sample:
+     9	  inference_exclude_rows_if: [earn_flag, news_flag]          # P07: days D and D+1
+    10	  forecast_eval_exclusion: {tanshin: [D, D+1], standalone_news: [D+1]}   # unscheduled news on day D is not knowable pre-open
+    11	  require_nonmissing: [usdjpy_ret, eurusd_ret, spy_oc, copx_oc, beta]
+    12	target:
+    13	  primary: abnormal_oc                 # y_oc - beta_{i,t-1} * hedge_oc
+    14	  hedge_oc_column: y_1306_oc           # AM-03 (P18): 1306 open->close; gap pair ao_1306_gap_adj
+    15	  beta: {method: expanding, min_periods: 250, lag_days: 1, estimate_on: non_excluded_rows, continue_across_samples: true}
+    16	  secondary: raw_oc
+    17	  decomposition: "b_raw ≈ mean_beta * b_mkt + b_abn; b_mkt = hedge_oc on the same design (time-series NW, same lag rule)"
+    18	model:
+    19	  fixed_effects: ticker               # no global intercept
+    20	  fx_block_common: [usdjpy_ret, eurusd_ret]
+    21	  controls_ticker_specific: [spy_oc, copx_oc]
+    22	  h1_parameter: usdjpy_ret
+    23	  h3_parameter: eurusd_ret
+    24	inference:
+    25	  estimator: pooled_ols
+    26	  se: driscoll_kraay
+    27	  kernel: bartlett
+    28	  lag_rule: "floor(4*(T/100)**(2/9)), T = unique dates in estimation sample"
+    29	  small_sample_correction: none
+    30	  reference: normal
+    31	  test: two_sided
+    32	  alpha: 0.05
+    33	  size_rule: "Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_conf (confirmation trading days minus dates on which all three tickers are excluded; 1013 per ofilt.drift.calendar) must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag."
+    34	fraction_unpriced:
+    35	  f: "b / delta_cc, delta_cc = loading of (gap_adj + oc) on same design; identity delta_cc = delta_gap + b"
+    36	  ci: [delta_method, fieller]
+    37	  status: "confirmatory for 2022 only; descriptive for 2023-2026"
+    38	robustness:
+    39	  huber: {c: 1.345, scale: "1.4826*MAD of OLS residuals"}
+    40	  winsorize_fx: {cols: [usdjpy_ret, eurusd_ret], q: [0.005, 0.995], values: {usdjpy_ret: [-1.6482588843e-02, 1.4399911615e-02], eurusd_ret: [-1.6324806371e-02, 1.5438152188e-02]}}
+    41	  influence_curve: {unit: date, k_max: 20, ranking: "full-sample |exact date-deletion change in b|"}
+    42	  others: [beta_rolling_250, beta_rolling_500, raw_target, copx_to_fcx, ewj_yen_denominated, xau_control, nikkei_proxy_p42, mechanism_session_fx_gotobi, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]
+    43	secondary_family_holm:      # each = primary design + one tested interaction (+ its moderator main effect, AM-01)
+    44	  fx_x_longwindow: "long_window + usdjpy_ret * long_window; long_window = 1[window_hours > 18]; test the interaction"
+    45	  fx_x_jumpshare: "jumpshare + usdjpy_ret * jumpshare; jumpshare = clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1); test the interaction"
+    46	  fx_x_highrv: "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction"
+    47	  fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
+    48	  rv_per_bar_dev_median: 1.2950114214e-08
+    49	equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
+    50	forecast:
+    51	  scheme: expanding
+    52	  min_train_dates: 500
+    53	  refit_every_dates: 21
+    54	  pooled_across_tickers: true
+    55	  scaling: in_fold_only
+    56	  test_aggregation: "mean across tickers within date, then time-series NW with lag_rule"
+    57	  models:
+    58	    M0: zero
+    59	    M1: prevailing_mean_per_ticker
+    60	    M2: "FE + ticker-specific spy_oc, copx_oc + eurusd_ret"
+    61	    M3: "M2 + usdjpy_ret"
+    62	    M4: "M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)"
+    63	    M5: {type: ridge, design: M4, fe: "unpenalized via in-fold within-ticker demeaning", alpha_grid: "n_train * [1e-4,1e-3,1e-2,1e-1,1]", tune: "last 250 dates of training fold"}
+    64	    M7: {type: HistGradientBoostingRegressor, features: "PRE_OPEN allowlist + ticker one-hot + N(0,1) noise column", grid: {max_depth: [2,3], max_iter: [50,100,200,400]}, fixed: {learning_rate: 0.03, min_samples_leaf: 100, l2_regularization: 1.0, early_stopping: false}, tune: "last 250 dates of training fold", status: exploratory}
+    65	  comparisons:
+    66	    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}
+    67	    secondary: [[clark_west, M4, M3], [clark_west, M5, M3], [clark_west, M7, M1], [diebold_mariano, M7, M1]]
+    68	    report_all: [oos_r2_vs_M0, oos_r2_vs_M1, pesaran_timmermann_with_training_base_rate]
+    69	  importance: {method: permutation, unit: date, repeats: 20, calibration: noise_column}
+    70	seeds: {global: 20261001}
+>>>>>>>>
+
+c.2 ofilt/drift/spec.py, in full (cat -n): the constants (SIZE_RULE line 45; PENDING line 31), the validation of inference (lines 170-176, 201), equivalence (206-209) and the amendment pins (AM-01: 198-200; AM-02: 201), and every accessor (Spec class, 234-359) that the sealed-run tool, calib.py or the inference code read (alpha 329-331; dk_lag 82-87 and 333-335; huber_c 337-339; winsor_bounds 345-347; sesoi 352-356; value 255-261, used by inference.tost_result for equivalence.alpha; h1_parameter, h3_parameter, fx_block, controls, inference_exclusion_flags, require_nonmissing, beta, hedge_oc_column, seed, sha256):
+<<<<<<<<
+     1	"""Load, validate and access the drift analysis spec (spec/analysis_spec_dev_v1.yaml).
+     2	
+     3	Design rules
+     4	------------
+     5	* The YAML is the single source of truth for every methodological choice.
+     6	  Code implements those choices; where a spec string *names* a rule the code
+     7	  implements (lag rule, estimator, kernel, ...), validation pins the string to
+     8	  the implemented value so that an edit to the YAML cannot silently diverge
+     9	  from the code. Fail closed: unknown top-level keys are rejected.
+    10	* ``TO_FILL`` values are permitted in the file during Stage A but are refused
+    11	  at analysis time: every accessor that would return one raises
+    12	  ``SpecIncompleteError``.
+    13	* ``PENDING_COSTS`` (equivalence SESOI) is refused by ``sesoi()`` with
+    14	  ``SpecPendingError``; the equivalence test is decided in Pass 4.
+    15	"""
+    16	from __future__ import annotations
+    17	
+    18	import hashlib
+    19	import math
+    20	import re
+    21	from dataclasses import dataclass
+    22	from pathlib import Path
+    23	from typing import Any
+    24	
+    25	import yaml
+    26	
+    27	REPO_ROOT = Path(__file__).resolve().parents[2]
+    28	DEFAULT_SPEC_PATH = REPO_ROOT / "spec" / "analysis_spec_dev_v1.yaml"
+    29	
+    30	UNFILLED = "TO_FILL"
+    31	PENDING = "PENDING_COSTS"
+    32	CANONICAL_LAG_RULE = "floor(4*(T/100)**(2/9)), T = unique dates in estimation sample"
+    33	TOP_LEVEL_KEYS = frozenset({
+    34	    "spec_id", "status", "data", "sample", "target", "model", "inference",
+    35	    "fraction_unpriced", "robustness", "secondary_family_holm", "equivalence",
+    36	    "forecast", "seeds",
+    37	})
+    38	REQUIRED_MODELS = frozenset({"M0", "M1", "M2", "M3", "M4", "M5", "M7"})
+    39	SECONDARY_DEFS = {  # AM-01 (2026-10-01): moderator main effects added; tested term = interaction
+    40	    "fx_x_longwindow": "long_window + usdjpy_ret * long_window; long_window = 1[window_hours > 18]; test the interaction",
+    41	    "fx_x_jumpshare": "jumpshare + usdjpy_ret * jumpshare; jumpshare = clip((usdjpy_rv - usdjpy_bv)/usdjpy_rv, 0, 1); test the interaction",
+    42	    "fx_x_highrv": "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction",
+    43	    "fx_asymmetry": "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes",
+    44	}
+    45	SIZE_RULE = 'Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_conf (confirmation trading days minus dates on which all three tickers are excluded; 1013 per ofilt.drift.calendar) must be in [3.5%, 6.5%]; else primary inference = stationary block bootstrap (mean block 5), decided before tag.'  # AM-02 (2026-10-01)
+    46	M4_DEF = ("M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare"
+    47	          " + e*1[rv_per_bar > expanding past median] + min(e,0)")
+    48	FORBIDDEN_MODELS = frozenset({"M6"})  # time-varying Kalman model: DROPPED
+    49	_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+    50	_DAY_TOKEN = re.compile(r"^D(?:\+(\d+))?$")
+    51	
+    52	
+    53	class SpecError(ValueError):
+    54	    """The spec file is malformed or disagrees with what the code implements."""
+    55	
+    56	
+    57	class SpecIncompleteError(SpecError):
+    58	    """A TO_FILL value was requested at analysis time."""
+    59	
+    60	
+    61	class SpecPendingError(SpecError):
+    62	    """A value deliberately deferred to a later pass (e.g. PENDING_COSTS) was requested."""
+    63	
+    64	
+    65	@dataclass(frozen=True)
+    66	class BetaSpec:
+    67	    method: str            # 'expanding' | 'rolling'
+    68	    min_periods: int
+    69	    lag_days: int
+    70	    estimate_on: str       # 'non_excluded_rows' | 'all_rows'
+    71	    continue_across_samples: bool
+    72	
+    73	
+    74	@dataclass(frozen=True)
+    75	class ForecastExclusion:
+    76	    """Day offsets (relative to D = first trading day >= release date) excluded
+    77	    from forecast *evaluation*, by event category."""
+    78	    tanshin: tuple[int, ...]
+    79	    standalone_news: tuple[int, ...]
+    80	
+    81	
+    82	def dk_lag(T: int) -> int:
+    83	    """Bartlett bandwidth: floor(4*(T/100)**(2/9)), T = unique dates in the
+    84	    estimation sample (spec inference.lag_rule)."""
+    85	    if not isinstance(T, (int,)) or isinstance(T, bool) or T < 1:
+    86	        raise ValueError(f"T must be a positive int, got {T!r}")
+    87	    return int(math.floor(4.0 * (T / 100.0) ** (2.0 / 9.0)))
+    88	
+    89	
+    90	def _get(d: dict, path: str) -> Any:
+    91	    cur: Any = d
+    92	    for part in path.split("."):
+    93	        if not isinstance(cur, dict) or part not in cur:
+    94	            raise SpecError(f"missing spec field: {path}")
+    95	        cur = cur[part]
+    96	    return cur
+    97	
+    98	
+    99	def _walk(x: Any, prefix: str = ""):
+   100	    if isinstance(x, dict):
+   101	        for k, v in x.items():
+   102	            yield from _walk(v, f"{prefix}.{k}" if prefix else str(k))
+   103	    elif isinstance(x, list):
+   104	        for i, v in enumerate(x):
+   105	            yield from _walk(v, f"{prefix}[{i}]")
+   106	    else:
+   107	        yield prefix, x
+   108	
+   109	
+   110	def _require(cond: bool, msg: str) -> None:
+   111	    if not cond:
+   112	        raise SpecError(msg)
+   113	
+   114	
+   115	def _parse_day_tokens(tokens: Any, where: str) -> tuple[int, ...]:
+   116	    _require(isinstance(tokens, list) and len(tokens) > 0, f"{where} must be a non-empty list")
+   117	    out = []
+   118	    for t in tokens:
+   119	        m = _DAY_TOKEN.match(str(t))
+   120	        _require(m is not None, f"{where}: bad day token {t!r} (expected D or D+k)")
+   121	        out.append(int(m.group(1) or 0))
+   122	    _require(len(set(out)) == len(out), f"{where}: duplicate offsets")
+   123	    return tuple(sorted(out))
+   124	
+   125	
+   126	def validate(d: dict) -> None:
+   127	    """Structural and semantic validation. Raises SpecError on any problem."""
+   128	    _require(isinstance(d, dict), "spec must be a mapping")
+   129	    keys = set(d)
+   130	    _require(keys == TOP_LEVEL_KEYS,
+   131	             f"top-level keys mismatch: missing={sorted(TOP_LEVEL_KEYS - keys)} extra={sorted(keys - TOP_LEVEL_KEYS)}")
+   132	    _require(d["spec_id"] == "drift-dev-v1", f"unexpected spec_id {d['spec_id']!r}")
+   133	    _require(d["status"] in ("DRAFT", "FROZEN"), f"status must be DRAFT or FROZEN, got {d['status']!r}")
+   134	
+   135	    for k in ("dev_panel_sha256", "events_firm_sha256", "events_boj_sha256", "sealed_panel_sha256"):
+   136	        v = _get(d, f"data.{k}")
+   137	        _require(isinstance(v, str) and _HEX64.match(v) is not None, f"data.{k} must be 64 lowercase hex")
+   138	
+   139	    s = d["sample"]
+   140	    _require(isinstance(s["inference_exclude_rows_if"], list) and all(isinstance(c, str) for c in s["inference_exclude_rows_if"]),
+   141	             "sample.inference_exclude_rows_if must be a list of column names")
+   142	    fe = s["forecast_eval_exclusion"]
+   143	    _require(isinstance(fe, dict) and set(fe) == {"tanshin", "standalone_news"},
+   144	             "sample.forecast_eval_exclusion must have exactly keys tanshin, standalone_news")
+   145	    _parse_day_tokens(fe["tanshin"], "forecast_eval_exclusion.tanshin")
+   146	    _parse_day_tokens(fe["standalone_news"], "forecast_eval_exclusion.standalone_news")
+   147	    _require("beta" in s["require_nonmissing"], "require_nonmissing must include beta")
+   148	
+   149	    t = d["target"]
+   150	    _require(t["primary"] == "abnormal_oc", "target.primary must be abnormal_oc")
+   151	    _require(t["secondary"] == "raw_oc", "target.secondary must be raw_oc")
+   152	    _require(isinstance(t["hedge_oc_column"], str), "target.hedge_oc_column must be a column name")
+   153	    b = t["beta"]
+   154	    _require(b.get("method") in ("expanding", "rolling"), "target.beta.method must be expanding|rolling")
+   155	    _require(isinstance(b.get("min_periods"), int) and b["min_periods"] > 1, "target.beta.min_periods must be int > 1")
+   156	    _require(isinstance(b.get("lag_days"), int) and b["lag_days"] >= 1, "target.beta.lag_days must be int >= 1 (past-only)")
+   157	    _require(b.get("estimate_on") in ("non_excluded_rows", "all_rows"), "target.beta.estimate_on invalid")
+   158	    _require(isinstance(b.get("continue_across_samples"), bool), "target.beta.continue_across_samples must be bool")
+   159	
+   160	    m = d["model"]
+   161	    _require(m["fixed_effects"] == "ticker", "model.fixed_effects must be ticker")
+   162	    _require(isinstance(m["fx_block_common"], list) and len(m["fx_block_common"]) == 2, "fx_block_common must list 2 columns")
+   163	    _require(m["h1_parameter"] in m["fx_block_common"], "h1_parameter must be in fx_block_common")
+   164	    _require(m["h3_parameter"] in m["fx_block_common"], "h3_parameter must be in fx_block_common")
+   165	    _require(m["h1_parameter"] != m["h3_parameter"], "h1 and h3 parameters must differ")
+   166	    _require(isinstance(m["controls_ticker_specific"], list) and len(m["controls_ticker_specific"]) >= 1,
+   167	             "controls_ticker_specific must be a non-empty list")
+   168	    _require(not (set(m["controls_ticker_specific"]) & set(m["fx_block_common"])), "controls overlap the FX block")
+   169	
+   170	    inf = d["inference"]
+   171	    pinned = {"estimator": "pooled_ols", "se": "driscoll_kraay", "kernel": "bartlett",
+   172	              "lag_rule": CANONICAL_LAG_RULE, "small_sample_correction": "none",
+   173	              "reference": "normal", "test": "two_sided"}
+   174	    for k, v in pinned.items():
+   175	        _require(inf.get(k) == v, f"inference.{k} = {inf.get(k)!r} is not what the code implements ({v!r})")
+   176	    _require(isinstance(inf["alpha"], float) and 0 < inf["alpha"] < 1, "inference.alpha must be in (0,1)")
+   177	
+   178	    fu = d["fraction_unpriced"]
+   179	    _require(fu["ci"] == ["delta_method", "fieller"], "fraction_unpriced.ci must be [delta_method, fieller]")
+   180	
+   181	    r = d["robustness"]
+   182	    _require(isinstance(r["huber"]["c"], float) and r["huber"]["c"] > 0, "robustness.huber.c must be > 0")
+   183	    w = r["winsorize_fx"]
+   184	    q = w["q"]
+   185	    _require(isinstance(q, list) and len(q) == 2 and 0 < q[0] < q[1] < 1, "winsorize_fx.q must be [lo, hi] in (0,1)")
+   186	    if w["values"] != UNFILLED:
+   187	        v = w["values"]
+   188	        _require(isinstance(v, dict) and set(v) == set(w["cols"]), "winsorize_fx.values must map each col")
+   189	        for c, lohi in v.items():
+   190	            _require(isinstance(lohi, list) and len(lohi) == 2 and all(isinstance(z, float) for z in lohi)
+   191	                     and lohi[0] < lohi[1], f"winsorize_fx.values[{c}] must be [lo, hi] floats, lo < hi")
+   192	    ic = r["influence_curve"]
+   193	    _require(ic["unit"] == "date" and isinstance(ic["k_max"], int) and ic["k_max"] >= 1, "influence_curve invalid")
+   194	
+   195	    sf = d["secondary_family_holm"]
+   196	    _require(set(sf) == {"fx_x_longwindow", "fx_x_jumpshare", "fx_x_highrv", "fx_asymmetry", "rv_per_bar_dev_median"},
+   197	             "secondary_family_holm keys mismatch")
+   198	    for k, v in SECONDARY_DEFS.items():  # AM-01: the spec text must match what build_design builds
+   199	        _require(sf[k] == v, f"secondary_family_holm.{k} must be {v!r} (implemented design, AM-01)")
+   200	    _require(d["forecast"]["models"]["M4"] == M4_DEF, f"forecast.models.M4 must be {M4_DEF!r} (AM-01)")
+   201	    _require(d["inference"]["size_rule"] == SIZE_RULE, f"inference.size_rule must be {SIZE_RULE!r} (AM-02)")
+   202	    if sf["rv_per_bar_dev_median"] != UNFILLED:
+   203	        v = sf["rv_per_bar_dev_median"]
+   204	        _require(isinstance(v, float) and v > 0, "rv_per_bar_dev_median must be a positive float")
+   205	
+   206	    eq = d["equivalence"]
+   207	    _require(eq["test"] == "TOST", "equivalence.test must be TOST")
+   208	    _require(eq["sesoi"] == PENDING or (isinstance(eq["sesoi"], float) and eq["sesoi"] > 0),
+   209	             "equivalence.sesoi must be PENDING_COSTS or a positive float")
+   210	
+   211	    f = d["forecast"]
+   212	    _require(f["scheme"] == "expanding", "forecast.scheme must be expanding")
+   213	    _require(isinstance(f["min_train_dates"], int) and f["min_train_dates"] > 0, "min_train_dates must be int > 0")
+   214	    _require(isinstance(f["refit_every_dates"], int) and f["refit_every_dates"] > 0, "refit_every_dates must be int > 0")
+   215	    _require(f["pooled_across_tickers"] is True, "forecast.pooled_across_tickers must be true")
+   216	    _require(f["scaling"] == "in_fold_only", "forecast.scaling must be in_fold_only")
+   217	    models = set(f["models"])
+   218	    _require(not (models & FORBIDDEN_MODELS), "M6 (time-varying Kalman) is DROPPED and must not appear")
+   219	    _require(models == REQUIRED_MODELS, f"forecast.models must be exactly {sorted(REQUIRED_MODELS)}")
+   220	    m7 = f["models"]["M7"]
+   221	    _require(m7["fixed"]["early_stopping"] is False, "M7 early_stopping must be explicitly false")
+   222	    pf = f["comparisons"]["primary_forecast"]
+   223	    _require(pf == {"test": "clark_west", "unrestricted": "M3", "restricted": "M2", "sided": "one"},
+   224	             "primary forecast comparison must be one-sided Clark-West M3 vs M2")
+   225	    for comp in f["comparisons"]["secondary"]:
+   226	        _require(isinstance(comp, list) and len(comp) == 3 and comp[0] in ("clark_west", "diebold_mariano")
+   227	                 and comp[1] in models and comp[2] in models, f"bad secondary comparison {comp!r}")
+   228	    imp = f["importance"]
+   229	    _require(imp["method"] == "permutation" and imp["unit"] == "date" and imp["calibration"] == "noise_column",
+   230	             "importance must be date-unit permutation calibrated to a noise column")
+   231	    _require(isinstance(d["seeds"].get("global"), int), "seeds.global must be int")
+   232	
+   233	
+   234	class Spec:
+   235	    """Validated, read-only view of the analysis spec."""
+   236	
+   237	    def __init__(self, raw: dict, path: Path, sha256: str):
+   238	        validate(raw)
+   239	        self._raw = raw
+   240	        self.path = path
+   241	        self.sha256 = sha256
+   242	
+   243	    @classmethod
+   244	    def load(cls, path: str | Path | None = None) -> "Spec":
+   245	        p = Path(path) if path is not None else DEFAULT_SPEC_PATH
+   246	        data = p.read_bytes()
+   247	        raw = yaml.safe_load(data.decode("utf-8"))
+   248	        return cls(raw, p, hashlib.sha256(data).hexdigest())
+   249	
+   250	    # ---------------------------------------------------------- generic
+   251	    def raw(self, path: str) -> Any:
+   252	        """Value at a dotted path, with no TO_FILL check (for validation/filling only)."""
+   253	        return _get(self._raw, path)
+   254	
+   255	    def value(self, path: str) -> Any:
+   256	        """Value at a dotted path; refuses TO_FILL anywhere inside it."""
+   257	        v = _get(self._raw, path)
+   258	        bad = [p for p, x in _walk(v, path) if x == UNFILLED]
+   259	        if bad:
+   260	            raise SpecIncompleteError(f"spec field(s) still TO_FILL at analysis time: {bad}")
+   261	        return v
+   262	
+   263	    def unfilled(self) -> list[str]:
+   264	        return [p for p, x in _walk(self._raw) if x == UNFILLED]
+   265	
+   266	    def assert_analysis_ready(self) -> None:
+   267	        u = self.unfilled()
+   268	        if u:
+   269	            raise SpecIncompleteError(f"spec not ready for analysis; TO_FILL remains at {u}")
+   270	
+   271	    # ---------------------------------------------------------- typed accessors
+   272	    @property
+   273	    def spec_id(self) -> str:
+   274	        return self._raw["spec_id"]
+   275	
+   276	    @property
+   277	    def status(self) -> str:
+   278	        return self._raw["status"]
+   279	
+   280	    @property
+   281	    def seed(self) -> int:
+   282	        return int(self._raw["seeds"]["global"])
+   283	
+   284	    def data_hash(self, which: str) -> str:
+   285	        """which in {dev_panel, events_firm, events_boj, sealed_panel}."""
+   286	        return self.value(f"data.{which}_sha256")
+   287	
+   288	    @property
+   289	    def inference_exclusion_flags(self) -> tuple[str, ...]:
+   290	        return tuple(self.value("sample.inference_exclude_rows_if"))
+   291	
+   292	    @property
+   293	    def forecast_eval_exclusion(self) -> ForecastExclusion:
+   294	        fe = self.value("sample.forecast_eval_exclusion")
+   295	        return ForecastExclusion(
+   296	            tanshin=_parse_day_tokens(fe["tanshin"], "tanshin"),
+   297	            standalone_news=_parse_day_tokens(fe["standalone_news"], "standalone_news"))
+   298	
+   299	    @property
+   300	    def require_nonmissing(self) -> tuple[str, ...]:
+   301	        return tuple(self.value("sample.require_nonmissing"))
+   302	
+   303	    @property
+   304	    def hedge_oc_column(self) -> str:
+   305	        return self.value("target.hedge_oc_column")
+   306	
+   307	    @property
+   308	    def beta(self) -> BetaSpec:
+   309	        b = self.value("target.beta")
+   310	        return BetaSpec(b["method"], int(b["min_periods"]), int(b["lag_days"]),
+   311	                        b["estimate_on"], bool(b["continue_across_samples"]))
+   312	
+   313	    @property
+   314	    def fx_block(self) -> tuple[str, ...]:
+   315	        return tuple(self.value("model.fx_block_common"))
+   316	
+   317	    @property
+   318	    def controls(self) -> tuple[str, ...]:
+   319	        return tuple(self.value("model.controls_ticker_specific"))
+   320	
+   321	    @property
+   322	    def h1_parameter(self) -> str:
+   323	        return self.value("model.h1_parameter")
+   324	
+   325	    @property
+   326	    def h3_parameter(self) -> str:
+   327	        return self.value("model.h3_parameter")
+   328	
+   329	    @property
+   330	    def alpha(self) -> float:
+   331	        return float(self.value("inference.alpha"))
+   332	
+   333	    @staticmethod
+   334	    def dk_lag(T: int) -> int:
+   335	        return dk_lag(T)
+   336	
+   337	    @property
+   338	    def huber_c(self) -> float:
+   339	        return float(self.value("robustness.huber.c"))
+   340	
+   341	    @property
+   342	    def influence_k_max(self) -> int:
+   343	        return int(self.value("robustness.influence_curve.k_max"))
+   344	
+   345	    def winsor_bounds(self) -> dict[str, tuple[float, float]]:
+   346	        v = self.value("robustness.winsorize_fx.values")  # raises if TO_FILL
+   347	        return {c: (float(lo), float(hi)) for c, (lo, hi) in v.items()}
+   348	
+   349	    def rv_per_bar_dev_median(self) -> float:
+   350	        return float(self.value("secondary_family_holm.rv_per_bar_dev_median"))
+   351	
+   352	    def sesoi(self) -> float:
+   353	        v = self.value("equivalence.sesoi")
+   354	        if v == PENDING:
+   355	            raise SpecPendingError("equivalence.sesoi is PENDING_COSTS; TOST viability is decided in Pass 4")
+   356	        return float(v)
+   357	
+   358	    def forecast(self, key: str) -> Any:
+   359	        return self.value(f"forecast.{key}")
+>>>>>>>>
+
+c.3 Test lines that pin the spec's content or amendment list, PENDING_COSTS and the viability text, or the C7 key's spec hash (each block: the pinned lines with ten lines of context; cat -n):
+  [tests/test_docs_d2.py, lines 31-55]
+    31	                         {"usdjpy_ret": [-1.6482588843e-02, 1.4399911615e-02],
+    32	                          "eurusd_ret": [-1.6324806371e-02, 1.5438152188e-02]})
+    33	        self.assertEqual((s.value("robustness.influence_curve.unit"), s.value("robustness.influence_curve.k_max")),
+    34	                         ("date", 20))
+    35	        self.assertTrue(callable(I.fit_huber) and callable(I.influence_curve))
+    36	        for crisis in ("2020-03", "2024-08-01", "2025-04-02", "crisis"):            # named windows removed
+    37	            self.assertNotIn(crisis, str(s.value("robustness")))
+    38	
+    39	    def test_p23_tost_pending_costs(self):
+    40	        s = Spec.load()
+    41	        self.assertEqual({k: s.value(f"equivalence.{k}") for k in ("test", "alpha", "sesoi")},
+    42	                         {"test": "TOST", "alpha": 0.05, "sesoi": "PENDING_COSTS"})
+    43	        self.assertIn("Pass 4", s.value("equivalence.viability"))
+    44	        with self.assertRaises(SpecPendingError):
+    45	            s.sesoi()
+    46	
+    47	    def test_p24_fraction_unpriced(self):
+    48	        s = Spec.load()
+    49	        self.assertIn("delta_cc = delta_gap + b", s.value("fraction_unpriced.f"))
+    50	        self.assertEqual(s.value("fraction_unpriced.ci"), ["delta_method", "fieller"])
+    51	        status = str(s.value("fraction_unpriced.status"))
+    52	        self.assertIn("2022", status)
+    53	        self.assertTrue(callable(I.fit_joint))
+    54	
+    55	    def test_p25_secondary_family(self):
+  [tests/test_docs_d3b.py, lines 25-47]
+    25	                                           B.CONFIRM_REAL: ("spec-dev-v1", "prereg-v1")})
+    26	        self.assertEqual(io.CONFIRM_TAG, "prereg-v1")                          # load_confirm gate (P29)
+    27	        for t in TAGS:
+    28	            self.assertFalse(B._tag_ok(t))                                      # neither exists in Pass 1
+    29	        naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
+    30	                        if any(t in p.read_text() for t in TAGS))
+    31	        self.assertEqual(naming, ["ofilt/drift/blind.py", "ofilt/drift/io.py"])  # the only unblinding events
+    32	
+    33	    def test_lock_amendments_and_nothing_real_before_the_tag(self):
+    34	        s = Spec.load()
+    35	        self.assertEqual(s.status, "DRAFT")
+    36	        self.assertIn("FROZEN only when Isaiah tags spec-dev-v1", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
+    37	        self.assertIn("decided before tag", SIZE_RULE)                          # = before spec-dev-v1 (P36)
+    38	        heads = re.findall(r"^## (AM-\d\d) ", (ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(), re.M)
+    39	        self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05"])   # AM-03, AM-04, AM-05 (row 27)
+    40	        log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+    41	        self.assertEqual(len(log), 6)                                           # only the sealed fits (P29)
+    42	        self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+    43	
+    44	
+    45	if __name__ == "__main__":
+    46	    unittest.main()
+  [tests/test_validation_c7.py, lines 31-54]
+    31	            out=["reports/mc.json", "reports/h1.json"], partial="reports/partial.json")
+    32	
+    33	
+    34	def load_report():
+    35	    return json.loads((ROOT / C.FULL["out"][0]).read_text()), json.loads((ROOT / C.FULL["out"][1]).read_text())
+    36	
+    37	
+    38	class TestC7Report(unittest.TestCase):
+    39	    def test_bands_consistency_and_staleness(self):
+    40	        mc, h1 = load_report()
+    41	        self.assertEqual(mc["key"]["code"], C.code_hashes(),
+    42	                         "C7 report is STALE: code changed since the slow tier ran; rerun tools/c7_mc.py")
+    43	        spec = Spec.load()
+    44	        self.assertEqual(mc["key"], C.config_key(C.FULL, spec))
+    45	        state = dict(key=mc["key"], reps=mc["reps"], runtime_s=mc["runtime_s"])
+    46	        mc2, h12 = C.summarise(state)
+    47	        self.assertEqual(json.loads(json.dumps(mc2)), mc)                    # summary == its own reps
+    48	        self.assertEqual(json.loads(json.dumps(h12)), h1)
+    49	        for name, b, n in C.FULL["cells"]:
+    50	            reps = mc["reps"][name]
+    51	            self.assertEqual(len(reps), n)
+    52	            self.assertEqual([r["seed"] for r in reps],
+    53	                             [spec.seed + C.FULL["seed_offset"] + 100_000 * c + r
+    54	                              for c, (nm, _, _) in enumerate(C.FULL["cells"]) if nm == name for r in range(n)])
+  [tests/test_spec.py, lines 22-111]
+    22	    mutate(d)
+    23	    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False, encoding="utf-8") as fh:
+    24	        yaml.safe_dump(d, fh, allow_unicode=True, sort_keys=False)
+    25	    return S.Spec.load(fh.name)
+    26	
+    27	
+    28	class TestSpecLoad(unittest.TestCase):
+    29	    def test_default_spec_loads(self):
+    30	        sp = S.Spec.load()
+    31	        self.assertEqual(sp.spec_id, "drift-dev-v1")
+    32	        self.assertEqual(sp.status, "DRAFT")
+    33	        self.assertEqual(len(sp.sha256), 64)
+    34	        self.assertEqual(sp.data_hash("dev_panel"),
+    35	                         "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68")   # AM-04 (row 1)
+    36	
+    37	    def test_unfilled_only_stage_a_fields(self):
+    38	        self.assertTrue(set(S.Spec.load().unfilled()) <= STAGE_A_FIELDS)
+    39	
+    40	    def test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines(self):
+    41	        import json, re
+    42	        live = S.DEFAULT_SPEC_PATH.read_text(encoding="utf-8").splitlines()
+    43	        orig = VERBATIM.read_text(encoding="utf-8").splitlines()
+    44	        self.assertEqual(len(live), len(orig))
+    45	        md = (S.REPO_ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(encoding="utf-8")
+    46	        recs = [json.loads(l) for blk in re.findall(r"```jsonl\n(.*?)```", md, re.S)
+    47	                for l in blk.splitlines() if l.strip()]
+    48	        amended = {}
+    49	        for r in recs:  # every record must describe the files exactly (no stale or duplicate records)
+    50	            self.assertNotIn(r["line"], amended, r)
+    51	            self.assertEqual(orig[r["line"] - 1], r["old"], r["id"])
+    52	            self.assertEqual(live[r["line"] - 1], r["new"], r["id"])
+    53	            self.assertNotIn("TO_FILL", r["old"])
+    54	            amended[r["line"]] = r["id"]
+    55	        for n, (a, b) in enumerate(zip(orig, live), start=1):
+    56	            if a != b and n not in amended:
+    57	                self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
+    58	                self.assertNotIn("TO_FILL", b)
+    59	        self.assertEqual(sorted(amended), [4, 7, 14, 33, 42, 43, 44, 45, 46, 62])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3)
+    60	        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05"})
+    61	
+    62	    def test_am01_pins_reject_pre_amendment_text(self):
+    63	        import copy, yaml
+    64	        d = yaml.safe_load(S.DEFAULT_SPEC_PATH.read_text(encoding="utf-8"))
+    65	        S.validate(d)
+    66	        for path, bad in [(("secondary_family_holm", "fx_x_longwindow"), "usdjpy_ret * 1[window_hours > 18]"),
+    67	                          (("secondary_family_holm", "fx_x_highrv"),
+    68	                           "usdjpy_ret * 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]"),
+    69	                          (("inference", "size_rule"),
+    70	                           "Pass 4: rejection at b=0 over 2000 dev-calibrated sims must be in [3.5%, 6.5%]; else primary "
+    71	                           "inference = stationary block bootstrap (mean block 5), decided before tag"),
+    72	                          (("forecast", "models", "M4"),
+    73	                           "M3 + e*1[long] + e*jumpshare + e*1[rv_per_bar > expanding past median] + min(e,0)")]:
+    74	            e = copy.deepcopy(d)
+    75	            node = e
+    76	            for k in path[:-1]:
+    77	                node = node[k]
+    78	            node[path[-1]] = bad
+    79	            with self.subTest(path=path), self.assertRaises(S.SpecError):
+    80	                S.validate(e)
+    81	
+    82	    def test_am02_size_rule_matches_calendar(self):
+    83	        from ofilt.drift import calendar as C
+    84	        self.assertIn(f"T = T_conf", S.SIZE_RULE)
+    85	        self.assertIn(f"; {C.T_CONF} per ofilt.drift.calendar", S.SIZE_RULE)
+    86	        self.assertIn("over 5000 dev-calibrated sims", S.SIZE_RULE)
+    87	        self.assertEqual(S.Spec.load().raw("inference.size_rule"), S.SIZE_RULE)
+    88	
+    89	    def test_typed_accessors(self):
+    90	        sp = S.Spec.load()
+    91	        self.assertEqual(sp.inference_exclusion_flags, ("earn_flag", "news_flag"))
+    92	        fe = sp.forecast_eval_exclusion
+    93	        self.assertEqual(fe.tanshin, (0, 1))
+    94	        self.assertEqual(fe.standalone_news, (1,))
+    95	        b = sp.beta
+    96	        self.assertEqual((b.method, b.min_periods, b.lag_days, b.estimate_on, b.continue_across_samples),
+    97	                         ("expanding", 250, 1, "non_excluded_rows", True))
+    98	        self.assertEqual(sp.fx_block, ("usdjpy_ret", "eurusd_ret"))
+    99	        self.assertEqual(sp.controls, ("spy_oc", "copx_oc"))
+   100	        self.assertEqual((sp.h1_parameter, sp.h3_parameter), ("usdjpy_ret", "eurusd_ret"))
+   101	        self.assertEqual(sp.hedge_oc_column, "y_1306_oc")   # AM-03 (row 2)
+   102	        self.assertEqual(sp.alpha, 0.05)
+   103	        self.assertEqual(sp.seed, 20261001)
+   104	        self.assertEqual(sp.huber_c, 1.345)
+   105	        self.assertEqual(sp.influence_k_max, 20)
+   106	
+   107	
+   108	class TestToFillRefusal(unittest.TestCase):
+   109	    def _unfilled(self):
+   110	        def m(d):
+   111	            d["robustness"]["winsorize_fx"]["values"] = "TO_FILL"
+  [tests/test_spec.py, lines 127-149]
+   127	
+   128	    def test_filled_values_accepted(self):
+   129	        def m(d):
+   130	            d["robustness"]["winsorize_fx"]["values"] = {"usdjpy_ret": [-0.01, 0.01], "eurusd_ret": [-0.008, 0.009]}
+   131	            d["secondary_family_holm"]["rv_per_bar_dev_median"] = 1.5e-08
+   132	        sp = _load_mutated(m)
+   133	        sp.assert_analysis_ready()
+   134	        self.assertEqual(sp.winsor_bounds()["eurusd_ret"], (-0.008, 0.009))
+   135	        self.assertEqual(sp.rv_per_bar_dev_median(), 1.5e-08)
+   136	
+   137	    def test_sesoi_pending(self):
+   138	        with self.assertRaises(S.SpecPendingError):
+   139	            S.Spec.load().sesoi()
+   140	
+   141	
+   142	class TestLagRule(unittest.TestCase):
+   143	    def test_known_values(self):
+   144	        self.assertEqual(S.dk_lag(100), 4)
+   145	        self.assertEqual(S.dk_lag(1708), 7)   # dev days
+   146	        self.assertEqual(S.dk_lag(983), 6)
+   147	        self.assertEqual(S.dk_lag(1), 1)
+   148	        last = 0
+   149	        for T in range(1, 6000):
+  [tests/test_docs_d1.py, lines 89-122]
+    89	            self.assertEqual(min(common, key=lambda w: common[w][j][0]), "expanding")
+    90	        text = (ROOT / "reports" / "A_hedge_efficiency.md").read_text()
+    91	        self.assertIn("| 500 | 24,073.9 (-0.245%) [n=1150] | 11,659.7 (-0.336%) [n=1140]", text)   # own rows
+    92	        self.assertIn("| expanding | 24,063.0 (+0.046%) [n=1178] | 11,662.6 (+0.006%) [n=1168]", text)
+    93	        self.assertAlmostEqual(100 * (11662.6 - 11659.7) / 11662.6, 0.025, delta=0.0005)   # "by 0.025%"
+    94	        c7 = (ROOT / "tests" / "test_validation_c7.py").read_text()             # "C7 for predictions"
+    95	        self.assertIn("class TestForecastLookAhead", c7)
+    96	
+    97	    def test_p18_hedge_and_secondary(self):
+    98	        s = Spec.load()
+    99	        self.assertEqual(s.value("target.hedge_oc_column"), "y_1306_oc")   # AM-03 (row 7)
+   100	        self.assertEqual(s.value("target.secondary"), "raw_oc")
+   101	        self.assertEqual(T.HEDGE_GAP_FOR, {"y_topix_oc": "ao_topix_gap", "y_1306_oc": "ao_1306_gap_adj"})   # AM-03 (row 7)
+   102	        self.assertIn("if hedge not in HEDGE_GAP_FOR", inspect.getsource(T.add_targets))
+   103	
+   104	    def test_p19_controls_and_robustness(self):
+   105	        s = Spec.load()
+   106	        self.assertEqual(s.value("data.require_nonmissing") if "require_nonmissing" in s.value("data")
+   107	                         else s.value("sample.require_nonmissing"), ["usdjpy_ret", "eurusd_ret", "spy_oc", "copx_oc", "beta"])
+   108	        design = set(s.value("model.fx_block_common")) | set(s.value("model.controls_ticker_specific"))
+   109	        self.assertNotIn("ewj_oc", design)
+   110	        self.assertNotIn("fcx_oc", design)
+   111	        rob = s.value("robustness.others")
+   112	        for r in ("ewj_yen_denominated", "copx_to_fcx", "exclude_boj_day", "exclude_sq_major"):   # AM-05 (row 8)
+   113	            self.assertIn(r, rob)
+   114	        self.assertIn("fx_x_longwindow", s.value("secondary_family_holm"))
+   115	        for c in ("gap_adj_lag1", "oc_lag1", "window_hours", "boj_day", "sq_major", "exdiv_day"):
+   116	            self.assertNotIn(c, design)
+   117	
+   118	
+   119	class TestP20P21(unittest.TestCase):
+   120	    def test_p20_allowlist(self):
+   121	        groups = {"KEYS": 2, "PRE_OPEN_FEATURES": 20, "EXCLUSION_FLAGS": 2, "INFORMATIONAL": 1, "ROBUSTNESS_ONLY": 1,
+   122	                  "AT_OPEN": 6, "TARGET_INPUTS": 3, "PROVENANCE": 16, "CONTEMPORANEOUS": 2,
+  [tests/test_docs_d1.py, lines 132-157]
+   132	        self.assertEqual(SC.PERMITTED_DERIVED_SOURCES, frozenset({"usdjpy_bars"}))
+   133	        self.assertEqual(SC.SYNTHETIC_FEATURES, frozenset({"noise_N01"}))
+   134	        df = pd.DataFrame({c: [1.0] for c in ("open", "close", "prev_close", "audit_flag", "spy_oc")})
+   135	        for c in ("open", "close", "prev_close", "audit_flag"):
+   136	            self.assertNotIn(c, SC.ALLOWED_FEATURES)
+   137	            with self.assertRaises(SC.FeatureNotAllowedError):
+   138	                SC.select_features(df, [c])
+   139	        with self.assertRaisesRegex(SC.FeatureNotAllowedError, "unknown column"):     # fail closed
+   140	            SC.select_features(df.assign(new_col=1.0), ["new_col"])
+   141	
+   142	    def test_p21_inference_size_rule_calendar(self):
+   143	        s = Spec.load()
+   144	        self.assertEqual((dk_lag(1708), dk_lag(1013)), (7, 6))
+   145	        self.assertEqual((s.value("inference.se"), s.value("inference.small_sample_correction"),
+   146	                          s.value("inference.reference")), ("driscoll_kraay", "none", "normal"))
+   147	        self.assertEqual(s.value("inference.size_rule"), SIZE_RULE)
+   148	        for frag in ("5000 dev-calibrated sims", "[3.5%, 6.5%]", "stationary block bootstrap (mean block 5)",
+   149	                     "decided before tag", "1013 per ofilt.drift.calendar"):
+   150	            self.assertIn(frag, SIZE_RULE)
+   151	        self.assertEqual((CAL.N_CONF_DAYS, CAL.T_CONF, len(CAL.confirmation_calendar())), (1019, 1013, 1019))
+   152	
+   153	
+   154	if __name__ == "__main__":
+   155	    unittest.main()
+  [tests/test_docs_d3.py, lines 100-125]
+   100	        self.assertEqual(round(100 * sum(r["coverage"] for r in at983) / 4, 2), 93.95)
+   101	        for p, quoted in ((0.0604, 0.086), (0.0673, 0.742)):                    # P(5000-rep rate > 6.5%)
+   102	            z = (0.065 - p) / (p * (1 - p) / 5000) ** 0.5
+   103	            self.assertEqual(round(float(stats.norm.sf(z)), 3), quoted)        # normal approximation
+   104	
+   105	
+   106	class TestP33toP35(unittest.TestCase):
+   107	    def test_p33_closed_robustness_list(self):
+   108	        rob = Spec.load().value("robustness")
+   109	        self.assertEqual(list(rob), ["huber", "winsorize_fx", "influence_curve", "others"])
+   110	        self.assertEqual(rob["others"], ["beta_rolling_250", "beta_rolling_500", "raw_target", "copx_to_fcx", "ewj_yen_denominated", "xau_control", "nikkei_proxy_p42", "mechanism_session_fx_gotobi", "exclusion_d_plus_2", "exclude_audit_flag", "exclude_boj_day", "exclude_sq_major", "post_2024_11_05_indicator_CONFIRMATION_ONLY", "per_ticker_slopes_holm"])   # AM-05 (row 10)
+   111	        self.assertNotIn("post_2024_11_05", (ROOT / "ofilt" / "drift" / "inference.py").read_text())   # "not yet"
+   112	
+   113	    def test_p34_p35_named_artifacts(self):
+   114	        s = Spec.load()
+   115	        self.assertTrue(s.value("data.sealed_panel_sha256").startswith("b575272a"))   # AM-04 (row 11)
+   116	        self.assertIn("target", inspect.signature(F.walk_forward).parameters)         # T3: target y_sim
+   117	        self.assertTrue(hasattr(S, "DevCalibrator"))
+   118	
+   119	
+   120	if __name__ == "__main__":
+   121	    unittest.main()
+  [tests/test_inference_b2.py, lines 94-122]
+    94	        self.assertTrue(r["equivalent"])
+    95	        self.assertAlmostEqual(r["p"], stats.norm.sf(3.0))
+    96	        self.assertFalse(I.tost(0.0, 1.0, 1.0)["equivalent"])
+    97	        q = stats.norm.ppf(0.95)
+    98	        for est in np.linspace(-2, 2, 41):
+    99	            for d in (0.5, 1.0, 2.0, 3.0):
+   100	                r = I.tost(est, 0.5, d)
+   101	                inside = (est - q * 0.5 > -d) and (est + q * 0.5 < d)
+   102	                self.assertEqual(r["equivalent"], inside, (est, d))
+   103	
+   104	    def test_refusals_and_pending_sesoi(self):
+   105	        for args in [(0, 1, 0), (0, 1, -1), (0, 0, 1)]:
+   106	            with self.assertRaises(ValueError):
+   107	                I.tost(*args)
+   108	        spec = Spec.load()
+   109	        res = I.fit_dk(I.build_design(panel(n_dates=200, seed=4), spec), spec)
+   110	        with self.assertRaises(SpecPendingError):
+   111	            I.tost_result(res, "usdjpy_ret", spec)
+   112	        self.assertIn("equivalent", I.tost_result(res, "usdjpy_ret", spec, sesoi=0.5))
+   113	
+   114	
+   115	class TestB2Blinding(unittest.TestCase):
+   116	    def test_forged_provenance_refused(self):
+   117	        spec = Spec.load()
+   118	        d = I.build_design(panel(n_dates=200, seed=5), spec)
+   119	        forged = I.Design(**{**d.__dict__, "provenance": "dev_real"})
+   120	        for fn in (lambda: I.fit_huber(forged, spec), lambda: I.date_influence(forged),
+   121	                   lambda: I.influence_curve(forged, spec)):
+   122	            with self.assertRaises(B.BlindingError):
+  [the pins that depend on the spec's status (DRAFT), which the tag changes]
+  [tests/test_io.py, lines 79-100]
+    79	            self.assertFalse(G.is_ancestor_tag("missing", repo))
+    80	            for bad in ("", "HEAD~1 ", "../x", "-x", None, 3):
+    81	                self.assertFalse(G.is_ancestor_tag(bad, repo))
+    82	            G.check_access("early", repo)
+    83	            with self.assertRaises(G.AccessDenied):
+    84	                G.check_access("sidetag", repo)
+    85	            not_repo = Path(t) / "plain"
+    86	            not_repo.mkdir()
+    87	            self.assertFalse(G.is_ancestor_tag("early", not_repo))
+    88	
+    89	    def test_main_repo_has_no_unblinding_tags_while_draft(self):
+    90	        if Spec.load().status != "DRAFT":
+    91	            self.skipTest("spec frozen; tags expected")
+    92	        for tag in ("spec-dev-v1", "prereg-v1"):
+    93	            self.assertFalse(G.is_ancestor_tag(tag, REPO_ROOT), tag)
+    94	
+    95	
+    96	class TestLoadConfirm(unittest.TestCase):
+    97	    def test_denied_and_logged(self):
+    98	        with tempfile.TemporaryDirectory() as t:
+    99	            log = Path(t) / "ACCESS_LOG"
+   100	            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), \
+  [tests/test_importance_registry_c6.py, lines 179-195]
+   179	        self.assertEqual(R.registry_path(B.CONFIRM_REAL), R.REAL_PATH)
+   180	        with self.assertRaises(B.BlindingError):
+   181	            R.registry_path("other")
+   182	        for bad in ({True: 1}, {"a": object()}, {(1, 2): 3}):
+   183	            with self.assertRaises(TypeError):
+   184	                R.json_safe(bad)
+   185	        self.assertEqual(R.json_safe({1.5: np.int64(2), 3: (np.float64(0.5), pd.Timestamp("2030-01-02"))}),
+   186	                         {"1.5": 2, "3": [0.5, "2030-01-02T00:00:00"]})
+   187	
+   188	    def test_committed_registry_empty_while_draft(self):
+   189	        real = ROOT / "RUN_REGISTRY.jsonl"
+   190	        self.assertTrue(real.exists())
+   191	        if self.spec.status == "DRAFT":                                       # no real forecast before the tags
+   192	            self.assertEqual(real.read_text(), "")
+   193	
+   194	
+   195	if __name__ == "__main__":
+
+c.4 $ grep -n -i -E 'six|6 dev_real|sealed fit|BLIND_FIT_LOG' docs/replacements/PLAN.md docs/*.md   (matching lines only; docs/*.md includes the DECISIONS_*.md files)
+docs/DATA_PROVENANCE.md:173:- Six rows have open = close = previous close (2016-12-14, 2017-02-23, 2017-05-29, 2017-06-26, 2018-05-21, 2023-10-06). All have a nonzero high–low range. On a 0.1-tick split-adjusted grid this is coincidence, not staleness, so they are kept.
+docs/DATA_PROVENANCE.md:246:- **Test suite.** The repo's suite was run on the Project's dev panel. These are Pass 1's own structural and target-only tests, with `OFILT_RUN_SEALED` unset; `BLIND_FIT_LOG` was unchanged at 6 lines.
+docs/DATA_PROVENANCE.md:354:- The Pass 1 dev panel is archived as `data/archive/panel_dev_736636031ca1.csv` (`736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42`), so `BLIND_FIT_LOG` lines 1–6 stay verifiable.
+docs/DECISIONS_P14_onward.md:100:- Model features may come only from PRE_OPEN_FEATURES, from six named derived features (long_window, jumpshare, rv_per_bar, e_pos, e_neg, no_us_session; deterministic row-wise, no estimated parameters), or from the synthetic `noise_N01`, which the model generates itself.
+docs/DECISIONS_P14_onward.md:262:- **Opt-in.** A real-data sealed fit runs only with `OFILT_RUN_SEALED=1`. Without it the function refuses **before** logging, and `tools/checkpoint.sh` unsets the variable.
+docs/DECISIONS_P14_onward.md:263:- **Record.** `BLIND_FIT_LOG` (committed) gets one JSONL line per executed call. **dev_real lines: 6, all legitimate:** lines 1–3 from the B5 real-data sealed-fit tests (`test_sim_b5`, run with `OFILT_RUN_SEALED=1`); lines 4–5 from `tools/report_B7.py` (line 4's process was killed before producing any output); line 6 from `tools/report_B7b.py`. All six are on `panel_dev.csv`. No further real sealed fit is sanctioned until Pass 4.
+docs/DECISIONS_P14_onward.md:268:*Effect:* the pre-registration discloses the six sealed fits, what each returned, and that no FX coefficient on real data has been computed or seen in Pass 1.
+docs/DECISIONS_P14_onward.md:271:B7b PREVIEW: one sealed fit; dev-calibrated draws at T = T_conf = 1013; DK lag 6.
+docs/DECISIONS_P14_onward.md:300:  - Pass 1 ran six sealed fits whose FX coefficients were never computed into any output (P29).
+docs/DECISIONS_P14_onward.md:379:- **Tag semantics, as implemented (`blind.REQUIRED_TAGS`):** `dev_real` computations relating FX to targets need `spec-dev-v1`, and `confirm_real` needs `spec-dev-v1` and `prereg-v1`. Before step 4, the only real-data computation combining FX and targets is the sealed fit with its conditions (P29), so the calibration pass sees no real b.
+docs/replacements/PLAN.md:297:The B7b preview: dev-calibrated simulations, T_conf = 1,013, one sealed fit, on the TOPIX hedge. The binding Pass 3 run uses the 1306 hedge (AM-03).
+docs/replacements/PLAN.md:384:| 1 | Analysis machine | **Complete** (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits. Stage C4–D rebuilt 2026-10-05 (P45): 205 tests, 4 skipped in the sandbox and 5 on the Mac; the same 6 sealed fits | — |
+docs/replacements/PLAN.md:402:**Pass 3 is done when** the following are run on dev-calibrated simulations through **one** sanctioned sealed fit, with each outcome written as an AM-xx:
+docs/replacements/PLAN.md:430:   - The **one** exception is the sealed blind fit, under its tested conditions (P29), opt-in through `OFILT_RUN_SEALED=1`. Each run must be sanctioned explicitly and counted in `BLIND_FIT_LOG`.
+docs/DECISIONS_P37_onward.md:49:- **Prices** (`1306`) are accepted as pulled: 2,728 dates identical to the miners' calendar, OHLC consistent, no split artifact. The six open = close = previous close rows have nonzero ranges, so they are coincidental and kept.
+docs/DECISIONS_P37_onward.md:263:**Switch commit.** It contains the schema, `HEDGE_GAP_FOR`, `io`, the `blind` list (P52), the approved amendments, DATA_DICTIONARY, the approved test changes, and the panel switch. The Pass 1 dev panel is archived under its hash, so `BLIND_FIT_LOG` lines 1–6 stay verifiable.
+docs/DECISIONS_P37_onward.md:266:- The C7 report's staleness key includes the spec file's SHA-256, not only the six code files. A comment-only spec edit on a scratch copy failed the staleness test (2026-10-05).
+docs/PASS2_ADDENDUM.md:180:| `test_docs_d3` (~66) | every BLIND_FIT_LOG panel hash equals the spec's dev hash | equals the Pass 1 dev hash `7366…`, as a constant: lines 1–6 are Pass 1 history | AM-04, P51 |
+docs/PASS2_ADDENDUM.md:252:   - No sealed fit: OFILT_RUN_SEALED stays unset.
+docs/PASS2_ADDENDUM.md:311:   - BLIND_FIT_LOG has 6 dev_real lines, and RUN_REGISTRY.jsonl is empty.
+docs/PASS2_ADDENDUM.md:354:  - the six rows where open = close = previous close;
+docs/PASS2_ADDENDUM.md:538:| Sealed fits | 6 dev_real lines (B5 ×3; B7 ×2, one of them killed; B7b ×1) | BLIND_FIT_LOG |
+docs/PASS2_ADDENDUM.md:568:1. **The test suite.** The rebuilt repo's default suite was run once on the Project's `panel_dev.csv`. These are Pass 1's own structural and target-only tests; `OFILT_RUN_SEALED` was unset, and `BLIND_FIT_LOG` was unchanged at 6 lines.
+docs/PASS2_HANDOFF.md:90:- **Sealed fits so far:** 6 `dev_real` lines in `BLIND_FIT_LOG`, all sanctioned. None returned an FX coefficient.
+docs/PASS2_HANDOFF.md:126:   - **No sealed fit is sanctioned in Pass 2.** Pass 3 gets exactly one.
+docs/PASS2_HANDOFF.md:168:**Prices are fine.** The dates are identical to the miners' calendar (2,728); there are no NaNs; OHLC is consistent; there are no split artifacts. Six open = close = previous close rows all have a nonzero range, so they are coincidence on a 0.1 tick and were kept.
+docs/PASS2_HANDOFF.md:235:- Run the Pass 1 suite: 171 tests, 5 skipped. Confirm `BLIND_FIT_LOG` has 6 dev_real lines and `RUN_REGISTRY.jsonl` is empty.
+docs/PASS2_HANDOFF.md:399:3. **`BLIND_FIT_LOG` still has 6 dev_real lines** (no sealed fit in Pass 2), and `RUN_REGISTRY.jsonl` is still empty.
+docs/PASS2_HANDOFF.md:410:- a sealed fit run;
+docs/PASS2_HANDOFF.md:448:Pass 3 runs on the rebuilt dev panel with the 1306 hedge, through **one** sealed fit that Isaiah sanctions explicitly. That will be dev_real line 7. It feeds:
+docs/PASS2_HANDOFF.md:487:- Repo: <REPO> (git; contains ofilt/drift from Pass 1, spec/, tests/, tools/, docs/, reports/, BLIND_FIT_LOG, RUN_REGISTRY.jsonl, PASS1_STATUS.md).
+docs/PASS2_HANDOFF.md:508:   - No sealed fit (OFILT_RUN_SEALED stays unset). No walk_forward or inference call on real data.
+docs/PASS2_HANDOFF.md:522:- **P2-0** Verify hashes; run the suite (expect 171 tests, 5 skipped); confirm BLIND_FIT_LOG = 6 dev_real lines and RUN_REGISTRY empty. Adapt the guard to the real signature, keeping it fail-closed, with tests (load_confirm and dev_real unblinding still refused).
+docs/PASS2_HANDOFF.md:568:| Sealed fits | 6 dev_real lines (B5 ×3, B7 ×2 with 1 killed, B7b ×1) | BLIND_FIT_LOG |
+docs/DECISIONS_P58_onward.md:257:- **The switch commit:** `b9bf6f3d2e7b11243af6d626713417b5c87423b8`. Spec SHA-256 `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9`. The dev panel in DATA is the P2-4 dev panel, `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`; the Pass 1 dev panel is archived as `data/archive/panel_dev_736636031ca1.csv` (`736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42`), so `BLIND_FIT_LOG` lines 1–6 stay verifiable.
+docs/DECISIONS_P58_onward.md:296:- **The P2-5b dry run** (PASS2_STATUS Progress): Scratch clone of HEAD `4a6e82d` (remote removed; tag pass1-final only), scratch DATA = the P2-4 dev panel + the two event files (hash-verified; no sealed panel). Drafts applied as written (AM-03 and AM-04 only; test-change rows 1–7, 9, 11–19, 21; row 16 with a TOPIX spec copy). Suite: Ran 246 tests, FAILED (failures=3, errors=1, skipped=5). One failure EXPECTED (C7 report staleness), three UNEXPLAINED (Flags). `reports/A_hedge_efficiency.md` byte-identical; clone BLIND_FIT_LOG 6, RUN_REGISTRY 0 bytes. Patch `/tmp/p2_switch_dryrun_A.patch` (18 files, no .csv), copied to `files/p2_5b/`. Pass B not run (item 3 (iv): not spec-only). Clone and scratch DATA deleted; REPO unchanged.
+docs/DECISIONS_P58_onward.md:303:  - `.gitignore` has `.DS_Store` as a sixth pattern (supervisor D.1, approved deviation).
+docs/DECISIONS_P58_onward.md:315:    One criterion changed: "exactly" went from binary float equality to decimal equality of the stored values, which turned that row from False to True; the float result is still printed. No other criterion changed, and no row was removed. Six rows were added (26 → 32), and five of them are True: two XAU gap rows and three of the four weekday-calendar diagnostic rows.
+docs/P2_switch_drafts.md:141:BLIND_FIT_LOG lines 1–6 keep referring to `736636…`, which is archived under its hash
+docs/P2_switch_drafts.md:341:| 12 | `test_docs_d3` (68–69) | every BLIND_FIT_LOG `panel_sha256` equals the spec's dev hash | equals the constant `736636031ca1…` (lines 1–6 are Pass 1 history) | AM-04, P51 |
+docs/REBUILD_VERIFICATION.md:26:| P20 | six derived features; only non-PRE_OPEN derived source `usdjpy_bars`; synthetic `noise_N01`; `open`, `close`, `prev_close`, `audit_flag` forbidden; unknown columns refused | `schema` constants; `select_features` refuses each (unknown: `FeatureNotAllowedError`, "unknown column") | ✓ |
+docs/REBUILD_VERIFICATION.md:76:| P29 | `BLIND_FIT_LOG`: 6 dev_real lines, all on `panel_dev.csv`; lines 1–3 from `test_sim_b5`, 4–5 from `report_B7.py`, 6 from `report_B7b.py` | parsed: 6 lines, provenance, panel hash == spec dev hash, caller fields | ✓ |
+docs/REBUILD_VERIFICATION.md:101:| before step 4 the only real FX-and-target computation is the sealed fit, so the calibration pass sees no real b | `BLIND_FIT_LOG` 6 sealed-fit lines (D3); committed `RUN_REGISTRY.jsonl` empty | ✓ |
+docs/REBUILD_VERIFICATION.md:127:1. **PLAN §8, Pass 1 row:** "Complete (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits". This describes the original repo. The rebuild has more tests (Stage D adds verification modules; 199 at this checkpoint) and 4 skipped (2 slow tests instead of 3). The 6 sealed fits match.
+docs/REBUILD_VERIFICATION.md:139:| PRE_OPEN list and derived features | the PRE_OPEN section names exactly `schema.PRE_OPEN_FEATURES`; the six derived features listed; `usdjpy_bars` the only PROVENANCE source; `noise_N01` described as model-generated | ✓ |
+docs/REBUILD_VERIFICATION.md:150:| the repo holds `ofilt/drift/`, `spec/`, `tests/`, `tools/`, `docs/`, `reports/`, `BLIND_FIT_LOG`, `RUN_REGISTRY.jsonl`, `PASS1_STATUS.md` | all present in the rebuilt repo | ✓ |
+docs/REBUILD_VERIFICATION.md:151:| the guard needs the tags as ancestors of HEAD; the two logs are append-only | `blind._tag_ok` (D3b); `registry.record_run` opens in append mode; `BLIND_FIT_LOG` appended by the sealed fit (`test_sim_b5`) | ✓ |
+
+--- d. The rehearsal on record ---
+cp: /tmp/p3_3_rehearsal.log reports/P3_3_rehearsal.log: No such file or directory
+shasum: /tmp/p3_3_rehearsal.log reports/P3_3_rehearsal.log: No such file or directory
+shasum: : No such file or directory
+$ cp -p /tmp/p3_3_rehearsal.log reports/P3_3_rehearsal.log : source ; copy ; equal: True
+cp: /tmp/p3_3_rehearsal_1/P3_4_sealed_run.json reports/P3_3_rehearsal_run1.json: No such file or directory
+shasum: /tmp/p3_3_rehearsal_1/P3_4_sealed_run.json reports/P3_3_rehearsal_run1.json: No such file or directory
+shasum: : No such file or directory
+$ cp -p /tmp/p3_3_rehearsal_1/P3_4_sealed_run.json reports/P3_3_rehearsal_run1.json : source ; copy ; equal: True
+cp: /tmp/p3_3_rehearsal_1/P3_4_sealed_run.md reports/P3_3_rehearsal_run1.md: No such file or directory
+shasum: /tmp/p3_3_rehearsal_1/P3_4_sealed_run.md reports/P3_3_rehearsal_run1.md: No such file or directory
+shasum: : No such file or directory
+$ cp -p /tmp/p3_3_rehearsal_1/P3_4_sealed_run.md reports/P3_3_rehearsal_run1.md : source ; copy ; equal: True
+cp: /tmp/p3_2e.txt reports/P3_2e_report.txt: No such file or directory
+shasum: /tmp/p3_2e.txt reports/P3_2e_report.txt: No such file or directory
+shasum: : No such file or directory
+$ cp -p /tmp/p3_2e.txt reports/P3_2e_report.txt : source ; copy ; equal: True
+d.2 Run 2 vs run 1 apart from runtime (by script):
+Traceback (most recent call last):
+  File "<stdin>", line 3, in <module>
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'reports/P3_3_rehearsal_run1.json'
+d.3 reports/P3_3_rehearsal_run1.md in full:
+<<<<<<<<
+cat: reports/P3_3_rehearsal_run1.md: No such file or directory
+>>>>>>>>
+
+(note) The run above was a bug in the copy script, not in the condition it checks: the shell running it is zsh, which does not word-split an unquoted $pair, so 'set -- $pair' gave one argument. Every cp failed (nothing was copied; git status shows only PASS3_STATUS.md modified), and the 'equal: True' lines compared two empty hashes, so they are spurious. d.2 then failed because the copy did not exist. Fix: one explicit cp and comparison per file. Rerun once (rerun-once rule):
+$ cp -p /tmp/p3_3_rehearsal.log reports/P3_3_rehearsal.log: source 5307a283f8b123d61854104d77bed4960413288a153228c7357840ae689cea69; copy 5307a283f8b123d61854104d77bed4960413288a153228c7357840ae689cea69; equal: True
+$ cp -p /tmp/p3_3_rehearsal_1/P3_4_sealed_run.json reports/P3_3_rehearsal_run1.json: source 510d1ea202283a28164ba424c0cba6f5c6cf654f50ec580890721840bd3222e5; copy 510d1ea202283a28164ba424c0cba6f5c6cf654f50ec580890721840bd3222e5; equal: True
+$ cp -p /tmp/p3_3_rehearsal_1/P3_4_sealed_run.md reports/P3_3_rehearsal_run1.md: source 2d5e3043038ce380f4f41c7dbad91b39cbfc0f2e1cd07133f76da9c152c0c69c; copy 2d5e3043038ce380f4f41c7dbad91b39cbfc0f2e1cd07133f76da9c152c0c69c; equal: True
+$ cp -p /tmp/p3_2e.txt reports/P3_2e_report.txt: source 11b26fedd6aebf6a9955368d7ae95f9c78e46591005cce632f9776efa31163d0; copy 11b26fedd6aebf6a9955368d7ae95f9c78e46591005cce632f9776efa31163d0; equal: True
+d.2 Run 2 vs run 1 apart from runtime (by script):
+  run 2's JSON equals run 1's apart from runtime: True
+d.3 reports/P3_3_rehearsal_run1.md in full:
+<<<<<<<<
+# P3 sealed run (rehearsal)
+
+Generated by `tools/p3_sealed_run.py`. Configuration SHA-256 `645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa`; spec `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9`; dev panel `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`; HEAD `1c48d381bb794e65d6532ba915ea782761ba58b2`. Aggregates only; no decision rule is applied here.
+
+Calibrator: T_source 1439, rows 4192.
+
+## Cells 0 to 4 (T1, T5 boundary, T2) and T6
+
+| Cell | Task | b | Reps | Window | DK-normal reject | Bootstrap reject | Calibrated reject | mean bias | sd | mean se | se/sd |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 0 | T1 | 0.0 | 5000 | full | 259/5000 = 0.0518 [0.0460, 0.0583] | 235/5000 = 0.0470 [0.0415, 0.0532] | 255/5000 = 0.0510 [0.0452, 0.0575] | -0.0022 | 0.0741 | 0.0737 | 0.9951 |
+| 1 | T5_boundary | 0.8652 | 5000 | full | 5000/5000 = 1.0000 [0.9992, 1.0000] | 5000/5000 = 1.0000 [0.9992, 1.0000] | 5000/5000 = 1.0000 [0.9992, 1.0000] | 0.0004 | 0.0737 | 0.0737 | 0.9993 |
+| 2 | T2 | 0.1 | 1000 | full | 287/1000 = 0.2870 [0.2598, 0.3158] | 271/1000 = 0.2710 [0.2444, 0.2994] | 283/1000 = 0.2830 [0.2560, 0.3117] | 0.0007 | 0.0760 | 0.0737 | 0.9699 |
+| 3 | T2 | 0.25 | 1000 | full | 919/1000 = 0.9190 [0.9004, 0.9344] | 917/1000 = 0.9170 [0.8983, 0.9325] | 919/1000 = 0.9190 [0.9004, 0.9344] | -0.0005 | 0.0716 | 0.0737 | 1.0302 |
+| 4 | T2 | 0.4 | 1000 | full | 1000/1000 = 1.0000 [0.9962, 1.0000] | 1000/1000 = 1.0000 [0.9962, 1.0000] | 1000/1000 = 1.0000 [0.9962, 1.0000] | 0.0020 | 0.0767 | 0.0737 | 0.9612 |
+| 5 | T6 ols_dk | 0.0 | 1000 | full | 54/1000 = 0.0540 [0.0416, 0.0698] | - | - | 0.0005 | 0.0758 | 0.0738 | 0.9736 |
+| 5 | T6 huber_dk | 0.0 | 1000 | full | 57/1000 = 0.0570 [0.0443, 0.0731] | - | - | 0.0115 | 0.0746 | 0.0733 | 0.9828 |
+| 5 | T6 winsorised_ols_dk | 0.0 | 1000 | full | 53/1000 = 0.0530 [0.0407, 0.0687] | - | - | -0.0011 | 0.0759 | 0.0740 | 0.9745 |
+| 6 | T6 ols_dk | 0.25 | 1000 | full | 920/1000 = 0.9200 [0.9015, 0.9353] | - | - | -0.0040 | 0.0773 | 0.0737 | 0.9536 |
+| 6 | T6 huber_dk | 0.25 | 1000 | full | 946/1000 = 0.9460 [0.9302, 0.9584] | - | - | 0.0080 | 0.0756 | 0.0732 | 0.9684 |
+| 6 | T6 winsorised_ols_dk | 0.25 | 1000 | full | 918/1000 = 0.9180 [0.8994, 0.9334] | - | - | -0.0051 | 0.0775 | 0.0739 | 0.9538 |
+| 7 | T6 ols_dk | 0.0 | 1000 | early | 337/1000 = 0.3370 [0.3084, 0.3669] | - | - | -0.0939 | 0.0599 | 0.0609 | 1.0179 |
+| 7 | T6 huber_dk | 0.0 | 1000 | early | 202/1000 = 0.2020 [0.1783, 0.2280] | - | - | -0.0738 | 0.0595 | 0.0620 | 1.0415 |
+| 7 | T6 winsorised_ols_dk | 0.0 | 1000 | early | 337/1000 = 0.3370 [0.3084, 0.3669] | - | - | -0.0939 | 0.0599 | 0.0609 | 1.0179 |
+| 8 | T6 ols_dk | 0.25 | 1000 | early | 706/1000 = 0.7060 [0.6770, 0.7334] | - | - | -0.0939 | 0.0621 | 0.0613 | 0.9863 |
+| 8 | T6 huber_dk | 0.25 | 1000 | early | 798/1000 = 0.7980 [0.7720, 0.8217] | - | - | -0.0742 | 0.0621 | 0.0623 | 1.0031 |
+| 8 | T6 winsorised_ols_dk | 0.25 | 1000 | early | 706/1000 = 0.7060 [0.6770, 0.7334] | - | - | -0.0939 | 0.0621 | 0.0613 | 0.9863 |
+
+## Pooled critical values (cells 0, 1, 2, 3, 4)
+
+- c_boot q95: 2.004922 (rank 12350 of 13000; interval [1.969078, 2.040054])
+- c_boot q90: 1.656450 (rank 11700 of 13000; interval [1.632416, 1.675433])
+- c_cal q95: 1.968220 (rank 12350 of 13000; interval [1.945602, 2.001424])
+- c_cal q90: 1.645810 (rank 11700 of 13000; interval [1.618709, 1.674980])
+- c_boot_h3 q95: 1.999922 (rank 12350 of 13000)
+
+## MDE80
+
+- dk_normal: {'probit_interpolated': 0.20740305548030188, 'normal_approx_sd': 0.2076283705715475, 'normal_approx_mean_se': 0.20648203263885406}
+- bootstrap: {'probit_interpolated': 0.20913079294473588, 'normal_approx_sd': 0.2076283705715475, 'normal_approx_mean_se': 0.20648203263885406}
+- calibrated: {'probit_interpolated': 0.20765751737320187, 'normal_approx_sd': 0.2076283705715475, 'normal_approx_mean_se': 0.20648203263885406}
+
+TOST, cell 0: dk_normal: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 5000/5000 = 1.0000 [0.9992, 1.0000]; bootstrap: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 5000/5000 = 1.0000 [0.9992, 1.0000]; calibrated: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 5000/5000 = 1.0000 [0.9992, 1.0000]
+H3, cell 0: dk_normal 250/5000 = 0.0500 [0.0443, 0.0564]; bootstrap 228/5000 = 0.0456 [0.0402, 0.0517]
+TOST, cell 1: dk_normal: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 258/5000 = 0.0516 [0.0458, 0.0581]; bootstrap: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 252/5000 = 0.0504 [0.0447, 0.0568]; calibrated: high 5000/5000 = 1.0000 [0.9992, 1.0000], low 0/5000 = 0.0000 [0.0000, 0.0008], primary 258/5000 = 0.0516 [0.0458, 0.0581]
+
+## T3
+
+c_CW,cal: {'value': 1.3990565217868869, 'interval': [1.3076143556075939, 1.5482734473089799], 'rank': 1900, 'rank_interval': [1880, 1920], 'n': 2000}
+walk_forward calls: 3000; registry lines: 3000
+
+- cell 9 (b 0.0, 2000 reps): H1 dk_normal 108/2000 = 0.0540 [0.0449, 0.0648]; bootstrap 96/2000 = 0.0480 [0.0395, 0.0583]; calibrated 106/2000 = 0.0530 [0.0440, 0.0637]; CW normal 62/2000 = 0.0310 [0.0243, 0.0395]; calibrated 100/2000 = 0.0500 [0.0413, 0.0604]
+  - dk_normal x normal: both 42, H1 only 66, CW only 20, neither 1872
+  - dk_normal x calibrated: both 51, H1 only 57, CW only 49, neither 1843
+  - bootstrap x normal: both 39, H1 only 57, CW only 23, neither 1881
+  - bootstrap x calibrated: both 48, H1 only 48, CW only 52, neither 1852
+  - calibrated x normal: both 41, H1 only 65, CW only 21, neither 1873
+  - calibrated x calibrated: both 50, H1 only 56, CW only 50, neither 1844
+- cell 10 (b 0.1, 500 reps): H1 dk_normal 141/500 = 0.2820 [0.2443, 0.3230]; bootstrap 135/500 = 0.2700 [0.2329, 0.3106]; calibrated 140/500 = 0.2800 [0.2424, 0.3209]; CW normal 154/500 = 0.3080 [0.2691, 0.3498]; calibrated 193/500 = 0.3860 [0.3444, 0.4294]
+  - dk_normal x normal: both 126, H1 only 15, CW only 28, neither 331
+  - dk_normal x calibrated: both 130, H1 only 11, CW only 63, neither 296
+  - bootstrap x normal: both 122, H1 only 13, CW only 32, neither 333
+  - bootstrap x calibrated: both 126, H1 only 9, CW only 67, neither 298
+  - calibrated x normal: both 125, H1 only 15, CW only 29, neither 331
+  - calibrated x calibrated: both 129, H1 only 11, CW only 64, neither 296
+- cell 11 (b 0.25, 500 reps): H1 dk_normal 460/500 = 0.9200 [0.8929, 0.9407]; bootstrap 457/500 = 0.9140 [0.8862, 0.9355]; calibrated 459/500 = 0.9180 [0.8906, 0.9390]; CW normal 480/500 = 0.9600 [0.9390, 0.9740]; calibrated 488/500 = 0.9760 [0.9585, 0.9862]
+  - dk_normal x normal: both 460, H1 only 0, CW only 20, neither 20
+  - dk_normal x calibrated: both 460, H1 only 0, CW only 28, neither 12
+  - bootstrap x normal: both 457, H1 only 0, CW only 23, neither 20
+  - bootstrap x calibrated: both 457, H1 only 0, CW only 31, neither 12
+  - calibrated x normal: both 459, H1 only 0, CW only 21, neither 20
+  - calibrated x calibrated: both 459, H1 only 0, CW only 29, neither 12
+
+## Status
+
+- complete: True; aborted: None; errors: []
+
+## Runtime
+
+- calibrator: 0.0156 s; total: 6954.9773 s
+- T1: 1085.3519 s for 5000 replications (0.2171 s each)
+- T5_boundary: 1075.6063 s for 5000 replications (0.2151 s each)
+- T2: 671.2016 s for 3000 replications (0.2237 s each)
+- pooled: 0.0095 s for 0 replications (- s each)
+- T6: 900.3774 s for 4000 replications (0.2251 s each)
+- T3: 3222.0899 s for 3000 replications (1.0740 s each)
+>>>>>>>>
+
+--- e. Plausibility table of the rehearsal's synthetic outputs (information) ---
+$ python /tmp/p3_3a_plaus.py   (reads only reports/P3_3_rehearsal_run1.json)
+Script in full:
+<<<<<<<<
+"""P3-3a step e: plausibility table of the rehearsal's synthetic outputs (information). Reads only
+reports/P3_3_rehearsal_run1.json (synthetic stand-in aggregates). One row per check, values and True/False."""
+import json
+import math
+from pathlib import Path
+
+j = json.loads(Path("reports/P3_3_rehearsal_run1.json").read_text())
+cells = {c["cell"]: c for c in j["cells"]}
+t3 = {c["cell"]: c for c in j["t3"]["cells"]}
+M = ("dk_normal", "bootstrap", "calibrated")
+rows = []
+
+
+def row(name, ok, vals):
+    rows.append((name, bool(ok)))
+    print(f"{name}: {bool(ok)} | {vals}")
+
+
+def r(d):
+    return d["rate"]
+
+
+# P1
+c0 = cells[0]
+rates = {m: r(c0[m]["reject"]) for m in M}
+row("P1 cell 0 rejection in [3.0%, 8.0%] (each method) and calibrated in [4.3%, 5.7%]",
+    all(0.03 <= v <= 0.08 for v in rates.values()) and 0.043 <= rates["calibrated"] <= 0.057,
+    {m: round(v, 4) for m, v in rates.items()})
+# P2
+sums = {m: (c0[m]["coverage"]["k"] + c0[m]["reject"]["k"], c0[m]["reject"]["n"]) for m in M}
+row("P2 cell 0 coverage count + rejection count == n (each method)", all(a == b for a, b in sums.values()),
+    {m: f"{a} vs n {b}" for m, (a, b) in sums.items()})
+# P3
+p3, v3 = True, {}
+for i in range(5):
+    e, n = cells[i]["estimates"], cells[i]["replications"]
+    ok = abs(e["mean_bias"]) <= 3 * e["sd"] / math.sqrt(n) and 0.85 <= e["se_over_sd"] <= 1.15
+    p3 &= ok
+    v3[i] = f"|bias| {abs(e['mean_bias']):.5f} vs 3sd/sqrt(n) {3 * e['sd'] / math.sqrt(n):.5f}; se/sd {e['se_over_sd']:.4f}"
+row("P3 cells 0-4 |mean bias| <= 3 sd/sqrt(n) and se/sd in [0.85, 1.15]", p3, v3)
+# P4
+sds = [cells[i]["estimates"]["sd"] for i in range(5)]
+mses = [cells[i]["estimates"]["mean_se"] for i in range(5)]
+agree = max(sds) / min(sds) - 1 <= 0.10 and max(mses) / min(mses) - 1 <= 0.10
+pool = j["pooled"]
+cnt = 0
+for i in range(5):
+    for k in ("c_boot", "c_cal"):
+        lo, hi = cells[i]["own_quantiles"][k]["q95"]["interval"]
+        cnt += lo <= pool[k]["q95"]["value"] <= hi
+row("P4 cells 0-4 sd(b_hat) and mean se agree within 10% (max/min - 1)", agree,
+    f"sd max/min - 1 = {max(sds) / min(sds) - 1:.4f}; mean se max/min - 1 = {max(mses) / min(mses) - 1:.4f}; "
+    f"own c_boot(0.95) and c_cal(0.95) intervals containing the pooled value: {cnt} of 10 (pooled c_boot "
+    f"{pool['c_boot']['q95']['value']:.4f}, c_cal {pool['c_cal']['q95']['value']:.4f})")
+# P5
+p5, v5 = True, {}
+mde = j["mde80"]
+for m in M:
+    rr = [r(cells[i][m]["reject"]) for i in (0, 2, 3, 4)]
+    rises = all(b > a for a, b in zip(rr, rr[1:]))
+    d = mde[m]
+    defined = d["probit_interpolated"] is not None
+    agree5 = defined and all(abs(d["probit_interpolated"] / d[k] - 1) <= 0.15
+                             for k in ("normal_approx_sd", "normal_approx_mean_se"))
+    p5 &= rises and defined and agree5
+    v5[m] = (f"rates {[round(x, 4) for x in rr]} rise {rises}; MDE80 probit {d['probit_interpolated']}; normal approx "
+             f"sd {d['normal_approx_sd']:.4f}, mean se {d['normal_approx_mean_se']:.4f}; within 15%: {agree5}")
+row("P5 rejection rises over cells 0, 2, 3, 4; MDE80 defined; probit vs normal approximations within 15%", p5, v5)
+# P6
+c1 = cells[1]
+t6 = {m: r(c1[m]["tost"]["primary"]) for m in M}
+row("P6 cell 1 TOST at the primary SESOI declares at most 7% (each method)", all(v <= 0.07 for v in t6.values()),
+    {m: round(v, 4) for m, v in t6.items()})
+# P7
+o7 = {m: (r(c0[m]["tost"]["low"]), r(c0[m]["tost"]["primary"]), r(c0[m]["tost"]["high"])) for m in M}
+row("P7 cell 0 TOST rates ordered low <= primary <= high (each method)", all(a <= b <= c for a, b, c in o7.values()),
+    {m: tuple(round(x, 4) for x in v) for m, v in o7.items()})
+# P8
+sums8 = all(sum(x[k] for k in ("both", "h1_only", "cw_only", "neither")) == t3[i]["replications"]
+            for i in (9, 10, 11) for x in t3[i]["crosstab"])
+cwcal9 = r(t3[9]["cw"]["calibrated"])
+h1d = abs(r(t3[9]["h1"]["dk_normal"]) - r(c0["dk_normal"]["reject"]))
+cwup = {m: (r(t3[9]["cw"][m]), r(t3[10]["cw"][m]), r(t3[11]["cw"][m])) for m in ("normal", "calibrated")}
+up = all(v[1] >= v[0] and v[2] >= v[0] for v in cwup.values())
+reg = j["t3"]["registry_lines"] == j["t3"]["walk_forward_calls"] == 3000
+row("P8 T3: cross-tabs sum to n; calibrated CW at cell 9 in [4.0%, 6.0%]; cell 9 DK-normal H1 within 2 pp of cell 0; "
+    "CW at cells 10, 11 >= cell 9 (each CW method); registry lines == walk_forward calls == 3000",
+    sums8 and 0.04 <= cwcal9 <= 0.06 and h1d <= 0.02 and up and reg,
+    f"sums {sums8}; calibrated CW cell 9 {cwcal9:.4f}; |H1 cell 9 - cell 0| {h1d:.4f}; CW rates (9, 10, 11) "
+    f"{ {m: tuple(round(x, 4) for x in v) for m, v in cwup.items()} }; registry {j['t3']['registry_lines']} lines, "
+    f"{j['t3']['walk_forward_calls']} calls")
+# P9
+E = ("ols_dk", "huber_dk", "winsorised_ols_dk")
+r5 = {(c, e): r(cells[c]["estimators"][e]["reject"]) for c in (5, 6, 7, 8) for e in E}
+in_band = all(0.02 <= r5[(c, e)] <= 0.10 for c in (5, 7) for e in E)
+share = {c: cells[c]["estimators"]["huber_dk"]["mean_share_downweighted"] for c in (5, 6, 7, 8)}
+share_ok = all(0 < s < 0.5 for s in share.values())
+rise = all(r5[(6, e)] >= r5[(5, e)] and r5[(8, e)] >= r5[(7, e)] for e in E)
+row("P9 T6: cells 5, 7 rates in [2%, 10%]; Huber share downweighted in (0, 0.5); cells 6, 8 >= their b = 0 cells",
+    in_band and share_ok and rise,
+    f"rates { {f'{c}:{e}': round(v, 4) for (c, e), v in r5.items()} }; Huber share { {c: round(s, 4) for c, s in share.items()} }")
+# P10
+row("P10 complete True, errors empty, aborted null", j["complete"] is True and j["errors"] == [] and j["aborted"] is None,
+    f"complete {j['complete']}; errors {j['errors']}; aborted {j['aborted']}")
+print("SUMMARY:", "; ".join(f"{n.split()[0]} {ok}" for n, ok in rows))
+>>>>>>>>
+Output:
+P1 cell 0 rejection in [3.0%, 8.0%] (each method) and calibrated in [4.3%, 5.7%]: True | {'dk_normal': 0.0518, 'bootstrap': 0.047, 'calibrated': 0.051}
+P2 cell 0 coverage count + rejection count == n (each method): True | {'dk_normal': '5000 vs n 5000', 'bootstrap': '5000 vs n 5000', 'calibrated': '5000 vs n 5000'}
+P3 cells 0-4 |mean bias| <= 3 sd/sqrt(n) and se/sd in [0.85, 1.15]: True | {0: '|bias| 0.00224 vs 3sd/sqrt(n) 0.00314; se/sd 0.9951', 1: '|bias| 0.00042 vs 3sd/sqrt(n) 0.00313; se/sd 0.9993', 2: '|bias| 0.00075 vs 3sd/sqrt(n) 0.00721; se/sd 0.9699', 3: '|bias| 0.00049 vs 3sd/sqrt(n) 0.00679; se/sd 1.0302', 4: '|bias| 0.00204 vs 3sd/sqrt(n) 0.00728; se/sd 0.9612'}
+P4 cells 0-4 sd(b_hat) and mean se agree within 10% (max/min - 1): True | sd max/min - 1 = 0.0717; mean se max/min - 1 = 0.0005; own c_boot(0.95) and c_cal(0.95) intervals containing the pooled value: 10 of 10 (pooled c_boot 2.0049, c_cal 1.9682)
+P5 rejection rises over cells 0, 2, 3, 4; MDE80 defined; probit vs normal approximations within 15%: True | {'dk_normal': 'rates [0.0518, 0.287, 0.919, 1.0] rise True; MDE80 probit 0.20740305548030188; normal approx sd 0.2076, mean se 0.2065; within 15%: True', 'bootstrap': 'rates [0.047, 0.271, 0.917, 1.0] rise True; MDE80 probit 0.20913079294473588; normal approx sd 0.2076, mean se 0.2065; within 15%: True', 'calibrated': 'rates [0.051, 0.283, 0.919, 1.0] rise True; MDE80 probit 0.20765751737320187; normal approx sd 0.2076, mean se 0.2065; within 15%: True'}
+P6 cell 1 TOST at the primary SESOI declares at most 7% (each method): True | {'dk_normal': 0.0516, 'bootstrap': 0.0504, 'calibrated': 0.0516}
+P7 cell 0 TOST rates ordered low <= primary <= high (each method): True | {'dk_normal': (0.0, 1.0, 1.0), 'bootstrap': (0.0, 1.0, 1.0), 'calibrated': (0.0, 1.0, 1.0)}
+P8 T3: cross-tabs sum to n; calibrated CW at cell 9 in [4.0%, 6.0%]; cell 9 DK-normal H1 within 2 pp of cell 0; CW at cells 10, 11 >= cell 9 (each CW method); registry lines == walk_forward calls == 3000: True | sums True; calibrated CW cell 9 0.0500; |H1 cell 9 - cell 0| 0.0022; CW rates (9, 10, 11) {'normal': (0.031, 0.308, 0.96), 'calibrated': (0.05, 0.386, 0.976)}; registry 3000 lines, 3000 calls
+P9 T6: cells 5, 7 rates in [2%, 10%]; Huber share downweighted in (0, 0.5); cells 6, 8 >= their b = 0 cells: False | rates {'5:ols_dk': 0.054, '5:huber_dk': 0.057, '5:winsorised_ols_dk': 0.053, '6:ols_dk': 0.92, '6:huber_dk': 0.946, '6:winsorised_ols_dk': 0.918, '7:ols_dk': 0.337, '7:huber_dk': 0.202, '7:winsorised_ols_dk': 0.337, '8:ols_dk': 0.706, '8:huber_dk': 0.798, '8:winsorised_ols_dk': 0.706}; Huber share {5: 0.1754, 6: 0.1753, 7: 0.1703, 8: 0.1707}
+P10 complete True, errors empty, aborted null: True | complete True; errors []; aborted None
+SUMMARY: P1 True; P2 True; P3 True; P4 True; P5 True; P6 True; P7 True; P8 True; P9 False; P10 True
+Context for P9 (information; synthetic stand-in; from reports/P3_3_rehearsal_run1.json): cells 5 to 8, per estimator: rejection rate; mean bias of b_hat - b; sd(b_hat); se/sd
+  cell 5 (full, b 0.0) ols_dk: reject 0.0540; mean bias +0.00052; sd 0.07580; se/sd 0.9736
+  cell 5 (full, b 0.0) huber_dk: reject 0.0570; mean bias +0.01150; sd 0.07459; se/sd 0.9828
+  cell 5 (full, b 0.0) winsorised_ols_dk: reject 0.0530; mean bias -0.00111; sd 0.07593; se/sd 0.9745
+  cell 6 (full, b 0.25) ols_dk: reject 0.9200; mean bias -0.00396; sd 0.07728; se/sd 0.9536
+  cell 6 (full, b 0.25) huber_dk: reject 0.9460; mean bias +0.00799; sd 0.07562; se/sd 0.9684
+  cell 6 (full, b 0.25) winsorised_ols_dk: reject 0.9180; mean bias -0.00506; sd 0.07752; se/sd 0.9538
+  cell 7 (early, b 0.0) ols_dk: reject 0.3370; mean bias -0.09395; sd 0.05986; se/sd 1.0179
+  cell 7 (early, b 0.0) huber_dk: reject 0.2020; mean bias -0.07376; sd 0.05953; se/sd 1.0415
+  cell 7 (early, b 0.0) winsorised_ols_dk: reject 0.3370; mean bias -0.09395; sd 0.05986; se/sd 1.0179
+  cell 8 (early, b 0.25) ols_dk: reject 0.7060; mean bias -0.09386; sd 0.06212; se/sd 0.9863
+  cell 8 (early, b 0.25) huber_dk: reject 0.7980; mean bias -0.07420; sd 0.06213; se/sd 1.0031
+  cell 8 (early, b 0.25) winsorised_ols_dk: reject 0.7060; mean bias -0.09386; sd 0.06212; se/sd 0.9863
+
+--- f. DQ5: the line-7 patch, rehearsed in scratch clones ---
+REPO before: HEAD 1c48d381bb794e65d6532ba915ea782761ba58b2; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; tests/ diff vs HEAD empty: True
+$ git clone --quiet REPO /tmp/p3_3a_cloneA: ok
+remote removed; remotes: []
+clone A HEAD 1c48d381bb794e65d6532ba915ea782761ba58b2; tree clean: True
+$ python /tmp/p3_3a_line7.py /tmp/p3_3a_cloneA
+appended dummy line 7 to /private/tmp/p3_3a_cloneA/BLIND_FIT_LOG: keys ['utc', 'provenance', 'panel_sha256', 'spec_sha256', 'n_rows_input', 'caller']; provenance dev_real; panel 36f7dd696503...; spec 0320d6aaa19b...; n_rows_input 5124; caller names tools/p3_sealed_run.py: True; lines now 7
+stand-in outputs copied into clone A: reports/P3_4_sealed_run.json 510d1ea20228..., .md 2d5e3043038c...
+clone A status:
+ M BLIND_FIT_LOG
+?? reports/P3_4_sealed_run.json
+?? reports/P3_4_sealed_run.md
+
+f.1 Clone A, unpatched, with the dummy line 7 and the stand-in outputs:
+$ (in clone A) env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest discover -s tests -v   (full log /tmp/p3_3a_cloneA_suite1.log)
+Ran 277 tests in 324.711s
+FAILED (failures=2, skipped=5)
+Failing or erroring tests:
+test_sealed_fit_opt_in_and_record (test_docs_d3.TestP29Blinding.test_sealed_fit_opt_in_and_record) ... FAIL
+test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag) ... FAIL
+Their assertions and messages:
+FAIL: test_sealed_fit_opt_in_and_record (test_docs_d3.TestP29Blinding.test_sealed_fit_opt_in_and_record)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/p3_3a_cloneA/tests/test_docs_d3.py", line 66, in test_sealed_fit_opt_in_and_record
+    self.assertEqual(len(lines), 6)                                          # "dev_real lines: 6"
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 7 != 6
+
+======================================================================
+FAIL: test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/p3_3a_cloneA/tests/test_docs_d3b.py", line 41, in test_lock_amendments_and_nothing_real_before_the_tag
+    self.assertEqual(len(log), 6)                                           # only the sealed fits (P29)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 7 != 6
+
+----------------------------------------------------------------------
+
+(the suite rewrote the clone's reports/B6_coverage.json; restored in the clone)
+
+f.2 The patch (made in clone A by /tmp/p3_3a_make_patch.py; values read by script from reports/P3_0_report.txt, docs/P3_RUN_CONFIG.json and reports/P3_0b_preflight.md):
+<<<<<<<<
+"""P3-3a step f.2: the DQ5 line-7 test changes, applied in scratch clone A only. Values read by script: the six-line
+prefix SHA-256 from reports/P3_0_report.txt (the P3-0 baseline); the panel and spec hashes from docs/P3_RUN_CONFIG.json;
+the input rows from reports/P3_0b_preflight.md."""
+import json
+import re
+import sys
+from pathlib import Path
+
+clone = Path(sys.argv[1]).resolve()
+if not str(clone).startswith(("/tmp/p3_3a_clone", "/private/tmp/p3_3a_clone")):
+    raise SystemExit(f"REFUSED: {clone} is not a /tmp/p3_3a_clone* scratch clone")
+cfg = json.loads((clone / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+prefix = re.search(r"^BLIND_FIT_LOG sha256 \(baseline[^\n]*?([0-9a-f]{64})$",
+                   (clone / "reports" / "P3_0_report.txt").read_text(), re.M).group(1)
+n = int(re.search(r"Rows in the dev panel: (\d+)\.", (clone / "reports" / "P3_0b_preflight.md").read_text()).group(1))
+panel, spec = cfg["dev_panel_sha256"], cfg["spec_sha256"]
+
+d3 = clone / "tests" / "test_docs_d3.py"
+s = d3.read_text(encoding="utf-8")
+R3 = [
+    ("import inspect\nimport json\n", "import hashlib\nimport inspect\nimport json\n"),
+    ('        lines = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]\n'
+     '        self.assertEqual(len(lines), 6)                                          # "dev_real lines: 6"\n'
+     '        self.assertTrue(all(x["provenance"] == B.DEV_REAL for x in lines))\n',
+     '        raw = (ROOT / "BLIND_FIT_LOG").read_bytes()\n'
+     '        lines = [json.loads(x) for x in raw.decode("utf-8").splitlines() if x.strip()]\n'
+     '        self.assertEqual(len(lines), 7)                                          # DQ5: Pass 1\'s six lines and P3-4\'s line 7\n'
+     '        self.assertEqual(hashlib.sha256(b"".join(raw.splitlines(keepends=True)[:6])).hexdigest(),\n'
+     f'                         "{prefix}")   # DQ5: lines 1-6 byte-identical\n'
+     '        self.assertTrue(all(x["provenance"] == B.DEV_REAL for x in lines))\n'),
+    ('        self.assertTrue(all(x["panel_sha256"] == dev for x in lines))            # all on panel_dev.csv\n',
+     '        self.assertTrue(all(x["panel_sha256"] == dev for x in lines[:6]))        # lines 1-6 on the Pass 1 panel_dev.csv (DQ5)\n'),
+    ('        self.assertIn("report_B7b.py", callers[5])                               # line 6: report_B7b\n',
+     '        self.assertIn("report_B7b.py", callers[5])                               # line 6: report_B7b\n'
+     '        l7 = lines[6]                                                            # DQ5: line 7, the P3-4 sealed fit, by its fields\n'
+     '        self.assertEqual(set(l7), {"utc", "provenance", "panel_sha256", "spec_sha256", "n_rows_input", "caller"})\n'
+     f'        self.assertEqual(l7["panel_sha256"], "{panel}")   # AM-04\'s dev panel\n'
+     f'        self.assertEqual(l7["spec_sha256"], "{spec}")   # the configuration\'s spec_sha256\n'
+     f'        self.assertEqual(l7["n_rows_input"], {n})\n'
+     '        self.assertIn("tools/p3_sealed_run.py", l7["caller"])\n'),
+]
+for a, b in R3:
+    if s.count(a) != 1:
+        raise SystemExit(f"test_docs_d3.py: target found {s.count(a)} times: {a[:70]!r}")
+    s = s.replace(a, b)
+d3.write_text(s, encoding="utf-8")
+
+d3b = clone / "tests" / "test_docs_d3b.py"
+s = d3b.read_text(encoding="utf-8")
+a = '        self.assertEqual(len(log), 6)                                           # only the sealed fits (P29)\n'
+b = '        self.assertEqual(len(log), 7)                                           # only the sealed fits (P29): Pass 1\'s six and P3-4\'s line 7 (DQ5)\n'
+if s.count(a) != 1:
+    raise SystemExit("test_docs_d3b.py: target not found once")
+d3b.write_text(s.replace(a, b), encoding="utf-8")
+print("patched tests/test_docs_d3.py and tests/test_docs_d3b.py in", clone)
+>>>>>>>>
+$ git -C /tmp/p3_3a_cloneA diff -- tests/ > docs/P3_DQ5_line7.patch
+$ git -C /tmp/p3_3a_cloneA diff --name-only (files the patch touches; all changes in clone A)
+BLIND_FIT_LOG
+tests/test_docs_d3.py
+tests/test_docs_d3b.py
+ M BLIND_FIT_LOG
+ M tests/test_docs_d3.py
+ M tests/test_docs_d3b.py
+?? reports/P3_4_sealed_run.json
+?? reports/P3_4_sealed_run.md
+$ grep -c '^diff --git' docs/P3_DQ5_line7.patch; files in it:
+diff --git a/tests/test_docs_d3.py b/tests/test_docs_d3.py
+diff --git a/tests/test_docs_d3b.py b/tests/test_docs_d3b.py
+$ shasum -a 256 docs/P3_DQ5_line7.patch
+8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c  /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P3_DQ5_line7.patch
+In clone A, with the patch, the dummy line 7 and the stand-ins: tests.test_docs_d3 and tests.test_docs_d3b ran 8 tests, OK.
+
+f.3 Clone B (from REPO HEAD), the patch applied:
+ls: /tmp/p3_3a_cloneB: No such file or directory
+$ git clone --quiet REPO /tmp/p3_3a_cloneB: ok
+remote removed; remotes: []; HEAD 1c48d381bb794e65d6532ba915ea782761ba58b2; tree clean: True
+$ git -C /tmp/p3_3a_cloneB apply --check docs/P3_DQ5_line7.patch
+exit=0
+$ git -C /tmp/p3_3a_cloneB apply docs/P3_DQ5_line7.patch
+exit=0
+clone B status:
+ M tests/test_docs_d3.py
+ M tests/test_docs_d3b.py
+(eval):19: no matches found: /tmp/p3_3a_cloneB/reports/P3_4_sealed_run.*
+clone B BLIND_FIT_LOG lines: 6 (the six-line state); stand-in outputs present: 0
+
+f.3 (ii) Clone B, patch applied, six-line state (no line 7, no stand-in outputs):
+$ (in clone B) env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest discover -s tests -v   (full log /tmp/p3_3a_cloneB_ii.log)
+Ran 277 tests in 318.888s
+FAILED (failures=2, skipped=5)
+Failing tests (only the patched ones):
+test_sealed_fit_opt_in_and_record (test_docs_d3.TestP29Blinding.test_sealed_fit_opt_in_and_record) ... FAIL
+test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag) ... FAIL
+  File "/private/tmp/p3_3a_cloneB/tests/test_docs_d3.py", line 68, in test_sealed_fit_opt_in_and_record
+AssertionError: 6 != 7
+  File "/private/tmp/p3_3a_cloneB/tests/test_docs_d3b.py", line 41, in test_lock_amendments_and_nothing_real_before_the_tag
+AssertionError: 6 != 7
+f.3 (i) Clone B, patch applied, with the dummy line 7 and the stand-in outputs:
+appended dummy line 7 to /private/tmp/p3_3a_cloneB/BLIND_FIT_LOG: keys ['utc', 'provenance', 'panel_sha256', 'spec_sha256', 'n_rows_input', 'caller']; provenance dev_real; panel 36f7dd696503...; spec 0320d6aaa19b...; n_rows_input 5124; caller names tools/p3_sealed_run.py: True; lines now 7
+stand-in outputs copied: reports/P3_4_sealed_run.json and .md (from /tmp/p3_3_rehearsal_1)
+$ (in clone B) env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest discover -s tests -v   (full log /tmp/p3_3a_cloneB_i.log)
+Ran 277 tests in 344.948s
+OK (skipped=5)
+skipped:
+  test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+  test_draw_passes_guard_and_contract (test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_logged_and_silent (test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_first_reps_bit_identical (test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+  test_last_reps_bit_identical (test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+GATE f: (i) passes (277, OK, skipped=5) and (ii) fails only in the patched tests (test_docs_d3.test_sealed_fit_opt_in_and_record, test_docs_d3b.test_lock_amendments_and_nothing_real_before_the_tag): PASSED.
+
+docs/P3_DQ5_line7.patch in full:
+<<<<<<<<
+diff --git a/tests/test_docs_d3.py b/tests/test_docs_d3.py
+index 1236c23..d0451f2 100644
+--- a/tests/test_docs_d3.py
++++ b/tests/test_docs_d3.py
+@@ -3,6 +3,7 @@ never edited) against the rebuilt repo. P30-P31 numbers are checked against the
+ pilot and B7b preview reports (produced before the C3 checkpoint, not by the rebuild), and
+ P31's two exceedance probabilities are recomputed independently. Plans and claim wording
+ (P32, most of P34-P35) are text-only and are listed, not tested. No data are read."""
++import hashlib
+ import inspect
+ import json
+ import subprocess
+@@ -62,15 +63,24 @@ class TestP29Blinding(unittest.TestCase):
+         ck = (ROOT / "tools" / "checkpoint.sh").read_text()
+         self.assertIn("env -u OFILT_RUN_SEALED", ck)
+         self.assertNotIn("OFILT_RUN_SEALED=1", ck)
+-        lines = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+-        self.assertEqual(len(lines), 6)                                          # "dev_real lines: 6"
++        raw = (ROOT / "BLIND_FIT_LOG").read_bytes()
++        lines = [json.loads(x) for x in raw.decode("utf-8").splitlines() if x.strip()]
++        self.assertEqual(len(lines), 7)                                          # DQ5: Pass 1's six lines and P3-4's line 7
++        self.assertEqual(hashlib.sha256(b"".join(raw.splitlines(keepends=True)[:6])).hexdigest(),
++                         "dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301")   # DQ5: lines 1-6 byte-identical
+         self.assertTrue(all(x["provenance"] == B.DEV_REAL for x in lines))
+         dev = "736636031ca1532548744440d3df9465eda3126ed93bdcdad2df06964ee36a42"   # AM-04, P51: lines 1-6 are Pass 1 history (row 12)
+-        self.assertTrue(all(x["panel_sha256"] == dev for x in lines))            # all on panel_dev.csv
++        self.assertTrue(all(x["panel_sha256"] == dev for x in lines[:6]))        # lines 1-6 on the Pass 1 panel_dev.csv (DQ5)
+         callers = [x["caller"] for x in lines]
+         self.assertTrue(all("test_sim_b5" in c for c in callers[:3]))            # lines 1-3: B5 tests
+         self.assertTrue(all("report_B7.py" in c for c in callers[3:5]))          # lines 4-5: report_B7
+         self.assertIn("report_B7b.py", callers[5])                               # line 6: report_B7b
++        l7 = lines[6]                                                            # DQ5: line 7, the P3-4 sealed fit, by its fields
++        self.assertEqual(set(l7), {"utc", "provenance", "panel_sha256", "spec_sha256", "n_rows_input", "caller"})
++        self.assertEqual(l7["panel_sha256"], "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68")   # AM-04's dev panel
++        self.assertEqual(l7["spec_sha256"], "0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9")   # the configuration's spec_sha256
++        self.assertEqual(l7["n_rows_input"], 5124)
++        self.assertIn("tools/p3_sealed_run.py", l7["caller"])
+ 
+ 
+ class TestP30P31Power(unittest.TestCase):
+diff --git a/tests/test_docs_d3b.py b/tests/test_docs_d3b.py
+index 69e7b45..4f49f27 100644
+--- a/tests/test_docs_d3b.py
++++ b/tests/test_docs_d3b.py
+@@ -38,7 +38,7 @@ class TestP36(unittest.TestCase):
+         heads = re.findall(r"^## (AM-\d\d) ", (ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(), re.M)
+         self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05"])   # AM-03, AM-04, AM-05 (row 27)
+         log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+-        self.assertEqual(len(log), 6)                                           # only the sealed fits (P29)
++        self.assertEqual(len(log), 7)                                           # only the sealed fits (P29): Pass 1's six and P3-4's line 7 (DQ5)
+         self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+ 
+ 
+>>>>>>>>
+
+f.4 Clones deleted; REPO unchanged:
+$ rm -rf /tmp/p3_3a_cloneA /tmp/p3_3a_cloneB; exit=0
+ls: /tmp/p3_3a_cloneA: No such file or directory
+ls: /tmp/p3_3a_cloneB: No such file or directory
+REPO: HEAD 1c48d381bb794e65d6532ba915ea782761ba58b2; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301 (6 lines); tests/ unchanged vs HEAD: True; untracked test files: []
+$ git -C REPO status --porcelain
+ M PASS3_STATUS.md
+?? docs/P3_DQ5_line7.patch
+?? reports/P3_2e_report.txt
+?? reports/P3_3_rehearsal.log
+?? reports/P3_3_rehearsal_run1.json
+?? reports/P3_3_rehearsal_run1.md
+
+--- g.1 PASS3_STATUS edits ---
+Test changes: the 'Pending: applied at the post-run checkpoint (DQ5)' section with two rows. Test results: the P3-3a block. Flags: the early-window finding (P3-3a, for the supervisor). Blinding attestation: P3-3a. Deviations: P3-3a d (copy-script bug; rerun), e (readings; context), f (the patch script; caller text; clones from HEAD), g (the flag). Progress: the P3-3a row set to done. All edits by the Edit tool or a shell heredoc (no Python).
+Records rule: lines added beginning with a reserved prefix: 0
+--- g.2 --check-config (records rule) ---
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+exit=0
+$ git diff --stat
+ PASS3_STATUS.md | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 63 insertions(+), 2 deletions(-)
+$ git status --porcelain
+ M PASS3_STATUS.md
+?? docs/P3_DQ5_line7.patch
+?? reports/P3_2e_report.txt
+?? reports/P3_3_rehearsal.log
+?? reports/P3_3_rehearsal_run1.json
+?? reports/P3_3_rehearsal_run1.md
+
+--- g.3 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-2d (review changes R1 R2; structural check; rehearsal script)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-3a (rehearsal on record; DQ5 patch; DQ6 facts)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 0fff5a681f90e2f80746ea137ae2a0c277b3caadcb7926ff3124e54b9c5f94d6
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+?? docs/P3_DQ5_line7.patch
+?? reports/P3_2e_report.txt
+?? reports/P3_3_rehearsal.log
+?? reports/P3_3_rehearsal_run1.json
+?? reports/P3_3_rehearsal_run1.md
+----------------------------------------------------------------------
+Ran 277 tests in 341.307s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+?? docs/P3_DQ5_line7.patch
+?? reports/P3_2e_report.txt
+?? reports/P3_3_rehearsal.log
+?? reports/P3_3_rehearsal_run1.json
+?? reports/P3_3_rehearsal_run1.md
+commit cdded9b444ea889ef64859acf7883b89ffecf29b
+checkpoint exit=0
+
+--- g.4 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+cdded9b444ea889ef64859acf7883b89ffecf29b checkpoint: P3-3a (rehearsal on record; DQ5 patch; DQ6 facts)
+$ git log -1 --format=%B
+checkpoint: P3-3a (rehearsal on record; DQ5 patch; DQ6 facts)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md                  |   65 +-
+ docs/P3_DQ5_line7.patch          |   53 ++
+ reports/P3_2e_report.txt         |  250 ++++++
+ reports/P3_3_rehearsal.log       |   40 +
+ reports/P3_3_rehearsal_run1.json | 1777 ++++++++++++++++++++++++++++++++++++++
+ reports/P3_3_rehearsal_run1.md   |   86 ++
+ 6 files changed, 2269 insertions(+), 2 deletions(-)
+  (step a check rerun) tools/p3_sealed_run.py: 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e; equals the listed value: True
+  (step a check rerun) docs/P3_RUN_CONFIG.json: 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals the listed value: True
+  (step a check rerun) BLIND_FIT_LOG: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+  (step a check rerun) RUN_REGISTRY.jsonl bytes: 0; is 0: True
+$ git tag -l
+pass1-final
+The five skips (the module check used before):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 21.825s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- g.5 The /tmp sources, after the checkpoint ---
+  reports/P3_3_rehearsal.log 5307a283f8b123d61854104d77bed4960413288a153228c7357840ae689cea69 vs /tmp/p3_3_rehearsal.log 5307a283f8b123d61854104d77bed4960413288a153228c7357840ae689cea69: equal True
+  reports/P3_3_rehearsal_run1.json 510d1ea202283a28164ba424c0cba6f5c6cf654f50ec580890721840bd3222e5 vs /tmp/p3_3_rehearsal_1/P3_4_sealed_run.json 510d1ea202283a28164ba424c0cba6f5c6cf654f50ec580890721840bd3222e5: equal True
+  reports/P3_3_rehearsal_run1.md 2d5e3043038ce380f4f41c7dbad91b39cbfc0f2e1cd07133f76da9c152c0c69c vs /tmp/p3_3_rehearsal_1/P3_4_sealed_run.md 2d5e3043038ce380f4f41c7dbad91b39cbfc0f2e1cd07133f76da9c152c0c69c: equal True
+  reports/P3_2e_report.txt 11b26fedd6aebf6a9955368d7ae95f9c78e46591005cce632f9776efa31163d0 vs /tmp/p3_2e.txt 11b26fedd6aebf6a9955368d7ae95f9c78e46591005cce632f9776efa31163d0: equal True
+  the committed copies are in HEAD: 4 of 4
+$ rm -r /tmp/p3_3_rehearsal_1; rm /tmp/p3_3_rehearsal.log /tmp/p3_2e.txt; exit=0
+  ls: /tmp/p3_2e.txt: No such file or directory
+  ls: /tmp/p3_3_rehearsal_1: No such file or directory
+  ls: /tmp/p3_3_rehearsal.log: No such file or directory
+  /tmp/p3_3_rehearsal_2 kept: it has no byte-identical copy in REPO (only run 1's outputs were copied; run 2 was shown equal to run 1 apart from runtime). Its files: P3_4_sealed_run.json P3_4_sealed_run.md 
+
+--- h. PASS3_STATUS.md Deviations, final (as committed in cdded9b), verbatim ---
+<<<<<<<<
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
+- P3-2b g, the tests' first run: 6 of the tests passed, and `setUpClass` of the tiny-run tests errored.
+  - The cause was a bug in the test's setup, not in the tool. The test set each subprocess's `TMPDIR` to its own folder and passed an `--out-dir` outside it, which the tool refuses by design.
+  - Diagnosis before the one rerun: the tool was run directly once (synthetic, `--smoke 2`, contained in `/tmp/p3_2b_dbg_*`) and completed with no error. One refusal check confirmed that an `--out-dir` outside the temporary locations is refused and nothing is written.
+  - The test alone was fixed: `--out-dir` now lies inside the run's `TMPDIR`. The one rerun passed (9 of 9). Both runs, the diagnosis and the diff are in the P3-2b report.
+- P3-2b f, the tree check in real mode (for the supervisor). DQ1.3 forbids the script to import `subprocess`, so it checks the tree with `registry.git_state()`, which runs `git status --porcelain --untracked-files=no` (registry.py:87-90). A modified tracked file refuses the run; an untracked file does not. A stricter check needs a decision before P3-4.
+- P3-2b f, other design choices the item did not fix (for review):
+  - `--out-dir` in synthetic modes may lie under `/tmp` or under the system temporary directory (needed for the tests' temporary folders on macOS). Never inside the repository.
+  - The configuration has two keys beyond step e's list: `stand_in`, which describes the stand-in (with its counts read from `reports/P3_0b_preflight.md`), and `early_window_before` (K's cut date, read from `reports/P3_2b_preflight.md`).
+  - The `rules` are stored as the Decision-log lines with their `> ` markers.
+  - MDE80 per method uses cells 0, 2, 3 and 4 (b = 0, 0.10, 0.25 and 0.40, as B7b). Its cross-checks use sd(b̂) and the mean se pooled over cells 0 to 4.
+  - H3's bootstrap decision uses c_boot_h3, the 0.95 order statistic of |t*_h3| pooled over cells 0 to 4 (D3.5).
+  - A task's exception is recorded with the line number of its innermost frame in this script.
+  - Real mode takes no `--out-dir`.
+- P3-2b g, test 4: the real-mode conditions are tested on the pure function `mode_refusal`, with the sealed value passed as an argument. No test sets the `OFILT_RUN_SEALED` environment variable; the subprocess test removes it from the child's environment.
+- P3-2b, the optional reuse-the-first-fit variant: the tool uses `calib.bootstrap_t_given_fit`, a new function appended to `calib.py`, to avoid refitting each draw a second time. Test 2 shows it returns exactly `calib.bootstrap_t`'s t*. Every existing function of `calib.py` is unchanged: the P3-2a file is a byte prefix of the new one.
+- P3-2c d: besides the test 4 change, the diff adds the two imports it needs (`import contextlib` and `from io import StringIO`). Nothing else in the file changed.
+- P3-2d f, where the smoke rehearsal ran: `tools/p3_3_rehearse.sh` refuses a dirty tree (its step 2), and REPO held this item's uncommitted files.
+  - It ran from a scratch clone, `/tmp/p3_2d_clone`: a local clone of HEAD `b94d8a4` with no remote, plus this item's files in one local commit (`39a39cc…`, never pushed).
+  - All 134 files were byte-identical to REPO's working tree, and the clone's tree was clean.
+  - The clone and the outputs were deleted afterwards. REPO's HEAD, BLIND_FIT_LOG and RUN_REGISTRY.jsonl were unchanged, as was the usual temporary run registry.
+- P3-2d d, R2's scope: the generic handlers print only `<class> at line <n>`, and the `AbortRun` handlers print only a line number. The `Refused` handler still prints its reason. That reason is a refusal message the tool composes itself (a mode combination, the sealed variable, the configuration SHA-256, the tree, or `validate_config`'s key names), with no data value; test 4, which this item leaves unchanged, asserts it.
+- P3-2d e, the structural check's draw used `n_dates` = T_conf (1,013), the sealed run's length, for the lag-6 gate (at the source length of 1,439 dates the DK lag would be 7). The check reads the calibrator's private row bounds for its row count; that tool is not the sealed-run tool.
+- P3-2d f, the rehearsal script's last summary line is "the larger total" of the two runs, as specified. In smoke mode that is the smoke total (105 s), not a full-count projection. The P3-2d report gives the per-task rates and the full-count projection (1.92 h), computed by script from the two runs' runtime sections.
+- P3-2d f, the script has no shebang line: its first line is `set -euo pipefail`, as specified, and it is run with `bash`.
+- P3-3a d, the first copy attempt: my copy script looped over "source destination" pairs with `set -- $pair`. The shell running it is zsh, which does not word-split an unquoted `$pair`, so every `cp` failed and nothing was copied (the tree was checked). Its "equal: True" lines compared two empty hashes and are spurious, and d.2 then failed on the missing copy. Fix: one explicit `cp -p` and hash comparison per file. The one rerun (rerun-once rule) copied all four files byte for byte, and d.2 found run 2 equal to run 1 apart from runtime. Both runs are in the P3-3a report.
+- P3-3a e, two readings the item left open:
+  - P4's "agree within 10%" is computed as max/min − 1 ≤ 0.10 over cells 0 to 4. The own-quantile intervals are reported as a count (10 of 10 contain the pooled value).
+  - P5's MDE80 agreement compares the probit value with both of B7b's normal approximations (sd(b̂) and mean se).
+- P3-3a e, the P9 context: beyond the table, the report prints cells 5 to 8's mean bias, sd and se/sd per estimator from the same JSON (synthetic aggregates), to support the P3-3a flag.
+- P3-3a f, the patch: made by a script (`/tmp/p3_3a_make_patch.py`, in the report) that reads the six-line prefix hash, the line-7 hashes and the row count from the registry files. The dummy line 7's caller text imitates `_log_blind_fit`'s format, with an invented line number. Both clones were taken from HEAD, so they lack this item's uncommitted files. Clone A's suite ran on HEAD plus the dummy line and the stand-ins.
+- P3-3a g, a flag beyond the listed edits: the early-window finding (P9) went into Flags, because it needs a decision before the sanction.
+>>>>>>>>
+$ git diff --quiet HEAD -- PASS3_STATUS.md
+unchanged since the commit: True
+
+--- Planned STOP (supervisor review of the patch, the plausibility table and the DQ6 facts) ---
+2026-10-07T04:51:20Z
+cdded9b444ea889ef64859acf7883b89ffecf29b
+$ git status --porcelain (between markers)
+<<<
+>>>

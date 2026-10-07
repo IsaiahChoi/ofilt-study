@@ -1,0 +1,432 @@
+2026-10-06T20:22:05Z
+87aff1406356701396a3e99b7b2923257ba81d62
+=== P3-2a report ===
+--- a. Date gate ---
+$ date +%F
+2026-10-06
+--- state at start ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+87aff1406356701396a3e99b7b2923257ba81d62 checkpoint: P3-1b (records; synthetic timing probe)
+$ git tag -l
+pass1-final
+BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+RUN_REGISTRY.jsonl bytes: 0
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Decisions recorded; targeted edits ---
+b.1 Progress: P3-1b status cell now 'done; accepted by Isaiah 2026-10-06'; P3-2a row added. b.2 Next action replaced.
+b.3 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-1b accepted (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - Checkpoint `87aff1406356701396a3e99b7b2923257ba81d62`, including the recorded deviation P3-1b c (panel B with `p_excl` = 0; explicit synthetic provenance on `pair` and `clark_west`).
+>   - Probe facts (synthetic, empty fingerprint registry): `build_design` + `fit_dk` at 1,013 dates, median 0.025 s; `fit_huber`, 0.007 s; `stationary_bootstrap_positions`, 0.0002 s; `walk_forward` with {M2, M3} on 2,452 dates, 0.92 s; Clark–West on the last 1,013 dates, 0.033 s. The first forecast falls at date 501 and every one of the last 1,013 dates is forecast. `registry.py` fixes the synthetic registry path at import (`registry.py:34`), and a TMPDIR set before the process starts contains every line.
+> - DQ3 (Isaiah, 2026-10-06, on the supervisor's recommendation): the inference methods, their evaluation and the joint T1/T4 rule.
+>   - D3.1 The bootstrap test (AM-02's branch). The statistic is the Driscoll–Kraay t of `usdjpy_ret`, t = b̂/se. The resampling is a stationary bootstrap of whole dates of the estimation sample (mean block 5): the sample's T dates are drawn to length T, taken in drawn order and refitted with the same design and DK lag, giving t* = (b̂* − b̂)/se* (recentred, not null-imposed). The two-sided 5% test rejects if |t| > c_boot, the 95% quantile of |t*|; the interval is b̂ ± c_boot·se; TOST uses the 90% quantile of |t*|. At the confirmation it uses 9,999 resamples, seeded from the spec's seed (the seed goes into the amendment).
+>   - D3.2 Its evaluation in the sealed run is the warp-speed method (Giacomini, Politis and White, 2013, Econometric Theory 29(3), 567–589, DOI 10.1017/S0266466612000655): one resample per simulated replication, with each cell's critical values taken as quantiles of the pooled |t*| over that cell's replications. P3-2a checks it on synthetic data against a full inner bootstrap.
+>   - D3.3 The simulation-calibrated critical value (P31). c_cal(α) is the ⌈(1 − α)·n⌉-th smallest |t| over T1's n = 5,000 replications at b = 0 (α = 0.05 for H1; α = 0.10 for TOST), reported with its 95% order-statistic interval. Power under it is size-adjusted power. For Clark–West, c_CW,cal is the ⌈0.95·n⌉-th smallest CW statistic over T3's replications at b = 0 (one-sided).
+>   - D3.4 The joint T1/T4 rule (Flags 10 and 12), applied at P3-5 to point estimates, as AM-02 is.
+>     - H1: if the DK-normal rejection rate at b = 0 (T1) lies in [3.5%, 6.5%], primary inference is DK with the normal reference. Otherwise it is the D3.1 bootstrap (AM-02), provided the bootstrap's own rate at b = 0 lies in that band; if it does not, primary inference is DK with c_cal(0.05).
+>     - Clark–West: if its rate at b = 0 (T3, normal reference) lies in [3.5%, 6.5%], the normal reference stays; otherwise c_CW,cal replaces it.
+>     - The selected methods' numbers are the binding ones (power, MDE80, D2.6 and the T3 cross-tab). Every method's numbers are reported (DQ1.6).
+>   - D3.5 When the method selected for H1 is DK-normal or the bootstrap, it applies to every other pre-registered DK test (H3, the secondary family, H4 and the robustness rows). Under c_cal, which is specific to H1 and TOST, the other tests keep the normal reference.
+> - DQ4 (Isaiah, 2026-10-06, on the supervisor's recommendation): the designs of T2, T3, T5's viability and T6.
+>   - D4.1 The cells, in task order (cell id: task, b, replications). Every draw has n_dates = 1,013 unless stated, a₂ = 0 and mean block 5.
+>     - 0: T1, b = 0, 5,000.
+>     - 1: T5's boundary (D2.6 (ii)), b = +0.8652, 5,000.
+>     - 2 to 4: T2, b = 0.10, 0.25 and 0.40, 1,000 each.
+>     - 5 to 8: T6, full draws at b = 0 and 0.25, and early-window draws at b = 0 and 0.25, 1,000 each.
+>     - 9 to 11: T3, n_dates = 2,452, b = 0, 0.10 and 0.25, with 2,000, 500 and 500.
+>     - The counts may be revised before the sanction, on runtime grounds only.
+>   - D4.2 T3. On each 2,452-date draw (T_source + T_conf): `walk_forward` with {M2, M3}, target `y_sim`, both masks False, and the replication's outer seed; Clark–West (M3 vs M2) on the rows of the last 1,013 dates; H1 on the same last 1,013 dates. The cross-tab (both, H1 only, CW only, neither) is reported per cell for every H1 method × CW method.
+>   - D4.3 T6. Early-window draws resample only the source dates before 2017-09-27 (the coarse-grid period of 5711 and 5706); their count is a target-only pre-flight fact, taken at P3-2b. The estimators are OLS-DK, Huber-DK (c = 1.345, MAD scale) and OLS-DK on FX winsorised at the spec's bounds, all with the normal reference. Reported: the rejection rate, mean bias, sd(b̂), mean SE/sd, coverage, and Huber's mean share downweighted. If an estimator's rate at b = 0 on early-window draws lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods.
+>   - D4.4 TOST viability (D2.6): (i) from cell 0, at the primary, low and high SESOI; (ii) from cell 1.
+>   - D4.5 Seeds. The outer seed is the spec's seed + 5,000,000 + 100,000·cell + replication; the warp-speed resample of the same replication uses that seed + 50,000. These are disjoint from the B7, B7b and C7 blocks.
+>   - D4.6 DK and Newey–West lags come from `Spec.dk_lag` on each fit's unique dates; the run asserts 6 for every fit.
+>   - D4.7 Outputs, per cell and method, are only: rejection counts, rates and Wilson intervals; means and standard deviations across replications; coverage; the named quantiles (c_boot, c_cal, c_CW,cal) with their order-statistic intervals; MDE80 per method (probit interpolation with B7b's cross-checks); the cross-tab counts; H3's rate at b = 0; and each task's runtime.
+> - DQ7 (Isaiah, 2026-10-06, on the supervisor's recommendation): code scope.
+>   - New code only: `ofilt/drift/calib.py` and its tests (P3-2a); `tools/p3_sealed_run.py`, its tests and `docs/P3_RUN_CONFIG.json` (P3-2b). The confirmation-time entry point for the selected method lives in `calib.py`.
+>   - Unchanged until the switch: the C7-hashed files, `spec.py`, `blind.py`, `io.py`, `registry.py`, `targets.py` and the guard; `build/pass1/` and `build/pass2/`; `PRE_OPEN_FEATURES` (the 20 Pass 1 columns).
+>   - The switch (P3-6) may change only the spec (AM-07 onward), `spec.py`'s validation of the new inference fields, and the pins listed under DQ5. Any other change needs its own listed approval.
+> - Clarifications of DQ1 (Isaiah, 2026-10-06, on the supervisor's recommendation).
+>   - DQ1.2. Because `registry.py` fixes the synthetic run-registry path at import, the sealed-run script creates its own temporary directory and sets `tempfile.tempdir` to it before importing any `ofilt` module. It asserts that `registry.SYNTHETIC_PATH` lies inside that directory, asserts at the end that the directory holds exactly one line per `walk_forward` call, and then deletes it. No line is printed or kept. If a run is killed, Isaiah deletes the directory before anything else.
+>   - DQ1.3. "Imports none of multiprocessing, concurrent.futures, joblib or subprocess" is tested on the import statements of the script and of `calib.py`. The indirect imports by sklearn (through `models`) and by `registry.py` (for git) are permitted.
+>   - DQ1.5. The rehearsal loads the dev panel with `io.load_dev` and `targets.add_targets` to populate the fingerprint registry. This is target-only contact: nothing is printed, and no `DevCalibrator` is constructed on real data.
+
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | in progress | P3-1b acceptance, DQ3, DQ4, DQ7 and the DQ1 clarifications recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with synthetic tests `tests/test_p3_calib.py`; the synthetic warp-speed check `tools/p3_2a_warp_check.py` writes `reports/P3_2a_warp_check.md`. Synthetic only; no data file read |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+P3-2b: the sealed-run tool, `docs/P3_RUN_CONFIG.json`, the T6 window's pre-flight count, and a complete synthetic run measuring runtime. DQ5, DQ6 and DQ8 remain open (P3-3, P3-6, P3-8).
+
+$ git diff --stat
+ PASS3_STATUS.md | 40 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 2 deletions(-)
+
+--- c. ofilt/drift/calib.py (new; in full) ---
+$ shasum -a 256 ofilt/drift/calib.py tests/test_p3_calib.py tools/p3_2a_warp_check.py
+de85c312c4652c41d4ad4beb6b9913ae14d986a66438fc83ad8ffdb68bce3e04  ofilt/drift/calib.py
+39cb74fd4964ec88db62d2b0bce4d991836a85b65bc891485869f7d2a9bd3757  tests/test_p3_calib.py
+499379fa7215f4ec345fe94a87d3e13ba8cd7c5bdf01a585e9396a2d213cd24f  tools/p3_2a_warp_check.py
+<<<<<<<<
+"""Calibration helpers for Pass 3 (DQ3, DQ4; PASS3_STATUS Decision log). Outside the C7 key.
+
+Implements, by calling existing code without changing it (inference.build_design, inference.fit_dk,
+inference.fit_huber, sim.stationary_bootstrap_positions, blind):
+  D3.1  the bootstrap test of H1: the Driscoll-Kraay t of the H1 parameter, t = b/se; a stationary bootstrap of whole
+        dates of the estimation sample (mean block 5), the T dates drawn to length T in drawn order and refitted with
+        the same design and DK lag; t* = (b* - b)/se* (recentred, not null-imposed). Reject if |t| > c_boot, the 0.95
+        order statistic of |t*|; interval b +/- c_boot se; TOST uses the 0.90 order statistic.
+  D3.2  the warp-speed draw is bootstrap_t with B = 1.
+  D3.3  order statistics with their 95% intervals (c_cal, c_boot, c_CW,cal).
+  D4.3  FX winsorisation at the spec's bounds; stationary-bootstrap positions inside an early window.
+Every public function that receives a frame calls blind.require_unblinded first, as the entry points of inference
+(inference.py:75), fctests (fctests.py:99) and forecast (forecast.py:209) do (P29). No file I/O and no global state;
+no other module's attributes are changed.
+"""
+from __future__ import annotations
+
+import math
+from fractions import Fraction
+
+import numpy as np
+import pandas as pd
+from scipy import stats
+
+from . import blind
+from . import inference as _inf
+from . import sim as _sim
+from .spec import Spec
+
+Z975 = float(stats.norm.ppf(0.975))     # as tools/report_B7b.py:34
+Z_INTERVAL = 1.959964                   # the order-statistic interval's multiplier (P3-2a)
+
+
+# ------------------------------------------------------------------ Monte Carlo summaries
+def wilson(k: int, n: int, z: float = Z975) -> tuple[float, float]:
+    """Wilson score interval, the arithmetic of tools/report_B7b.py:37-42 (fctests.wilson is the same, clipped)."""
+    p = k / n
+    d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d
+    h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return float(c - h), float(c + h)
+
+
+def order_stat_ranks(n: int, level: float) -> tuple[int, int, int]:
+    """(k, k_lo, k_hi), 1-based: k = ceil(level n); k_lo = max(1, floor(n level - z sqrt(n level (1 - level))));
+    k_hi = min(n, ceil(n level + z sqrt(...))), z = 1.959964. level is read as its decimal string (exact n level)."""
+    if not (isinstance(n, (int, np.integer)) and n >= 1 and 0 < level < 1):
+        raise ValueError("need an integer n >= 1 and 0 < level < 1")
+    nl = Fraction(str(level)) * int(n)
+    half = Z_INTERVAL * math.sqrt(float(nl) * (1 - level))
+    k = math.ceil(nl)
+    return int(k), int(max(1, math.floor(float(nl) - half))), int(min(n, math.ceil(float(nl) + half)))
+
+
+def order_stat(x, level: float) -> float:
+    """The ceil(level n)-th smallest value of x."""
+    v = np.sort(np.asarray(x, dtype=float).ravel())
+    k, _, _ = order_stat_ranks(v.size, level)
+    return float(v[k - 1])
+
+
+def order_stat_interval(x, level: float) -> tuple[float, float]:
+    """The 95% order-statistic interval of the level quantile: the k_lo-th and k_hi-th smallest values."""
+    v = np.sort(np.asarray(x, dtype=float).ravel())
+    _, lo, hi = order_stat_ranks(v.size, level)
+    return float(v[lo - 1]), float(v[hi - 1])
+
+
+def mde80(bs, rates, sd: float | None = None, mean_se: float | None = None) -> dict:
+    """MDE at 80% power as tools/report_B7b.py:70-77 (probit-scale interpolation between bracketing grid points,
+    b ascending) and its cross-checks as report_B7b.py:122-128: (z_.975 + z_.80) x sd(b_hat) and x mean DK SE."""
+    points = list(zip([float(b) for b in bs], [float(r) for r in rates]))
+    target = stats.norm.ppf(0.80)
+    probit = None
+    for (b0, p0), (b1, p1) in zip(points[:-1], points[1:]):
+        if p0 <= 0.80 <= p1 and p1 > p0:
+            q0, q1 = stats.norm.ppf(np.clip([p0, p1], 1e-6, 1 - 1e-6))
+            probit = float(b0 + (target - q0) * (b1 - b0) / (q1 - q0))
+            break
+    k = Z975 + stats.norm.ppf(0.8)
+    return dict(probit_interpolated=probit,
+                normal_approx_sd=None if sd is None else float(k * sd),
+                normal_approx_mean_se=None if mean_se is None else float(k * mean_se))
+
+
+# ------------------------------------------------------------------ decisions
+def rejects(t, c):
+    """Two-sided rejection: |t| > c (elementwise)."""
+    return np.abs(np.asarray(t, dtype=float)) > c
+
+
+def tost_declares(b, se, sesoi, c):
+    """Equivalence declared: (b - c se > -sesoi) and (b + c se < sesoi) (elementwise)."""
+    b, se = np.asarray(b, dtype=float), np.asarray(se, dtype=float)
+    return (b - c * se > -sesoi) & (b + c * se < sesoi)
+
+
+# ------------------------------------------------------------------ fits and resampling
+def fit_t(frame: pd.DataFrame, spec: Spec, target: str, lag: int | None = None) -> dict:
+    """build_design then fit_dk (normal reference). b, se, t and lag for spec.h1_parameter, and b, se, t for
+    spec.h3_parameter (H3); T and n of the design; the index of the estimation-sample rows."""
+    blind.require_unblinded(frame)
+    d = _inf.build_design(frame, spec, target=target)
+    r = _inf.fit_dk(d, spec, lag)
+    p1, p3 = r.param(spec.h1_parameter), r.param(spec.h3_parameter)
+    return dict(b=p1["estimate"], se=p1["se"], t=p1["estimate"] / p1["se"], lag=r.lag,
+                b_h3=p3["estimate"], se_h3=p3["se"], t_h3=p3["estimate"] / p3["se"],
+                T=r.T, n=r.n, index=d.index)
+
+
+def resample_dates(frame: pd.DataFrame, rng: np.random.Generator, mean_block: float = 5.0) -> pd.DataFrame:
+    """Stationary bootstrap of whole dates: the frame's T unique dates (sorted) are drawn to length T with
+    sim.stationary_bootstrap_positions(T, mean_block, rng, n_out=T); each drawn date's rows are copied in drawn order
+    and the dates are relabelled to a consecutive synthetic business-day calendar from sim.SIM_CALENDAR_START, the
+    mechanism of DevCalibrator.draw (sim.py:225-230). The provenance is the input's (synthetic stays synthetic)."""
+    prov = blind.require_unblinded(frame)
+    f = frame.sort_values(["date", "ticker"], kind="mergesort")
+    codes = np.unique(f["date"].to_numpy(dtype="datetime64[ns]"), return_inverse=True)[1]
+    bounds = np.r_[0, np.cumsum(np.bincount(codes))]
+    T = len(bounds) - 1
+    pos = _sim.stationary_bootstrap_positions(T, mean_block, rng, n_out=T)
+    lens = np.diff(bounds)[pos]
+    offs = np.r_[0, np.cumsum(lens)[:-1]]
+    src = np.repeat(bounds[pos] - offs, lens) + np.arange(int(lens.sum()))
+    out = f.iloc[src].reset_index(drop=True)
+    cal = pd.bdate_range(_sim.SIM_CALENDAR_START, periods=T)
+    out["date"] = np.repeat(cal.to_numpy(), lens)
+    out.attrs = {"provenance": prov}
+    return out
+
+
+def bootstrap_t(frame: pd.DataFrame, spec: Spec, rng: np.random.Generator, target: str, B: int,
+                mean_block: float = 5.0) -> dict:
+    """B resamples of the estimation sample's dates (resample_dates), each refitted by fit_t with the original fit's
+    DK lag: t* = (b* - b)/se* for H1 and for H3. B = 1 is the warp-speed draw (D3.2)."""
+    blind.require_unblinded(frame)
+    if not (isinstance(B, (int, np.integer)) and B >= 1):
+        raise ValueError("B must be an integer >= 1")
+    f0 = fit_t(frame, spec, target)
+    sample = frame.loc[f0["index"]]
+    sample.attrs = dict(frame.attrs)
+    t1, t3 = np.empty(B), np.empty(B)
+    for i in range(B):
+        fi = fit_t(resample_dates(sample, rng, mean_block), spec, target, lag=f0["lag"])
+        t1[i] = (fi["b"] - f0["b"]) / fi["se"]
+        t3[i] = (fi["b_h3"] - f0["b_h3"]) / fi["se_h3"]
+    return dict(fit={k: v for k, v in f0.items() if k != "index"}, t_star=t1, t_star_h3=t3)
+
+
+def bootstrap_test(frame: pd.DataFrame, spec: Spec, rng: np.random.Generator, target: str, B: int = 9999,
+                   mean_block: float = 5.0) -> dict:
+    """The confirmation procedure of D3.1: reject H1 if |t| > c_boot = the 0.95 order statistic of |t*|; interval
+    b +/- c_boot se; c_boot at 0.90 for TOST (tost_declares(b, se, sesoi, c_boot_90))."""
+    blind.require_unblinded(frame)
+    bt = bootstrap_t(frame, spec, rng, target, B, mean_block)
+    f = bt["fit"]
+    a = np.abs(bt["t_star"])
+    c95, c90 = order_stat(a, 0.95), order_stat(a, 0.90)
+    return dict(reject=bool(rejects(f["t"], c95)), c_boot_95=c95, c_boot_90=c90,
+                interval=(f["b"] - c95 * f["se"], f["b"] + c95 * f["se"]), b=f["b"], se=f["se"], t=f["t"],
+                lag=f["lag"], B=int(B))
+
+
+# ------------------------------------------------------------------ D4.3 helpers
+def winsorise_fx(frame: pd.DataFrame, spec: Spec) -> pd.DataFrame:
+    """Copy of the frame with usdjpy_ret and eurusd_ret clipped at Spec.winsor_bounds(); other columns unchanged."""
+    blind.require_unblinded(frame)
+    out = frame.copy()
+    for c, (lo, hi) in spec.winsor_bounds().items():
+        out[c] = out[c].clip(lower=lo, upper=hi)
+    out.attrs = dict(frame.attrs)
+    return out
+
+
+def window_positions(K: int, n_out: int, rng: np.random.Generator, mean_block: float = 5.0) -> np.ndarray:
+    """Stationary-bootstrap positions in [0, K) (the first K source dates: D4.3's early window)."""
+    return _sim.stationary_bootstrap_positions(int(K), mean_block, rng, n_out=int(n_out))
+>>>>>>>>
+Cited code at HEAD: report_B7b.py:34-42 (Wilson; tools/report_B7.py has no Wilson function), report_B7b.py:70-77 and 122-128 (MDE80), sim.py:225-230 (relabelling), inference.py:75, fctests.py:99, forecast.py:209 (guard first):
+    | Z = float(stats.norm.ppf(0.975))
+    | 
+    | 
+    | def wilson(k: int, n: int, z: float = Z) -> tuple[float, float]:
+    |     p = k / n
+    |     d = 1 + z * z / n
+    |     c = (p + z * z / (2 * n)) / d
+    |     h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    |     return float(c - h), float(c + h)
+    | ...
+    |         lens = np.diff(self._bounds)[pos]
+    |         offs = np.r_[0, np.cumsum(lens)[:-1]]
+    |         src = np.repeat(self._bounds[pos] - offs, lens) + np.arange(int(lens.sum()))
+    |         out = self._pred.iloc[src].reset_index(drop=True)
+    |         cal = self._cal if n == self.T else pd.bdate_range(SIM_CALENDAR_START, periods=n)
+    |         out.insert(0, "date", np.repeat(cal.to_numpy(), lens))
+$ grep -n -i wilson tools/report_B7.py (expect no match)
+grep exit=1
+
+--- d. Tests: tests/test_p3_calib.py (synthetic only), first and only run ---
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_p3_calib -v
+test_1_tost_declares_matches_inference_tost (tests.test_p3_calib.TestP3Calib.test_1_tost_declares_matches_inference_tost) ... ok
+test_2_fit_t_equals_fit_dk (tests.test_p3_calib.TestP3Calib.test_2_fit_t_equals_fit_dk) ... ok
+test_3_resample_dates (tests.test_p3_calib.TestP3Calib.test_3_resample_dates) ... ok
+test_4_order_statistics (tests.test_p3_calib.TestP3Calib.test_4_order_statistics) ... ok
+test_5_wilson_and_mde80_reproduce_b7b (tests.test_p3_calib.TestP3Calib.test_5_wilson_and_mde80_reproduce_b7b) ... ok
+test_6_winsorise_fx (tests.test_p3_calib.TestP3Calib.test_6_winsorise_fx) ... ok
+test_7_window_positions (tests.test_p3_calib.TestP3Calib.test_7_window_positions) ... ok
+test_8_static_imports_and_no_open (tests.test_p3_calib.TestP3Calib.test_8_static_imports_and_no_open) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 2.696s
+
+OK
+
+--- e. The warp-speed check: tools/p3_2a_warp_check.py (synthetic only) ---
+Containment, BEFORE (recorded before /tmp/p3_2a_nodata and /tmp/p3_2a_tmp were created, both empty, neither pre-existing):
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18477271
+Chunking equivalence check (small R = 4, B = 99; same containment):
+== A: unchunked, R=4, B=99
+COMPLETE
+exit= elapsed_s=34
+== B: chunked, R=4, B=99, --budget 1 (repeated until COMPLETE)
+invocation 1: PARTIAL 1 of 4
+invocation 2: PARTIAL 2 of 4
+invocation 3: PARTIAL 3 of 4
+invocation 4: COMPLETE
+== compare the two reports, Runtime section excluded
+$ cmp /tmp/p3_2a_eqA_noruntime.md /tmp/p3_2a_eqB_noruntime.md
+identical apart from the Runtime section: True
+$ diff /tmp/p3_2a_eqA.md /tmp/p3_2a_eqB.md (full files; only Runtime lines may differ)
+38,40c38,40
+< - Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 4 replications' original fits: 0.0483 s
+< - Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0782 s
+< - Total runtime over 1 chunk(s): 32.1 s
+---
+> - Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 4 replications' original fits: 0.0496 s
+> - Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0763 s
+> - Total runtime over 4 chunk(s): 31.4 s
+(eval):10: no matches found: /tmp/p3_2a_eq*_state.json
+state files left: 0
+$ ls -A /tmp/p3_2a_tmp /tmp/p3_2a_nodata
+/tmp/p3_2a_nodata:
+
+/tmp/p3_2a_tmp:
+Full run (R = 200, B = 99), in foreground chunks of --budget 420 s, each as:
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=/tmp/p3_2a_nodata TMPDIR=/tmp/p3_2a_tmp python tools/p3_2a_warp_check.py --budget 420
+  chunk 1: PARTIAL 55 of 200
+  chunk 2: PARTIAL 110 of 200
+  chunk 3: PARTIAL 165 of 200
+  chunk 4: COMPLETE
+$ cmp <(tail -n +2 /tmp/p3_2a_full_chunk4.out) reports/P3_2a_warp_check.md
+printed report == written report: True
+$ shasum -a 256 reports/P3_2a_warp_check.md
+ad126811938e51a60bf32b34b9ea4f72cc962347d4fce702da439428d8594134  reports/P3_2a_warp_check.md
+reports/P3_2a_warp_check.md in full:
+<<<<<<<<
+# P3-2a: warp-speed check (synthetic only)
+
+Generated by `tools/p3_2a_warp_check.py`, using `ofilt/drift/calib.py` (DQ3, D3.1 and D3.2). Synthetic aggregates only.
+
+## Design
+
+- R = 200 outer replications; replication r is `sim.synthetic_panel(1013, b=0, tails="t5", seed=s_r)`.
+- Seeds: s_r = spec seed + 4,000,000 + r; warp s_r + 50,000; inner s_r + 60,000 (spec seed 20261001).
+- Per replication: t_r from `calib.fit_t` (target `abn_oc`); one warp-speed resample giving t*_r; a full inner bootstrap of B = 99 resamples giving p_r = (1 + #{|t*| >= |t_r|}) / (B + 1); the full test rejects if p_r <= 0.05. Every fit's DK lag is 6 (asserted).
+- The warp-speed test rejects if |t_r| > q_warp(0.95), the order statistic of the 200 values |t*_r|; q_full is the order statistic of all 200 x 99 = 19800 inner |t*|.
+
+## Critical values (order statistics)
+
+| Quantity | Level | Rank k of n | Value | 95% order-statistic interval (ranks) |
+|---|---|---|---|---|
+| q_warp | 0.95 | 190 of 200 | 2.235550 | [1.785051, 2.456939] (183, 197) |
+| q_warp | 0.90 | 180 of 200 | 1.730980 | [1.597395, 2.234566] (171, 189) |
+| q_full | 0.95 | 18810 of 19800 | 1.975124 | |
+| q_full | 0.90 | 17820 of 19800 | 1.646792 | |
+
+## Rejections at b = 0
+
+| Test | Rejections | of R |
+|---|---|---|
+| warp-speed (|t_r| > q_warp(0.95)) | 6 | 200 |
+| per-replication full bootstrap (p_r <= 0.05) | 15 | 200 |
+| with q_full (|t_r| > q_full(0.95)) | 14 | 200 |
+
+Paired (warp-speed vs per-replication full): n10 (warp rejects, full does not) = 0; n01 (the reverse) = 9.
+
+## Gates (fixed in advance)
+
+- G1: q_full(0.95) = 1.975124 lies inside q_warp(0.95)'s 95% order-statistic interval [1.785051, 2.456939]: **True**
+- G2: |n10 - n01| = 9 <= 1.959964 sqrt(n10 + n01) = 5.8799 (passes if n10 + n01 = 0): **False**
+
+## Runtime
+
+- Median time per fit (`calib.fit_t`: build_design + fit_dk), over the 200 replications' original fits: 0.0461 s
+- Median time per inner-bootstrap resample and refit (`resample_dates` + `fit_t`), per replication: 0.0742 s
+- Total runtime over 4 chunk(s): 1538.9 s
+>>>>>>>>
+Containment, AFTER:
+  BLIND_FIT_LOG sha256: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301
+  RUN_REGISTRY.jsonl bytes: 0
+  usual TMPDIR: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+  ofilt_RUN_REGISTRY_synthetic.jsonl in the usual TMPDIR, bytes: 18477271
+  containment unchanged: True
+  /tmp/p3_2a_tmp and /tmp/p3_2a_nodata were empty after every run (ls -A printed nothing); the tool's state file was deleted on completion.
+$ rm -r /tmp/p3_2a_tmp /tmp/p3_2a_nodata; exit=0
+$ ls -d /tmp/p3_2a_tmp /tmp/p3_2a_nodata
+ls: /tmp/p3_2a_nodata: No such file or directory
+ls: /tmp/p3_2a_tmp: No such file or directory
+
+--- STOP at e: gate G2 failed ---
+G1: True. G2: False: n10 = 0, n01 = 9; |n10 - n01| = 9 > 1.959964 sqrt(9) = 5.8799.
+Counts: warp-speed rejections 6 of 200; per-replication full-bootstrap rejections 15 of 200; with q_full 14 of 200.
+Critical values: q_warp(0.95) = 2.235550 (rank 190 of 200; 95% interval [1.785051, 2.456939], ranks 183 and 197); q_full(0.95) = 1.975124 (rank 18810 of 19800).
+Rerun-once rule: not applied. The gate failed on the condition it checks, not on a script bug: p_r, the order statistics and the seed offsets follow the item's formulas; the chunked and unchunked small-R runs agree; q_full is near the normal 1.96.
+Not done (STOP): step f (PASS3_STATUS Test changes, Test results, Blinding attestation and Deviations edits; the suite; the checkpoint). Nothing committed or reverted.
+Deviations to record when work resumes (not yet in PASS3_STATUS):
+  - c.1: the item cites tools/report_B7.py for the Wilson interval; report_B7.py has none. calib.wilson mirrors tools/report_B7b.py:37-42, as test 5 (B7b's interval) requires; fctests.wilson is the same arithmetic, clipped.
+  - e: the chunked/unchunked equality excludes the report's Runtime section (wall-clock times and the chunk count), as D16 excluded runtime_s.
+  - c: the first write of calib.py ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+Working tree at STOP (uncommitted):
+$ git status --porcelain
+ M PASS3_STATUS.md
+?? ofilt/drift/calib.py
+?? reports/P3_2a_warp_check.md
+?? tests/test_p3_calib.py
+?? tools/p3_2a_warp_check.py
+$ git diff --stat
+ PASS3_STATUS.md | 40 ++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 38 insertions(+), 2 deletions(-)
+
+--- STOPPED (P3-2a, step e: gate G2) ---
+2026-10-06T20:55:32Z
+87aff1406356701396a3e99b7b2923257ba81d62
+$ git status --porcelain (between markers)
+<<<
+ M PASS3_STATUS.md
+?? ofilt/drift/calib.py
+?? reports/P3_2a_warp_check.md
+?? tests/test_p3_calib.py
+?? tools/p3_2a_warp_check.py
+>>>

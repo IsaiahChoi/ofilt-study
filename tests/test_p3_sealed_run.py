@@ -199,6 +199,19 @@ class TestTinyRuns(unittest.TestCase):
         ma, mb = ((o / f"{P.REAL_STEM}.md").read_text(encoding="utf-8").split("## Runtime")[0] for o in self.out)
         self.assertEqual(ma, mb)
 
+    def test_15_t6_blocks_are_centred_only(self):                    # P3-3b: D4.3a
+        for j in self.js:
+            t6 = [c for c in j["cells"] if c["task"] == "T6"]
+            self.assertEqual([c["cell"] for c in t6], [5, 6, 7, 8])
+            for c in t6:
+                for name, blk in c["estimators"].items():
+                    want = {"centred_reject", "sd", "mean_se", "se_over_sd"}
+                    if name == "huber_dk":
+                        want |= {"mean_share_downweighted"}
+                    self.assertEqual(set(blk), want, (c["cell"], name))
+                    self.assertFalse({"estimates", "reject", "coverage"} & set(blk))
+                    self.assertEqual(set(blk["centred_reject"]), {"k", "n", "rate", "wilson95"})
+
 
 class TestSeedsAndLogs(unittest.TestCase):
     def test_7_seeds_disjoint(self):
@@ -309,6 +322,83 @@ class TestP32d(unittest.TestCase):
         check = next(i for i, l in enumerate(lines) if "${OFILT_RUN_SEALED+x}" in l and "refuse" in l)
         first_py = next(i for i, l in enumerate(lines) if "python" in l and not l.lstrip().startswith("#"))
         self.assertLess(check, first_py)
+        # P3-3b: --expect-config-sha256 is required and checked against the configuration, before any Python line
+        expect = next(i for i, l in enumerate(lines) if '[[ "$EXPECT" =~ ^[0-9a-f]{64}$ ]]' in l and "refuse" in l)
+        cfg = next(i for i, l in enumerate(lines) if '[ "$CFG_SHA" = "$EXPECT" ]' in l and "refuse" in l)
+        self.assertIn('CFG_SHA="$(shasum -a 256 docs/P3_RUN_CONFIG.json', sh)
+        self.assertLess(expect, first_py)
+        self.assertLess(cfg, first_py)
+        self.assertIn("cfg == exp", sh)
+        self.assertNotIn("P3_2b_smoke", sh)
+
+
+class TestP33b(unittest.TestCase):
+    """P3-3b (D4.3a): T6's centred outputs and the leak test."""
+
+    def test_14_centred_block(self):
+        from scipy import stats
+        z = float(stats.norm.ppf(0.975))                                      # the tool's z2 at alpha 0.05
+        bh = np.array([0.5, -0.5, 0.25, -0.25, 1.0, -1.0, 0.125, -0.125])     # dyadic, n = 8: mean and shifts exact
+        se = np.full(8, 0.25)
+        out = P.centred_block(bh, se, z, C)
+        self.assertEqual(out, P.centred_block(bh + 3.0, se, z, C))           # a constant shift changes nothing
+        self.assertEqual(set(out), {"centred_reject", "sd", "mean_se", "se_over_sd"})
+        k = sum(abs(b - bh.mean()) > z * s for b, s in zip(bh, se))          # by hand: 0.5, -0.5, 1.0, -1.0 exceed 0.49
+        self.assertEqual(k, 4)
+        self.assertEqual(out["centred_reject"], {"k": 4, "n": 8, "rate": 0.5, "wilson95": list(C.wilson(4, 8))})
+        sd = float(np.sqrt(np.sum(bh ** 2) / 7))
+        self.assertAlmostEqual(out["sd"], sd, places=15)
+        self.assertEqual(out["mean_se"], 0.25)
+        self.assertAlmostEqual(out["se_over_sd"], 0.25 / sd, places=15)
+        rng = np.random.default_rng(3)
+        b2, s2 = rng.normal(size=200), rng.uniform(0.5, 1.5, 200)
+        x, y = P.centred_block(b2, s2, z, C), P.centred_block(b2 + 0.37, s2, z, C)
+        self.assertEqual(x["centred_reject"], y["centred_reject"])
+        self.assertAlmostEqual(x["sd"], y["sd"], places=12)
+
+    def test_16_leak_invariance(self):
+        """Adding delta * usdjpy_ret to the calibrator's residuals (in the test only) shifts every OLS-DK and Huber-DK
+        b_hat by delta and leaves their se, Huber's share and the centred counts unchanged, in a full-window and an
+        early-window cell: a window's coefficient deviation cannot reach T6's centred outputs."""
+        from scipy import stats
+        from ofilt.drift import inference as I
+        spec = Spec.load()
+        z = float(stats.norm.ppf(0.975))
+        df = S.synthetic_panel(300, b=0.4, a2=-0.2, seed=93, tails="t5")
+        with tempfile.TemporaryDirectory() as t, mock.patch.object(S, "BLIND_FIT_LOG_PATH", Path(t) / "LOG"):
+            cal = S.DevCalibrator(df, spec)
+        cells = {"full": [cal.positions(np.random.default_rng(100 + r), cal.T) for r in range(6)],
+                 "early": [C.window_positions(80, cal.T, np.random.default_rng(200 + r)) for r in range(6)]}
+
+        def fits():
+            out = {}
+            for name, poss in cells.items():
+                v = {k: [] for k in ("ob", "ose", "hb", "hse", "hsh")}
+                for r, pos in enumerate(poss):
+                    y = cal.draw(0.0, 0.0, seed=7 + r, positions=pos)
+                    f = C.fit_t(y, spec, "y_sim")
+                    h = I.fit_huber(I.build_design(y, spec, target="y_sim"), spec)
+                    ph = h.param("usdjpy_ret")
+                    for k, val in (("ob", f["b"]), ("ose", f["se"]), ("hb", ph["estimate"]), ("hse", ph["se"]),
+                                   ("hsh", h.info["share_downweighted"])):
+                        v[k].append(val)
+                out[name] = {k: np.array(x) for k, x in v.items()}
+            return out
+
+        base = fits()
+        delta = 0.3
+        cal._resid = cal._resid + delta * cal._pred["usdjpy_ret"].to_numpy(dtype=float)   # the test only
+        moved = fits()
+        for name in cells:
+            b0, b1 = base[name], moved[name]
+            self.assertLess(float(np.max(np.abs(b1["ob"] - b0["ob"] - delta))), 1e-10, name)
+            self.assertLess(float(np.max(np.abs(b1["ose"] - b0["ose"]))), 1e-10, name)
+            self.assertLess(float(np.max(np.abs(b1["hb"] - b0["hb"] - delta))), 1e-8, name)
+            self.assertLess(float(np.max(np.abs(b1["hse"] - b0["hse"]))), 1e-8, name)
+            self.assertLess(float(np.max(np.abs(b1["hsh"] - b0["hsh"]))), 1e-8, name)
+            for kb, ks in (("ob", "ose"), ("hb", "hse")):
+                self.assertEqual(P.centred_block(b0[kb], b0[ks], z, C)["centred_reject"]["k"],
+                                 P.centred_block(b1[kb], b1[ks], z, C)["centred_reject"]["k"], (name, kb))
 
 
 if __name__ == "__main__":

@@ -14,12 +14,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
 | P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
 | P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
-| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
 | Pass 3 | in progress | |
 
 ## Next action
 
-P3-3b: the DQ6 amendment drafts (from the P3-3a listing), then P3-4, Isaiah's sanction.
+Isaiah runs the full rehearsal again (`tools/p3_3_rehearse.sh --expect-config-sha256` with the new hash); then P3-3c, the DQ6 amendment drafts; then P3-4, the sanction.
 
 ## Decision log
 
@@ -248,6 +249,28 @@ P3-3b: the DQ6 amendment drafts (from the P3-3a listing), then P3-4, Isaiah's sa
 >   - Lines 1 to 6 stay pinned as Pass 1's history: the six-line prefix stays byte-identical, with SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`. Line 7 is pinned by its fields: provenance `dev_real`; panel hash `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`; spec hash `0320d6aaa19b0ed3cc34f50dd105df3d16d1c3c5ee408561f68f96fd94d3b0f9` (the configuration's `spec_sha256`); 5,124 input rows; and a caller naming `tools/p3_sealed_run.py`. Line 7's time and caller text cannot be known in advance, so no whole-file hash of the seven-line log is pinned.
 >   - The spec amendments (AM-07 onward) and their test changes come later, in the switch (DQ6).
 
+> - P3-3a accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `cdded9b444ea889ef64859acf7883b89ffecf29b`, including P3-3a's recorded deviations: the copy script's zsh bug and its one rerun; the readings of P4 and P5; the P9 context; the patch script; and the flag.
+>   - The DQ5 patch `docs/P3_DQ5_line7.patch` (SHA-256 `8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c`) is approved. With a dummy line 7 and stand-in outputs the full suite passes; in the six-line state it fails only in the two patched tests.
+>   - The plausibility table: P1 to P8 and P10 True; P9 False, which the next decision resolves.
+> - D4.3 amended (Isaiah, 2026-10-07, on the supervisor's recommendation): T6's outputs, after the P9 finding.
+>   - The finding. The calibrator's residuals are orthogonal to the design over the full estimation sample only.
+>     - A draw that resamples only a window of source dates (cells 7 and 8) carries that window's own coefficient deviation: its b̂ is centred near b + (b̂_W − b̂), where b̂_W is the OLS coefficient on the window's dates and b̂ the full-sample one.
+>     - An estimator other than the calibrator's OLS (Huber-DK, winsorised OLS-DK) is likewise centred near b plus the difference between its own full-sample estimate and OLS's, in every T6 cell.
+>     - The rehearsal's stand-in showed this: a mean bias of −0.094 and a rejection rate of 33.7% at b = 0 in cell 7, and a Huber mean bias of +0.0115 in cell 5. The supervisor reproduced the mechanism in a toy calibrator.
+>     - On the real panel, T6's mean biases, rejection rates and coverages would therefore reveal real-data differences between FX coefficients. That is a relation between FX and real targets, which the blinding rules forbid before `spec-dev-v1`.
+>   - D4.3a The outputs. For every T6 cell (5 to 8) and every estimator, the sealed run computes and writes only:
+>     - the centred rejection rate: the share of draws with |b̂ − b̄| > 1.959964·se, where b̄ is the cell's own mean of b̂, held in memory only, with its Wilson interval;
+>     - sd(b̂), mean se and se/sd;
+>     - for Huber-DK, the mean share downweighted.
+>     - No mean bias, uncentred rejection rate or coverage is computed or written for T6. Centring removes any constant shift exactly, so these outputs do not depend on the deviations above. Cells 0 to 4 and 9 to 11 (the calibrator's own OLS on full draws) are unchanged.
+>   - D4.3b The flag rule. If an estimator's centred rejection rate at b = 0 on early-window draws (cell 7) lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods. This replaces D4.3's flag sentence, and the configuration copies this line.
+>   - The deviations themselves cannot be measured before `spec-dev-v1` without breaking the blinding; Pass 4 may examine them on dev. The pre-registration discloses the finding and this amendment.
+> - The rehearsal script bound to the configuration (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - `tools/p3_3_rehearse.sh` takes a required `--expect-config-sha256` and refuses unless the configuration file's SHA-256 equals it. This replaces the comparison with the hash recorded in `reports/P3_2b_smoke.md`.
+>   - Because the tool and the configuration change, the full rehearsal (DQ1.5) is run again, twice, on the new commit and before the sanction.
+> - The records rule now also reserves the prefix `>   - D4.3b The flag rule.`.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -316,6 +339,16 @@ P3-3b: the DQ6 amendment drafts (from the P3-3a listing), then P3-4, Isaiah's sa
   - clone B, patched, with line 7 and the stand-in outputs: 277 tests, OK (skipped=5).
 - The full suite ran inside the P3-3a checkpoint; its result is in the P3-3a report (`/tmp/p3_3a.txt`).
 
+**P3-3b:**
+- `tests/test_p3_sealed_run.py` alone, after steps d and e: 16 tests (3 new; test 13 extended), OK, on the first run. The tiny runs completed.
+- The configuration: deleted, rebuilt with `--write-config`, then `--check-config`: `valid: True`. New SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (was `645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa`).
+- The configuration's key diff (by script; the old one from `git show HEAD:docs/P3_RUN_CONFIG.json`): the top-level keys that differ are exactly `methods`, `outputs` and `rules`; inside them, exactly `methods.t6`, `centred_reject` added to `outputs` (nothing removed) and `rules.D4.3_flag`: True.
+- Smoke rehearsal (`tools/p3_3_rehearse.sh --smoke 20 --expect-config-sha256` with the new hash, read from the configuration file by the command; from a scratch clone, as at P3-2d): REHEARSAL PASSED.
+  - Both runs printed `COMPLETE … errors: 0`, and the JSON outputs are identical apart from `runtime`. Every hash and size was unchanged, and the clone's tree stayed clean with HEAD unchanged. Totals 102.9 s and 102.7 s.
+  - Step g.3, by script on run 1's JSON: in cells 5 to 8, every estimator block has exactly the D4.3a keys, `centred_reject` has `k`, `n`, `rate` and `wilson95`, and no `mean_bias`, `reject`, `coverage` or `tost` key appears; `config_sha256` equals the new hash; `complete` is True, `errors` empty and `aborted` null. All True.
+  - Refusals: with no `--expect-config-sha256`, and with a wrong one (64 zeros), the script printed `REHEARSAL REFUSED` and exited 2, before any run started.
+- The full suite ran inside the P3-3b checkpoint; its result is in the P3-3b report (`/tmp/p3_3b.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
@@ -328,6 +361,8 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 | new `tests/test_p3_sealed_run.py` | — | 9 tests, synthetic only (no data file read; no test sets `OFILT_RUN_SEALED`):<br>1. static checks (one `DevCalibrator(`; no banned import; one writing function; private attributes only in the row-count assertion);<br>2. the invariance of (b̂ − b)/se and t* across b, and `calib.bootstrap_t_given_fit` equal to `calib.bootstrap_t`;<br>3. the configuration (rebuilt equals committed; refusals);<br>4. real-mode refusals with no data read;<br>5. outputs whitelisted, no list over 20;<br>6. the run-registry directory;<br>7. seeds disjoint;<br>8. the 6 → 7 → 7 log checks;<br>9. determinism<br>P3-2c change: test 4's two in-process refusals have their stdout captured (`contextlib.redirect_stdout`), and the captured text must start with `REFUSED` (was: printed to the suite's stdout, uncaptured) | P3-2b (supervisor message, 2026-10-06); P3-2c (supervisor message, 2026-10-06) | P3-2b; P3-2c |
 | `tests/test_p3_sealed_run.py`: 4 tests added (existing tests unchanged) | 9 tests | 13 tests:<br>10. R1: the generalised log check (a synthetic line passes; a wrong count, provenance or caller fails) and the logged-panel check (provenance `dev_real` and the logged hash);<br>11. R2: the generic handlers in `main` and `_run` reference no exception message (AST);<br>12. R2: `_abort_text` gives `<class> at line <n>` without the message;<br>13. `tools/p3_3_rehearse.sh`, static: no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | P3-2d (supervisor message, 2026-10-06) | P3-2d |
 | new `tests/test_p3_2d_structural.py` | — | 1 test, synthetic only: the structural frame builder keeps exactly the stated columns, keeps the missing pattern of `abn_oc` and `beta`, replaces their present values, drops every `y_*`, `ao_*`, `open`, `close` and `prev_close` column, and labels the frame synthetic | P3-2d (supervisor message, 2026-10-06) | P3-2d |
+| `tests/test_p3_sealed_run.py`: test 13 (`test_13_rehearsal_script_static`) changed; everything it checked before is still required | no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | also: the `--expect-config-sha256` refusal (missing or malformed) and the configuration-hash refusal (`[ "$CFG_SHA" = "$EXPECT" ]`), both before any Python line; `CFG_SHA` computed from `docs/P3_RUN_CONFIG.json`; the baselines compare with the flag (`cfg == exp`); no reference to `P3_2b_smoke` | P3-3b (supervisor message, 2026-10-07), step e | P3-3b |
+| `tests/test_p3_sealed_run.py`: 3 tests added | 13 tests | 16 tests:<br>14. (i) `centred_block`: identical output after adding a constant to every b̂ (+3.0 on a dyadic example of 8; +0.37 on 200 random draws, with the count exact and sd to 12 places); its rate equals a hand computation (4 of 8);<br>15. (ii) in the tiny runs, every T6 estimator block (cells 5 to 8) has exactly `centred_reject`, `sd`, `mean_se` and `se_over_sd`, plus `mean_share_downweighted` for Huber-DK, and no `estimates`, `reject` or `coverage`;<br>16. (iii) the leak test: on a synthetic `DevCalibrator` (temporary log), adding 0.3·`usdjpy_ret` to its residuals (in the test only) shifts every OLS-DK b̂ by 0.3 (to 1e-10) and every Huber-DK b̂ by 0.3 (to 1e-8), leaves their se and Huber's share unchanged to the same tolerances, and leaves the centred counts exactly unchanged, in a full-window and an early-window cell (6 draws each, identical seeds and positions) | P3-3b (supervisor message, 2026-10-07), step d | P3-3b |
 
 **Pending: applied at the post-run checkpoint (DQ5).** `docs/P3_DQ5_line7.patch` is applied unchanged in the first commit after the real run, together with BLIND_FIT_LOG's line 7 and `reports/P3_4_sealed_run.json` and `.md`. It was rehearsed in scratch clones at P3-3a: with a dummy line 7 and stand-in outputs the suite passes (277, OK); without them it fails only in these two tests.
 
@@ -358,6 +393,7 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The D4.3 flag rule would also flag every estimator as unreliable for this reason, not because of the coarse grids.
   - Cells 0 to 6 and 9 to 11 resample all source dates and are not affected.
   - Nothing was changed. The configuration and the tool stay as accepted.
+  - Resolved by D4.3 amended (P3-3b).
 
 ## Blinding attestation
 
@@ -454,6 +490,17 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - Read-only listings: the spec, `spec.py`, tests and docs.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. The sealed-run tool was not run in any mode by the builder. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3b (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. Read-only code listings (step c): the tool, the rehearsal script and the tests.
+  - Code and configuration changes: T6's outputs in `tools/p3_sealed_run.py` (D4.3a), `--expect-config-sha256` in `tools/p3_3_rehearse.sh`, and `docs/P3_RUN_CONFIG.json` rebuilt by `--write-config` from the registry, the reports and the spec (no data file).
+  - Synthetic tests: `tests/test_p3_sealed_run.py`, including tiny synthetic runs and a synthetic `DevCalibrator` with a temporary log (test 16).
+  - The smoke rehearsal (`--smoke 20`, from a scratch clone with the same files; two runs of `--rehearsal`): the dev panel was loaded (hash-checked; `io.load_dev`, `targets.add_targets`) only to populate the fingerprint registry (target-only; DQ1.5).
+    - The draws are synthetic stand-in draws, and the sealed fit in each run was the stand-in's, logged to a temporary file.
+    - Only aggregates were written, under `/tmp/p3_3_smoke_*`. The step g.3 check printed keys, the configuration hash and booleans only. The outputs and the clone were deleted afterwards.
+    - The two refusal runs stopped before any Python command.
+  - The report copies: byte-for-byte copies of the builder's own Pass 3 reports into `reports/P3_reports/`.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No `--real` run, and the full rehearsal was not started. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`; the rehearsal script was started under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -508,3 +555,12 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-3a e, the P9 context: beyond the table, the report prints cells 5 to 8's mean bias, sd and se/sd per estimator from the same JSON (synthetic aggregates), to support the P3-3a flag.
 - P3-3a f, the patch: made by a script (`/tmp/p3_3a_make_patch.py`, in the report) that reads the six-line prefix hash, the line-7 hashes and the row count from the registry files. The dummy line 7's caller text imitates `_log_blind_fit`'s format, with an invented line number. Both clones were taken from HEAD, so they lack this item's uncommitted files. Clone A's suite ran on HEAD plus the dummy line and the stand-ins.
 - P3-3a g, a flag beyond the listed edits: the early-window finding (P9) went into Flags, because it needs a decision before the sanction.
+- P3-3b b.4, the records-rule count: the report's line "lines in the file beginning '>   - D4.3b The flag rule.': 2" counted lines containing the string (`grep -c -F`), and the records-rule bullet of the step b block quotes the prefix mid-line. Lines beginning with the prefix, which `_rule_lines`' `one()` matches: 1, the step b line. The report keeps the original line, followed by the correction.
+- P3-3b b.2, the flag: "Resolved by D4.3 amended (P3-3b)." was appended as the last sub-bullet of the P3-3a early-window flag, which has sub-bullets, not to its first line.
+- P3-3b d, `t6_block`: its only callers were the three T6 estimator lines, so it was replaced in place by `centred_block` (whose signature drops `b`), not left as unused code. `est_summary` and `rate` are unchanged.
+- P3-3b d, the winsorised estimator and test 16's scope (for the supervisor; builder's algebra, not computed).
+  - OLS-DK and Huber-DK (c and scale fixed) are regression-equivariant. If the residuals gain any vector in the span of the draw's design, b̂ moves by that vector's coefficient, the same in every draw. The window's OLS coefficient deviation of D4.3's finding (cells 7 and 8) is such a vector, so centring removes it from these two estimators' outputs exactly. Test 16 shows this for a shift along `usdjpy_ret`.
+  - Winsorised OLS-DK regresses on the winsorised FX columns, while that deviation runs along the unwinsorised `usdjpy_ret`. Its b̂ moves by the deviation times γ, the coefficient of `usdjpy_ret` on the winsorised design within the draw. γ is near 1 but varies across draws with the rows the draw winsorises.
+  - Centring removes the mean of that shift, not its spread. Winsorised OLS-DK's centred outputs in cells 7 and 8 therefore depend on the deviation at second order, through its product with the spread of γ across draws. D4.3a's "these outputs do not depend on the deviations above" holds exactly for OLS-DK and Huber-DK and approximately for winsorised OLS-DK.
+  - Test 16 covers OLS-DK and Huber-DK, as step d(iii) specifies. Nothing beyond step d was changed.
+- P3-3b h, the Test changes preamble: "No existing test was changed or deleted" was written at P3-0b and refers to the tests that existed before Pass 3; it still holds for them. Changes to Pass 3's own tests are in their rows (P3-2c: test 4; P3-3b: test 13). The line was left as it stands.
