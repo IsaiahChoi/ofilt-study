@@ -16,12 +16,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
 | P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
 | P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
-| P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
+| P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
+| P3-3d P3-3c accepted; read-only facts for DQ6 and the launcher | done | `checkpoint: P3-3d`. Report `/tmp/p3_3d.txt`; planned STOP: the supervisor reviews the report, then drafts P3-3e. P3-3c acceptance recorded, with its two post-checkpoint notes under Deviations. The P3-3c report copied to `reports/P3_reports/`. Read-only facts for DQ6 (`calib.py`'s functions; the readers of the spec fields DQ6 would change; the confirmation path; every pin a spec edit could touch; the amendment record format) and for the launcher (the real-mode refusals and log checks; `OFILT_RUN_SEALED=1`; PLAN's pins), in the P3-3d report. No code, test, spec or configuration changed |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-3c. Then P3-3d, the DQ6 amendment drafts (a document, not applied; moved here from P3-3c); then P3-3e, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
+The supervisor reviews P3-3d. Then P3-3e, the DQ6 amendment drafts (a document, not applied); then P3-3f, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
 
 ## Decision log
 
@@ -288,6 +289,11 @@ The supervisor reviews P3-3c. Then P3-3d, the DQ6 amendment drafts (a document, 
 >   - The expected duration of the real run is about 2 hours (1.88 h here; 1.93 h and 1.95 h at rehearsal 1).
 >   - The plausibility checks P1 to P11 were stated before this run (the supervisor's handoff of 2026-10-07, Appendix C) and computed at P3-3c; the table is in Test results.
 
+> - P3-3c accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `f5e6d281d1b95102fc19a6aab554d1af331d7828`, including P3-3c's recorded deviations (the expected values read from the saved message; the table's layout; the extra alpha print) and its two post-checkpoint notes, which P3-3d records under Deviations.
+>   - The plausibility table on rehearsal 2's run 1: P1 to P11 all True. P11 found no difference from rehearsal 1 outside `runtime`, `config_sha256`, `head` and cells 5 to 8 (13 top-level keys, with cells 0 to 4, compared exactly).
+>   - `z2` is `stats.norm.ppf(1 - alpha / 2)` with alpha 0.05, from the spec's `inference.alpha` through the configuration's `methods.alpha` (`tools/p3_sealed_run.py:397-398`): the quantile D4.3a states.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -385,6 +391,11 @@ The supervisor reviews P3-3c. Then P3-3d, the DQ6 amendment drafts (a document, 
   - For information, cell 7's centred rejection counts (the cell D4.3b reads): ols_dk 57/1000; huber_dk 49/1000; winsorised_ols_dk 57/1000.
 - Step d (read-only): `z2` is assigned once, at `tools/p3_sealed_run.py:398`, as `stats.norm.ppf(1 - alpha / 2)`. Its alpha comes from line 397, the configuration's `methods.alpha`, which `build_config` writes at line 174 from the spec's `inference.alpha` (0.05, `spec/analysis_spec_dev_v1.yaml:32`). The other `norm.ppf` lines (176, 178 and 192) are description text inside `build_config`. T6's `centred_block` receives `z2` (lines 595 to 598).
 - The full suite ran inside the P3-3c checkpoint; its result is in the P3-3c report (`/tmp/p3_3c.txt`).
+
+**P3-3d:**
+- The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_3c.txt` is byte-identical to `/tmp/p3_3c.txt` (SHA-256 equal: True).
+- Read-only facts for DQ6 and the launcher: in the P3-3d report (`/tmp/p3_3d.txt`), step c.
+- The full suite ran inside the P3-3d checkpoint; its result is in the P3-3d report (`/tmp/p3_3d.txt`).
 
 ## Test changes
 
@@ -551,6 +562,13 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
     - The sealed-run tool ran only as `--check-config`, and the rehearsal script was not run.
     - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
     - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3d (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md.
+  - The report copy: a byte-for-byte copy of the P3-3c report into `reports/P3_reports/`.
+  - Read-only listings of code, tests and documents: `ofilt/`, `tools/`, `tests/`, `docs/` (with `docs/replacements/`), `spec/`, the key lines of the two C7 reports and the committed P3-3a report. The searches skipped data-type files, of which the repository holds none. No data file was opened.
+  - The sealed-run tool ran only as `--check-config`.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -617,3 +635,14 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-3c a and c, the expected values: the state check and the plausibility table read their expected hashes, times and lines by script from the P3-3c message as saved from this session's transcript (`/tmp/p3_3c_msg.txt`), not typed. Rehearsal 1's expected SHA-256 was passed to the plausibility script as an argument, so that the script itself reads only the two rehearsal JSONs.
 - P3-3c c, the table's layout: P9′ prints its per-cell and per-estimator values on lines after its row, and P11 prints its input's hash check on a line before its row. P1 to P8 and P10 are P3-3a's code unchanged apart from the input path (the diff is in the report).
 - P3-3c d, beyond the listed lines: the report also prints `docs/P3_RUN_CONFIG.json`'s `methods.alpha` and the two quantiles it gives (`z2` 1.959963984540054, `z1` 1.644853626951472), by a one-line script, and the spec's alpha line.
+- P3-3c g.2 (after the checkpoint), the deletion: the first attempt ran the three removals inside a bash -c script together with the checks. Claude Code's built-in safety check refused that command before anything in it ran. g.1 was then run on its own (True), and the removal was issued as one plain command with the three literal paths, which completed. Nothing else was deleted.
+- P3-3c g.2, the HEAD check after the deletion compared git rev-parse HEAD with the checkpoint hash copied into the command from step f.2's output, not read by script. The pre-deletion state line, read from git, printed the same value.
+- P3-3d b, an informational line beyond the step: after the required copy check (by script, True), the report also compared the source's SHA-256 with the P3-3c report's hash as printed at the end of P3-3c. That hash was typed into the command, and the line's label wrongly said it was read from that output. A correction line follows it in the report.
+- P3-3d c, a shell loop in zsh: before the report's run, the seven listing parts were run once to scratch files (`/tmp/p3_3d_c1.out` to `/tmp/p3_3d_c7.out`) by a `for` loop in zsh, against the reminder to run loops in bash. The loop had no word-splitting step, and every part exited 0. The listings in the report come from a second run, in bash, after two changes to the script: c.1 prints the signatures verbatim from the source, and c.3 adds `_log_access`.
+- P3-3d c.4, a typed hash: the extra search of the two C7 reports typed the spec's SHA-256 into the command, copied from the message, instead of reading it by script as the c.4 search itself did.
+- P3-3d c, beyond the listed items (for the supervisor's use):
+  - c.3 also prints `io._log_access`: `load_confirm` appends to `ACCESS_LOG` at the repository root on every attempt.
+  - c.4 adds the C7 reports' key lines and the test that compares them (test_validation_c7.py:44, through tools/c7_mc.py:74).
+  - c.6 adds `combo_refusal`, `registry.git_state` and the tests that scan whole directories of code.
+  - c.7 notes test_docs_d4's text pins of PLAN.
+  - Method: c.2's readers were found by regular expressions over `ofilt/` and `tools/` (printed with the listing), with the enclosing names from the AST. c.4 reports compiled `__pycache__` files that contain a term by name only.
