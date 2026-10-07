@@ -15,12 +15,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
 | P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
 | P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
-| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
+| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
+| P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
 | Pass 3 | in progress | |
 
 ## Next action
 
-Isaiah runs the full rehearsal again (`tools/p3_3_rehearse.sh --expect-config-sha256` with the new hash); then P3-3c, the DQ6 amendment drafts; then P3-4, the sanction.
+The supervisor reviews P3-3c. Then P3-3d, the DQ6 amendment drafts (a document, not applied; moved here from P3-3c); then P3-3e, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
 
 ## Decision log
 
@@ -271,6 +272,22 @@ Isaiah runs the full rehearsal again (`tools/p3_3_rehearse.sh --expect-config-sh
 >   - Because the tool and the configuration change, the full rehearsal (DQ1.5) is run again, twice, on the new commit and before the sanction.
 > - The records rule now also reserves the prefix `>   - D4.3b The flag rule.`.
 
+> - P3-3b accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `56897128f2e93068b60747640a87ce4cd4148241`, including P3-3b's recorded deviations: the records-rule count and its correction; the flag's placement; `t6_block` replaced in place by `centred_block`; the winsorised estimator and test 16's scope (resolved by the next decision); and the Test changes preamble.
+>   - The configuration `docs/P3_RUN_CONFIG.json`, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e`, is the one rehearsed below. This acceptance does not sanction it.
+> - D4.3a qualified (Isaiah, 2026-10-07, on the supervisor's recommendation): winsorised OLS-DK in the early-window cells.
+>   - The statement in D4.3a that the centred outputs do not depend on the deviations holds exactly for OLS-DK and Huber-DK, which are regression-equivariant (test 16), and approximately for winsorised OLS-DK in cells 7 and 8.
+>   - Mechanism. Winsorised OLS-DK regresses on the clipped FX columns. The part of the window's FX-coefficient deviation that lies along the clipped excess (the dates beyond the spec's bounds, for `usdjpy_ret` and `eurusd_ret`) shifts each draw's b̂ by an amount that varies across draws, and changes its se. The dependence is first order in the deviation, with a coefficient set by the window's residuals on the clipped dates, of unknown sign. This replaces the reading "at second order" in P3-3b's deviation.
+>   - Size (the supervisor's synthetic toy; no data): at a deviation of 0.2, sd(b̂) moves by about 0.5–1.2% (RMS; at most 2.5%), mean se by about 0.4–1.1% (RMS; at most 2.3%), se/sd by at most 0.6%, and the centred count by at most 6 of 1,000; about half that at 0.1. The Monte Carlo noise of sd(b̂) at 1,000 draws is about 2–4%.
+>   - Accepted with disclosure, without changing T6. The outputs cannot identify the deviation, because their value at a zero deviation depends on the unknown real residuals (in the toy, the winsorised-to-OLS sd ratio ranged from about 0.5 to 1.3 across datasets). No rule is materially affected: D4.3b reads one count, which can move by a few.
+>   - Cells 5 and 6 carry no such channel: the calibrator's residuals are orthogonal to the full design.
+>   - The pre-registration discloses this together with D4.3 amended.
+> - Rehearsal 2 on record (2026-10-07).
+>   - The full rehearsal (DQ1.5; `tools/p3_3_rehearse.sh --expect-config-sha256` with the configuration above) ran in Isaiah's Terminal on `56897128f2e93068b60747640a87ce4cd4148241`, from 2026-10-07T05:41:48Z to 09:27:07Z, and printed `REHEARSAL PASSED`.
+>   - Both runs printed `COMPLETE` with 0 errors and were identical apart from runtime; totals 6,757.6 s and 6,757.9 s. Every baseline hash and size was unchanged, and the tree was clean with HEAD unchanged.
+>   - The expected duration of the real run is about 2 hours (1.88 h here; 1.93 h and 1.95 h at rehearsal 1).
+>   - The plausibility checks P1 to P11 were stated before this run (the supervisor's handoff of 2026-10-07, Appendix C) and computed at P3-3c; the table is in Test results.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -348,6 +365,26 @@ Isaiah runs the full rehearsal again (`tools/p3_3_rehearse.sh --expect-config-sh
   - Step g.3, by script on run 1's JSON: in cells 5 to 8, every estimator block has exactly the D4.3a keys, `centred_reject` has `k`, `n`, `rate` and `wilson95`, and no `mean_bias`, `reject`, `coverage` or `tost` key appears; `config_sha256` equals the new hash; `complete` is True, `errors` empty and `aborted` null. All True.
   - Refusals: with no `--expect-config-sha256`, and with a wrong one (64 zeros), the script printed `REHEARSAL REFUSED` and exited 2, before any run started.
 - The full suite ran inside the P3-3b checkpoint; its result is in the P3-3b report (`/tmp/p3_3b.txt`).
+
+**P3-3c:**
+- Copies (step b.1; bash, one `cp -p` per file), each byte-identical to its source (SHA-256 equal: True): `reports/P3_3_rehearsal2.log` (rehearsal 2's log), `reports/P3_3_rehearsal2_run1.json` and `.md` (its run 1's outputs) and `reports/P3_reports/p3_3b.txt`. `/tmp/p3_3b.txt` equals the copy the supervisor reviewed: True.
+- Run 2 against run 1 (step b.2, by script, independently of the rehearsal script): the JSON outputs are equal apart from `runtime`: True; the Markdown files are equal up to their `## Runtime` heading: True.
+- Plausibility table of rehearsal 2's synthetic outputs (`reports/P3_3_rehearsal2_run1.json`; checks stated before the run; information, except P11; values in the P3-3c report):
+  - P1 cell 0 rejection in [3.0%, 8.0%] (each method) and calibrated in [4.3%, 5.7%]: True
+  - P2 cell 0 coverage count + rejection count == n (each method): True
+  - P3 cells 0-4 |mean bias| <= 3 sd/sqrt(n) and se/sd in [0.85, 1.15]: True
+  - P4 cells 0-4 sd(b_hat) and mean se agree within 10% (max/min - 1): True
+  - P5 rejection rises over cells 0, 2, 3, 4; MDE80 defined; probit vs normal approximations within 15%: True
+  - P6 cell 1 TOST at the primary SESOI declares at most 7% (each method): True
+  - P7 cell 0 TOST rates ordered low <= primary <= high (each method): True
+  - P8 T3: cross-tabs sum to n; calibrated CW at cell 9 in [4.0%, 6.0%]; cell 9 DK-normal H1 within 2 pp of cell 0; CW at cells 10, 11 >= cell 9 (each CW method); registry lines == walk_forward calls == 3000: True
+  - P9′ T6 cells 5-8, each estimator: keys exactly D4.3a; centred rejection in [3.0%, 8.0%]; se/sd in [0.85, 1.15]; Huber share downweighted in (0, 0.5): True
+  - P10 complete True, errors empty, aborted null: True
+  - P11 regression: outside runtime, config_sha256, head and cells 5-8, rehearsal 2 equals rehearsal 1 exactly: True
+  - `SUMMARY: P1 True; P2 True; P3 True; P4 True; P5 True; P6 True; P7 True; P8 True; P9′ True; P10 True; P11 True`
+  - For information, cell 7's centred rejection counts (the cell D4.3b reads): ols_dk 57/1000; huber_dk 49/1000; winsorised_ols_dk 57/1000.
+- Step d (read-only): `z2` is assigned once, at `tools/p3_sealed_run.py:398`, as `stats.norm.ppf(1 - alpha / 2)`. Its alpha comes from line 397, the configuration's `methods.alpha`, which `build_config` writes at line 174 from the spec's `inference.alpha` (0.05, `spec/analysis_spec_dev_v1.yaml:32`). The other `norm.ppf` lines (176, 178 and 192) are description text inside `build_config`. T6's `centred_block` receives `z2` (lines 595 to 598).
+- The full suite ran inside the P3-3c checkpoint; its result is in the P3-3c report (`/tmp/p3_3c.txt`).
 
 ## Test changes
 
@@ -501,6 +538,19 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The report copies: byte-for-byte copies of the builder's own Pass 3 reports into `reports/P3_reports/`.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No `--real` run, and the full rehearsal was not started. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`; the rehearsal script was started under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3c (supervisor message of 2026-10-07)**, by category:
+  - Rehearsal 2, run by Isaiah in his own Terminal (2026-10-07T05:41:48Z to 09:27:07Z; from its log): two `--rehearsal` runs.
+    - The dev panel was loaded (hash-checked; `io.load_dev`, `targets.add_targets`) only to populate the fingerprint registry (target-only; DQ1.5).
+    - The draws were synthetic stand-in draws, and the sealed fit in each run was the stand-in's, logged to a temporary file.
+    - Only aggregates were written, under `/tmp/p3_3_rehearsal_1` and `/tmp/p3_3_rehearsal_2`. BLIND_FIT_LOG, RUN_REGISTRY.jsonl and the tree were unchanged, and HEAD did not move.
+  - This item:
+    - Records: document edits to PASS3_STATUS.md.
+    - Byte-for-byte copies: rehearsal 2's log, its run 1's outputs (synthetic aggregates) and the P3-3b report.
+    - Scripts read only the rehearsal's files (synthetic aggregates and its log): the step a.3 check (hashes, names and booleans), the run 2 against run 1 check, and the plausibility script, which read only the two rehearsal JSONs.
+    - The read-only listing: `tools/p3_sealed_run.py`, the spec's alpha line and the configuration's `methods.alpha`.
+    - The sealed-run tool ran only as `--check-config`, and the rehearsal script was not run.
+    - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+    - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -564,3 +614,6 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - Centring removes the mean of that shift, not its spread. Winsorised OLS-DK's centred outputs in cells 7 and 8 therefore depend on the deviation at second order, through its product with the spread of γ across draws. D4.3a's "these outputs do not depend on the deviations above" holds exactly for OLS-DK and Huber-DK and approximately for winsorised OLS-DK.
   - Test 16 covers OLS-DK and Huber-DK, as step d(iii) specifies. Nothing beyond step d was changed.
 - P3-3b h, the Test changes preamble: "No existing test was changed or deleted" was written at P3-0b and refers to the tests that existed before Pass 3; it still holds for them. Changes to Pass 3's own tests are in their rows (P3-2c: test 4; P3-3b: test 13). The line was left as it stands.
+- P3-3c a and c, the expected values: the state check and the plausibility table read their expected hashes, times and lines by script from the P3-3c message as saved from this session's transcript (`/tmp/p3_3c_msg.txt`), not typed. Rehearsal 1's expected SHA-256 was passed to the plausibility script as an argument, so that the script itself reads only the two rehearsal JSONs.
+- P3-3c c, the table's layout: P9′ prints its per-cell and per-estimator values on lines after its row, and P11 prints its input's hash check on a line before its row. P1 to P8 and P10 are P3-3a's code unchanged apart from the input path (the diff is in the report).
+- P3-3c d, beyond the listed lines: the report also prints `docs/P3_RUN_CONFIG.json`'s `methods.alpha` and the two quantiles it gives (`z2` 1.959963984540054, `z1` 1.644853626951472), by a one-line script, and the spec's alpha line.

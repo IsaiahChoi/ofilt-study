@@ -1,0 +1,1029 @@
+2026-10-07T05:09:29Z
+cdded9b444ea889ef64859acf7883b89ffecf29b
+=== P3-3b report ===
+--- a.1 Date gate ---
+$ date +%F
+2026-10-07
+--- a.2 State check (read-only) ---
+$ python /tmp/p3_3b_statecheck.py
+HEAD cdded9b444ea889ef64859acf7883b89ffecf29b == cdded9b4...: True
+tree clean: True
+tools/p3_sealed_run.py: 14f3cdc394a25c3b8754367b298f121e366500fc48040b725e144c583384899e; equals the listed value: True
+docs/P3_RUN_CONFIG.json: 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; equals the listed value: True
+tools/p3_3_rehearse.sh: 2b2669be4a39be5eae742e035154c06704940bcdce4b4aaa7a03bedd8709d4a5; equals the listed value: True
+docs/P3_DQ5_line7.patch: 8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c; equals the listed value: True
+BLIND_FIT_LOG: dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+RUN_REGISTRY.jsonl bytes: 0; is 0: True
+STATE CHECK: True
+exit=0
+$ git tag -l
+pass1-final
+$ printenv OFILT_RUN_SEALED
+exit=1
+
+--- b. Decisions recorded; targeted edits ---
+b.1 Progress: P3-3a status cell now 'done; accepted by Isaiah 2026-10-07'; P3-3b row added. b.2 Flags: 'Resolved by D4.3 amended (P3-3b).' appended to the P3-3a early-window flag (as a sub-bullet). b.3 Next action replaced.
+b.4 Decision-log text added (verbatim, as in the file):
+<<<<<<<<
+> - P3-3a accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `cdded9b444ea889ef64859acf7883b89ffecf29b`, including P3-3a's recorded deviations: the copy script's zsh bug and its one rerun; the readings of P4 and P5; the P9 context; the patch script; and the flag.
+>   - The DQ5 patch `docs/P3_DQ5_line7.patch` (SHA-256 `8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c`) is approved. With a dummy line 7 and stand-in outputs the full suite passes; in the six-line state it fails only in the two patched tests.
+>   - The plausibility table: P1 to P8 and P10 True; P9 False, which the next decision resolves.
+> - D4.3 amended (Isaiah, 2026-10-07, on the supervisor's recommendation): T6's outputs, after the P9 finding.
+>   - The finding. The calibrator's residuals are orthogonal to the design over the full estimation sample only.
+>     - A draw that resamples only a window of source dates (cells 7 and 8) carries that window's own coefficient deviation: its b̂ is centred near b + (b̂_W − b̂), where b̂_W is the OLS coefficient on the window's dates and b̂ the full-sample one.
+>     - An estimator other than the calibrator's OLS (Huber-DK, winsorised OLS-DK) is likewise centred near b plus the difference between its own full-sample estimate and OLS's, in every T6 cell.
+>     - The rehearsal's stand-in showed this: a mean bias of −0.094 and a rejection rate of 33.7% at b = 0 in cell 7, and a Huber mean bias of +0.0115 in cell 5. The supervisor reproduced the mechanism in a toy calibrator.
+>     - On the real panel, T6's mean biases, rejection rates and coverages would therefore reveal real-data differences between FX coefficients. That is a relation between FX and real targets, which the blinding rules forbid before `spec-dev-v1`.
+>   - D4.3a The outputs. For every T6 cell (5 to 8) and every estimator, the sealed run computes and writes only:
+>     - the centred rejection rate: the share of draws with |b̂ − b̄| > 1.959964·se, where b̄ is the cell's own mean of b̂, held in memory only, with its Wilson interval;
+>     - sd(b̂), mean se and se/sd;
+>     - for Huber-DK, the mean share downweighted.
+>     - No mean bias, uncentred rejection rate or coverage is computed or written for T6. Centring removes any constant shift exactly, so these outputs do not depend on the deviations above. Cells 0 to 4 and 9 to 11 (the calibrator's own OLS on full draws) are unchanged.
+>   - D4.3b The flag rule. If an estimator's centred rejection rate at b = 0 on early-window draws (cell 7) lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods. This replaces D4.3's flag sentence, and the configuration copies this line.
+>   - The deviations themselves cannot be measured before `spec-dev-v1` without breaking the blinding; Pass 4 may examine them on dev. The pre-registration discloses the finding and this amendment.
+> - The rehearsal script bound to the configuration (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - `tools/p3_3_rehearse.sh` takes a required `--expect-config-sha256` and refuses unless the configuration file's SHA-256 equals it. This replaces the comparison with the hash recorded in `reports/P3_2b_smoke.md`.
+>   - Because the tool and the configuration change, the full rehearsal (DQ1.5) is run again, twice, on the new commit and before the sanction.
+> - The records rule now also reserves the prefix `>   - D4.3b The flag rule.`.
+>>>>>>>>
+Progress rows:
+<<<<<<<<
+## Progress
+
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+| P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | in progress | P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 outputs changed in `tools/p3_sealed_run.py`; configuration regenerated; `--expect-config-sha256` required by `tools/p3_3_rehearse.sh`; smoke rehearsal in a scratch clone; Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
+| Pass 3 | in progress | |
+
+>>>>>>>>
+Next action:
+## Next action
+
+Isaiah runs the full rehearsal again (`tools/p3_3_rehearse.sh --expect-config-sha256` with the new hash); then P3-3c, the DQ6 amendment drafts; then P3-4, the sanction.
+
+Flag (end):
+384:  - Resolved by D4.3 amended (P3-3b).
+Records rule: added lines beginning with the five reserved prefixes: 0; lines in the file beginning '>   - D4.3b The flag rule.': 2
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config   (the unchanged tool and configuration)
+config docs/P3_RUN_CONFIG.json SHA-256 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa; valid: True
+(note) The count '2' above was of lines CONTAINING the string (grep -F counts anywhere in a line); the records-rule bullet quotes the prefix mid-line. Lines BEGINNING with '>   - D4.3b The flag rule.' (what _rule_lines' one() matches, by startswith): 1
+267:>   - D4.3b The flag rule. If an estimator's centred rej
+
+--- c. Read-only facts (before any edit) ---
+c.1 The T6 section of tools/p3_sealed_run.py and the helpers it calls:
+  [tools/p3_sealed_run.py, lines 569-606]
+   569	        # ------------------------------------------------ T6 (cells 5 to 8)
+   570	        def t6():
+   571	            tot = 0
+   572	            for cid in (5, 6, 7, 8):
+   573	                c = cells[cid]
+   574	                n = reps(c)
+   575	                v = {k: np.empty(n) for k in ("ob", "ose", "hb", "hse", "hsh", "wb", "wse")}
+   576	                for r in range(n):
+   577	                    s = seed(c, r)
+   578	                    if c["window"] == "early":
+   579	                        pos = C.window_positions(cfg["K_early"], c["n_dates"], np.random.default_rng(s),
+   580	                                                 cfg["mean_block"])
+   581	                        y = cal.draw(c["b"], float(cfg["a2"]), seed=s, positions=pos, n_dates=c["n_dates"])
+   582	                    else:
+   583	                        y = cal.draw(c["b"], float(cfg["a2"]), seed=s, n_dates=c["n_dates"])
+   584	                    f = C.fit_t(y, spec, "y_sim")
+   585	                    h = I.fit_huber(I.build_design(y, spec, target="y_sim"), spec)
+   586	                    fw = C.fit_t(C.winsorise_fx(y, spec), spec, "y_sim")
+   587	                    assert_lag(f["lag"], f"cell {cid} OLS")
+   588	                    assert_lag(h.lag, f"cell {cid} Huber")
+   589	                    assert_lag(fw["lag"], f"cell {cid} winsorised")
+   590	                    ph = h.param(h1n)
+   591	                    v["ob"][r], v["ose"][r] = f["b"], f["se"]
+   592	                    v["hb"][r], v["hse"][r], v["hsh"][r] = ph["estimate"], ph["se"], h.info["share_downweighted"]
+   593	                    v["wb"][r], v["wse"][r] = fw["b"], fw["se"]
+   594	                out = cell_head(c, n)
+   595	                out["estimators"] = {
+   596	                    "ols_dk": t6_block(v["ob"], v["ose"], c["b"], z2, C),
+   597	                    "huber_dk": dict(t6_block(v["hb"], v["hse"], c["b"], z2, C),
+   598	                                     mean_share_downweighted=float(np.mean(v["hsh"]))),
+   599	                    "winsorised_ols_dk": t6_block(v["wb"], v["wse"], c["b"], z2, C)}
+   600	                state["cells"].append(out)
+   601	                flush()
+   602	                tot += n
+   603	            return tot
+   604	
+   605	        run_task("T6", t6, 4)
+   606	
+  [tools/p3_sealed_run.py, lines 744-747]
+   744	def rate(k: int, n: int, C) -> dict:
+   745	    lo, hi = C.wilson(int(k), int(n))
+   746	    return {"k": int(k), "n": int(n), "rate": k / n, "wilson95": [lo, hi]}
+   747	
+  [tools/p3_sealed_run.py, lines 760-765]
+   760	def est_summary(bhat, se, b) -> dict:
+   761	    import numpy as np
+   762	    sd = float(np.std(bhat, ddof=1))
+   763	    return {"mean_bias": float(np.mean(bhat - b)), "sd": sd, "mean_se": float(np.mean(se)),
+   764	            "se_over_sd": float(np.mean(se) / sd)}
+   765	
+  [tools/p3_sealed_run.py, lines 778-784]
+   778	def t6_block(bhat, se, b, z2, C) -> dict:
+   779	    import numpy as np
+   780	    n = len(bhat)
+   781	    return {"reject": rate(int((np.abs(bhat / se) > z2).sum()), n, C),
+   782	            "coverage": rate(int((np.abs(bhat - b) <= z2 * se).sum()), n, C),
+   783	            "estimates": est_summary(bhat, se, b)}
+   784	
+c.2 render_md's T6 rows:
+  [tools/p3_sealed_run.py, lines 811-820]
+   811	          "mean se | se/sd |", "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+   812	    for o in state["cells"]:
+   813	        e = o.get("estimates") or {}
+   814	        if "estimators" in o:
+   815	            for name, blk in o["estimators"].items():
+   816	                es = blk["estimates"]
+   817	                L.append(f"| {o['cell']} | {o['task']} {name} | {o['b']} | {o['replications']} | {o['window']} | "
+   818	                         f"{_r(blk['reject'])} | - | - | {_f(es['mean_bias'])} | {_f(es['sd'])} | {_f(es['mean_se'])} | "
+   819	                         f"{_f(es['se_over_sd'])} |")
+   820	            continue
+c.3 _rule_lines and build_config's methods.t6 entry:
+  [tools/p3_sealed_run.py, lines 84-113]
+    84	def _rule_lines() -> dict:
+    85	    """Rules copied verbatim from PASS3_STATUS.md's Decision log, and AM-02 from the spec (inference.size_rule)."""
+    86	    import yaml
+    87	    lines = STATUS_PATH.read_text(encoding="utf-8").splitlines()
+    88	
+    89	    def one(prefix: str) -> str:
+    90	        hit = [l for l in lines if l.startswith(prefix)]
+    91	        if len(hit) != 1:
+    92	            raise ValueError(f"rule line {prefix!r} found {len(hit)} times")
+    93	        return hit[0]
+    94	
+    95	    def block(prefix: str, sub: str) -> list:
+    96	        i = lines.index(one(prefix))
+    97	        out = [lines[i]]
+    98	        while i + 1 < len(lines) and lines[i + 1].startswith(sub):
+    99	            i += 1
+   100	            out.append(lines[i])
+   101	        return out
+   102	
+   103	    d43 = one(">   - D4.3 T6.")
+   104	    flag = re.search(r"If an estimator's rate at b = 0 on early-window draws lies outside \[3\.5%, 6\.5%\], the "
+   105	                     r"pre-registration flags that robustness row as unreliable on coarse-grid periods\.", d43)
+   106	    if flag is None:
+   107	        raise ValueError("D4.3 flag sentence not found")
+   108	    spec = yaml.safe_load(SPEC_PATH.read_text(encoding="utf-8"))
+   109	    return {"D2.6": [one(">   - D2.6 Viability")], "D2.7": [one(">   - D2.7 Claim wording")],
+   110	            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [flag.group(0)],
+   111	            "D3.2_D3.3_amended": block("> - D3.2 and D3.3 amended", ">   - "),
+   112	            "AM-02": [spec["inference"]["size_rule"]]}
+   113	
+  [tools/p3_sealed_run.py, lines 194-195]
+   194	            "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c "
+   195	                  "and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference",
+c.4 The parts of tools/p3_3_rehearse.sh that read reports/P3_2b_smoke.md (the baseline function):
+  [tools/p3_3_rehearse.sh, lines 47-70]
+    47	
+    48	# 6. Baselines, read by script (the same script runs again after the runs).
+    49	baseline() {
+    50	  env -u OFILT_RUN_SEALED python - <<'PYEOF'
+    51	import hashlib, os, re, tempfile
+    52	from pathlib import Path
+    53	R = Path.cwd()
+    54	sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+    55	p30 = re.search(r"^BLIND_FIT_LOG sha256 \(baseline[^\n]*?([0-9a-f]{64})$", (R / "reports/P3_0_report.txt").read_text(), re.M).group(1)
+    56	smoke = re.search(r"^- Configuration: `docs/P3_RUN_CONFIG.json`, SHA-256 `([0-9a-f]{64})`", (R / "reports/P3_2b_smoke.md").read_text(), re.M).group(1)
+    57	log, cfg = sha(R / "BLIND_FIT_LOG"), sha(R / "docs/P3_RUN_CONFIG.json")
+    58	reg = (R / "RUN_REGISTRY.jsonl").stat().st_size
+    59	syn = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+    60	print(f"BLIND_FIT_LOG sha256 {log}; equals the P3-0 baseline: {log == p30}")
+    61	print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals reports/P3_2b_smoke.md: {cfg == smoke}")
+    62	print(f"RUN_REGISTRY.jsonl bytes {reg}; is 0: {reg == 0}")
+    63	print(f"tools/p3_sealed_run.py sha256 {sha(R / 'tools/p3_sealed_run.py')}")
+    64	print(f"ofilt/drift/calib.py sha256 {sha(R / 'ofilt/drift/calib.py')}")
+    65	print(f"usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes {syn.stat().st_size if syn.exists() else 'absent'}")
+    66	raise SystemExit(0 if (log == p30 and cfg == smoke and reg == 0) else 1)
+    67	PYEOF
+    68	}
+    69	BASE0="$(baseline)" || { printf '%s\n' "$BASE0"; refuse "a baseline check failed"; }
+    70	printf '%s\n' "$BASE0"
+c.5 Tests in tests/test_p3_sealed_run.py that read T6 outputs (the tiny-run tests read the whole output, which includes T6's blocks; no test names a T6 key) or the rehearsal script (test 13):
+  [tests/test_p3_sealed_run.py, lines 156-197]
+   156	            self.assertIn(f"REFUSED: --real needs {P.SEALED_ENV}=1", r.stdout)
+   157	            self.assertEqual(list(tmp.iterdir()), [])                      # the run's directory removed
+   158	
+   159	
+   160	class TestTinyRuns(unittest.TestCase):
+   161	    @classmethod
+   162	    def setUpClass(cls):
+   163	        cls._t = tempfile.TemporaryDirectory()
+   164	        base = Path(cls._t.name)
+   165	        cls.out, cls.tmp, cls.res = [], [], []
+   166	        for i in (1, 2):
+   167	            tm, nd = base / f"tmp{i}", base / f"nodata{i}"
+   168	            o = tm / "out"                                         # --out-dir must lie under TMPDIR or /tmp
+   169	            tm.mkdir(); nd.mkdir()
+   170	            cls.res.append(tiny_run(o, tm, nd))
+   171	            cls.out.append(o); cls.tmp.append(tm)
+   172	        cls.js = [json.loads((o / f"{P.REAL_STEM}.json").read_text(encoding="utf-8")) for o in cls.out]
+   173	
+   174	    @classmethod
+   175	    def tearDownClass(cls):
+   176	        cls._t.cleanup()
+   177	
+   178	    def test_5_outputs_whitelisted_and_aggregates_only(self):
+   179	        for r, j in zip(self.res, self.js):
+   180	            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+   181	            self.assertTrue(j["complete"])
+   182	            self.assertEqual(j["errors"], [])
+   183	            self.assertIsNone(j["aborted"])
+   184	            self.assertEqual(P.check_output(j, set(CFG["outputs"])), [])
+   185	            self.assertEqual(j["calibrator"], {"T_source": CFG["T_source"], "rows": CFG["rows"]})
+   186	            self.assertEqual(sorted(p.name for p in self.out[0].iterdir()), [f"{P.REAL_STEM}.json", f"{P.REAL_STEM}.md"])
+   187	
+   188	    def test_6_registry_directory(self):
+   189	        for j, tm in zip(self.js, self.tmp):
+   190	            self.assertEqual(j["t3"]["walk_forward_calls"], 3 * 2)       # cells 9 to 11 at smoke 2
+   191	            self.assertEqual(j["t3"]["registry_lines"], j["t3"]["walk_forward_calls"])
+   192	            self.assertEqual([p.name for p in tm.iterdir()], ["out"])      # the run's own directory deleted
+   193	
+   194	    def test_9_determinism(self):
+   195	        a, b = (dict(j) for j in self.js)
+   196	        self.assertNotEqual(a["runtime"], None)
+   197	        a.pop("runtime"); b.pop("runtime")
+  [tests/test_p3_sealed_run.py, lines 303-311]
+   303	    def test_13_rehearsal_script_static(self):
+   304	        sh = (ROOT / "tools" / "p3_3_rehearse.sh").read_text(encoding="utf-8")
+   305	        lines = sh.splitlines()
+   306	        self.assertEqual(lines[0], "set -euo pipefail")
+   307	        self.assertNotIn("--real", sh)
+   308	        self.assertNotIn("OFILT_RUN_SEALED=1", sh)
+   309	        check = next(i for i, l in enumerate(lines) if "${OFILT_RUN_SEALED+x}" in l and "refuse" in l)
+   310	        first_py = next(i for i, l in enumerate(lines) if "python" in l and not l.lstrip().startswith("#"))
+   311	        self.assertLess(check, first_py)
+
+--- d. The configuration ---
+$ rm docs/P3_RUN_CONFIG.json
+exit=0
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --write-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: True
+exit=0
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: True
+exit=0
+$ shasum -a 256 docs/P3_RUN_CONFIG.json
+ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e  docs/P3_RUN_CONFIG.json
+Key diff (old = git show HEAD:docs/P3_RUN_CONFIG.json; new = the file):
+  top-level keys whose values differ: ['methods', 'outputs', 'rules']
+  methods: keys that differ: ['t6']
+  outputs: added ['centred_reject'] removed []
+  rules: keys that differ: ['D4.3_flag']
+  new rules.D4.3_flag: [">   - D4.3b The flag rule. If an estimator's centred rejection rate at b = 0 on early-window draws (cell 7) lies outside [3.5%, 6.5%], the pre-registration flags that robustness row as unreliable on coarse-grid periods. This replaces D4.3's flag sentence, and the configuration copies this line."]
+  new methods.t6: D4.3a: OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw. Per cell and estimator only: the centred rejection rate, the share of draws with |b_hat - b_bar| > z se (z = scipy.stats.norm.ppf(1 - alpha/2); b_bar the cell's mean of b_hat, held in memory only), with its Wilson interval; sd(b_hat), mean se and se/sd; and Huber's mean share downweighted. No mean bias, uncentred rejection rate or coverage
+  KEY DIFF EXACTLY methods.t6, centred_reject added to outputs, rules.D4.3_flag: True
+exit=0
+
+--- d. Tool changes: diff -u (the cdded9b version, saved before the edit) tools/p3_sealed_run.py, in full ---
+--- /tmp/p3_3b_tool_before.py	2026-10-06 18:47:04
++++ tools/p3_sealed_run.py	2026-10-07 01:11:53
+@@ -51,7 +51,7 @@
+     "rows", "cells", "cell", "task", "b", "replications", "n_dates", "window", "lag", "estimates", "mean_bias", "sd",
+     "mean_se", "se_over_sd", "dk_normal", "bootstrap", "calibrated", "reject", "coverage", "tost", "primary", "low",
+     "high", "k", "n", "rate", "wilson95", "h3", "own_quantiles", "c_boot", "c_cal", "c_boot_h3", "q95", "q90", "value",
+-    "interval", "rank", "rank_interval", "pooled", "estimators", "ols_dk", "huber_dk", "winsorised_ols_dk",
++    "interval", "rank", "rank_interval", "pooled", "estimators", "ols_dk", "huber_dk", "winsorised_ols_dk", "centred_reject",
+     "mean_share_downweighted", "mde80", "probit_interpolated", "normal_approx_sd", "normal_approx_mean_se", "t3",
+     "c_cw_cal", "cw", "normal", "h1", "crosstab", "h1_method", "cw_method", "both", "h1_only", "cw_only", "neither",
+     "walk_forward_calls", "registry_lines", "errors", "error_class", "line", "complete", "aborted", "runtime",
+@@ -100,14 +100,9 @@
+             out.append(lines[i])
+         return out
+ 
+-    d43 = one(">   - D4.3 T6.")
+-    flag = re.search(r"If an estimator's rate at b = 0 on early-window draws lies outside \[3\.5%, 6\.5%\], the "
+-                     r"pre-registration flags that robustness row as unreliable on coarse-grid periods\.", d43)
+-    if flag is None:
+-        raise ValueError("D4.3 flag sentence not found")
+     spec = yaml.safe_load(SPEC_PATH.read_text(encoding="utf-8"))
+     return {"D2.6": [one(">   - D2.6 Viability")], "D2.7": [one(">   - D2.7 Claim wording")],
+-            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [flag.group(0)],
++            "D3.4": block(">   - D3.4 The joint T1/T4 rule", ">     - "), "D4.3_flag": [one(">   - D4.3b The flag rule.")],
+             "D3.2_D3.3_amended": block("> - D3.2 and D3.3 amended", ">   - "),
+             "AM-02": [spec["inference"]["size_rule"]]}
+ 
+@@ -191,8 +186,12 @@
+                                  "over cw_cal_cell (D3.3)"},
+             "h3": "dk_normal as for H1; bootstrap at c_boot_h3(0.95), the order statistic of |t*_h3| pooled over "
+                   "pooled_cells (D3.5); H3 keeps the normal reference under c_cal",
+-            "t6": "OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; c "
+-                  "and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw; normal reference",
++            "t6": "D4.3a: OLS-DK (calib.fit_t), Huber-DK (inference.fit_huber on inference.build_design of the draw; "
++                  "c and scale from the spec) and OLS-DK on calib.winsorise_fx of the draw. Per cell and estimator "
++                  "only: the centred rejection rate, the share of draws with |b_hat - b_bar| > z se (z = "
++                  "scipy.stats.norm.ppf(1 - alpha/2); b_bar the cell's mean of b_hat, held in memory only), with "
++                  "its Wilson interval; sd(b_hat), mean se and se/sd; and Huber's mean share downweighted. No mean "
++                  "bias, uncentred rejection rate or coverage",
+             "mde80": "calib.mde80 over cells 0, 2, 3, 4 (b = 0, 0.10, 0.25, 0.40) per H1 method; cross-checks "
+                      "with sd(b_hat) and mean se pooled over pooled_cells",
+             "order_statistics": "calib.order_stat (the ceil(level n)-th smallest) with calib.order_stat_interval"},
+@@ -592,11 +591,11 @@
+                     v["hb"][r], v["hse"][r], v["hsh"][r] = ph["estimate"], ph["se"], h.info["share_downweighted"]
+                     v["wb"][r], v["wse"][r] = fw["b"], fw["se"]
+                 out = cell_head(c, n)
+-                out["estimators"] = {
+-                    "ols_dk": t6_block(v["ob"], v["ose"], c["b"], z2, C),
+-                    "huber_dk": dict(t6_block(v["hb"], v["hse"], c["b"], z2, C),
++                out["estimators"] = {                                   # D4.3a: centred outputs only
++                    "ols_dk": centred_block(v["ob"], v["ose"], z2, C),
++                    "huber_dk": dict(centred_block(v["hb"], v["hse"], z2, C),
+                                      mean_share_downweighted=float(np.mean(v["hsh"]))),
+-                    "winsorised_ols_dk": t6_block(v["wb"], v["wse"], c["b"], z2, C)}
++                    "winsorised_ols_dk": centred_block(v["wb"], v["wse"], z2, C)}
+                 state["cells"].append(out)
+                 flush()
+                 tot += n
+@@ -775,12 +774,16 @@
+     return out
+ 
+ 
+-def t6_block(bhat, se, b, z2, C) -> dict:
++def centred_block(bhat, se, z, C) -> dict:
++    """D4.3a, one T6 estimator: the centred rejection rate (|b_hat - b_bar| > z se, b_bar the mean of b_hat, held here
++    only) with its Wilson interval, sd(b_hat), mean se and se/sd. No mean bias, uncentred rejection or coverage; adding
++    a constant to every b_hat leaves the output unchanged."""
+     import numpy as np
+-    n = len(bhat)
+-    return {"reject": rate(int((np.abs(bhat / se) > z2).sum()), n, C),
+-            "coverage": rate(int((np.abs(bhat - b) <= z2 * se).sum()), n, C),
+-            "estimates": est_summary(bhat, se, b)}
++    bhat, se = np.asarray(bhat, dtype=float), np.asarray(se, dtype=float)
++    bbar = float(np.mean(bhat))
++    sd = float(np.std(bhat, ddof=1))
++    return {"centred_reject": rate(int((np.abs(bhat - bbar) > z * se).sum()), len(bhat), C),
++            "sd": sd, "mean_se": float(np.mean(se)), "se_over_sd": float(np.mean(se) / sd)}
+ 
+ 
+ def cell_head(c, n) -> dict:
+@@ -812,11 +815,12 @@
+     for o in state["cells"]:
+         e = o.get("estimates") or {}
+         if "estimators" in o:
+-            for name, blk in o["estimators"].items():
+-                es = blk["estimates"]
+-                L.append(f"| {o['cell']} | {o['task']} {name} | {o['b']} | {o['replications']} | {o['window']} | "
+-                         f"{_r(blk['reject'])} | - | - | {_f(es['mean_bias'])} | {_f(es['sd'])} | {_f(es['mean_se'])} | "
+-                         f"{_f(es['se_over_sd'])} |")
++            for name, blk in o["estimators"].items():                    # D4.3a: centred rejection, sd, se
++                share = "" if "mean_share_downweighted" not in blk else \
++                    f" (share downweighted {_f(blk['mean_share_downweighted'])})"
++                L.append(f"| {o['cell']} | {o['task']} {name}{share} | {o['b']} | {o['replications']} | {o['window']} | "
++                         f"centred {_r(blk['centred_reject'])} | - | - | - | {_f(blk['sd'])} | {_f(blk['mean_se'])} | "
++                         f"{_f(blk['se_over_sd'])} |")
+             continue
+         L.append(f"| {o['cell']} | {o['task']} | {o['b']} | {o['replications']} | {o['window']} | "
+                  f"{_r((o.get('dk_normal') or {}).get('reject'))} | {_r((o.get('bootstrap') or {}).get('reject'))} | "
+(note) t6_block, which computed the uncentred rejection, coverage and mean bias, is replaced in place by centred_block; nothing else calls it.
+$ shasum -a 256 tools/p3_sealed_run.py
+bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837  tools/p3_sealed_run.py
+
+--- e. The rehearsal script: diff -u (the cdded9b version) tools/p3_3_rehearse.sh, in full ---
+--- /tmp/p3_3b_rehearse_before.sh	2026-10-06 18:48:25
++++ tools/p3_3_rehearse.sh	2026-10-07 01:12:41
+@@ -1,8 +1,9 @@
+ set -euo pipefail
+ # tools/p3_3_rehearse.sh: the P3-3 rehearsal (DQ1.5; PASS3_STATUS Decision log, "The rehearsal procedure").
+-# usage:  bash tools/p3_3_rehearse.sh             the full rehearsal: two runs of the tool's rehearsal mode
+-#         bash tools/p3_3_rehearse.sh --smoke N   the short one (every cell capped at N replications)
+-# Capture the output with:  bash tools/p3_3_rehearse.sh 2>&1 | tee <log file>
++# usage:  bash tools/p3_3_rehearse.sh --expect-config-sha256 <hash>             the full rehearsal: two runs
++#         bash tools/p3_3_rehearse.sh --smoke N --expect-config-sha256 <hash>   the short one (cells capped at N)
++# <hash> is docs/P3_RUN_CONFIG.json's SHA-256 (64 lowercase hex); the script refuses unless the file matches it.
++# Capture the output with:  bash tools/p3_3_rehearse.sh --expect-config-sha256 <hash> 2>&1 | tee <log file>
+ # The script never passes the tool's real-mode flag, never sets the sealed-run environment variable, and writes nothing
+ # inside the repository. Any refusal prints "REHEARSAL REFUSED: <reason>" and exits 2; the end prints "REHEARSAL PASSED"
+ # (exit 0) or "REHEARSAL FAILED: <reason>" (exit 1).
+@@ -15,15 +16,24 @@
+ 
+ MODE=full
+ SMOKE=""
+-if [ "$#" -gt 0 ]; then
+-  if [ "$#" -eq 2 ] && [ "$1" = "--smoke" ] && [[ "$2" =~ ^[0-9]+$ ]]; then MODE=smoke; SMOKE="$2"
+-  else refuse "usage: bash tools/p3_3_rehearse.sh [--smoke N]"; fi
+-fi
++EXPECT=""
++USAGE="usage: bash tools/p3_3_rehearse.sh [--smoke N] --expect-config-sha256 <64 lowercase hex>"
++while [ "$#" -gt 0 ]; do
++  case "$1" in
++    --smoke) { [ "$#" -ge 2 ] && [[ "$2" =~ ^[0-9]+$ ]]; } || refuse "$USAGE"; MODE=smoke; SMOKE="$2"; shift 2 ;;
++    --expect-config-sha256) [ "$#" -ge 2 ] || refuse "$USAGE"; EXPECT="$2"; shift 2 ;;
++    *) refuse "$USAGE" ;;
++  esac
++done
++[[ "$EXPECT" =~ ^[0-9a-f]{64}$ ]] || refuse "--expect-config-sha256 <64 lowercase hex> is required (missing or malformed)"
+ 
+ # 2. The repository root; the tree must be clean, untracked files included.
+ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ cd "$ROOT"
+ [ -z "$(git status --porcelain)" ] || refuse "git status --porcelain is not empty"
++CFG_SHA="$(shasum -a 256 docs/P3_RUN_CONFIG.json | cut -d' ' -f1)"
++[ "$CFG_SHA" = "$EXPECT" ] || refuse "docs/P3_RUN_CONFIG.json's SHA-256 differs from --expect-config-sha256"
++echo "configuration sha256: $CFG_SHA (equals --expect-config-sha256)"
+ 
+ # 3. Header.
+ echo "rehearsal mode: $MODE${SMOKE:+ (smoke $SMOKE)}"
+@@ -47,23 +57,23 @@
+ 
+ # 6. Baselines, read by script (the same script runs again after the runs).
+ baseline() {
+-  env -u OFILT_RUN_SEALED python - <<'PYEOF'
+-import hashlib, os, re, tempfile
++  env -u OFILT_RUN_SEALED python - "$EXPECT" <<'PYEOF'
++import hashlib, os, re, sys, tempfile
+ from pathlib import Path
+ R = Path.cwd()
+ sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ p30 = re.search(r"^BLIND_FIT_LOG sha256 \(baseline[^\n]*?([0-9a-f]{64})$", (R / "reports/P3_0_report.txt").read_text(), re.M).group(1)
+-smoke = re.search(r"^- Configuration: `docs/P3_RUN_CONFIG.json`, SHA-256 `([0-9a-f]{64})`", (R / "reports/P3_2b_smoke.md").read_text(), re.M).group(1)
++exp = sys.argv[1]
+ log, cfg = sha(R / "BLIND_FIT_LOG"), sha(R / "docs/P3_RUN_CONFIG.json")
+ reg = (R / "RUN_REGISTRY.jsonl").stat().st_size
+ syn = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+ print(f"BLIND_FIT_LOG sha256 {log}; equals the P3-0 baseline: {log == p30}")
+-print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals reports/P3_2b_smoke.md: {cfg == smoke}")
++print(f"docs/P3_RUN_CONFIG.json sha256 {cfg}; equals --expect-config-sha256: {cfg == exp}")
+ print(f"RUN_REGISTRY.jsonl bytes {reg}; is 0: {reg == 0}")
+ print(f"tools/p3_sealed_run.py sha256 {sha(R / 'tools/p3_sealed_run.py')}")
+ print(f"ofilt/drift/calib.py sha256 {sha(R / 'ofilt/drift/calib.py')}")
+ print(f"usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes {syn.stat().st_size if syn.exists() else 'absent'}")
+-raise SystemExit(0 if (log == p30 and cfg == smoke and reg == 0) else 1)
++raise SystemExit(0 if (log == p30 and cfg == exp and reg == 0) else 1)
+ PYEOF
+ }
+ BASE0="$(baseline)" || { printf '%s\n' "$BASE0"; refuse "a baseline check failed"; }
+$ bash -n tools/p3_3_rehearse.sh: OK
+$ shasum -a 256 tools/p3_3_rehearse.sh
+d6ea9c15d43d96f95c6a8932067ecafc6149e513cf1e98d8fefef21a016ba47b  tools/p3_3_rehearse.sh
+
+--- d, e. Tests: diff -u (the cdded9b version) tests/test_p3_sealed_run.py, in full (additions only) ---
+--- /tmp/p3_3b_test_before.py	2026-10-06 18:49:09
++++ tests/test_p3_sealed_run.py	2026-10-07 01:13:41
+@@ -198,6 +198,19 @@
+         self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True))
+         ma, mb = ((o / f"{P.REAL_STEM}.md").read_text(encoding="utf-8").split("## Runtime")[0] for o in self.out)
+         self.assertEqual(ma, mb)
++
++    def test_15_t6_blocks_are_centred_only(self):                    # P3-3b: D4.3a
++        for j in self.js:
++            t6 = [c for c in j["cells"] if c["task"] == "T6"]
++            self.assertEqual([c["cell"] for c in t6], [5, 6, 7, 8])
++            for c in t6:
++                for name, blk in c["estimators"].items():
++                    want = {"centred_reject", "sd", "mean_se", "se_over_sd"}
++                    if name == "huber_dk":
++                        want |= {"mean_share_downweighted"}
++                    self.assertEqual(set(blk), want, (c["cell"], name))
++                    self.assertFalse({"estimates", "reject", "coverage"} & set(blk))
++                    self.assertEqual(set(blk["centred_reject"]), {"k", "n", "rate", "wilson95"})
+ 
+ 
+ class TestSeedsAndLogs(unittest.TestCase):
+@@ -309,7 +322,84 @@
+         check = next(i for i, l in enumerate(lines) if "${OFILT_RUN_SEALED+x}" in l and "refuse" in l)
+         first_py = next(i for i, l in enumerate(lines) if "python" in l and not l.lstrip().startswith("#"))
+         self.assertLess(check, first_py)
++        # P3-3b: --expect-config-sha256 is required and checked against the configuration, before any Python line
++        expect = next(i for i, l in enumerate(lines) if '[[ "$EXPECT" =~ ^[0-9a-f]{64}$ ]]' in l and "refuse" in l)
++        cfg = next(i for i, l in enumerate(lines) if '[ "$CFG_SHA" = "$EXPECT" ]' in l and "refuse" in l)
++        self.assertIn('CFG_SHA="$(shasum -a 256 docs/P3_RUN_CONFIG.json', sh)
++        self.assertLess(expect, first_py)
++        self.assertLess(cfg, first_py)
++        self.assertIn("cfg == exp", sh)
++        self.assertNotIn("P3_2b_smoke", sh)
++
++
++class TestP33b(unittest.TestCase):
++    """P3-3b (D4.3a): T6's centred outputs and the leak test."""
++
++    def test_14_centred_block(self):
++        from scipy import stats
++        z = float(stats.norm.ppf(0.975))                                      # the tool's z2 at alpha 0.05
++        bh = np.array([0.5, -0.5, 0.25, -0.25, 1.0, -1.0, 0.125, -0.125])     # dyadic, n = 8: mean and shifts exact
++        se = np.full(8, 0.25)
++        out = P.centred_block(bh, se, z, C)
++        self.assertEqual(out, P.centred_block(bh + 3.0, se, z, C))           # a constant shift changes nothing
++        self.assertEqual(set(out), {"centred_reject", "sd", "mean_se", "se_over_sd"})
++        k = sum(abs(b - bh.mean()) > z * s for b, s in zip(bh, se))          # by hand: 0.5, -0.5, 1.0, -1.0 exceed 0.49
++        self.assertEqual(k, 4)
++        self.assertEqual(out["centred_reject"], {"k": 4, "n": 8, "rate": 0.5, "wilson95": list(C.wilson(4, 8))})
++        sd = float(np.sqrt(np.sum(bh ** 2) / 7))
++        self.assertAlmostEqual(out["sd"], sd, places=15)
++        self.assertEqual(out["mean_se"], 0.25)
++        self.assertAlmostEqual(out["se_over_sd"], 0.25 / sd, places=15)
++        rng = np.random.default_rng(3)
++        b2, s2 = rng.normal(size=200), rng.uniform(0.5, 1.5, 200)
++        x, y = P.centred_block(b2, s2, z, C), P.centred_block(b2 + 0.37, s2, z, C)
++        self.assertEqual(x["centred_reject"], y["centred_reject"])
++        self.assertAlmostEqual(x["sd"], y["sd"], places=12)
+ 
++    def test_16_leak_invariance(self):
++        """Adding delta * usdjpy_ret to the calibrator's residuals (in the test only) shifts every OLS-DK and Huber-DK
++        b_hat by delta and leaves their se, Huber's share and the centred counts unchanged, in a full-window and an
++        early-window cell: a window's coefficient deviation cannot reach T6's centred outputs."""
++        from scipy import stats
++        from ofilt.drift import inference as I
++        spec = Spec.load()
++        z = float(stats.norm.ppf(0.975))
++        df = S.synthetic_panel(300, b=0.4, a2=-0.2, seed=93, tails="t5")
++        with tempfile.TemporaryDirectory() as t, mock.patch.object(S, "BLIND_FIT_LOG_PATH", Path(t) / "LOG"):
++            cal = S.DevCalibrator(df, spec)
++        cells = {"full": [cal.positions(np.random.default_rng(100 + r), cal.T) for r in range(6)],
++                 "early": [C.window_positions(80, cal.T, np.random.default_rng(200 + r)) for r in range(6)]}
+ 
++        def fits():
++            out = {}
++            for name, poss in cells.items():
++                v = {k: [] for k in ("ob", "ose", "hb", "hse", "hsh")}
++                for r, pos in enumerate(poss):
++                    y = cal.draw(0.0, 0.0, seed=7 + r, positions=pos)
++                    f = C.fit_t(y, spec, "y_sim")
++                    h = I.fit_huber(I.build_design(y, spec, target="y_sim"), spec)
++                    ph = h.param("usdjpy_ret")
++                    for k, val in (("ob", f["b"]), ("ose", f["se"]), ("hb", ph["estimate"]), ("hse", ph["se"]),
++                                   ("hsh", h.info["share_downweighted"])):
++                        v[k].append(val)
++                out[name] = {k: np.array(x) for k, x in v.items()}
++            return out
++
++        base = fits()
++        delta = 0.3
++        cal._resid = cal._resid + delta * cal._pred["usdjpy_ret"].to_numpy(dtype=float)   # the test only
++        moved = fits()
++        for name in cells:
++            b0, b1 = base[name], moved[name]
++            self.assertLess(float(np.max(np.abs(b1["ob"] - b0["ob"] - delta))), 1e-10, name)
++            self.assertLess(float(np.max(np.abs(b1["ose"] - b0["ose"]))), 1e-10, name)
++            self.assertLess(float(np.max(np.abs(b1["hb"] - b0["hb"] - delta))), 1e-8, name)
++            self.assertLess(float(np.max(np.abs(b1["hse"] - b0["hse"]))), 1e-8, name)
++            self.assertLess(float(np.max(np.abs(b1["hsh"] - b0["hsh"]))), 1e-8, name)
++            for kb, ks in (("ob", "ose"), ("hb", "hse")):
++                self.assertEqual(P.centred_block(b0[kb], b0[ks], z, C)["centred_reject"]["k"],
++                                 P.centred_block(b1[kb], b1[ks], z, C)["centred_reject"]["k"], (name, kb))
++
++
+ if __name__ == "__main__":
+     unittest.main()
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_p3_sealed_run -v   (first and only run)
+test_3_configuration (tests.test_p3_sealed_run.TestConfig.test_3_configuration) ... ok
+test_2_invariance_and_given_fit (tests.test_p3_sealed_run.TestInvariance.test_2_invariance_and_given_fit) ... ok
+test_10_r1_log_check_and_logged_panel (tests.test_p3_sealed_run.TestP32d.test_10_r1_log_check_and_logged_panel) ... ok
+test_11_r2_generic_handlers_print_no_message (tests.test_p3_sealed_run.TestP32d.test_11_r2_generic_handlers_print_no_message) ... ok
+test_12_r2_abort_text (tests.test_p3_sealed_run.TestP32d.test_12_r2_abort_text) ... ok
+test_13_rehearsal_script_static (tests.test_p3_sealed_run.TestP32d.test_13_rehearsal_script_static) ... ok
+test_14_centred_block (tests.test_p3_sealed_run.TestP33b.test_14_centred_block) ... ok
+test_16_leak_invariance (tests.test_p3_sealed_run.TestP33b.test_16_leak_invariance)
+Adding delta * usdjpy_ret to the calibrator's residuals (in the test only) shifts every OLS-DK and Huber-DK ... ok
+test_4_real_mode_refusals_read_no_data (tests.test_p3_sealed_run.TestRealRefusals.test_4_real_mode_refusals_read_no_data) ... ok
+test_7_seeds_disjoint (tests.test_p3_sealed_run.TestSeedsAndLogs.test_7_seeds_disjoint) ... ok
+test_8_log_checks (tests.test_p3_sealed_run.TestSeedsAndLogs.test_8_log_checks) ... ok
+test_1_static (tests.test_p3_sealed_run.TestStatic.test_1_static) ... ok
+test_15_t6_blocks_are_centred_only (tests.test_p3_sealed_run.TestTinyRuns.test_15_t6_blocks_are_centred_only) ... ok
+test_5_outputs_whitelisted_and_aggregates_only (tests.test_p3_sealed_run.TestTinyRuns.test_5_outputs_whitelisted_and_aggregates_only) ... ok
+test_6_registry_directory (tests.test_p3_sealed_run.TestTinyRuns.test_6_registry_directory) ... ok
+test_9_determinism (tests.test_p3_sealed_run.TestTinyRuns.test_9_determinism) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 22.451s
+
+OK
+
+--- f.1 The reports trail (run in bash) ---
+  cp -p /tmp/p3_0b.txt reports/P3_reports/p3_0b.txt: source a3e4f2cc32e2024f1d323693d0c8a52c9c91eccede58e28ec36384b1bc0789a7; copy a3e4f2cc32e2024f1d323693d0c8a52c9c91eccede58e28ec36384b1bc0789a7; equal: True
+  cp -p /tmp/p3_1.txt reports/P3_reports/p3_1.txt: source 4a798b96ae48da0f360fda927bd4047316d5706cfed8404b1b19416ae3f64224; copy 4a798b96ae48da0f360fda927bd4047316d5706cfed8404b1b19416ae3f64224; equal: True
+  cp -p /tmp/p3_1b.txt reports/P3_reports/p3_1b.txt: source e617c43cef6b0975f41937f4cead19b91a6f9c88a0356f06250f0d4042e29823; copy e617c43cef6b0975f41937f4cead19b91a6f9c88a0356f06250f0d4042e29823; equal: True
+  cp -p /tmp/p3_2a.txt reports/P3_reports/p3_2a.txt: source 7c305d48e292c5026048d3f4284400f66aba54fb5653df234f7b0c8d8568ec21; copy 7c305d48e292c5026048d3f4284400f66aba54fb5653df234f7b0c8d8568ec21; equal: True
+  cp -p /tmp/p3_2a_cont.txt reports/P3_reports/p3_2a_cont.txt: source 04cf56734b6fd7be6209028733667ed755ed1e401f0990c5b67fef58b12896d7; copy 04cf56734b6fd7be6209028733667ed755ed1e401f0990c5b67fef58b12896d7; equal: True
+  cp -p /tmp/p3_2b.txt reports/P3_reports/p3_2b.txt: source ff1b0ba0fd9fb78f10d6923a8605194303e2548d205462ca1aae6d6d6017cff3; copy ff1b0ba0fd9fb78f10d6923a8605194303e2548d205462ca1aae6d6d6017cff3; equal: True
+  cp -p /tmp/p3_2c.txt reports/P3_reports/p3_2c.txt: source 48f3a2fcf303e589edc96a0ea43349f452f1a9f2f8b1a6c2b74d5349cb241279; copy 48f3a2fcf303e589edc96a0ea43349f452f1a9f2f8b1a6c2b74d5349cb241279; equal: True
+  cp -p /tmp/p3_2d.txt reports/P3_reports/p3_2d.txt: source ff008c4c7d222576e92c7824934c6a9ff690223adb97e5680864453df940a816; copy ff008c4c7d222576e92c7824934c6a9ff690223adb97e5680864453df940a816; equal: True
+  cp -p /tmp/p3_3a.txt reports/P3_reports/p3_3a.txt: source 972bd1db5227a70e743803c81f5e9d76d244bf4c6237596683ae68a52581ac61; copy 972bd1db5227a70e743803c81f5e9d76d244bf4c6237596683ae68a52581ac61; equal: True
+  missing: none (all 9 sources existed)
+
+--- f.2 The old rehearsal folder ---
+$ ls /tmp/p3_3_rehearsal_2
+P3_4_sealed_run.json
+P3_4_sealed_run.md
+$ rm -r /tmp/p3_3_rehearsal_2; exit=0
+ls: /tmp/p3_3_rehearsal_2: No such file or directory
+(run 2 was shown equal to run 1 apart from runtime at P3-3a d.2; its runtimes are in reports/P3_3_rehearsal.log)
+
+--- g.1 The scratch clone ---
+ls: /tmp/p3_3_smoke_1: No such file or directory
+ls: /tmp/p3_3_smoke_2: No such file or directory
+ls: /tmp/p3_3b_clone: No such file or directory
+REPO before: HEAD cdded9b444ea889ef64859acf7883b89ffecf29b; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; RUN_REGISTRY.jsonl 0 bytes
+$ git -C REPO status --porcelain -uall
+ M PASS3_STATUS.md
+ M docs/P3_RUN_CONFIG.json
+ M tests/test_p3_sealed_run.py
+ M tools/p3_3_rehearse.sh
+ M tools/p3_sealed_run.py
+?? reports/P3_reports/p3_0b.txt
+?? reports/P3_reports/p3_1.txt
+?? reports/P3_reports/p3_1b.txt
+?? reports/P3_reports/p3_2a.txt
+?? reports/P3_reports/p3_2a_cont.txt
+?? reports/P3_reports/p3_2b.txt
+?? reports/P3_reports/p3_2c.txt
+?? reports/P3_reports/p3_2d.txt
+?? reports/P3_reports/p3_3a.txt
+$ git clone --quiet REPO /tmp/p3_3b_clone: ok
+remote removed; remotes: []
+clone commit: 5ad6e4497c85dc1855f1b8a2daf05e83169a0fe6 (parent cdded9b444ea889ef64859acf7883b89ffecf29b)
+clone git status --porcelain: []
+files compared (REPO tracked + new): 148; differing: 0; clone file count: 148
+
+--- g.2 The smoke rehearsal ---
+the new hash, read from REPO working-tree docs/P3_RUN_CONFIG.json (regenerated in step d): ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e
+$ env -u OFILT_RUN_SEALED bash /tmp/p3_3b_clone/tools/p3_3_rehearse.sh --smoke 20 --expect-config-sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e > /tmp/p3_3b_smoke.log 2>&1
+start utc: 2026-10-07T05:16:46Z
+end utc: 2026-10-07T05:20:15Z; exit 0
+--- /tmp/p3_3b_smoke.log, in full (41 lines) ---
+configuration sha256: ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e (equals --expect-config-sha256)
+rehearsal mode: smoke (smoke 20)
+utc: 2026-10-07T05:16:46Z
+HEAD: 5ad6e4497c85dc1855f1b8a2daf05e83169a0fe6
+macOS: 26.6.2
+machine: arm64
+python: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+power: Now drawing from 'AC Power'
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; equals --expect-config-sha256: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19951580
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: True
+run start (/tmp/p3_3_smoke_1): 2026-10-07T05:16:46Z
+COMPLETE: /private/tmp/p3_3_smoke_1/P3_4_sealed_run.json and /private/tmp/p3_3_smoke_1/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_smoke_1): 2026-10-07T05:18:30Z; exit 0
+run start (/tmp/p3_3_smoke_2): 2026-10-07T05:18:30Z
+COMPLETE: /private/tmp/p3_3_smoke_2/P3_4_sealed_run.json and /private/tmp/p3_3_smoke_2/P3_4_sealed_run.md; errors: 0
+run end (/tmp/p3_3_smoke_2): 2026-10-07T05:20:15Z; exit 0
+the two JSON outputs are identical apart from runtime: True
+task T1: run 1 4.2 s, run 2 4.1 s (20 replications each)
+task T5_boundary: run 1 4.2 s, run 2 4.2 s (20 replications each)
+task T2: run 1 12.5 s, run 2 12.4 s (60 replications each)
+task pooled: run 1 0.0 s, run 2 0.0 s (0 replications each)
+task T6: run 1 17.2 s, run 2 17.0 s (80 replications each)
+task T3: run 1 64.7 s, run 2 65.0 s (60 replications each)
+calibrator: run 1 0.01 s, run 2 0.01 s
+totals: run 1 102.9 s, run 2 102.7 s
+projected duration of the real run (the larger total): 103 s (0.03 h)
+BLIND_FIT_LOG sha256 dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; equals the P3-0 baseline: True
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; equals --expect-config-sha256: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+tools/p3_sealed_run.py sha256 bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837
+ofilt/drift/calib.py sha256 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6
+usual TMPDIR ofilt_RUN_REGISTRY_synthetic.jsonl bytes 19951580
+hashes and sizes unchanged: True
+tree clean and HEAD unchanged: True
+utc: 2026-10-07T05:20:15Z
+REHEARSAL PASSED
+--- end of /tmp/p3_3b_smoke.log ---
+
+--- g.3 The structural check of /tmp/p3_3_smoke_1/P3_4_sealed_run.json (/tmp/p3_3b_g3.py) ---
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_3b_g3.py
+T6 cells present: [5, 6, 7, 8]; equal to [5, 6, 7, 8]: True
+cell 5: estimators ['huber_dk', 'ols_dk', 'winsorised_ols_dk']; ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']; huber_dk keys ['centred_reject', 'mean_se', 'mean_share_downweighted', 'sd', 'se_over_sd']; winsorised_ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']
+  estimator set exact: True; per-estimator keys exactly D4.3a: True; centred_reject keys ['k', 'n', 'rate', 'wilson95']: True; estimates/dk_normal/bootstrap/calibrated all null: True; no mean_bias/reject/coverage/tost key anywhere: True
+cell 6: estimators ['huber_dk', 'ols_dk', 'winsorised_ols_dk']; ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']; huber_dk keys ['centred_reject', 'mean_se', 'mean_share_downweighted', 'sd', 'se_over_sd']; winsorised_ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']
+  estimator set exact: True; per-estimator keys exactly D4.3a: True; centred_reject keys ['k', 'n', 'rate', 'wilson95']: True; estimates/dk_normal/bootstrap/calibrated all null: True; no mean_bias/reject/coverage/tost key anywhere: True
+cell 7: estimators ['huber_dk', 'ols_dk', 'winsorised_ols_dk']; ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']; huber_dk keys ['centred_reject', 'mean_se', 'mean_share_downweighted', 'sd', 'se_over_sd']; winsorised_ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']
+  estimator set exact: True; per-estimator keys exactly D4.3a: True; centred_reject keys ['k', 'n', 'rate', 'wilson95']: True; estimates/dk_normal/bootstrap/calibrated all null: True; no mean_bias/reject/coverage/tost key anywhere: True
+cell 8: estimators ['huber_dk', 'ols_dk', 'winsorised_ols_dk']; ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']; huber_dk keys ['centred_reject', 'mean_se', 'mean_share_downweighted', 'sd', 'se_over_sd']; winsorised_ols_dk keys ['centred_reject', 'mean_se', 'sd', 'se_over_sd']
+  estimator set exact: True; per-estimator keys exactly D4.3a: True; centred_reject keys ['k', 'n', 'rate', 'wilson95']: True; estimates/dk_normal/bootstrap/calibrated all null: True; no mean_bias/reject/coverage/tost key anywhere: True
+config_sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; equals the new hash ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+complete: True; is True: True
+errors: []; empty: True
+aborted: None; is null: True
+G3 CHECK: True
+exit 0
+
+--- g.4 The refusal checks ---
+(1) no --expect-config-sha256:
+$ env -u OFILT_RUN_SEALED bash /tmp/p3_3b_clone/tools/p3_3_rehearse.sh --smoke 20
+REHEARSAL REFUSED: --expect-config-sha256 <64 lowercase hex> is required (missing or malformed)
+exit 2
+prints REHEARSAL REFUSED and exits 2: True
+(2) a wrong hash (64 zeros; well-formed, differs from the configuration ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True):
+$ env -u OFILT_RUN_SEALED bash /tmp/p3_3b_clone/tools/p3_3_rehearse.sh --smoke 20 --expect-config-sha256 0000000000000000000000000000000000000000000000000000000000000000
+REHEARSAL REFUSED: docs/P3_RUN_CONFIG.json's SHA-256 differs from --expect-config-sha256
+exit 2
+prints REHEARSAL REFUSED and exits 2: True
+smoke output folders untouched by the refusals (mtime): /tmp/p3_3_smoke_1 Oct  7 01:16:48 2026;/tmp/p3_3_smoke_2 Oct  7 01:18:32 2026;
+
+GATE (REHEARSAL PASSED; g.3 True; both refusals): True
+
+--- g.5 Cleanup ---
+targets before deletion:
+/tmp/p3_3_smoke_1
+/tmp/p3_3_smoke_2
+/tmp/p3_3b_clone
+clone HEAD (scratch commit) 5ad6e4497c85dc1855f1b8a2daf05e83169a0fe6; remotes []
+smoke folder contents: P3_4_sealed_run.json P3_4_sealed_run.md | P3_4_sealed_run.json P3_4_sealed_run.md 
+after deletion:
+ls: /tmp/p3_3_smoke_*: No such file or directory
+ls: /tmp/p3_3b_clone: No such file or directory
+REPO after: HEAD cdded9b444ea889ef64859acf7883b89ffecf29b (cdded9b4... expected: True)
+REPO BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; lines 6
+equals the P3-0 baseline read from reports/P3_0_report.txt (dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301): True
+REPO RUN_REGISTRY.jsonl bytes 0
+$ git -C REPO status --porcelain
+ M PASS3_STATUS.md
+ M docs/P3_RUN_CONFIG.json
+ M tests/test_p3_sealed_run.py
+ M tools/p3_3_rehearse.sh
+ M tools/p3_sealed_run.py
+?? reports/P3_reports/
+
+--- h.1 PASS3_STATUS edits (/tmp/p3_3b_records.py) ---
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_3b_records.py
+PASS3_STATUS.md edited: Progress row, Test results, Test changes (2 rows), Blinding attestation, Deviations (5 bullets); new config hash ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; old 645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa
+exit=0
+--- h.1 diff -u (before step h) PASS3_STATUS.md, in full ---
+--- /tmp/p3_3b_status_before_h.md	2026-10-07 01:10:02
++++ PASS3_STATUS.md	2026-10-07 01:25:14
+@@ -15,7 +15,7 @@
+ | P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+ | P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+ | P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+-| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | in progress | P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 outputs changed in `tools/p3_sealed_run.py`; configuration regenerated; `--expect-config-sha256` required by `tools/p3_3_rehearse.sh`; smoke rehearsal in a scratch clone; Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
++| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
+ | Pass 3 | in progress | |
+ 
+ ## Next action
+@@ -339,6 +339,16 @@
+   - clone B, patched, with line 7 and the stand-in outputs: 277 tests, OK (skipped=5).
+ - The full suite ran inside the P3-3a checkpoint; its result is in the P3-3a report (`/tmp/p3_3a.txt`).
+ 
++**P3-3b:**
++- `tests/test_p3_sealed_run.py` alone, after steps d and e: 16 tests (3 new; test 13 extended), OK, on the first run. The tiny runs completed.
++- The configuration: deleted, rebuilt with `--write-config`, then `--check-config`: `valid: True`. New SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (was `645ef80ee91c91e81ac4a880ff34b0fc19906bbb3c36f5300575d727dc1d7eaa`).
++- The configuration's key diff (by script; the old one from `git show HEAD:docs/P3_RUN_CONFIG.json`): the top-level keys that differ are exactly `methods`, `outputs` and `rules`; inside them, exactly `methods.t6`, `centred_reject` added to `outputs` (nothing removed) and `rules.D4.3_flag`: True.
++- Smoke rehearsal (`tools/p3_3_rehearse.sh --smoke 20 --expect-config-sha256` with the new hash, read from the configuration file by the command; from a scratch clone, as at P3-2d): REHEARSAL PASSED.
++  - Both runs printed `COMPLETE … errors: 0`, and the JSON outputs are identical apart from `runtime`. Every hash and size was unchanged, and the clone's tree stayed clean with HEAD unchanged. Totals 102.9 s and 102.7 s.
++  - Step g.3, by script on run 1's JSON: in cells 5 to 8, every estimator block has exactly the D4.3a keys, `centred_reject` has `k`, `n`, `rate` and `wilson95`, and no `mean_bias`, `reject`, `coverage` or `tost` key appears; `config_sha256` equals the new hash; `complete` is True, `errors` empty and `aborted` null. All True.
++  - Refusals: with no `--expect-config-sha256`, and with a wrong one (64 zeros), the script printed `REHEARSAL REFUSED` and exited 2, before any run started.
++- The full suite ran inside the P3-3b checkpoint; its result is in the P3-3b report (`/tmp/p3_3b.txt`).
++
+ ## Test changes
+ 
+ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
+@@ -351,6 +361,8 @@
+ | new `tests/test_p3_sealed_run.py` | — | 9 tests, synthetic only (no data file read; no test sets `OFILT_RUN_SEALED`):<br>1. static checks (one `DevCalibrator(`; no banned import; one writing function; private attributes only in the row-count assertion);<br>2. the invariance of (b̂ − b)/se and t* across b, and `calib.bootstrap_t_given_fit` equal to `calib.bootstrap_t`;<br>3. the configuration (rebuilt equals committed; refusals);<br>4. real-mode refusals with no data read;<br>5. outputs whitelisted, no list over 20;<br>6. the run-registry directory;<br>7. seeds disjoint;<br>8. the 6 → 7 → 7 log checks;<br>9. determinism<br>P3-2c change: test 4's two in-process refusals have their stdout captured (`contextlib.redirect_stdout`), and the captured text must start with `REFUSED` (was: printed to the suite's stdout, uncaptured) | P3-2b (supervisor message, 2026-10-06); P3-2c (supervisor message, 2026-10-06) | P3-2b; P3-2c |
+ | `tests/test_p3_sealed_run.py`: 4 tests added (existing tests unchanged) | 9 tests | 13 tests:<br>10. R1: the generalised log check (a synthetic line passes; a wrong count, provenance or caller fails) and the logged-panel check (provenance `dev_real` and the logged hash);<br>11. R2: the generic handlers in `main` and `_run` reference no exception message (AST);<br>12. R2: `_abort_text` gives `<class> at line <n>` without the message;<br>13. `tools/p3_3_rehearse.sh`, static: no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | P3-2d (supervisor message, 2026-10-06) | P3-2d |
+ | new `tests/test_p3_2d_structural.py` | — | 1 test, synthetic only: the structural frame builder keeps exactly the stated columns, keeps the missing pattern of `abn_oc` and `beta`, replaces their present values, drops every `y_*`, `ao_*`, `open`, `close` and `prev_close` column, and labels the frame synthetic | P3-2d (supervisor message, 2026-10-06) | P3-2d |
++| `tests/test_p3_sealed_run.py`: test 13 (`test_13_rehearsal_script_static`) changed; everything it checked before is still required | no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | also: the `--expect-config-sha256` refusal (missing or malformed) and the configuration-hash refusal (`[ "$CFG_SHA" = "$EXPECT" ]`), both before any Python line; `CFG_SHA` computed from `docs/P3_RUN_CONFIG.json`; the baselines compare with the flag (`cfg == exp`); no reference to `P3_2b_smoke` | P3-3b (supervisor message, 2026-10-07), step e | P3-3b |
++| `tests/test_p3_sealed_run.py`: 3 tests added | 13 tests | 16 tests:<br>14. (i) `centred_block`: identical output after adding a constant to every b̂ (+3.0 on a dyadic example of 8; +0.37 on 200 random draws, with the count exact and sd to 12 places); its rate equals a hand computation (4 of 8);<br>15. (ii) in the tiny runs, every T6 estimator block (cells 5 to 8) has exactly `centred_reject`, `sd`, `mean_se` and `se_over_sd`, plus `mean_share_downweighted` for Huber-DK, and no `estimates`, `reject` or `coverage`;<br>16. (iii) the leak test: on a synthetic `DevCalibrator` (temporary log), adding 0.3·`usdjpy_ret` to its residuals (in the test only) shifts every OLS-DK b̂ by 0.3 (to 1e-10) and every Huber-DK b̂ by 0.3 (to 1e-8), leaves their se and Huber's share unchanged to the same tolerances, and leaves the centred counts exactly unchanged, in a full-window and an early-window cell (6 draws each, identical seeds and positions) | P3-3b (supervisor message, 2026-10-07), step d | P3-3b |
+ 
+ **Pending: applied at the post-run checkpoint (DQ5).** `docs/P3_DQ5_line7.patch` is applied unchanged in the first commit after the real run, together with BLIND_FIT_LOG's line 7 and `reports/P3_4_sealed_run.json` and `.md`. It was rehearsed in scratch clones at P3-3a: with a dummy line 7 and stand-in outputs the suite passes (277, OK); without them it fails only in these two tests.
+ 
+@@ -478,6 +490,17 @@
+   - Read-only listings: the spec, `spec.py`, tests and docs.
+   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+   - No viewer was used. RAW and OUT: untouched. The sealed-run tool was not run in any mode by the builder. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
++- **P3-3b (supervisor message of 2026-10-07)**, by category:
++  - Records: document edits to PASS3_STATUS.md. Read-only code listings (step c): the tool, the rehearsal script and the tests.
++  - Code and configuration changes: T6's outputs in `tools/p3_sealed_run.py` (D4.3a), `--expect-config-sha256` in `tools/p3_3_rehearse.sh`, and `docs/P3_RUN_CONFIG.json` rebuilt by `--write-config` from the registry, the reports and the spec (no data file).
++  - Synthetic tests: `tests/test_p3_sealed_run.py`, including tiny synthetic runs and a synthetic `DevCalibrator` with a temporary log (test 16).
++  - The smoke rehearsal (`--smoke 20`, from a scratch clone with the same files; two runs of `--rehearsal`): the dev panel was loaded (hash-checked; `io.load_dev`, `targets.add_targets`) only to populate the fingerprint registry (target-only; DQ1.5).
++    - The draws are synthetic stand-in draws, and the sealed fit in each run was the stand-in's, logged to a temporary file.
++    - Only aggregates were written, under `/tmp/p3_3_smoke_*`. The step g.3 check printed keys, the configuration hash and booleans only. The outputs and the clone were deleted afterwards.
++    - The two refusal runs stopped before any Python command.
++  - The report copies: byte-for-byte copies of the builder's own Pass 3 reports into `reports/P3_reports/`.
++  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
++  - No `--real` run, and the full rehearsal was not started. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`; the rehearsal script was started under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+ 
+ ## Deviations
+ 
+@@ -532,3 +555,12 @@
+ - P3-3a e, the P9 context: beyond the table, the report prints cells 5 to 8's mean bias, sd and se/sd per estimator from the same JSON (synthetic aggregates), to support the P3-3a flag.
+ - P3-3a f, the patch: made by a script (`/tmp/p3_3a_make_patch.py`, in the report) that reads the six-line prefix hash, the line-7 hashes and the row count from the registry files. The dummy line 7's caller text imitates `_log_blind_fit`'s format, with an invented line number. Both clones were taken from HEAD, so they lack this item's uncommitted files. Clone A's suite ran on HEAD plus the dummy line and the stand-ins.
+ - P3-3a g, a flag beyond the listed edits: the early-window finding (P9) went into Flags, because it needs a decision before the sanction.
++- P3-3b b.4, the records-rule count: the report's line "lines in the file beginning '>   - D4.3b The flag rule.': 2" counted lines containing the string (`grep -c -F`), and the records-rule bullet of the step b block quotes the prefix mid-line. Lines beginning with the prefix, which `_rule_lines`' `one()` matches: 1, the step b line. The report keeps the original line, followed by the correction.
++- P3-3b b.2, the flag: "Resolved by D4.3 amended (P3-3b)." was appended as the last sub-bullet of the P3-3a early-window flag, which has sub-bullets, not to its first line.
++- P3-3b d, `t6_block`: its only callers were the three T6 estimator lines, so it was replaced in place by `centred_block` (whose signature drops `b`), not left as unused code. `est_summary` and `rate` are unchanged.
++- P3-3b d, the winsorised estimator and test 16's scope (for the supervisor; builder's algebra, not computed).
++  - OLS-DK and Huber-DK (c and scale fixed) are regression-equivariant. If the residuals gain any vector in the span of the draw's design, b̂ moves by that vector's coefficient, the same in every draw. The window's OLS coefficient deviation of D4.3's finding (cells 7 and 8) is such a vector, so centring removes it from these two estimators' outputs exactly. Test 16 shows this for a shift along `usdjpy_ret`.
++  - Winsorised OLS-DK regresses on the winsorised FX columns, while that deviation runs along the unwinsorised `usdjpy_ret`. Its b̂ moves by the deviation times γ, the coefficient of `usdjpy_ret` on the winsorised design within the draw. γ is near 1 but varies across draws with the rows the draw winsorises.
++  - Centring removes the mean of that shift, not its spread. Winsorised OLS-DK's centred outputs in cells 7 and 8 therefore depend on the deviation at second order, through its product with the spread of γ across draws. D4.3a's "these outputs do not depend on the deviations above" holds exactly for OLS-DK and Huber-DK and approximately for winsorised OLS-DK.
++  - Test 16 covers OLS-DK and Huber-DK, as step d(iii) specifies. Nothing beyond step d was changed.
++- P3-3b h, the Test changes preamble: "No existing test was changed or deleted" was written at P3-0b and refers to the tests that existed before Pass 3; it still holds for them. Changes to Pass 3's own tests are in their rows (P3-2c: test 4; P3-3b: test 13). The line was left as it stands.
+--- end of diff ---
+
+--- h.2 Records rule and --check-config ---
+lines added to PASS3_STATUS.md since HEAD (whole item): 58
+added lines beginning with one of the five reserved prefixes: 0
+added lines beginning with '>   - D4.3b The flag rule.': 1; lines in the file beginning with it: 1 (the step b line only)
+RECORDS RULE: True
+exit=0
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: True
+exit=0
+
+--- h.3 Checkpoint ---
+$ git log -1 --format=%B
+checkpoint: P3-3a (rehearsal on record; DQ5 patch; DQ6 facts)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA bash tools/checkpoint.sh "P3-3b (T6 leak fixed; rehearsal script bound to the configuration; reports trail)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 cf8d365d8055399b9bbd8ceee01530ded7bf49ee71dff01125968860ba249403
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+ M docs/P3_RUN_CONFIG.json
+ M tests/test_p3_sealed_run.py
+ M tools/p3_3_rehearse.sh
+ M tools/p3_sealed_run.py
+?? reports/P3_reports/
+----------------------------------------------------------------------
+Ran 280 tests in 318.947s
+
+OK (skipped=5)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+ M docs/P3_RUN_CONFIG.json
+ M tests/test_p3_sealed_run.py
+ M tools/p3_3_rehearse.sh
+ M tools/p3_sealed_run.py
+?? reports/P3_reports/
+commit 56897128f2e93068b60747640a87ce4cd4148241
+checkpoint exit=0
+
+--- h.4 After the checkpoint ---
+$ git status --porcelain
+<<<
+>>>
+$ git log -1 --format='%H %s'
+56897128f2e93068b60747640a87ce4cd4148241 checkpoint: P3-3b (T6 leak fixed; rehearsal script bound to the configuration; reports trail)
+$ git log -1 --format=%B
+checkpoint: P3-3b (T6 leak fixed; rehearsal script bound to the configuration; reports trail)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md                   |   60 +-
+ docs/P3_RUN_CONFIG.json           |    5 +-
+ reports/P3_reports/p3_0b.txt      |  367 +++++++++
+ reports/P3_reports/p3_1.txt       |  716 +++++++++++++++++
+ reports/P3_reports/p3_1b.txt      |  379 +++++++++
+ reports/P3_reports/p3_2a.txt      |  432 ++++++++++
+ reports/P3_reports/p3_2a_cont.txt |  430 ++++++++++
+ reports/P3_reports/p3_2b.txt      | 1180 +++++++++++++++++++++++++++
+ reports/P3_reports/p3_2c.txt      | 1301 ++++++++++++++++++++++++++++++
+ reports/P3_reports/p3_2d.txt      |  848 ++++++++++++++++++++
+ reports/P3_reports/p3_3a.txt      | 1587 +++++++++++++++++++++++++++++++++++++
+ tests/test_p3_sealed_run.py       |   90 +++
+ tools/p3_3_rehearse.sh            |   34 +-
+ tools/p3_sealed_run.py            |   50 +-
+ 14 files changed, 7440 insertions(+), 39 deletions(-)
+$ shasum -a 256 tools/p3_sealed_run.py ofilt/drift/calib.py tools/p3_3_rehearse.sh docs/P3_RUN_CONFIG.json docs/P3_DQ5_line7.patch
+bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837  tools/p3_sealed_run.py
+31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6  ofilt/drift/calib.py
+d6ea9c15d43d96f95c6a8932067ecafc6149e513cf1e98d8fefef21a016ba47b  tools/p3_3_rehearse.sh
+ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e  docs/P3_RUN_CONFIG.json
+8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c  docs/P3_DQ5_line7.patch
+docs/P3_DQ5_line7.patch 8b4eaa35b45605566f3a1447b61647f0ee55252f82852091c8189e9f00e2977c; equals the value step a listed (read from the saved P3-3b message): True
+BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301; lines 6; equals the P3-0 baseline read from reports/P3_0_report.txt: True
+RUN_REGISTRY.jsonl bytes 0; is 0: True
+$ git tag -l
+pass1-final
+The five skips (the module check used before):
+$ env -u OFILT_RUN_SEALED OFILT_DATA_DIR=DATA python -m unittest tests.test_docs_d6 tests.test_sim_b5 tests.test_validation_c7 -v 2>&1 | grep -E 'skipped|^Ran|^OK|^FAILED'
+test_project_claims (tests.test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_draw_passes_guard_and_contract (tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (tests.test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_first_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+test_last_reps_bit_identical (tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical) ... skipped 'slow tier (OFILT_SLOW=1)'
+Ran 21 tests in 17.525s
+OK (skipped=5)
+$ git status --porcelain (after the skip check)
+<<<
+>>>
+
+--- i. Files written outside REPO by this item (names only) ---
+/tmp/p3_3b_config_before.json
+/tmp/p3_3b_g3.py
+/tmp/p3_3b_msg.txt
+/tmp/p3_3b_records.py
+/tmp/p3_3b_rehearse_before.sh
+/tmp/p3_3b_smoke.log
+/tmp/p3_3b_statecheck.py
+/tmp/p3_3b_status_before_h.md
+/tmp/p3_3b_test_before.py
+/tmp/p3_3b_tests_run1.log
+/tmp/p3_3b_tool_before.py
+/tmp/p3_3b.txt
+(/tmp/p3_3b_clone and /tmp/p3_3_smoke_1, /tmp/p3_3_smoke_2: deleted at g.5; /tmp/p3_3_rehearsal_2: deleted at f.2)
+(eval):1: no matches found: /tmp/p3_3_smoke_*
+
+--- i. The final Deviations section of PASS3_STATUS.md, verbatim (HEAD 5689712) ---
+## Deviations
+
+- P3-0 c: the first run of the hash-check script (`/tmp/p3_0_hashes.py`) printed "listed in prompt: None" for the four DATA rows, and an overall False. Its table parser kept only rows starting with ``| ` ``, so it dropped the rows starting with `| DATA`. Every computed-vs-registry comparison in that run was True. The parser was fixed to keep every table body row, and the rerun agreed three ways on all five files. Both runs are in the P3-0 report.
+- P3-0 e: the post-run check command assigned a shell variable holding the BLIND_FIT_LOG baseline hash, typed by hand. The variable was never used; the comparison read the baseline from step d's printed output.
+- P3-0b d: beyond non-missingness, Part A checks one boolean: the kept rows are finite in the required columns (`beta`, `abn_oc` and the four predictors). This mirrors `inference.py:130-131`, where the design builder refuses non-finite values, so the counts match the sealed fit's sample exactly. It reads finiteness, a missingness-type property, and computes no statistic of any value. It printed True.
+- P3-0b b.1: the P3-0 status cell reads "done; accepted by Isaiah 2026-10-06" as instructed. The checkpoint name `checkpoint: P3-0`, which the standing prompt puts in that row, moved to the start of its Notes cell.
+- P3-1 d: in `docs/P3_COST_INPUTS.json`, every value the message specified is present as given. The structure has three additions:
+  - each tick table's rows (`[inclusive upper bound, tick]`) sit under `rows` in an object, with the in-force period under `in_force` where step d gives one;
+  - `price_factor` and `dev_table` are lists of dated segments (`start` inclusive, `null` for the start of the panel);
+  - `_about` keys explain the shapes.
+- P3-1 g.3: one PASS3_STATUS.md text edit (the P3-1 Progress row) ran as `python3 - <<'PY' …` with the system interpreter: not in the activated venv, and without the `env -u OFILT_RUN_SEALED` prefix the standing prompt requires of every Python command. The script only replaced two strings in this file and read no data. `OFILT_RUN_SEALED` was unset in the shell (`printenv` printed nothing at step a). Every other Python command in P3-1 followed the rule.
+- P3-1b c: two probe details the item did not fix.
+  - Panel B used `p_excl = 0`, with `b = 0`. `tools/c7_mc.py` builds its panels with `p_excl = 0.02`. With 0, `earn_flag` is 0 everywhere, as in a DevCalibrator draw and consistent with the all-False masks the item specifies.
+  - `fctests.pair` and `fctests.clark_west` on the row subset were given `provenance="synthetic"` explicitly. The probe also printed whether the subset kept `attrs['provenance']`: it did, in every run.
+- P3-2a c.1, the Wilson citation: the supervisor's message cited `tools/report_B7.py`, which has no Wilson function. `calib.wilson` mirrors `tools/report_B7b.py:37-42`, as test 5 (B7b's interval) requires; `fctests.wilson` is the same arithmetic, clipped to [0, 1].
+- P3-2a e, chunk equivalence: chunked and unchunked reports are compared with the Runtime section excluded (wall-clock times and the chunk count), as D16 excluded `runtime_s`. They were identical (R = 4) at both seed bases.
+- P3-2a c, `calib.py`'s first write: it ended in an unfinished placeholder line (invalid syntax). It was rewritten in full before any import, test or run.
+- P3-2a e, the STOP: run 1's gate G2 failed (n10 = 0, n01 = 9).
+  - G2 was replaced by G2′ before run 2 (Decision log). Run 1's report is kept byte for byte as `reports/P3_2a_warp_check_run1.md`.
+  - `tools/p3_2a_warp_check.py` changed only as the continuation's step e lists: `--seed-base`, G2′, the information counts at the ends of q_warp(0.95)'s interval, and the superseded G2 printed and labelled. `--out` already existed with the required default and is unchanged. The docstring's design and gate lines were updated to match.
+  - Run 2 used fresh seeds (spec seed + 4,100,000 + r) and passed G1 and G2′.
+- P3-2a g.1, a records correction: P3-1 added `tests/test_p3_1_sesoi.py` (5 tests) without a Test changes row, because P3-1's record step did not ask for one. The continuation's step g refers to rows "as at P3-0b and P3-1", so the missing P3-1 row was added at P3-2a, labelled as such.
+- P3-2b g, the tests' first run: 6 of the tests passed, and `setUpClass` of the tiny-run tests errored.
+  - The cause was a bug in the test's setup, not in the tool. The test set each subprocess's `TMPDIR` to its own folder and passed an `--out-dir` outside it, which the tool refuses by design.
+  - Diagnosis before the one rerun: the tool was run directly once (synthetic, `--smoke 2`, contained in `/tmp/p3_2b_dbg_*`) and completed with no error. One refusal check confirmed that an `--out-dir` outside the temporary locations is refused and nothing is written.
+  - The test alone was fixed: `--out-dir` now lies inside the run's `TMPDIR`. The one rerun passed (9 of 9). Both runs, the diagnosis and the diff are in the P3-2b report.
+- P3-2b f, the tree check in real mode (for the supervisor). DQ1.3 forbids the script to import `subprocess`, so it checks the tree with `registry.git_state()`, which runs `git status --porcelain --untracked-files=no` (registry.py:87-90). A modified tracked file refuses the run; an untracked file does not. A stricter check needs a decision before P3-4.
+- P3-2b f, other design choices the item did not fix (for review):
+  - `--out-dir` in synthetic modes may lie under `/tmp` or under the system temporary directory (needed for the tests' temporary folders on macOS). Never inside the repository.
+  - The configuration has two keys beyond step e's list: `stand_in`, which describes the stand-in (with its counts read from `reports/P3_0b_preflight.md`), and `early_window_before` (K's cut date, read from `reports/P3_2b_preflight.md`).
+  - The `rules` are stored as the Decision-log lines with their `> ` markers.
+  - MDE80 per method uses cells 0, 2, 3 and 4 (b = 0, 0.10, 0.25 and 0.40, as B7b). Its cross-checks use sd(b̂) and the mean se pooled over cells 0 to 4.
+  - H3's bootstrap decision uses c_boot_h3, the 0.95 order statistic of |t*_h3| pooled over cells 0 to 4 (D3.5).
+  - A task's exception is recorded with the line number of its innermost frame in this script.
+  - Real mode takes no `--out-dir`.
+- P3-2b g, test 4: the real-mode conditions are tested on the pure function `mode_refusal`, with the sealed value passed as an argument. No test sets the `OFILT_RUN_SEALED` environment variable; the subprocess test removes it from the child's environment.
+- P3-2b, the optional reuse-the-first-fit variant: the tool uses `calib.bootstrap_t_given_fit`, a new function appended to `calib.py`, to avoid refitting each draw a second time. Test 2 shows it returns exactly `calib.bootstrap_t`'s t*. Every existing function of `calib.py` is unchanged: the P3-2a file is a byte prefix of the new one.
+- P3-2c d: besides the test 4 change, the diff adds the two imports it needs (`import contextlib` and `from io import StringIO`). Nothing else in the file changed.
+- P3-2d f, where the smoke rehearsal ran: `tools/p3_3_rehearse.sh` refuses a dirty tree (its step 2), and REPO held this item's uncommitted files.
+  - It ran from a scratch clone, `/tmp/p3_2d_clone`: a local clone of HEAD `b94d8a4` with no remote, plus this item's files in one local commit (`39a39cc…`, never pushed).
+  - All 134 files were byte-identical to REPO's working tree, and the clone's tree was clean.
+  - The clone and the outputs were deleted afterwards. REPO's HEAD, BLIND_FIT_LOG and RUN_REGISTRY.jsonl were unchanged, as was the usual temporary run registry.
+- P3-2d d, R2's scope: the generic handlers print only `<class> at line <n>`, and the `AbortRun` handlers print only a line number. The `Refused` handler still prints its reason. That reason is a refusal message the tool composes itself (a mode combination, the sealed variable, the configuration SHA-256, the tree, or `validate_config`'s key names), with no data value; test 4, which this item leaves unchanged, asserts it.
+- P3-2d e, the structural check's draw used `n_dates` = T_conf (1,013), the sealed run's length, for the lag-6 gate (at the source length of 1,439 dates the DK lag would be 7). The check reads the calibrator's private row bounds for its row count; that tool is not the sealed-run tool.
+- P3-2d f, the rehearsal script's last summary line is "the larger total" of the two runs, as specified. In smoke mode that is the smoke total (105 s), not a full-count projection. The P3-2d report gives the per-task rates and the full-count projection (1.92 h), computed by script from the two runs' runtime sections.
+- P3-2d f, the script has no shebang line: its first line is `set -euo pipefail`, as specified, and it is run with `bash`.
+- P3-3a d, the first copy attempt: my copy script looped over "source destination" pairs with `set -- $pair`. The shell running it is zsh, which does not word-split an unquoted `$pair`, so every `cp` failed and nothing was copied (the tree was checked). Its "equal: True" lines compared two empty hashes and are spurious, and d.2 then failed on the missing copy. Fix: one explicit `cp -p` and hash comparison per file. The one rerun (rerun-once rule) copied all four files byte for byte, and d.2 found run 2 equal to run 1 apart from runtime. Both runs are in the P3-3a report.
+- P3-3a e, two readings the item left open:
+  - P4's "agree within 10%" is computed as max/min − 1 ≤ 0.10 over cells 0 to 4. The own-quantile intervals are reported as a count (10 of 10 contain the pooled value).
+  - P5's MDE80 agreement compares the probit value with both of B7b's normal approximations (sd(b̂) and mean se).
+- P3-3a e, the P9 context: beyond the table, the report prints cells 5 to 8's mean bias, sd and se/sd per estimator from the same JSON (synthetic aggregates), to support the P3-3a flag.
+- P3-3a f, the patch: made by a script (`/tmp/p3_3a_make_patch.py`, in the report) that reads the six-line prefix hash, the line-7 hashes and the row count from the registry files. The dummy line 7's caller text imitates `_log_blind_fit`'s format, with an invented line number. Both clones were taken from HEAD, so they lack this item's uncommitted files. Clone A's suite ran on HEAD plus the dummy line and the stand-ins.
+- P3-3a g, a flag beyond the listed edits: the early-window finding (P9) went into Flags, because it needs a decision before the sanction.
+- P3-3b b.4, the records-rule count: the report's line "lines in the file beginning '>   - D4.3b The flag rule.': 2" counted lines containing the string (`grep -c -F`), and the records-rule bullet of the step b block quotes the prefix mid-line. Lines beginning with the prefix, which `_rule_lines`' `one()` matches: 1, the step b line. The report keeps the original line, followed by the correction.
+- P3-3b b.2, the flag: "Resolved by D4.3 amended (P3-3b)." was appended as the last sub-bullet of the P3-3a early-window flag, which has sub-bullets, not to its first line.
+- P3-3b d, `t6_block`: its only callers were the three T6 estimator lines, so it was replaced in place by `centred_block` (whose signature drops `b`), not left as unused code. `est_summary` and `rate` are unchanged.
+- P3-3b d, the winsorised estimator and test 16's scope (for the supervisor; builder's algebra, not computed).
+  - OLS-DK and Huber-DK (c and scale fixed) are regression-equivariant. If the residuals gain any vector in the span of the draw's design, b̂ moves by that vector's coefficient, the same in every draw. The window's OLS coefficient deviation of D4.3's finding (cells 7 and 8) is such a vector, so centring removes it from these two estimators' outputs exactly. Test 16 shows this for a shift along `usdjpy_ret`.
+  - Winsorised OLS-DK regresses on the winsorised FX columns, while that deviation runs along the unwinsorised `usdjpy_ret`. Its b̂ moves by the deviation times γ, the coefficient of `usdjpy_ret` on the winsorised design within the draw. γ is near 1 but varies across draws with the rows the draw winsorises.
+  - Centring removes the mean of that shift, not its spread. Winsorised OLS-DK's centred outputs in cells 7 and 8 therefore depend on the deviation at second order, through its product with the spread of γ across draws. D4.3a's "these outputs do not depend on the deviations above" holds exactly for OLS-DK and Huber-DK and approximately for winsorised OLS-DK.
+  - Test 16 covers OLS-DK and Huber-DK, as step d(iii) specifies. Nothing beyond step d was changed.
+- P3-3b h, the Test changes preamble: "No existing test was changed or deleted" was written at P3-0b and refers to the tests that existed before Pass 3; it still holds for them. Changes to Pass 3's own tests are in their rows (P3-2c: test 4; P3-3b: test 13). The line was left as it stands.
+--- end of the Deviations section ---
+
+STOP (planned). The supervisor reviews this report, then gives Isaiah the full-rehearsal command with the new configuration hash (tools/p3_3_rehearse.sh --expect-config-sha256 <hash>, two runs, on commit 56897128f2e93068b60747640a87ce4cd4148241). Then P3-3c, the DQ6 amendment drafts; then P3-4, the sanction.
+
+2026-10-07T05:32:05Z
+56897128f2e93068b60747640a87ce4cd4148241
+$ git status --porcelain
+<<<
+>>>
