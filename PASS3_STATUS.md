@@ -21,12 +21,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-3e P3-3d accepted; DQ6 drafts and dry switches | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3e`. Report `/tmp/p3_3e.txt`; planned STOP: the supervisor reviews the report and the drafts; Isaiah decides on DQ6; then P3-3f. P3-3d acceptance and the DQ6 drafts' routing recorded. The P3-3d report copied to `reports/P3_reports/`. Read-only facts (the SESOIs; Clark-West in the sealed run; AM-04's record format; the stand-in values). `docs/P3_DQ6_drafts.md`: the supervisor's amendment texts (AM-07 to AM-10), the current lines and records, the `spec.py` validation diffs, the confirmation-code plan, the dry switches and a draft test-change table. Dry switches D1 to D3 in scratch clones (deleted). No code, test, spec or configuration changed in REPO |
 | P3-3f P3-3e accepted; DQ6 decided; salvage (b); the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3f`. Report `/tmp/p3_3f.txt`; planned STOP: the supervisor reviews the launcher, then gives P3-4. The clone rehearsal ran twice: the first run stopped at the dry run for the power source, and the second, on AC power, passed every gate. P3-3e acceptance, DQ6, salvage option (b) and the launcher's design recorded. The P3-3e report copied to `reports/P3_reports/`. `tools/p3_4_launch.sh` (constants filled by script from their sources) with 8 tests in `tests/test_p3_launch.py`; rehearsed in a scratch clone with `--dry-run` and refusal cases (a) to (k), with a data folder that does not exist. No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | P3-4 P3-3f accepted; Isaiah's sanction of the one real sealed fit | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4`, the sanction commit. Report `/tmp/p3_4.txt`; planned STOP: the supervisor confirms the report, then Isaiah runs the command printed in it. P3-3f acceptance and Isaiah's sanction of the one real sealed fit (DQ1.7) recorded. The P3-3f report copied to `reports/P3_reports/`. After the checkpoint: one launcher dry run at the sanction commit, with a data folder that does not exist, and the command for Isaiah, both in the P3-4 report. No `--real` run; `OFILT_RUN_SEALED=1` never set |
-| P3-4b The real sealed fit on record; the post-run checkpoint | done | `checkpoint: P3-4b`. Report `/tmp/p3_4b.txt`; planned STOP: the supervisor reviews the report, then gives P3-5. P3-4 acceptance and the real sealed fit recorded (Isaiah's Terminal, 2026-10-07T18:51:20Z to 20:45:12Z; COMPLETE, 0 errors; launcher exit 0). BLIND_FIT_LOG's line 7 and the two outputs committed as the run left them; the launcher's log and the P3-4 report copied into `reports/`; `docs/P3_DQ5_line7.patch` applied unchanged. The outputs read for six structural keys only |
+| P3-4b The real sealed fit on record; the post-run checkpoint | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4b`. Report `/tmp/p3_4b.txt`; planned STOP: the supervisor reviews the report, then gives P3-5. P3-4 acceptance and the real sealed fit recorded (Isaiah's Terminal, 2026-10-07T18:51:20Z to 20:45:12Z; COMPLETE, 0 errors; launcher exit 0). BLIND_FIT_LOG's line 7 and the two outputs committed as the run left them; the launcher's log and the P3-4 report copied into `reports/`; `docs/P3_DQ5_line7.patch` applied unchanged. The outputs read for six structural keys only |
+| P3-5 The pre-stated rules applied to the sealed run's outputs | done | `checkpoint: P3-5`. Report `/tmp/p3_5.txt` (continued after a STOP under the rerun-once rule); planned STOP: the supervisor reviews the application of the rules, Isaiah approves the selection, then P3-6. P3-4b acceptance recorded. D3.4, D2.6 and D4.3b applied by script to `reports/P3_4_sealed_run.json`: M = dk_normal; CW = calibrated; viable: True; D4.3b flags: none. The binding numbers, the switch's branch and its placeholder values in `reports/P3_5_selection.md` and `.json` (the second run's files; Deviations). Plausibility checks as information. The P3-4b report copied to `reports/P3_reports/` |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-4b. Then P3-5: the pre-stated rules applied to the sealed run's outputs (D3.4, D2.6, D4.3b), and the plausibility table.
+The supervisor reviews P3-5, and Isaiah approves the selection. Then P3-6: the switch, rehearsed whole in a scratch clone first, C7 rerun included.
 
 ## Decision log
 
@@ -337,6 +338,10 @@ The supervisor reviews P3-4b. Then P3-5: the pre-stated rules applied to the sea
 >   - Line 7, the two outputs and the launcher's log (`reports/P3_4_launch.log`) are committed at P3-4b, with `docs/P3_DQ5_line7.patch` applied unchanged (DQ5).
 >   - The outputs' aggregates are read first at P3-5, which applies the pre-stated rules (D2.6, D3.4, D4.3b).
 
+> - P3-4b accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `57ceb44c4ebf79ac086c9aec3c8bc5c2601f7822`: line 7, the two outputs (their hashes equal those the launcher printed), the launcher's log, and the DQ5 patch applied unchanged.
+> - The rules applied (a routing record, not a decision): P3-5 applied D3.4, D2.6 and D4.3b to `reports/P3_4_sealed_run.json` by script, as written before the run. The bands were tested on the point estimates in exact integer arithmetic. The results, the binding numbers and the switch's branch and placeholder values are in `reports/P3_5_selection.md` and `.json`. Isaiah approves them after the supervisor's review, at P3-6.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -486,6 +491,34 @@ The supervisor reviews P3-4b. Then P3-5: the pre-stated rules applied to the sea
 - The copies (step b; one `cp -p` each): `reports/P3_4_launch.log` (SHA-256 `da76746b137a2dbc966b78ee99a7b2404e8f365e32608140b8c14de1e58eee67`) and `reports/P3_reports/p3_4.txt`, each byte-identical to its source.
 - The DQ5 patch (step c): `git apply --check` and `git apply` exit 0; it changed exactly `tests/test_docs_d3.py` (16 lines) and `tests/test_docs_d3b.py` (2 lines). `python -m unittest tests.test_docs_d3 tests.test_docs_d3b`: 8 tests, OK.
 - The full suite ran inside the P3-4b checkpoint; its result is in the P3-4b report (`/tmp/p3_4b.txt`).
+
+**P3-5:**
+- The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_4b.txt` is byte-identical to `/tmp/p3_4b.txt` (SHA-256 equal: True).
+- The rules (step c; `/tmp/p3_5_rules.py`; exact integer tests on the point estimates):
+  - D3.4, H1: cell 0 `dk_normal` 291/5000: `35·5000 = 175000 <= 1000·291 = 291000 <= 65·5000 = 325000: True`
+  - M = `dk_normal`.
+  - D3.4, Clark–West: cell 9 `normal` 66/2000: `35·2000 = 70000 <= 1000·66 = 66000 <= 65·2000 = 130000: False`. CW = `calibrated`.
+  - D2.6 under `dk_normal`: (i) cell 0 TOST at the primary SESOI 5000/5000: `5·5000 = 25000 >= 4·5000 = 20000: True`; (ii) cell 1 TOST at the primary SESOI 296/5000: `1000·296 = 296000 <= 65·5000 = 325000: True`. Viable: True.
+  - D4.3b, `huber_dk`: cell 7 centred 57/1000: `35·1000 = 35000 <= 1000·57 = 57000 <= 65·1000 = 65000: True`; flagged: False.
+  - D4.3b, `ols_dk`: cell 7 centred 55/1000: `35·1000 = 35000 <= 1000·55 = 55000 <= 65·1000 = 65000: True`; flagged: False.
+  - D4.3b, `winsorised_ols_dk`: cell 7 centred 52/1000: `35·1000 = 35000 <= 1000·52 = 52000 <= 65·1000 = 65000: True`; flagged: False.
+  - The binding numbers under `dk_normal`: rejection rates cell 0 (b 0.0) 291/5000 = 0.0582; cell 2 (b 0.1) 212/1000 = 0.212; cell 3 (b 0.25) 809/1000 = 0.809; cell 4 (b 0.4) 995/1000 = 0.995. MDE80: probit interpolated 0.24707872570018363; normal approximations 0.2425411037781687 (sd) and 0.23995965196729913 (mean se).
+  - The switch's branch: AM-07 ("viable"), AM-09, AM-10; AM-08 unused.
+  - The selection files are the second run's: `reports/P3_5_selection.json` SHA-256 `110a045e5ff6c2f0657fecd93c2c9d400c679599ffbde09354ea9f8f5bd207d3`, `reports/P3_5_selection.md` SHA-256 `33365cde94848b318986ca729deda60c7a3f7ff9ff877f940726430b4badee0d`.
+- The two runs compared (continuation step b; `/tmp/p3_5_compare_runs2.py`): True. Exactly seven JSON strings differ, all under keys named `test`, and run 1 with `*` -> `·` in those strings equals run 2. The Markdown differs at exactly lines 9, 11, 13, 14, 16, 17 and 18, each only by `*` and `·`.
+- The plausibility checks (step d; P3-3c's script with the input path changed and P11 removed). Information only: they were written for the synthetic stand-in and decide nothing:
+  - P1 cell 0 rejection in [3.0%, 8.0%] (each method) and calibrated in [4.3%, 5.7%]: True
+  - P2 cell 0 coverage count + rejection count == n (each method): True
+  - P3 cells 0-4 |mean bias| <= 3 sd/sqrt(n) and se/sd in [0.85, 1.15]: True
+  - P4 cells 0-4 sd(b_hat) and mean se agree within 10% (max/min - 1): True
+  - P5 rejection rises over cells 0, 2, 3, 4; MDE80 defined; probit vs normal approximations within 15%: True
+  - P6 cell 1 TOST at the primary SESOI declares at most 7% (each method): True
+  - P7 cell 0 TOST rates ordered low <= primary <= high (each method): True
+  - P8 T3: cross-tabs sum to n; calibrated CW at cell 9 in [4.0%, 6.0%]; cell 9 DK-normal H1 within 2 pp of cell 0; CW at cells 10, 11 >= cell 9 (each CW method); registry lines == walk_forward calls == 3000: True
+  - P9′ T6 cells 5-8, each estimator: keys exactly D4.3a; centred rejection in [3.0%, 8.0%]; se/sd in [0.85, 1.15]; Huber share downweighted in (0, 0.5): True
+  - P10 complete True, errors empty, aborted null: True
+  - `SUMMARY: P1 True; P2 True; P3 True; P4 True; P5 True; P6 True; P7 True; P8 True; P9′ True; P10 True`
+- The full suite ran inside the P3-5 checkpoint; its result is in the P3-5 report (`/tmp/p3_5.txt`).
 
 ## Test changes
 
@@ -695,6 +728,11 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
     - BLIND_FIT_LOG's line 7 was read and printed (its fields are hashes, a row count, a time and the caller).
     - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
     - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set in this item; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-5 (supervisor messages of 2026-10-07: the item, and its continuation after the STOP)**, by category:
+  - The sealed run's aggregates were read for the first time. They come from synthetic draws of the sealed calibrator, and are rates, critical values, standard deviations and the centred T6 blocks; no coefficient of the real data exists in them.
+  - Records: document edits to PASS3_STATUS.md. The report copy. The two selection files, built by script from `reports/P3_4_sealed_run.json` and `docs/P3_RUN_CONFIG.json` alone.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -807,3 +845,8 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-3f e, how the files were made:
   - The launcher was written from a template by `/tmp/p3_3f_make_launcher.py`, which filled its six constants from their sources. Both are in the report.
   - The clone driver (`/tmp/p3_3f_cases.py`) was corrected twice before its first run, so neither change was a rerun. A regular expression had a stray alternative that could not yield the hash. The dry run's "check 9 ... not checked (--dry-run)" line is now exempt from the all-True condition, as step e specifies that check 9 is skipped under `--dry-run`.
+- P3-5 c, a second run of the rules script, not requested by the item: the first run's test strings used *, which Markdown reads as emphasis in the .md tables. The first run's files were kept as /tmp/p3_5_run1_selection.json and .md and removed from reports/. The script was changed in its three test strings only (* to ·) and run a second time. Every result is the same in both runs, and the committed selection files are the second run's.
+- P3-5 c, the comparison of the two runs: the first attempt, an inline python -c, failed with a quoting SyntaxError. Its one rerun, /tmp/p3_5_compare_runs.py, printed False because of two bugs in the check: json.dumps writes the character · as an escape, and the .md lines' bold markers were replaced too. Under the rerun-once rule this was a STOP. After the supervisor's review, the continuation ran a corrected comparison, /tmp/p3_5_compare_runs2.py; its result is in Test results.
+- P3-5 c, the state at the STOP: the outputs' and BLIND_FIT_LOG's hashes printed at the STOP were compared with step a.2's values copied into the command from its output, not read by script.
+- P3-5, continuation a.2, the state check: its first run printed False only for its own count check, which expected nine listed hash values where the message lists eight. Every file check was True. The count was corrected and the script run once more (rerun-once rule): True. Both runs are in the report.
+- P3-5 c.7, the placeholder table: the rules script may read only the run's JSON and the configuration, so the placeholders each amendment uses are written into it as a table. A separate script checked that table against `docs/P3_DQ6_drafts.md` section 2 before the rules ran (True).
