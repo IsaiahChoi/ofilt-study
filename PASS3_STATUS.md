@@ -18,12 +18,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
 | P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
 | P3-3d P3-3c accepted; read-only facts for DQ6 and the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3d`. Report `/tmp/p3_3d.txt`; planned STOP: the supervisor reviews the report, then drafts P3-3e. P3-3c acceptance recorded, with its two post-checkpoint notes under Deviations. The P3-3c report copied to `reports/P3_reports/`. Read-only facts for DQ6 (`calib.py`'s functions; the readers of the spec fields DQ6 would change; the confirmation path; every pin a spec edit could touch; the amendment record format) and for the launcher (the real-mode refusals and log checks; `OFILT_RUN_SEALED=1`; PLAN's pins), in the P3-3d report. No code, test, spec or configuration changed |
-| P3-3e P3-3d accepted; DQ6 drafts and dry switches | done | `checkpoint: P3-3e`. Report `/tmp/p3_3e.txt`; planned STOP: the supervisor reviews the report and the drafts; Isaiah decides on DQ6; then P3-3f. P3-3d acceptance and the DQ6 drafts' routing recorded. The P3-3d report copied to `reports/P3_reports/`. Read-only facts (the SESOIs; Clark-West in the sealed run; AM-04's record format; the stand-in values). `docs/P3_DQ6_drafts.md`: the supervisor's amendment texts (AM-07 to AM-10), the current lines and records, the `spec.py` validation diffs, the confirmation-code plan, the dry switches and a draft test-change table. Dry switches D1 to D3 in scratch clones (deleted). No code, test, spec or configuration changed in REPO |
+| P3-3e P3-3d accepted; DQ6 drafts and dry switches | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3e`. Report `/tmp/p3_3e.txt`; planned STOP: the supervisor reviews the report and the drafts; Isaiah decides on DQ6; then P3-3f. P3-3d acceptance and the DQ6 drafts' routing recorded. The P3-3d report copied to `reports/P3_reports/`. Read-only facts (the SESOIs; Clark-West in the sealed run; AM-04's record format; the stand-in values). `docs/P3_DQ6_drafts.md`: the supervisor's amendment texts (AM-07 to AM-10), the current lines and records, the `spec.py` validation diffs, the confirmation-code plan, the dry switches and a draft test-change table. Dry switches D1 to D3 in scratch clones (deleted). No code, test, spec or configuration changed in REPO |
+| P3-3f P3-3e accepted; DQ6 decided; salvage (b); the launcher | done | `checkpoint: P3-3f`. Report `/tmp/p3_3f.txt`; planned STOP: the supervisor reviews the launcher, then gives P3-4. The clone rehearsal ran twice: the first run stopped at the dry run for the power source, and the second, on AC power, passed every gate. P3-3e acceptance, DQ6, salvage option (b) and the launcher's design recorded. The P3-3e report copied to `reports/P3_reports/`. `tools/p3_4_launch.sh` (constants filled by script from their sources) with 8 tests in `tests/test_p3_launch.py`; rehearsed in a scratch clone with `--dry-run` and refusal cases (a) to (k), with a data folder that does not exist. No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-3e and the DQ6 drafts, and Isaiah decides on them. Then P3-3f, the launcher and the salvage decision; then P3-4, Isaiah's sanction.
+The supervisor reviews P3-3f. Then P3-4: Isaiah's sanction, recorded in its own commit, and the real run with the launcher at that commit.
 
 ## Decision log
 
@@ -301,6 +302,21 @@ The supervisor reviews P3-3e and the DQ6 drafts, and Isaiah decides on them. The
 >   - The facts for the launcher: in real mode the tool refuses unless BLIND_FIT_LOG has 6 lines before the fit (after it loads the panel, before any write); its tree check counts tracked files only; it does not refuse existing outputs, which it overwrites; and no test scans `tools/` as a whole for `OFILT_RUN_SEALED=1`.
 > - The DQ6 drafts (a routing record, not a decision): P3-3e writes the supervisor's proposed amendment texts to `docs/P3_DQ6_drafts.md` and dry-runs them in scratch clones. Isaiah decides on them after the supervisor's review, before the sanction.
 
+> - P3-3e accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `025d9c432b9592a5a062f24c07ccabd3bbf074c8`, including P3-3e's recorded deviations.
+>   - The sealed run's Clark–West statistic is `fctests.clark_west(...)["stat"]` for M3 against M2 on the last 1,013 dates of each draw, at the spec's lag (6): the statistic a confirmation computes, so c_CW,cal applies to it (P3-3e, step c.2).
+>   - With the DQ5 patch, a dummy line 7 and stand-in outputs, the suite passes (280, OK): the patch still holds at HEAD.
+> - DQ6 decided (Isaiah, 2026-10-07, on the supervisor's recommendation): the switch's amendments, as drafted in `docs/P3_DQ6_drafts.md` (SHA-256 `9ad9b0941952dbaee6b45e53940d5f1ed8b206abdacc2198d60733e04d3697c3`).
+>   - Its sections 2 to 4 are adopted: the texts and templates of AM-07 (both variants), AM-08 (both variants), AM-09 and AM-10; the `spec.py` validation changes; and the confirmation-code plan. P3-5 selects the branch by D3.4 and D2.6. P3-6 fills the placeholders from the run's outputs and applies the branch in one commit, with the C7 rerun.
+>   - AM-10 needs no validation change: `validate` keeps accepting DRAFT or FROZEN, and the tests pin FROZEN.
+>   - Its section 6, the test-change table, is adopted as P3-6's plan. P3-6 first rehearses the whole switch in a scratch clone, C7 rerun included, and confirms or corrects every row before the switch commit. The three rows for `tests/test_p3_sealed_run.py` rest on the builder's reading and are confirmed there. Tests retired at the switch (the tiny-run tests 5, 6, 9 and 15) are listed in Test changes with their reason.
+>   - From the switch on, the configuration differs from a rebuild by its `spec_sha256`, by design. The records rule's `--check-config` step then ends; each later records step checks instead that the SHA-256 of `docs/P3_RUN_CONFIG.json` is still `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e`.
+> - Salvage (Isaiah, 2026-10-07, on the supervisor's recommendation): option (b).
+>   - No salvage path is added before the run, because any change to `tools/p3_sealed_run.py` would require a third full rehearsal. DQ1.4 stands.
+>   - If a task fails in the real run, a new reviewed item adds the salvage path: line 8, the identical configuration and seeds, every completed task reproducing exactly. It runs only after that review and a new sanction by Isaiah.
+>   - A second `--real` run as the tool stands is refused at its 6-line check, before the fit and before any write (P3-3d, step c.6).
+> - The launcher (Isaiah, 2026-10-07, on the supervisor's recommendation): `tools/p3_4_launch.sh`, as P3-3f step e specifies. It wraps the one sealed-run command with pre-checks and post-checks, and changes nothing the sealed run executes. It is committed, statically tested, and rehearsed in a scratch clone with `--dry-run` and a data folder that does not exist.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -415,6 +431,26 @@ The supervisor reviews P3-3e and the DQ6 drafts, and Isaiah decides on them. The
 - `docs/P3_DQ6_drafts.md`: SHA-256 `9ad9b0941952dbaee6b45e53940d5f1ed8b206abdacc2198d60733e04d3697c3`. Its checks by script (the supervisor's texts verbatim; the records' old and new lines; the three diffs pass `git apply --check`): True.
 - The full suite ran inside the P3-3e checkpoint; its result is in the P3-3e report (`/tmp/p3_3e.txt`).
 
+**P3-3f:**
+- The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_3e.txt` is byte-identical to `/tmp/p3_3e.txt` (SHA-256 equal: True).
+- Step c's facts (the rehearsal script's interpreter, power, hash and refusal lines; `io.py`'s data folder and dev panel name): in the P3-3f report.
+- `tests/test_p3_launch.py`: 8 tests, OK, alone in REPO on the first run, and in the scratch clone in both of its runs.
+- The clone rehearsal (`/tmp/p3_3f_clone`; `--data-dir /tmp/p3_3f_nodata`, which never existed). The first run stopped at the dry run, which refused only for the power source (Deviations). The second run, after Isaiah plugged in:
+  - the dry run: exit 0; every check line True (check 9 not run under `--dry-run`); last line `LAUNCH DRY RUN: all checks passed`.
+  - (a): exit 2; `LAUNCH REFUSED: --commit is required exactly once (usage: bash tools/p3_4_launch.sh --commit <40 lowercase hex> --expect-config-sha256 <64 lowercase hex> --data-dir <path> [--dry-run])`
+  - (b): exit 2; `LAUNCH REFUSED: --expect-config-sha256 must be 64 lowercase hex`
+  - (c): exit 2; `LAUNCH REFUSED: OFILT_RUN_SEALED is set in the environment (to any value); unset it`
+  - (d): exit 2; `LAUNCH REFUSED: OFILT_RUN_SEALED is set in the environment (to any value); unset it`
+  - (e): exit 2; `LAUNCH REFUSED: HEAD 065ad799ca7c7f022c437aa5c25fe0a1bda210d4 differs from --commit 0000000000000000000000000000000000000000`
+  - (f): exit 2; `LAUNCH REFUSED: git status --porcelain --untracked-files=all is not empty`
+  - (g): exit 2; `LAUNCH REFUSED: --expect-config-sha256 differs from the rehearsed configuration SHA-256`
+  - (h): exit 2; `LAUNCH REFUSED: BLIND_FIT_LOG differs from the P3-0 baseline or does not have exactly 6 lines (7)`
+  - (i): exit 2; `LAUNCH REFUSED: RUN_REGISTRY.jsonl is not 0 bytes`
+  - (j): exit 2; `LAUNCH REFUSED: reports/P3_4_sealed_run.json exists`
+  - (k): exit 2; `LAUNCH REFUSED: ACCESS_LOG exists`
+- The clone checks (second run): 'LAUNCHING' appears in no case's output (12 launcher runs): True; the clone is at its step-1 commit 065ad799ca7c7f022c437aa5c25fe0a1bda210d4, clean; BLIND_FIT_LOG dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301 equals the baseline; RUN_REGISTRY.jsonl 0 bytes: True; no p3_sealed_run_* directory under /tmp or the system temporary directory ([]): True; /tmp/p3_3f_nodata still does not exist: True.
+- The full suite ran inside the P3-3f checkpoint; its result is in the P3-3f report (`/tmp/p3_3f.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was changed or deleted.
@@ -429,6 +465,7 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 | new `tests/test_p3_2d_structural.py` | — | 1 test, synthetic only: the structural frame builder keeps exactly the stated columns, keeps the missing pattern of `abn_oc` and `beta`, replaces their present values, drops every `y_*`, `ao_*`, `open`, `close` and `prev_close` column, and labels the frame synthetic | P3-2d (supervisor message, 2026-10-06) | P3-2d |
 | `tests/test_p3_sealed_run.py`: test 13 (`test_13_rehearsal_script_static`) changed; everything it checked before is still required | no real-mode flag and no `OFILT_RUN_SEALED=1`; first line `set -euo pipefail`; the sealed-variable refusal before any Python line | also: the `--expect-config-sha256` refusal (missing or malformed) and the configuration-hash refusal (`[ "$CFG_SHA" = "$EXPECT" ]`), both before any Python line; `CFG_SHA` computed from `docs/P3_RUN_CONFIG.json`; the baselines compare with the flag (`cfg == exp`); no reference to `P3_2b_smoke` | P3-3b (supervisor message, 2026-10-07), step e | P3-3b |
 | `tests/test_p3_sealed_run.py`: 3 tests added | 13 tests | 16 tests:<br>14. (i) `centred_block`: identical output after adding a constant to every b̂ (+3.0 on a dyadic example of 8; +0.37 on 200 random draws, with the count exact and sd to 12 places); its rate equals a hand computation (4 of 8);<br>15. (ii) in the tiny runs, every T6 estimator block (cells 5 to 8) has exactly `centred_reject`, `sd`, `mean_se` and `se_over_sd`, plus `mean_share_downweighted` for Huber-DK, and no `estimates`, `reject` or `coverage`;<br>16. (iii) the leak test: on a synthetic `DevCalibrator` (temporary log), adding 0.3·`usdjpy_ret` to its residuals (in the test only) shifts every OLS-DK b̂ by 0.3 (to 1e-10) and every Huber-DK b̂ by 0.3 (to 1e-8), leaves their se and Huber's share unchanged to the same tolerances, and leaves the centred counts exactly unchanged, in a full-window and an early-window cell (6 draws each, identical seeds and positions) | P3-3b (supervisor message, 2026-10-07), step d | P3-3b |
+| new `tests/test_p3_launch.py` | — | 8 tests on `tools/p3_4_launch.sh` (1 to 6 on its text; 7 and 8 run it in a subprocess that refuses before any git or Python command):<br>1. the first line is `set -euo pipefail`, and the usage names the four arguments;<br>2. `OFILT_RUN_SEALED=1` is on exactly one line, which begins `OFILT_RUN_SEALED=1 OFILT_DATA_DIR=` and contains `caffeinate -i` and `tools/p3_sealed_run.py --real --expect-config-sha256`; no line exports the variable; no other line contains `--real`;<br>3. the sealed-variable refusal precedes the first Python line; the `--dry-run` exit and every refusal precede the command line;<br>4. the `--check-config` line contains `env -u OFILT_RUN_SEALED`;<br>5. the constants equal their sources: the tool, `calib.py` and configuration hashes as `reports/P3_3_rehearsal2.log` prints them; the spec hash as the configuration's `spec_sha256`; the baseline as BLIND_FIT_LOG's first six lines and the P3-0 baseline; and `DEV_FILE` as `io.py` names the dev panel;<br>6. no tag name; the commands that touch `reports/P3_4_sealed_run.*` only test existence or compute a SHA-256;<br>7. no arguments: exit 2, `LAUNCH REFUSED`;<br>8. `OFILT_RUN_SEALED=0` with well-formed arguments: exit 2, a refusal naming `OFILT_RUN_SEALED` | P3-3f (supervisor message, 2026-10-07) | P3-3f |
 
 **Pending: applied at the post-run checkpoint (DQ5).** `docs/P3_DQ5_line7.patch` is applied unchanged in the first commit after the real run, together with BLIND_FIT_LOG's line 7 and `reports/P3_4_sealed_run.json` and `.md`. It was rehearsed in scratch clones at P3-3a: with a dummy line 7 and stand-in outputs the suite passes (277, OK); without them it fails only in these two tests.
 
@@ -594,6 +631,17 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The scratch clones (`/tmp/p3_3e_clone` and one per dry switch; remote removed; never pushed; deleted): a dummy BLIND_FIT_LOG line 7; stand-in synthetic outputs and values; spec and validation edits in the clones only.
   - The suites in the clones and in REPO (inside the checkpoint) read `panel_dev.csv` only through their structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED` was unset throughout (every Python command ran in the venv under `env -u OFILT_RUN_SEALED`). REPO's BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-3f (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy: a byte-for-byte copy of the P3-3e report into `reports/P3_reports/`. Read-only listings of `tools/p3_3_rehearse.sh` and `ofilt/drift/io.py`.
+  - The launcher `tools/p3_4_launch.sh` (its constants filled by script from the rehearsal log, the configuration, the P3-0 report and `io.py`) and its static tests `tests/test_p3_launch.py`. Tests 7 and 8 refuse before any git or Python command; test 8 sets `OFILT_RUN_SEALED` to 0 in its child only.
+  - The scratch clone (`/tmp/p3_3f_clone`; remote removed; never pushed; deleted):
+    - `--check-config` ran in it, inside the launcher's dry runs;
+    - the dry runs and the refusal cases (a) to (k) all used `--data-dir /tmp/p3_3f_nodata`, which was checked to be absent before every call and never created;
+    - cases (c) and (d) set `OFILT_RUN_SEALED` to 0 and to the empty string;
+    - no `--real` run, and `LAUNCHING` was printed by no case;
+    - the clone's BLIND_FIT_LOG and RUN_REGISTRY.jsonl were restored to their committed state after cases (h) and (i), and REPO's were never touched.
+  - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG still has 6 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -688,3 +736,21 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - The dummy line 7's `utc` is the time of writing. Its caller text imitates `sim`'s format, with invented line numbers.
   - 276 tests ran in each, not 280, because `TestTinyRuns.setUpClass` errored. The sixth skip was identified by a verbose run of two modules in the D1 clone.
 - P3-3e d.6, the three `tests/test_p3_sealed_run.py` rows: their proposals rest on the builder's reading of the tool after the switch's C7 rerun (the configuration would be refused for its `spec_sha256`). That state was not run.
+- P3-3f e.2, the power-source STOP and the rerun:
+  - The first run of the clone rehearsal passed its 8 tests, then stopped at the dry run. The dry run refused only for the power source: check 7, after checks 1 to 6 passed, printed "not on AC Power (Now drawing from 'Battery Power')".
+  - As step e.2 directs, the builder stopped. No refusal case had run.
+  - Isaiah plugged in (`pmset -g ps`: AC Power) and asked for the clone rehearsal to be run once more from its start, with the driver unchanged. The second run passed: the 8 tests, the dry run, cases (a) to (k) and every step 4 check.
+  - Both runs are in the report.
+- P3-3f c, a refused command: the first attempt at step c's listing was a `bash -c` script of `awk` and `grep` lines. Claude Code's built-in safety check refused it as a possible removal. It contained no removal, and nothing in it ran. The same lines were printed with plain commands.
+- P3-3f e, the launcher's choices beyond the item's text:
+  - `--data-dir` must be an absolute path.
+  - The interpreter, which the item does not number, is chosen after check 7 and before check 8.
+  - Check 8 requires the tool's exact line `config docs/P3_RUN_CONFIG.json SHA-256 <rehearsed>; valid: True`.
+  - The summary prints the command as the script's own line, read from the file at the marker `# >>> THE ONE COMMAND <<<`, together with the values of DATA_DIR, PY and EXPECT. The sealed variable and `--real` therefore appear on one line of the script only (test 2).
+  - The command pipes the tool's output through `grep -E '^(COMPLETE|ABORTED|REFUSED)'`, which keeps only the tool's own status lines, and takes the tool's exit code from `PIPESTATUS`. `caffeinate` passes its child's exit code through; this was checked once with a harmless child (`sh -c 'exit 3'`).
+  - The power check matches "AC Power" with a bash pattern rather than a pipe into `grep -q`, which can fail under `pipefail`.
+  - Line counts use `awk`, because `grep -c` exits 1 on an empty file under `set -e`.
+  - A `DEV_FILE` constant (`io.py`'s name) serves check 9. Test 5 also checks it, beyond the item's list.
+- P3-3f e, how the files were made:
+  - The launcher was written from a template by `/tmp/p3_3f_make_launcher.py`, which filled its six constants from their sources. Both are in the report.
+  - The clone driver (`/tmp/p3_3f_cases.py`) was corrected twice before its first run, so neither change was a rerun. A regular expression had a stray alternative that could not yield the hash. The dry run's "check 9 ... not checked (--dry-run)" line is now exempt from the all-True condition, as step e specifies that check 9 is skipped under `--dry-run`.
