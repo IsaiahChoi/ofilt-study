@@ -22,12 +22,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-3f P3-3e accepted; DQ6 decided; salvage (b); the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3f`. Report `/tmp/p3_3f.txt`; planned STOP: the supervisor reviews the launcher, then gives P3-4. The clone rehearsal ran twice: the first run stopped at the dry run for the power source, and the second, on AC power, passed every gate. P3-3e acceptance, DQ6, salvage option (b) and the launcher's design recorded. The P3-3e report copied to `reports/P3_reports/`. `tools/p3_4_launch.sh` (constants filled by script from their sources) with 8 tests in `tests/test_p3_launch.py`; rehearsed in a scratch clone with `--dry-run` and refusal cases (a) to (k), with a data folder that does not exist. No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | P3-4 P3-3f accepted; Isaiah's sanction of the one real sealed fit | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4`, the sanction commit. Report `/tmp/p3_4.txt`; planned STOP: the supervisor confirms the report, then Isaiah runs the command printed in it. P3-3f acceptance and Isaiah's sanction of the one real sealed fit (DQ1.7) recorded. The P3-3f report copied to `reports/P3_reports/`. After the checkpoint: one launcher dry run at the sanction commit, with a data folder that does not exist, and the command for Isaiah, both in the P3-4 report. No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | P3-4b The real sealed fit on record; the post-run checkpoint | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4b`. Report `/tmp/p3_4b.txt`; planned STOP: the supervisor reviews the report, then gives P3-5. P3-4 acceptance and the real sealed fit recorded (Isaiah's Terminal, 2026-10-07T18:51:20Z to 20:45:12Z; COMPLETE, 0 errors; launcher exit 0). BLIND_FIT_LOG's line 7 and the two outputs committed as the run left them; the launcher's log and the P3-4 report copied into `reports/`; `docs/P3_DQ5_line7.patch` applied unchanged. The outputs read for six structural keys only |
-| P3-5 The pre-stated rules applied to the sealed run's outputs | done | `checkpoint: P3-5`. Report `/tmp/p3_5.txt` (continued after a STOP under the rerun-once rule); planned STOP: the supervisor reviews the application of the rules, Isaiah approves the selection, then P3-6. P3-4b acceptance recorded. D3.4, D2.6 and D4.3b applied by script to `reports/P3_4_sealed_run.json`: M = dk_normal; CW = calibrated; viable: True; D4.3b flags: none. The binding numbers, the switch's branch and its placeholder values in `reports/P3_5_selection.md` and `.json` (the second run's files; Deviations). Plausibility checks as information. The P3-4b report copied to `reports/P3_reports/` |
+| P3-5 The pre-stated rules applied to the sealed run's outputs | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-5`. Report `/tmp/p3_5.txt` (continued after a STOP under the rerun-once rule); planned STOP: the supervisor reviews the application of the rules, Isaiah approves the selection, then P3-6. P3-4b acceptance recorded. D3.4, D2.6 and D4.3b applied by script to `reports/P3_4_sealed_run.json`: M = dk_normal; CW = calibrated; viable: True; D4.3b flags: none. The binding numbers, the switch's branch and its placeholder values in `reports/P3_5_selection.md` and `.json` (the second run's files; Deviations). Plausibility checks as information. The P3-4b report copied to `reports/P3_reports/` |
+| P3-6a P3-5 accepted; the selection approved; the switch rehearsed and written as a patch | done | `checkpoint: P3-6a`. Report `/tmp/p3_6a.txt`; planned STOP: the supervisor reviews the switch patch, then gives P3-6b. P3-5 acceptance, Isaiah's approval of the selection, the switch's C7 rerun (D16) and the patch's routing recorded. The P3-5 report copied to `reports/P3_reports/`. The switch (AM-07 ("viable"), AM-09, AM-10; `<date>` 2026-10-07) built in a scratch clone: the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). In the clone: the C7 rerun PASS under D16; the suite OK (skipped=6) on 285 tests; the slow tier OK. Written as `docs/P3_6_switch.patch` and checked in a second clone; both clones deleted. No spec, code or test changed in REPO |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-5, and Isaiah approves the selection. Then P3-6: the switch, rehearsed whole in a scratch clone first, C7 rerun included.
+The supervisor reviews the switch patch. Then P3-6b: the switch commit, with the patch applied unchanged and the C7 rerun in REPO under D16.
 
 ## Decision log
 
@@ -342,6 +343,19 @@ The supervisor reviews P3-5, and Isaiah approves the selection. Then P3-6: the s
 >   - Checkpoint `57ceb44c4ebf79ac086c9aec3c8bc5c2601f7822`: line 7, the two outputs (their hashes equal those the launcher printed), the launcher's log, and the DQ5 patch applied unchanged.
 > - The rules applied (a routing record, not a decision): P3-5 applied D3.4, D2.6 and D4.3b to `reports/P3_4_sealed_run.json` by script, as written before the run. The bands were tested on the point estimates in exact integer arithmetic. The results, the binding numbers and the switch's branch and placeholder values are in `reports/P3_5_selection.md` and `.json`. Isaiah approves them after the supervisor's review, at P3-6.
 
+> - P3-5 accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `5b33bd0fb9b9b993105af0116d734918e606e120`, including P3-5's recorded deviations: the second run of the rules script, the comparison's STOP and its corrected rerun, and the state checks' typed values and count.
+>   - The supervisor recomputed every rule test and MDE80 from the printed integers, with the same results.
+> - The selection approved (Isaiah, 2026-10-07, on the supervisor's recommendation): the outcomes of the pre-stated rules, as `reports/P3_5_selection.json` (SHA-256 `110a045e5ff6c2f0657fecd93c2c9d400c679599ffbde09354ea9f8f5bd207d3`) records them.
+>   - H1 (D3.4): DK with the normal reference. Its rate at b = 0 was 291 of 5,000 (5.82%), inside [3.5%, 6.5%]. AM-08 is unused.
+>   - Clark–West (D3.4): the normal reference's rate at b = 0 was 66 of 2,000 (3.30%), outside the band, so the primary comparison uses c_CW,cal = 1.411608406163672 (AM-09).
+>   - TOST (D2.6): viable under DK-normal. Equivalence was declared at b = 0 in 5,000 of 5,000 draws at the primary SESOI, and in 296 of 5,000 (5.92%) at b = +SESOI (AM-07, variant "viable").
+>   - D4.3b: no robustness row is flagged (cell 7: 55, 57 and 52 of 1,000).
+>   - The binding numbers under DK-normal: rejection 21.2%, 80.9% and 99.5% at b = 0.10, 0.25 and 0.40; MDE80 0.2471 (probit interpolated).
+>   - The switch applies AM-07 ("viable"), AM-09 and AM-10, with `<date>` 2026-10-07, the date of this approval.
+> - The switch's C7 rerun (Isaiah, 2026-10-07, on the supervisor's recommendation): D16's criterion, as amended at P68 (`runtime_s` excluded), applies to the one C7 rerun of the Pass 3 switch, with `key.spec_sha256` equal to the switched spec's SHA-256. It runs as at P2-3b: `tools/c7_mc.py --budget 90` in foreground chunks until complete, compared by `tools/p2_3b_c7_compare.py`, then the slow tier.
+> - The switch patch (a routing record, not a decision): P3-6a builds the switch in a scratch clone (the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes), rehearses it whole with the C7 rerun, and writes it to `docs/P3_6_switch.patch`. P3-6b applies it unchanged, after the supervisor's review, in the switch commit.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -519,6 +533,46 @@ The supervisor reviews P3-5, and Isaiah approves the selection. Then P3-6: the s
   - P10 complete True, errors empty, aborted null: True
   - `SUMMARY: P1 True; P2 True; P3 True; P4 True; P5 True; P6 True; P7 True; P8 True; P9′ True; P10 True`
 - The full suite ran inside the P3-5 checkpoint; its result is in the P3-5 report (`/tmp/p3_5.txt`).
+
+**P3-6a:**
+- The report copy (step b; bash, `cp -p`): `reports/P3_reports/p3_5.txt` is byte-identical to `/tmp/p3_5.txt` (SHA-256 equal: True).
+- Step d, in a scratch clone of HEAD (`/tmp/p3_6a_clone`, remote removed), every command under `env -u OFILT_RUN_SEALED` in the venv:
+  - d.2, the switch (`/tmp/p3_6a_switch.py`: AM-07 ("viable"), AM-09, AM-10; `<date>` 2026-10-07; texts and templates from `docs/P3_DQ6_drafts.md` sections 2 and 3, values from `reports/P3_5_selection.json`). The checks (`/tmp/p3_6a_switch_check.py`), all True:
+    - ofilt.drift.spec imported from the clone (/private/tmp/p3_6a_clone/ofilt/drift/spec.py): True
+    - Spec.load() validates (status 'FROZEN'; spec sha256 feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26): True
+    - the spec still has 70 lines (70): True
+    - spec/analysis_spec_dev_v1.VERBATIM.yaml unchanged (9007339534c0f31aae65487d5b879bcc5070c2e7dc78da4587c6ecfd9d3d91ec): True
+    - parsed equivalence.sesoi 0.8652 equals the configuration's primary SESOI 0.8652: True
+    - parsed critical_value 1.411608406163672 equals t3.c_cw_cal.value 1.411608406163672 exactly: True
+    - no placeholder remains in spec/analysis_spec_dev_v1.yaml (clone 0; REPO before the switch 0): True
+    - no placeholder remains in spec/SPEC_AMENDMENTS.md (clone 0; REPO before the switch 0): True
+    - no placeholder remains in ofilt/drift/spec.py (clone 0; REPO before the switch 0): True
+  - d.3, the first suite (after the switch, before any test change): `Ran 284 tests in 353.473s`, `FAILED (failures=8, errors=2, skipped=6)`. The failures and errors, by name:
+    - ERROR: `test_p3_sealed_run.TestConfig.test_3_configuration`
+    - ERROR: `test_p3_sealed_run.TestTinyRuns`
+    - FAIL: `test_docs_d2.TestP22toP25.test_p23_tost_pending_costs`
+    - FAIL: `test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag`
+    - FAIL: `test_inference_b2.TestTOST.test_refusals_and_pending_sesoi`
+    - FAIL: `test_p3_sealed_run.TestRealRefusals.test_4_real_mode_refusals_read_no_data`
+    - FAIL: `test_spec.TestSpecLoad.test_default_spec_loads`
+    - FAIL: `test_spec.TestSpecLoad.test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines`
+    - FAIL: `test_spec.TestToFillRefusal.test_sesoi_pending`
+    - FAIL: `test_validation_c7.TestC7Report.test_bands_consistency_and_staleness`
+  - d.4, the test changes: `docs/P3_DQ6_drafts.md` section 6's rows for this branch, in `tests/test_docs_d2.py`, `tests/test_docs_d3b.py`, `tests/test_inference_b2.py`, `tests/test_spec.py` and `tests/test_p3_sealed_run.py`; each changed assertion asserts the amended state. The tiny-run tests 5, 6, 9 and 15 retired, and test 17 asserts that a synthetic run is refused. Each change is in the report as a diff with its row.
+  - d.5, the C7 rerun: `tools/c7_mc.py --budget 90` in 4 foreground chunks (`PARTIAL {"size": 195, "power_040": 0, "power_025": 0}`; `PARTIAL {"size": 300, "power_040": 92, "power_025": 0}`; `PARTIAL {"size": 300, "power_040": 200, "power_025": 91}`; `COMPLETE`). The comparison (`tools/p2_3b_c7_compare.py`): `C7_mc.json PASS; C7_h1_same_dgp.json PASS`. The only non-float difference in each report is `key.spec_sha256`, `0320d6aa…` -> `feb6005d…` (the switched spec's SHA-256, `feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`: reports/C7_mc.json True, reports/C7_h1_same_dgp.json True). `runtime_s` differs, as information only (D16 as amended).
+  - d.6, the full suite again: `Ran 285 tests in 300.355s`, `OK (skipped=6)`. 288 at HEAD - 4 (tiny-run tests 5, 6, 9 and 15 retired) + 1 (test 17 added) = 285. The six skips:
+    - `tests.test_docs_d6.TestProjectSetup.test_project_claims`: "Claude Project not mounted"
+    - `tests.test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract`: "real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)"
+    - `tests.test_sim_b5.TestRealDev.test_logged_and_silent`: "real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)"
+    - `tests.test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical`: "slow tier (OFILT_SLOW=1)"
+    - `tests.test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical`: "slow tier (OFILT_SLOW=1)"
+    - `tests.test_io.TestGuardFallback.test_main_repo_has_no_unblinding_tags_while_draft`: "spec frozen; tags expected"
+  - d.7, the slow tier (`tests.test_validation_c7`, `OFILT_SLOW=1`): 6 tests, OK.
+  - d.8, the configuration: SHA-256 unchanged: True. `--check-config` (once): `config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False`, exit 2; `validate_config` returns `["key 'spec_sha256' differs from the registry"]`, the spec hash difference DQ6 expects.
+  - d.9, the patch: `docs/P3_6_switch.patch`, SHA-256 `cd9d317db33ee04c8c627d1386565e3c5ad19f9ddeb511286c576a946515281a`, 288 lines. Its files (added/removed lines): `ofilt/drift/spec.py` 5/1; `spec/SPEC_AMENDMENTS.md` 27/0; `spec/analysis_spec_dev_v1.yaml` 3/3; `tests/test_docs_d2.py` 5/5; `tests/test_docs_d3b.py` 3/3; `tests/test_inference_b2.py` 4/2; `tests/test_p3_sealed_run.py` 19/54; `tests/test_spec.py` 9/5. Exactly the switch's files: True (the check's first form printed False; Deviations). In a second clone of HEAD: `git apply --check` exit 0; `git apply` exit 0; the eight files equal the first clone's by SHA-256, and across all 166 tracked files only `reports/C7_h1_same_dgp.json` and `reports/C7_mc.json` differ (`/tmp/p3_6a_clone2_check.py`: True).
+  - d.10, cleanup: both clones and `/tmp/p3_6a_c7_old/` deleted; REPO's HEAD, the ten files of step a.2, BLIND_FIT_LOG, RUN_REGISTRY.jsonl and the two C7 reports unchanged; `git status` shows only this item's two new files (`/tmp/p3_6a_cleanup_check.py`: True).
+  - The gate (step 2's checks; the test changes; step 5 PASS; steps 6 and 7 OK; the patch applies and reproduces the clone): passed.
+- The full suite in REPO ran inside the P3-6a checkpoint; its result is in the P3-6a report (`/tmp/p3_6a.txt`).
 
 ## Test changes
 
@@ -733,6 +787,12 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
   - Records: document edits to PASS3_STATUS.md. The report copy. The two selection files, built by script from `reports/P3_4_sealed_run.json` and `docs/P3_RUN_CONFIG.json` alone.
   - The full suite (inside the checkpoint) read `panel_dev.csv` only through its structural and target-only tests.
   - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-6a (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy. Read-only listings of documents, code and tests (step c and the test files' imports).
+  - The scratch clones: the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes were edited in the clones only. The C7 rerun is synthetic only. Both clones and the copied C7 reports were deleted at step d.10.
+  - The patch document: `docs/P3_6_switch.patch`, the first clone's diff, checked in a second clone and, in REPO, with `git apply --check` only. Nothing was applied in REPO.
+  - The suites in the clones and in REPO (inside the checkpoint) read `panel_dev.csv` only through their structural and target-only tests.
+  - No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. `tools/p3_sealed_run.py` ran only with `--check-config`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -850,3 +910,8 @@ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No existing test was
 - P3-5 c, the state at the STOP: the outputs' and BLIND_FIT_LOG's hashes printed at the STOP were compared with step a.2's values copied into the command from its output, not read by script.
 - P3-5, continuation a.2, the state check: its first run printed False only for its own count check, which expected nine listed hash values where the message lists eight. Every file check was True. The count was corrected and the script run once more (rerun-once rule): True. Both runs are in the report.
 - P3-5 c.7, the placeholder table: the rules script may read only the run's JSON and the configuration, so the placeholders each amendment uses are written into it as a table. A separate script checked that table against `docs/P3_DQ6_drafts.md` section 2 before the rules ran (True).
+- P3-6a d.4, before the test changes: one read-only listing (the import lines and module constants of the five test files, by `grep -n`) ran as a zsh `for` loop, against the standing rule to run loops in bash or write one command per file. It read tracked test files only and changed nothing.
+- P3-6a d, the scratch clone's local commits: the switch, the test changes and the C7 rerun were each committed in `/tmp/p3_6a_clone` (remote removed), so that each suite ran on a clean tree and the patch is one `git diff --binary` from REPO's HEAD to the clone's HEAD, with the two C7 reports excluded. The commits were deleted with the clone.
+- P3-6a d.4, choices beyond the rows' text: the tests read the configuration's SESOI with `json`, so `tests/test_inference_b2.py` gains `import json` at its top, and `tests/test_spec.py` imports it inside `test_sesoi_pending`. The tiny runs' class keeps its name, `TestTinyRuns`, and holds test 17 alone.
+- P3-6a d.3 and d.6, six skips where step d.6 expected five: after the switch, `tests/test_io.py:89-93` (`test_main_repo_has_no_unblinding_tags_while_draft`) skips once the status is FROZEN ("spec frozen; tags expected"), as `docs/P3_DQ6_drafts.md` section 6 notes under "Not failures". A verbose run of four modules in the clone showed the six skips. The result was OK, so the builder read the gate's "steps 6 and 7 OK" as met. After the switch commit, REPO's suite would skip six tests.
+- P3-6a d.9, the file-list check: its first form compared the list as `sort` printed it with a string in byte order. Under the user's locale, macOS `sort` placed `spec/SPEC_AMENDMENTS.md` after `spec/analysis_spec_dev_v1.yaml`, so the check printed False, although the patch's numstat listed exactly the eight expected files. The check was rewritten as a set comparison and run once more (rerun-once rule): True. The rerun's command line also held a redundant first `git apply --numstat`, piped into the venv's activation, which reads no input; it had no effect. Both runs are in the report.

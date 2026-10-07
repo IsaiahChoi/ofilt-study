@@ -1,0 +1,288 @@
+diff --git a/ofilt/drift/spec.py b/ofilt/drift/spec.py
+index bd7cb6b..604a8ca 100644
+--- a/ofilt/drift/spec.py
++++ b/ofilt/drift/spec.py
+@@ -46,6 +46,10 @@ SIZE_RULE = 'Pass 4: rejection at b=0 over 5000 dev-calibrated sims at T = T_con
+ M4_DEF = ("M3 + 1[long] + jumpshare + 1[rv_per_bar > expanding past median] + e*1[long] + e*jumpshare"
+           " + e*1[rv_per_bar > expanding past median] + min(e,0)")
+ FORBIDDEN_MODELS = frozenset({"M6"})  # time-varying Kalman model: DROPPED
++PRIMARY_FORECAST = {  # AM-09 (2026-10-07): the primary comparison with the Clark-West critical value D3.4 selects
++    "test": "clark_west", "unrestricted": "M3", "restricted": "M2", "sided": "one",
++    "reference": "calibrated", "critical_value": 1.411608406163672,
++}
+ _HEX64 = re.compile(r"^[0-9a-f]{64}$")
+ _DAY_TOKEN = re.compile(r"^D(?:\+(\d+))?$")
+ 
+@@ -220,7 +224,7 @@ def validate(d: dict) -> None:
+     m7 = f["models"]["M7"]
+     _require(m7["fixed"]["early_stopping"] is False, "M7 early_stopping must be explicitly false")
+     pf = f["comparisons"]["primary_forecast"]
+-    _require(pf == {"test": "clark_west", "unrestricted": "M3", "restricted": "M2", "sided": "one"},
++    _require(pf == PRIMARY_FORECAST,  # AM-09
+              "primary forecast comparison must be one-sided Clark-West M3 vs M2")
+     for comp in f["comparisons"]["secondary"]:
+         _require(isinstance(comp, list) and len(comp) == 3 and comp[0] in ("clark_west", "diebold_mariano")
+diff --git a/spec/SPEC_AMENDMENTS.md b/spec/SPEC_AMENDMENTS.md
+index eeed173..f6d52e2 100644
+--- a/spec/SPEC_AMENDMENTS.md
++++ b/spec/SPEC_AMENDMENTS.md
+@@ -92,3 +92,30 @@ Common to every row below: the primary design, target, β, exclusions and infere
+ ```jsonl
+ {"id": "AM-05", "line": 42, "old": "  others: [beta_rolling_250, raw_target, copx_to_fcx, ewj_yen_denominated_REQUIRES_PASS2, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]", "new": "  others: [beta_rolling_250, beta_rolling_500, raw_target, copx_to_fcx, ewj_yen_denominated, xau_control, nikkei_proxy_p42, mechanism_session_fx_gotobi, exclusion_d_plus_2, exclude_audit_flag, exclude_boj_day, exclude_sq_major, post_2024_11_05_indicator_CONFIRMATION_ONLY, per_ticker_slopes_holm]"}
+ ```
++
++## AM-07 (2026-10-07, Isaiah): the SESOI and TOST viability (D2.1 to D2.9; D2.6 applied at P3-5)
++
++Change. `equivalence.sesoi`: PENDING_COSTS becomes 0.8652, the primary SESOI of the cost model (D2.1 to D2.9; `reports/P3_1_sesoi.md`; approved by Isaiah 2026-10-06), exactly as the sealed run's configuration holds it. `equivalence.viability`: the outcome of D2.6 under the method that D3.4 selects. Reasons: P23 left both pending until costs were priced and the simulator run; Pass 3 did both, and D2.6 was fixed before the run. The low and high SESOIs, 0.07152 and 2.719, are reported beside the primary as sensitivity values.
++
++**Lines (exact):**
++```jsonl
++{"id": "AM-07", "line": 49, "old": "equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: \"decided in Pass 4 after costs priced and simulator run\"}", "new": "equivalence: {test: TOST, alpha: 0.05, sesoi: 0.8652, viability: \"viable (D2.6, P3-5): under dk_normal, P(equivalence | b = 0) = 1.0000 at the primary SESOI, and the rate at b = +SESOI is 0.0592; low and high SESOI 0.07152 and 2.719 reported\"}"}
++```
++
++## AM-09 (2026-10-07, Isaiah): the Clark–West critical value selected by D3.4
++
++Change. `forecast.comparisons.primary_forecast` gains its calibrated one-sided critical value. T3's normal-reference rate at b = 0 was 0.0330, outside [3.5%, 6.5%] (D3.4), so the primary comparison (M3 against M2) rejects if its Clark–West statistic exceeds 1.411608406163672, c_CW,cal (D3.3: T3's cell at b = 0). The statistic is the one the sealed run calibrated (P3-3e, step c.2). The secondary comparisons keep the normal reference.
++
++**Lines (exact):**
++```jsonl
++{"id": "AM-09", "line": 66, "old": "    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}", "new": "    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one, reference: calibrated, critical_value: 1.411608406163672}"}
++```
++
++## AM-10 (2026-10-07, Isaiah): the spec frozen for spec-dev-v1
++
++Change. `status`: DRAFT becomes FROZEN, in the switch commit, after the other amendments of the switch. Isaiah tags spec-dev-v1 on the final Pass 3 records commit.
++
++**Lines (exact):**
++```jsonl
++{"id": "AM-10", "line": 2, "old": "status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)", "new": "status: FROZEN           # frozen at the Pass 3 switch (AM-10); Isaiah tags spec-dev-v1 on the final Pass 3 records commit"}
++```
+diff --git a/spec/analysis_spec_dev_v1.yaml b/spec/analysis_spec_dev_v1.yaml
+index 7c7f5c3..a6030fd 100644
+--- a/spec/analysis_spec_dev_v1.yaml
++++ b/spec/analysis_spec_dev_v1.yaml
+@@ -1,5 +1,5 @@
+ spec_id: drift-dev-v1
+-status: DRAFT            # FROZEN only when Isaiah tags spec-dev-v1 (after the Pass 2 rebuild)
++status: FROZEN           # frozen at the Pass 3 switch (AM-10); Isaiah tags spec-dev-v1 on the final Pass 3 records commit
+ data:
+   dev_panel_sha256: 36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68
+   events_firm_sha256: 61b5629567dad37147078f4305d764587cd727fc45e257719158da3510984a4c
+@@ -46,7 +46,7 @@ secondary_family_holm:      # each = primary design + one tested interaction (+
+   fx_x_highrv: "highrv + usdjpy_ret * highrv; highrv = 1[usdjpy_rv/usdjpy_bars > rv_per_bar_dev_median]; test the interaction"
+   fx_asymmetry: "replace usdjpy_ret with (max(e,0), min(e,0)); test equal slopes"
+   rv_per_bar_dev_median: 1.2950114214e-08
+-equivalence: {test: TOST, alpha: 0.05, sesoi: PENDING_COSTS, viability: "decided in Pass 4 after costs priced and simulator run"}
++equivalence: {test: TOST, alpha: 0.05, sesoi: 0.8652, viability: "viable (D2.6, P3-5): under dk_normal, P(equivalence | b = 0) = 1.0000 at the primary SESOI, and the rate at b = +SESOI is 0.0592; low and high SESOI 0.07152 and 2.719 reported"}
+ forecast:
+   scheme: expanding
+   min_train_dates: 500
+@@ -63,7 +63,7 @@ forecast:
+     M5: {type: ridge, design: M4, fe: "unpenalized via in-fold within-ticker demeaning", alpha_grid: "n_train * [1e-4,1e-3,1e-2,1e-1,1]", tune: "last 250 dates of training fold"}
+     M7: {type: HistGradientBoostingRegressor, features: "PRE_OPEN allowlist + ticker one-hot + N(0,1) noise column", grid: {max_depth: [2,3], max_iter: [50,100,200,400]}, fixed: {learning_rate: 0.03, min_samples_leaf: 100, l2_regularization: 1.0, early_stopping: false}, tune: "last 250 dates of training fold", status: exploratory}
+   comparisons:
+-    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one}
++    primary_forecast: {test: clark_west, unrestricted: M3, restricted: M2, sided: one, reference: calibrated, critical_value: 1.411608406163672}
+     secondary: [[clark_west, M4, M3], [clark_west, M5, M3], [clark_west, M7, M1], [diebold_mariano, M7, M1]]
+     report_all: [oos_r2_vs_M0, oos_r2_vs_M1, pesaran_timmermann_with_training_base_rate]
+   importance: {method: permutation, unit: date, repeats: 20, calibration: noise_column}
+diff --git a/tests/test_docs_d2.py b/tests/test_docs_d2.py
+index 9f3640e..182e253 100644
+--- a/tests/test_docs_d2.py
++++ b/tests/test_docs_d2.py
+@@ -36,13 +36,13 @@ class TestP22toP25(unittest.TestCase):
+         for crisis in ("2020-03", "2024-08-01", "2025-04-02", "crisis"):            # named windows removed
+             self.assertNotIn(crisis, str(s.value("robustness")))
+ 
+-    def test_p23_tost_pending_costs(self):
++    def test_p23_tost_pending_costs(self):                                       # AM-07 (P3-6): no longer pending
+         s = Spec.load()
++        primary = json.loads((ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))["sesoi"]["primary"]
+         self.assertEqual({k: s.value(f"equivalence.{k}") for k in ("test", "alpha", "sesoi")},
+-                         {"test": "TOST", "alpha": 0.05, "sesoi": "PENDING_COSTS"})
+-        self.assertIn("Pass 4", s.value("equivalence.viability"))
+-        with self.assertRaises(SpecPendingError):
+-            s.sesoi()
++                         {"test": "TOST", "alpha": 0.05, "sesoi": primary})
++        self.assertTrue(s.value("equivalence.viability").startswith("viable (D2.6, P3-5)"))
++        self.assertEqual(s.sesoi(), primary)
+ 
+     def test_p24_fraction_unpriced(self):
+         s = Spec.load()
+diff --git a/tests/test_docs_d3b.py b/tests/test_docs_d3b.py
+index 4f49f27..6cb9118 100644
+--- a/tests/test_docs_d3b.py
++++ b/tests/test_docs_d3b.py
+@@ -32,11 +32,11 @@ class TestP36(unittest.TestCase):
+ 
+     def test_lock_amendments_and_nothing_real_before_the_tag(self):
+         s = Spec.load()
+-        self.assertEqual(s.status, "DRAFT")
+-        self.assertIn("FROZEN only when Isaiah tags spec-dev-v1", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
++        self.assertEqual(s.status, "FROZEN")                                     # AM-10 (P3-6): frozen at the switch
++        self.assertIn("frozen at the Pass 3 switch (AM-10)", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
+         self.assertIn("decided before tag", SIZE_RULE)                          # = before spec-dev-v1 (P36)
+         heads = re.findall(r"^## (AM-\d\d) ", (ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(), re.M)
+-        self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05"])   # AM-03, AM-04, AM-05 (row 27)
++        self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05", "AM-07", "AM-09", "AM-10"])   # + the switch (P3-6)
+         log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+         self.assertEqual(len(log), 7)                                           # only the sealed fits (P29): Pass 1's six and P3-4's line 7 (DQ5)
+         self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+diff --git a/tests/test_inference_b2.py b/tests/test_inference_b2.py
+index 2ec6c01..fc86397 100644
+--- a/tests/test_inference_b2.py
++++ b/tests/test_inference_b2.py
+@@ -1,3 +1,4 @@
++import json
+ import sys
+ import unittest
+ from pathlib import Path
+@@ -107,8 +108,9 @@ class TestTOST(unittest.TestCase):
+                 I.tost(*args)
+         spec = Spec.load()
+         res = I.fit_dk(I.build_design(panel(n_dates=200, seed=4), spec), spec)
+-        with self.assertRaises(SpecPendingError):
+-            I.tost_result(res, "usdjpy_ret", spec)
++        r = I.tost_result(res, "usdjpy_ret", spec)                               # AM-07 (P3-6): the spec's SESOI and alpha
++        cfg = json.loads((Path(__file__).resolve().parents[1] / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
++        self.assertEqual((r["sesoi"], r["alpha"]), (cfg["sesoi"]["primary"], 0.05))
+         self.assertIn("equivalent", I.tost_result(res, "usdjpy_ret", spec, sesoi=0.5))
+ 
+ 
+diff --git a/tests/test_p3_sealed_run.py b/tests/test_p3_sealed_run.py
+index 689278e..e0fe087 100644
+--- a/tests/test_p3_sealed_run.py
++++ b/tests/test_p3_sealed_run.py
+@@ -111,8 +111,12 @@ class TestInvariance(unittest.TestCase):
+ 
+ class TestConfig(unittest.TestCase):
+     def test_3_configuration(self):
+-        self.assertEqual(P.CONFIG_PATH.read_text(encoding="utf-8"), P.config_text(P.build_config()))
+-        self.assertEqual(P.validate_config(CFG), [])
++        # P3-6 (switch): the configuration is the sealed run's, bound to the pre-switch spec; a rebuild differs only there
++        run = json.loads((ROOT / "reports" / f"{P.REAL_STEM}.json").read_text(encoding="utf-8"))
++        self.assertEqual(run["config_sha256"], P.sha256_file(P.CONFIG_PATH))
++        line7 = json.loads((ROOT / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines()[6])
++        self.assertEqual(CFG["spec_sha256"], line7["spec_sha256"])
++        self.assertEqual(P.validate_config(CFG), ["key 'spec_sha256' differs from the registry"])
+         bad = {k: v for k, v in CFG.items() if k != "seeds"}
+         self.assertTrue(any("missing" in x for x in P.validate_config(bad)))
+         changed = dict(CFG, dev_panel_sha256="0" * 64)
+@@ -153,64 +157,25 @@ class TestRealRefusals(unittest.TestCase):
+             r = subprocess.run([sys.executable, str(TOOL), "--real", "--expect-config-sha256", sha], cwd=str(ROOT),
+                                env=env, capture_output=True, text=True, timeout=300)
+             self.assertEqual(r.returncode, P.EXIT_REFUSED, r.stdout + r.stderr)
+-            self.assertIn(f"REFUSED: --real needs {P.SEALED_ENV}=1", r.stdout)
++            self.assertIn("REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]", r.stdout)   # P3-6 (switch)
+             self.assertEqual(list(tmp.iterdir()), [])                      # the run's directory removed
+ 
+ 
+ class TestTinyRuns(unittest.TestCase):
+-    @classmethod
+-    def setUpClass(cls):
+-        cls._t = tempfile.TemporaryDirectory()
+-        base = Path(cls._t.name)
+-        cls.out, cls.tmp, cls.res = [], [], []
+-        for i in (1, 2):
+-            tm, nd = base / f"tmp{i}", base / f"nodata{i}"
++    """P3-6 (switch): the configuration now differs from a rebuild by its spec_sha256, so every synthetic run is refused
++    before it starts. The tiny runs' tests 5, 6, 9 and 15 retired at the switch (PASS3_STATUS, Test changes); test 17
++    asserts the refusal."""
++
++    def test_17_synthetic_run_refused_after_the_switch(self):
++        with tempfile.TemporaryDirectory() as t:
++            tm, nd = Path(t) / "tmp1", Path(t) / "nodata1"
+             o = tm / "out"                                         # --out-dir must lie under TMPDIR or /tmp
+             tm.mkdir(); nd.mkdir()
+-            cls.res.append(tiny_run(o, tm, nd))
+-            cls.out.append(o); cls.tmp.append(tm)
+-        cls.js = [json.loads((o / f"{P.REAL_STEM}.json").read_text(encoding="utf-8")) for o in cls.out]
+-
+-    @classmethod
+-    def tearDownClass(cls):
+-        cls._t.cleanup()
+-
+-    def test_5_outputs_whitelisted_and_aggregates_only(self):
+-        for r, j in zip(self.res, self.js):
+-            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+-            self.assertTrue(j["complete"])
+-            self.assertEqual(j["errors"], [])
+-            self.assertIsNone(j["aborted"])
+-            self.assertEqual(P.check_output(j, set(CFG["outputs"])), [])
+-            self.assertEqual(j["calibrator"], {"T_source": CFG["T_source"], "rows": CFG["rows"]})
+-            self.assertEqual(sorted(p.name for p in self.out[0].iterdir()), [f"{P.REAL_STEM}.json", f"{P.REAL_STEM}.md"])
+-
+-    def test_6_registry_directory(self):
+-        for j, tm in zip(self.js, self.tmp):
+-            self.assertEqual(j["t3"]["walk_forward_calls"], 3 * 2)       # cells 9 to 11 at smoke 2
+-            self.assertEqual(j["t3"]["registry_lines"], j["t3"]["walk_forward_calls"])
+-            self.assertEqual([p.name for p in tm.iterdir()], ["out"])      # the run's own directory deleted
+-
+-    def test_9_determinism(self):
+-        a, b = (dict(j) for j in self.js)
+-        self.assertNotEqual(a["runtime"], None)
+-        a.pop("runtime"); b.pop("runtime")
+-        self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True))
+-        ma, mb = ((o / f"{P.REAL_STEM}.md").read_text(encoding="utf-8").split("## Runtime")[0] for o in self.out)
+-        self.assertEqual(ma, mb)
+-
+-    def test_15_t6_blocks_are_centred_only(self):                    # P3-3b: D4.3a
+-        for j in self.js:
+-            t6 = [c for c in j["cells"] if c["task"] == "T6"]
+-            self.assertEqual([c["cell"] for c in t6], [5, 6, 7, 8])
+-            for c in t6:
+-                for name, blk in c["estimators"].items():
+-                    want = {"centred_reject", "sd", "mean_se", "se_over_sd"}
+-                    if name == "huber_dk":
+-                        want |= {"mean_share_downweighted"}
+-                    self.assertEqual(set(blk), want, (c["cell"], name))
+-                    self.assertFalse({"estimates", "reject", "coverage"} & set(blk))
+-                    self.assertEqual(set(blk["centred_reject"]), {"k", "n", "rate", "wilson95"})
++            r = tiny_run(o, tm, nd)
++            self.assertEqual(r.returncode, P.EXIT_REFUSED, r.stdout + r.stderr)
++            self.assertEqual(r.stdout.strip(), "REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]")
++            self.assertFalse(o.exists())                           # nothing written to --out-dir
++            self.assertEqual(list(tm.iterdir()), [])               # the run's own directory removed
+ 
+ 
+ class TestSeedsAndLogs(unittest.TestCase):
+diff --git a/tests/test_spec.py b/tests/test_spec.py
+index 61acaed..c322e1d 100644
+--- a/tests/test_spec.py
++++ b/tests/test_spec.py
+@@ -29,7 +29,7 @@ class TestSpecLoad(unittest.TestCase):
+     def test_default_spec_loads(self):
+         sp = S.Spec.load()
+         self.assertEqual(sp.spec_id, "drift-dev-v1")
+-        self.assertEqual(sp.status, "DRAFT")
++        self.assertEqual(sp.status, "FROZEN")                                    # AM-10 (P3-6)
+         self.assertEqual(len(sp.sha256), 64)
+         self.assertEqual(sp.data_hash("dev_panel"),
+                          "36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68")   # AM-04 (row 1)
+@@ -56,8 +56,8 @@ class TestSpecLoad(unittest.TestCase):
+             if a != b and n not in amended:
+                 self.assertIn("TO_FILL", a, f"unrecorded change at line {n}:\n{a}\n{b}")
+                 self.assertNotIn("TO_FILL", b)
+-        self.assertEqual(sorted(amended), [4, 7, 14, 33, 42, 43, 44, 45, 46, 62])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3)
+-        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05"})
++        self.assertEqual(sorted(amended), [2, 4, 7, 14, 33, 42, 43, 44, 45, 46, 49, 62, 66])    # + AM-04: 4, 7; AM-03: 14; AM-05: 42 (row 3); P3-6: AM-10 2, AM-07 49, AM-09 66
++        self.assertEqual({r["id"] for r in recs}, {"AM-01", "AM-02", "AM-03", "AM-04", "AM-05", "AM-07", "AM-09", "AM-10"})
+ 
+     def test_am01_pins_reject_pre_amendment_text(self):
+         import copy, yaml
+@@ -134,9 +134,13 @@ class TestToFillRefusal(unittest.TestCase):
+         self.assertEqual(sp.winsor_bounds()["eurusd_ret"], (-0.008, 0.009))
+         self.assertEqual(sp.rv_per_bar_dev_median(), 1.5e-08)
+ 
+-    def test_sesoi_pending(self):
++    def test_sesoi_pending(self):                                                # AM-07 (P3-6): set; PENDING_COSTS still refused
++        import json
++        cfg = json.loads((S.REPO_ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
++        self.assertEqual(S.Spec.load().sesoi(), cfg["sesoi"]["primary"])
++        pending = _load_mutated(lambda d: d["equivalence"].__setitem__("sesoi", "PENDING_COSTS"))
+         with self.assertRaises(S.SpecPendingError):
+-            S.Spec.load().sesoi()
++            pending.sesoi()
+ 
+ 
+ class TestLagRule(unittest.TestCase):
