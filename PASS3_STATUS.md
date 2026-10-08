@@ -27,12 +27,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
 | P3-6b The switch: AM-07, AM-09 and AM-10; the C7 rerun | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-6b`. Report `/tmp/p3_6b.txt`; planned STOP: the supervisor reviews the switch commit, then gives P3-7. P3-6a acceptance and the switch recorded. The P3-6a report copied to `reports/P3_reports/`. `docs/P3_6_switch.patch` applied unchanged in REPO (`git apply --check` and `git apply` exit 0; the eight files equal the rehearsal's first clone by SHA-256): the spec FROZEN, SHA-256 `feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`, with AM-07 ("viable"), AM-09 and AM-10 in `spec/SPEC_AMENDMENTS.md`; `spec.py`'s AM-09 validation; the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). The C7 rerun in REPO (4 chunks) passed D16 (C7_mc.json PASS; C7_h1_same_dgp.json PASS), 0 floats differing; the slow tier OK. `--check-config`: valid: False, exit 2, the one `spec_sha256` problem (DQ6). No `--real` run; `OFILT_RUN_SEALED=1` never set |
 | P3-7a P3-6b accepted; read-only facts for the final records and the tag | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7a`. Report `/tmp/p3_7a.txt`; planned STOP: the supervisor reviews the facts, then gives P3-7b. P3-6b acceptance, the new builder session and the final records' routing recorded. The boot and P3-6b reports copied to `reports/P3_reports/`. Read-only facts for P3-7b and P3-8 (step c, in the report): of the 16 named documents, 14 are tracked, each equal to its Project copy (14 of 14); not tracked: `DECISIONS_ADDENDUM.md`, `MANIFEST.json`; every pin on them; PLAN.md §8 and its Pass 3 lines; DATA_PROVENANCE §4.5; PROJECT_SETUP and `test_project_claims`; Flag 4; the handoffs by hash (H2, H3 found; H0, H1 not found); the reports trail; the checkpoint chain; the tag gate; the hygiene checks. No code, test, spec or configuration changed |
 | P3-7a2 Read-only facts, continued: the tests that pin the documents, read the tags or call the guard | done; accepted by Isaiah 2026-10-07 | Read-only; no checkpoint. Report /tmp/p3_7a2.txt, copied at P3-7b. Its step b ran twice under the rerun-once rule (b.4's own matching rules). |
-| P3-7b P3-7a and P3-7a2 accepted; the final Pass 3 records, rehearsed in a scratch clone | done | `checkpoint: P3-7b`. Report `/tmp/p3_7b.txt`; planned STOP: the supervisor reviews the report, then gives P3-8. P3-7a and P3-7a2 acceptance and the final records recorded. The P3-7a and P3-7a2 reports copied to `reports/P3_reports/`. Read-only facts for P3-8 (step c, in the report). From the supervisor's kit, checked by SHA-256: `docs/DECISIONS_P71_onward.md` new; PLAN v2.5, README, PROJECT_SETUP and DATA_PROVENANCE replaced whole; their pins moved in three tests (12 rows, P81). Rehearsed first in a scratch clone: the apply's checks True; the suite OK (skipped=6) (Ran 285 tests). REPO equals the clone on the eight paths. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
+| P3-7b P3-7a and P3-7a2 accepted; the final Pass 3 records, rehearsed in a scratch clone | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7b`. Report `/tmp/p3_7b.txt`; planned STOP: the supervisor reviews the report, then gives P3-8. P3-7a and P3-7a2 acceptance and the final records recorded. The P3-7a and P3-7a2 reports copied to `reports/P3_reports/`. Read-only facts for P3-8 (step c, in the report). From the supervisor's kit, checked by SHA-256: `docs/DECISIONS_P71_onward.md` new; PLAN v2.5, README, PROJECT_SETUP and DATA_PROVENANCE replaced whole; their pins moved in three tests (12 rows, P81). Rehearsed first in a scratch clone: the apply's checks True; the suite OK (skipped=6) (Ran 285 tests). REPO equals the clone on the eight paths. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
+| P3-8a P3-7b accepted; read-only facts for the tag-aware tests | done | `checkpoint: P3-8a`. Report `/tmp/p3_8a.txt`; planned STOP: the supervisor reads the facts of step b, then gives P3-8b. P3-7b acceptance, the tag-aware tests' routing and the note on the fifth supervisor chat recorded. The P3-7b report copied to `reports/P3_reports/`. Read-only facts for P3-8b (step b, in the report): the tag and guard tests, the tests that pass dev_real frames to an entry point and their classes, the code they reach, the skips, the data paths, `tools/checkpoint.sh`, git, and the SHA-256 of every tracked file under `tests/`, `ofilt/` and `tools/` (84). The suite in a scratch clone, verbose: `Ran 285 tests`, `OK (skipped=6)`, by module (39 modules); the six skips named. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
 | Pass 3 | in progress | |
 
 ## Next action
 
-The supervisor reviews P3-7b. Then P3-8: the tests that read the repository's tags or call its guard are made to hold before and after `spec-dev-v1`; the guard is checked in a scratch clone with the tag (dev_real granted, confirm_real still refused); and Isaiah creates the annotated `spec-dev-v1` on the final records commit.
+The supervisor reviews P3-8a and reads the code of its step b. Then P3-8b: the tests that read the repository's tags or call its guard are made to hold before and after `spec-dev-v1`; once the code read shows that no test computes on real dev data when the guard grants dev_real, the guard is checked in a scratch clone with a scratch tag (dev_real granted, confirm_real still refused). P3-8b is the final records commit, and Isaiah creates the annotated `spec-dev-v1` on it.
 
 ## Decision log
 
@@ -386,6 +387,12 @@ The supervisor reviews P3-7b. Then P3-8: the tests that read the repository's ta
 >   - `PASS1_STATUS.md` and the earlier decision files stay as recorded; the P61 citation and the PASS1_STATUS Flag 4 correction are rows of the new file's status index.
 >   - The Pass 3 Project upload follows the tag, as PROJECT_SETUP's "After Pass 3" list states; `PASS3_SUPERVISOR_HANDOFF_2026-10-06.md` is retired from the Project.
 
+> - P3-7b accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `42a88bc987321871687097742226dceeb3631059`, including its recorded deviations (the configuration check run only as `--check-config`, on Isaiah's answer in the session; the six reserved prefixes read from the P3-7a message; the edits before the kit and apply scripts' only runs; c.6's `--local` exit codes; the kit-check lines inserted into the Test results by `/tmp/p3_7b_fix.py`) and the notes in its report.
+>   - Its facts for P3-8 (step c): besides `test_docs_d3.TestP29Blinding.test_tag_gates`, `test_docs_d3b.TestP36.test_tag_semantics_as_implemented` and `test_blind.TestGuard.test_dev_real_raises_in_main_repo`, step c.5 lists further tests that pass a frame or a design labelled dev_real to an entry point and expect a refusal. Unless a test isolates the guard from REPO's tags, the guard grants dev_real once `spec-dev-v1` is an ancestor of HEAD. Their code, and the code they reach, is read before any tag is created, in REPO or in a scratch clone.
+> - The tag-aware tests (a routing record, not a decision): P3-8a prints the read-only facts the code read needs. P3-8b makes the tests that read the repository's tags or call its guard hold before and after `spec-dev-v1`, checks the guard in a scratch clone with a scratch tag, and is the final records commit, which Isaiah tags.
+> - The fifth Pass 3 supervisor chat (from the P3-7b review on) is not in DATA_PROVENANCE §4.5, which the P3-7b kit wrote before that chat began. Its real-data contact is recorded in its handoff and is added to DATA_PROVENANCE §4.5 at Pass 4's first records refresh.
+
 ## Test results
 
 **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
@@ -727,6 +734,24 @@ The supervisor reviews P3-7b. Then P3-8: the tests that read the repository's ta
   - E2 CHECK: True
 - The full suite ran inside the P3-7b checkpoint; its result is in the P3-7b report (`/tmp/p3_7b.txt`).
 
+**P3-8a:**
+- The report copy (step d; bash, `cp -p /tmp/p3_7b.txt reports/P3_reports/p3_7b.txt`), checked by `/tmp/p3_8a_d.py`:
+  - copy   reports/P3_reports/p3_7b.txt sha256 43b39cd1b99d633cbbb01023d49160a0532e9bc39f9d01010c32694d5fb1166e
+  - source /tmp/p3_7b.txt sha256 43b39cd1b99d633cbbb01023d49160a0532e9bc39f9d01010c32694d5fb1166e
+  - p3_7b.txt: copy equals source: True
+  - p3_7b.txt: first two lines ['2026-10-08T01:01:40Z', '80147cf44b3fb8205f7d7a6ed67ec3a5ac1c05cd'] equal ['2026-10-08T01:01:40Z', '80147cf44b3fb8205f7d7a6ed67ec3a5ac1c05cd']: True
+  - p3_7b.txt: last two non-empty lines ['2026-10-08T01:29:27Z', '42a88bc987321871687097742226dceeb3631059'] equal ['2026-10-08T01:29:27Z', '42a88bc987321871687097742226dceeb3631059']: True
+  - p3_7b.txt: the line '7c8c4363b179660a656f1fb7c0a2d98a5c0c66ead9bd36eaef9a460772b0b1bb  /tmp/p3_7b_msg.txt' occurs exactly once (1): True
+- The suite in a scratch clone, verbose (`/tmp/p3_8a_suite.py`; no tag, no commit; the log parsed again by `/tmp/p3_8a_suite_parse.py`, Deviations): `Ran 285 tests in 299.898s`, `OK (skipped=6)`; result kinds {'ok': 279, 'skipped': 6}. The six skipped tests:
+  - `test_docs_d6.TestProjectSetup.test_project_claims`: skipped 'Claude Project not mounted'
+  - `test_io.TestGuardFallback.test_main_repo_has_no_unblinding_tags_while_draft`: skipped 'spec frozen; tags expected'
+  - `test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract`: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  - `test_sim_b5.TestRealDev.test_logged_and_silent`: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  - `test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical`: skipped 'slow tier (OFILT_SLOW=1)'
+  - `test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical`: skipped 'slow tier (OFILT_SLOW=1)'
+- The read-only facts of step b are in the P3-8a report (`/tmp/p3_8a.txt`).
+- The full suite ran inside the P3-8a checkpoint; its result is in the P3-8a report (`/tmp/p3_8a.txt`).
+
 ## Test changes
 
 Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No test that existed before Pass 3 was changed or deleted before the post-run checkpoint (P3-4b). Since then, such tests changed only through DQ5's patch (P3-4b) and the switch's patch (P3-6b), in the two tables below; changes to Pass 3's own tests are in their rows.
@@ -996,6 +1021,11 @@ Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.p
   - The final records: the kit's five documents written whole, each checked by SHA-256 before and after, in a scratch clone first and then in REPO; the pin edits in three tests.
   - No data file was opened by any script of this item; the documents and tests of step c were read as text. The suites in the clone and in REPO (inside the checkpoint) read `panel_dev.csv` only through their structural and target-only tests.
   - No tag was created, moved or deleted, in REPO or in the clone. `tools/p3_sealed_run.py` ran only with `--check-config` (Isaiah's answer in the session; Deviations); no sealed run. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+- **P3-8a (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy (`reports/P3_reports/p3_7b.txt`, byte for byte).
+  - No script of this item opened a data file. The code of step b (tracked files under `tests/`, `ofilt/` and `tools/`) was read as text, and hashed.
+  - The two suites (in a scratch clone, verbose, and inside the checkpoint) read the dev panel only through the tests' structural and target-only reads; only the Ran and result lines, the skips and the per-module counts of the clone's log were printed.
+  - No tag was created, moved or deleted, in REPO or in the clone. `tools/p3_sealed_run.py` ran only with `--check-config`. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
 
 ## Deviations
 
@@ -1132,3 +1162,5 @@ Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.p
 - P3-7b d.1 and d.3, edits before the scripts' only runs: `/tmp/p3_7b_kit.py` had its kit-path line simplified, and `/tmp/p3_7b_apply.py` was changed to check every "before" value before writing any file, and to take the four documents from the kit table rather than by name. Each then ran once (the apply script once per root).
 - P3-7b c.6: the item asks whether `git config user.name` and `user.email` are set in REPO; the exit codes of `git config --local` for both are printed as well.
 - P3-7b f, an omission in the records script's output: the P3-7b Test results listed the kit check without its lines, because `/tmp/p3_7b_records.py` reused the name `k`, which held the report's d.1 section, as a loop variable before using it. The lines were inserted from the report's d.1 output by exact replacement (`/tmp/p3_7b_fix.py`); the records script was not rerun. No result changed.
+- P3-8a c.2, the parse: the first parse of the clone's verbose log (`/tmp/p3_8a_suite.py`) listed 10 skipped tests where the result line says skipped=6. It took a test's result from its own line or the next one, so four tests whose result was not on their own line took the next test's "skipped". Under the rerun-once rule the parse was fixed (the next line is read only if it is not another test's line) and run once more on the saved log (`/tmp/p3_8a_suite_parse.py`): 279 ok and 6 skipped, the six expected. The suite itself ran once, correctly; both parses are in the report.
+- P3-8a b, choices the item left open: in b.7, "every function that contains" a line is read as the outermost function containing it (for a method, the method), and b.7.2 prints the module's top-level functions and methods, not nested functions separately (one edit before the script's only run); b.1 also prints each file's SHA-256 and line count.
