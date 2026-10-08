@@ -1,0 +1,171 @@
+2026-10-07T23:15:00Z
+6338409a30f57758523de8ec47a004774c45c0cd
+=== P3-boot report (supervisor message of 2026-10-07: a new builder session at the boundary after P3-6a; read-only) ===
+--- a.1 Date gate ---
+$ date +%F
+2026-10-07
+(It first ran as this session's first command and printed the same date. Every check below is a rerun for the record.)
+
+--- a.2 State (read-only; bash, piped to bash; no file written) ---
+Script in full:
+<<<<<<<<
+exp=6338409a30f57758523de8ec47a004774c45c0cd
+h=$(git rev-parse HEAD); b=$(git rev-parse --abbrev-ref HEAD)
+echo "HEAD=$h"; [ "$h" = "$exp" ] && echo "HEAD_OK" || echo "HEAD_MISMATCH"
+echo "BRANCH=$b"; [ "$b" = "main" ] && echo "BRANCH_OK" || echo "BRANCH_MISMATCH"
+s=$(git status --porcelain --untracked-files=all); n=$(printf "%s" "$s" | grep -c . || true)
+echo "PORCELAIN_LINES=$n"; [ -z "$s" ] && echo "CLEAN_OK" || { echo "CLEAN_MISMATCH"; echo "$s"; }
+if [ -z "${OFILT_RUN_SEALED+x}" ]; then echo "OFILT_RUN_SEALED=unset SEALED_OK"; else echo "OFILT_RUN_SEALED=set SEALED_MISMATCH"; fi
+if [ -f /tmp/p3_6a.txt ]; then echo "P3_6A_EXISTS_OK size=$(wc -c < /tmp/p3_6a.txt | tr -d ' ') sha256=$(shasum -a 256 /tmp/p3_6a.txt | cut -d' ' -f1)"; else echo "P3_6A_MISSING"; fi
+>>>>>>>>
+HEAD=6338409a30f57758523de8ec47a004774c45c0cd
+HEAD_OK
+BRANCH=main
+BRANCH_OK
+PORCELAIN_LINES=0
+CLEAN_OK
+OFILT_RUN_SEALED=unset SEALED_OK
+P3_6A_EXISTS_OK size=191373 sha256=f7f7ceec3aa248e5c3c6d5c7903a08eecc23a943d4f362b46a41287a3f4a9d9b
+exit=0
+
+--- b. The standing prompt, found by its hash (bash, piped to bash) ---
+Script in full (run from REPO; /tmp/p3_boot.txt, this report, is excluded because it is open for writing):
+<<<<<<<<
+target=018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36
+lim=2097152
+n=0; matches=()
+hashfile() { local f="$1"; local sz; sz=$(stat -f %z "$f" 2>/dev/null) || return; [ "$sz" -lt "$lim" ] || return; local h; h=$(shasum -a 256 "$f" 2>/dev/null | cut -d" " -f1) || return; [ -n "$h" ] || return; n=$((n+1)); [ "$h" = "$target" ] && matches+=("$f"); }
+while IFS= read -r -d "" f; do hashfile "$f"; done < <(find "$HOME/Desktop/FX_Project/files" -type f \( -name "*.md" -o -name "*.txt" \) -print0 2>/dev/null)
+while IFS= read -r -d "" f; do hashfile "$f"; done < <(find /tmp/ -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) ! -name p3_boot.txt -print0 2>/dev/null)
+while IFS= read -r -d "" f; do case "$f" in *.md|*.txt) hashfile "$PWD/$f";; esac; done < <(git ls-files -z)
+echo "FILES_HASHED=$n"
+echo "MATCHES=${#matches[@]}"
+for m in "${matches[@]}"; do echo "MATCH $m"; done
+>>>>>>>>
+FILES_HASHED=167
+MATCHES=1
+MATCH /Users/isaiahchoi/Desktop/FX_Project/files/pass3/PASS3_BUILDER_PROMPT_2026-10-06.md
+$ shasum -a 256 <the match>
+018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36  /Users/isaiahchoi/Desktop/FX_Project/files/pass3/PASS3_BUILDER_PROMPT_2026-10-06.md
+429 lines; read in full in this session. Its item P3-0 was completed and accepted on 2026-10-06 and is not run.
+
+--- Quoted verbatim from the standing prompt ---
+[Its definition of STOP, lines 226-232]
+**STOP** means:
+- write what you have into the report, including the reason;
+- change nothing further (no commit, no revert) unless the item says so;
+- run no further command;
+- end your response with one line: `STOPPED at <item, step>: <reason>`.
+
+Isaiah decides what happens next.
+
+[Its report format, lines 220-224]
+**Report.** Each item ends with a report file `/tmp/p3_<n>.txt` (for P3-0: `/tmp/p3_0.txt`).
+- Build it from command output only. Never retype a result.
+- Its first lines are `date -u +%FT%TZ` and `git rev-parse HEAD`.
+- Its last lines repeat both, then `git status --porcelain`.
+- Tell Isaiah the path. He copies it with `pbcopy < /tmp/p3_0.txt` in a separate Terminal window.
+
+[The commit trailer: every line of the prompt that names a trailer]
+416:2. Run `tools/checkpoint.sh "P3-0 (setup, integrity, code survey; PASS3_STATUS created)"`, using the commit-message format and trailer of the Pass 2 checkpoints.
+(The prompt states the trailer only by reference, as that of the Pass 2 checkpoints. The facts below show what it is.)
+$ grep -n "msg" tools/checkpoint.sh
+59:msg=(-m "checkpoint: $item")
+60:for para in "$@"; do msg+=(-m "$para"); done
+61:git add -A && git commit -q "${msg[@]}" && echo "commit $(git rev-parse HEAD)"
+$ git log -1 --format=%B c9cea24fba787efc6411131d4314aa7e2e29a331 | grep -i co-authored   (P2-7, the last Pass 2 checkpoint)
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+$ git log --format=%(trailers:key=Co-Authored-By,valueonly) c9cea24..HEAD | sort | uniq -c   (every Pass 3 commit)
+  18 Claude Opus 5.5 <noreply@anthropic.com>
+$ grep -n "bash tools/checkpoint.sh \"P3-6a" /tmp/p3_6a.txt   (how P3-6a passed it)
+1699:$ source VENV && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "P3-6a (P3-5 accepted; the selection approved; the switch rehearsed and written as a patch)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+
+--- c. Orientation (read-only) ---
+Read: PASS3_STATUS.md, Progress (all rows), Next action, Decision log (DQ1, the rerun-once standing rule, and from 'P3-3a accepted' to its end), and Deviations from P3-5 on; /tmp/p3_6a.txt (its format, step e and its last lines). Section bounds:
+5:## Progress
+29:## Next action
+33:## Decision log
+359:## Test results
+577:## Test changes
+600:## Flags
+624:## Blinding attestation
+797:## Deviations
+
+--- The records rule's six reserved prefixes ---
+[The Decision log's statements of the rule, verbatim]
+242:> - The records rule (Isaiah, 2026-10-06, on the supervisor's recommendation): until the switch, no line added to PASS3_STATUS.md begins with a prefix from which the configuration's rules are copied, and every records step ends with `--check-config` printing valid: True.
+280:> - The records rule now also reserves the prefix `>   - D4.3b The flag rule.`.
+317:>   - From the switch on, the configuration differs from a rebuild by its `spec_sha256`, by design. The records rule's `--check-config` step then ends; each later records step checks instead that the SHA-256 of `docs/P3_RUN_CONFIG.json` is still `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e`.
+[The six, as P3-6a's step e printed them, read from its saved message's records-rule paragraph]
+reserved prefixes (6): ['>   - D2.6 Viability', '>   - D2.7 Claim wording', '>   - D3.4 The joint T1/T4 rule', '>   - D4.3 T6.', '> - D3.2 and D3.3 amended', '>   - D4.3b The flag rule.']
+  1. '>   - D2.6 Viability': lines beginning with it: 1
+     line 132: >   - D2.6 Viability (the spec's `equivalence.viability`, written in the switch). TOST is viable at T_conf if, under the primary inference m ...
+  2. '>   - D2.7 Claim wording': lines beginning with it: 1
+     line 133: >   - D2.7 Claim wording. The equivalence wording ("no drift exploitable net of costs") is used only if TOST declares equivalence at the pri ...
+  3. '>   - D3.4 The joint T1/T4 rule': lines beginning with it: 1
+     line 153: >   - D3.4 The joint T1/T4 rule (Flags 10 and 12), applied at P3-5 to point estimates, as AM-02 is. ...
+  4. '>   - D4.3 T6.': lines beginning with it: 1
+     line 167: >   - D4.3 T6. Early-window draws resample only the source dates before 2017-09-27 (the coarse-grid period of 5711 and 5706); their count is ...
+  5. '> - D3.2 and D3.3 amended': lines beginning with it: 1
+     line 187: > - D3.2 and D3.3 amended (Isaiah, 2026-10-06, on the supervisor's recommendation): pooled critical values. ...
+  6. '>   - D4.3b The flag rule.': lines beginning with it: 1
+     line 275: >   - D4.3b The flag rule. If an estimator's centred rejection rate at b = 0 on early-window draws (cell 7) lies outside [3.5%, 6.5%], the p ...
+prefixes: 6; each begins exactly one line, inside the Decision log (lines 33-358): True
+[Information: the prefixes the tool's _rule_lines reads, tools/p3_sealed_run.py]
+104:one(">   - D2.6 Viability")
+104:one(">   - D2.7 Claim wording")
+105:block(">   - D3.4 The joint T1/T4 rule"
+105:one(">   - D4.3b The flag rule.")
+106:block("> - D3.2 and D3.3 amended"
+
+--- Next action (PASS3_STATUS.md, verbatim) ---
+The supervisor reviews the switch patch. Then P3-6b: the switch commit, with the patch applied unchanged and the C7 rerun in REPO under D16.
+Next item: P3-6b, the switch commit: docs/P3_6_switch.patch applied unchanged and the C7 rerun in REPO under D16, after the supervisor's review of the patch.
+
+--- Blinding attestation (this message) ---
+- No data file opened, listed or hashed: nothing under DATA, RAW or OUT, and no .csv, .gz or .xlsx file anywhere. The hash search covered .md and .txt files only.
+- Nothing run in Python. Not run: the suite, tools/c7_mc.py, tools/checkpoint.sh, the launcher, the rehearsal script, tools/p3_sealed_run.py. tools/checkpoint.sh and tools/p3_sealed_run.py were read as text (the message construction, and _rule_lines).
+- OFILT_RUN_SEALED unset throughout. Nothing in REPO changed. Outside REPO, the only file written is /tmp/p3_boot.txt. /tmp/p3_6a.txt was read only.
+
+--- Deviations and notes ---
+- Two first runs, before this report: the state checks of a.2 and the hash search of b ran once in the session with the same scripts (all OK; FILES_HASHED=166, 1 match). This report reruns both, so its lines are command output.
+- One read-only orientation command contained 'echo ====' in zsh, which zsh rejected ('(eval):1: === not found') after the git log part had printed. The grep on tools/checkpoint.sh in the same command did not run, and was run again as a separate command. Nothing was written.
+- Beyond the listed reads: the Progress rows before P3-3a, the rerun-once standing rule (PASS3_STATUS.md lines 101-104), the commit-message part of tools/checkpoint.sh, and tools/p3_sealed_run.py lines 80-120 (_rule_lines). These were read to answer the trailer and prefix questions.
+- The records rule: the Decision log states the rule in general terms (line 242) and names one reserved prefix itself (line 280). The full list of six comes from the P3-6a message, as P3-6a's report prints it. '>   - D4.3 T6.' is one of the six, but _rule_lines does not read it.
+
+=== STOP (planned): Isaiah brings this report to the supervisor, then pastes P3-6b. ===
+
+2026-10-07T23:15:03Z
+6338409a30f57758523de8ec47a004774c45c0cd
+
+--- Addendum (after the first ending above): the count in b ---
+- Correction to the first note under 'Deviations and notes'. The session's first run of the step b search printed FILES_HASHED=166. The rerun above printed FILES_HASHED=167, so the two runs agree on the match (MATCHES=1, the same path, SHA-256 confirmed) but not on the count. The note's '166' was typed from the first run's output, which this report does not contain. The counts below are by search root, with the same filters and exclusion; no file names are printed.
+Script in full:
+<<<<<<<<
+lim=2097152
+cnt() { local n=0 f sz; while IFS= read -r -d "" f; do sz=$(stat -f %z "$f" 2>/dev/null) || continue; [ "$sz" -lt "$lim" ] || continue; shasum -a 256 "$f" >/dev/null 2>&1 && n=$((n+1)); done; echo "$n"; }
+echo "files (recursive): $(find "$HOME/Desktop/FX_Project/files" -type f \( -name "*.md" -o -name "*.txt" \) -print0 2>/dev/null | cnt)"
+echo "/tmp (top level, p3_boot.txt excluded): $(find /tmp/ -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) ! -name p3_boot.txt -print0 2>/dev/null | cnt)"
+echo "REPO tracked: $(git ls-files -z -- '*.md' '*.txt' | (cd "$PWD" && cnt))"
+>>>>>>>>
+files (recursive): 40
+/tmp (top level, p3_boot.txt excluded): 70
+REPO tracked: 57
+exit=0
+[Count-only: files in each root modified in the last 30 minutes, which covers this session]
+Script in full:
+<<<<<<<<
+echo "files (recursive), modified in the last 30 min: $(find "$HOME/Desktop/FX_Project/files" -type f \( -name "*.md" -o -name "*.txt" \) -size -2097152c -mmin -30 2>/dev/null | wc -l | tr -d ' ')"
+echo "/tmp (top level, p3_boot.txt excluded), modified in the last 30 min: $(find /tmp/ -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) ! -name p3_boot.txt -size -2097152c -mmin -30 2>/dev/null | wc -l | tr -d ' ')"
+echo "REPO tracked, modified in the last 30 min: $(git ls-files -- '*.md' '*.txt' | while IFS= read -r f; do find "$f" -mmin -30; done | wc -l | tr -d ' ')"
+>>>>>>>>
+files (recursive), modified in the last 30 min: 0
+/tmp (top level, p3_boot.txt excluded), modified in the last 30 min: 0
+REPO tracked, modified in the last 30 min: 0
+exit=0
+- This report does not name the file behind the difference: step b allows printing only the count and the matches. The match result is unaffected.
+
+=== STOP (planned): Isaiah brings this report to the supervisor, then pastes P3-6b. ===
+
+2026-10-07T23:16:10Z
+6338409a30f57758523de8ec47a004774c45c0cd
