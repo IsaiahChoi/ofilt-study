@@ -1,6 +1,6 @@
 # Overnight FX and the Tokyo opening auction (October 2026)
 
-**Status (2026-10-06).**
+**Status (2026-10-07).**
 - **Done:**
   - Pass 1, the analysis machine, completed 2026-10-02. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (205 tests). The rebuilt repository is the canonical study repository (P45).
   - Pass 2, data and rebuild, completed 2026-10-06 (decisions P58–P70):
@@ -8,17 +8,22 @@
     - the hedge is the 1306 ETF (AM-03); the panel hashes are in AM-04, and the Pass 2 robustness rows in AM-05;
     - the switch commit applied them (P2-3b), and the C7 rerun on the Mac reproduced every rejection decision (D16).
   - The four items still open on 2026-10-05 were resolved that day: the settings check by attestation (D2); the TOPIX total-return series, TPXDDVD Index (D3); the raw files organised; the Mac environment, `~/venvs/ofilt_p2`.
-- **Next:** Pass 3, calibration (cost inputs; one sanctioned sealed fit).
+  - Pass 3, calibration with dev still blinded, completed 2026-10-07 (decisions P71–P81):
+    - one sanctioned sealed fit, `BLIND_FIT_LOG` line 7, calibrated the inference on dev-calibrated simulations;
+    - the pre-stated rules kept DK with the normal reference for H1, set the calibrated Clark–West critical value (AM-09) and found TOST viable at the primary SESOI (AM-07);
+    - the switch froze the spec (AM-10).
+- **Next:** the `spec-dev-v1` tag, then Pass 4, the dev first look.
 
 ## Current scope
 
-`PLAN.md` (v2.4) is the authoritative research plan. It supersedes v2.1, v2.0 and the multi-market Plan v1.1. Where wording differs, the decision log and `spec/SPEC_AMENDMENTS.md` govern.
+`PLAN.md` (v2.5) is the authoritative research plan. It supersedes v2.1, v2.0 and the multi-market Plan v1.1. Where wording differs, the decision log and `spec/SPEC_AMENDMENTS.md` govern.
 
-The decision log has four parts:
+The decision log has five parts:
 - `DECISIONS_ADDENDUM.md`: P01–P13, the panel build;
 - `DECISIONS_P14_onward.md`: P14–P36, Pass 1;
 - `DECISIONS_P37_onward.md`: P37–P57, Pass 2 inputs and the pre-flight decisions;
-- `DECISIONS_P58_onward.md`: P58–P70, the Pass 2 build, the decision checkpoint and the switch.
+- `DECISIONS_P58_onward.md`: P58–P70, the Pass 2 build, the decision checkpoint and the switch;
+- `DECISIONS_P71_onward.md`: P71–P81, Pass 3, calibration with dev still blinded.
 
 The plan's discipline applies throughout:
 - the pre-registration and the holdout lock;
@@ -32,7 +37,7 @@ The plan's discipline applies throughout:
 - the dark-window returns `usdjpy_ret` and `eurusd_ret`, both with common slopes;
 - the US open→close controls `spy_oc` and `copx_oc`, with ticker-specific slopes.
 
-The primary estimand is **b**, the coefficient on `usdjpy_ret`. Because EUR/USD is in the design, b is the drift per unit of **yen-specific** overnight move (Frisch–Waugh–Lovell). Inference is pooled OLS with Driscoll–Kraay SEs, two-sided at 5%. The final calibration choice is made in Pass 3.
+The primary estimand is **b**, the coefficient on `usdjpy_ret`. Because EUR/USD is in the design, b is the drift per unit of **yen-specific** overnight move (Frisch–Waugh–Lovell). Inference is pooled OLS with Driscoll–Kraay SEs, two-sided at 5%. Pass 3 kept the normal reference for H1 (P79); the primary Clark–West comparison uses a calibrated critical value (AM-09).
 
 | Coefficient | Meaning |
 |---|---|
@@ -60,7 +65,7 @@ This tests whether FX is fully priced at the open, not how fast. Speed needs int
 |---|---|---|
 | 1 | Analysis machine (`ofilt/drift/`): originally 171 tests, 5 skipped by default. Rebuilt C4–D: 205 tests, 4 skipped (5 on the Mac). 6 sealed fits, none returning an FX coefficient | **Complete** (2026-10-02; rebuilt 2026-10-05) |
 | 2 | Data and rebuild (`PASS2_HANDOFF.md` + `PASS2_ADDENDUM.md`). No sealed fit is sanctioned in this pass | **Complete** (2026-10-06): 60-column panels built on macOS arm64; hedge 1306 (AM-03); the C7 rerun on the Mac reproduced every rejection decision (D16) |
-| 3 | Calibration, with dev still blinded by the guard: binding size run (AM-02), power and MDE, joint H1/CW cross-tab, Flags 10/12, SESOI and equivalence viability. Exactly one sanctioned sealed fit | — |
+| 3 | Calibration, with dev still blinded by the guard: binding size run (AM-02), power and MDE, joint H1/CW cross-tab, Flags 10/12, SESOI and equivalence viability. Exactly one sanctioned sealed fit | **Complete** (2026-10-07): the sealed fit is `BLIND_FIT_LOG` line 7; DK-normal kept, c_CW,cal for Clark–West (AM-09), TOST viable (AM-07), the spec frozen (AM-10) |
 | — | **Tag `spec-dev-v1`**. Inference and calibration choices are locked from here | — |
 | 4 | Dev first look (exploratory) + the P13(b) dry run | — |
 | 5 | Pre-registration (prior-exposure disclosure, advisor sign-off) → tag `prereg-v1` | — |
@@ -132,21 +137,26 @@ Then compare the hashes with `MANIFEST.json`. Identical hashes prove an identica
 | `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; the 2026-10-05 decisions; builder prompt A′; reference numbers B′. Governs where it differs from the handoff. |
 | `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`) | The Pass 1 build record. |
 | `REBUILD_VERIFICATION.md` | The rebuilt repo checked against the adopted decision text, with every difference listed. |
-| `PLAN.md` | The research plan, v2.4 (authoritative). |
+| `PLAN.md` | The research plan, v2.5 (authoritative). |
 | `DECISIONS_ADDENDUM.md` | Decisions P01–P13. |
 | `DECISIONS_P14_onward.md` | Decisions P14–P36 (Pass 1). |
 | `DECISIONS_P37_onward.md` | Decisions P37–P57: the Pass 2 inputs and the pre-flight decisions. |
 | `DECISIONS_P58_onward.md` | Decisions P58–P70: the Pass 2 build, the decision checkpoint and the switch. |
+| `DECISIONS_P71_onward.md` | Decisions P71–P81: Pass 3, calibration with dev still blinded. |
 | `build_panel.py`, `make_events.py`, `events.py` | The frozen Pass 1 build (`build/pass1/`), run unchanged by `build_panel_p2.py`. |
 | `build_panel_p2.py`, `columns.py` | The Pass 2 build (`build/pass2/`): appends the 19 new columns (P51). |
 | `events_firm.csv`, `events_boj.csv` | Event calendars (calendar data only, no outcomes). |
 | `pull_dukascopy.py` | FX download script (patched version, P38). |
 | `PROJECT_SETUP.md` | What belongs in this project and why. |
 | `PASS2_STATUS.md` | The Pass 2 build record: progress, decision log, test results and changes, flags, blinding attestation, deviations. |
-| Pass 2 reports | `P2_1_inputs.md`, `P2_4_acceptance.md`, `P2_5_dev_checks.md`, `P2_5_resolutions.md`, `A_hedge_efficiency_1306.md`, `A_hedge_efficiency_1306_supplement.md`, `P2_3b_d8_gate.md`, and the C7 reports regenerated on the Mac (`C7_mc.json`, `C7_h1_same_dgp.json`). |
+| `PASS3_STATUS.md` | The Pass 3 record, in the same form. |
+| Pass 2 reports | `P2_1_inputs.md`, `P2_4_acceptance.md`, `P2_5_dev_checks.md`, `P2_5_resolutions.md`, `A_hedge_efficiency_1306.md`, `A_hedge_efficiency_1306_supplement.md`, `P2_3b_d8_gate.md`, and the C7 reports regenerated on the Mac (`C7_mc.json`, `C7_h1_same_dgp.json`; regenerated again at the Pass 3 switch, P80). |
+| Pass 3 reports | `P3_1_sesoi.md` (the SESOI), `P3_4_sealed_run.md` (the sealed run's aggregates) and `P3_5_selection.md` (the pre-stated rules applied). |
 | Math 86 paper | Background only. |
 
 Retired at the Pass 2 upload (PROJECT_SETUP, "Removed"): `PASS2_SUPERVISOR_HANDOFF_2026-10-05.md`, `PASS2_P2-6_RECORDS_REGISTER.md` and `PASS2_SUPERVISOR_HANDOFF_P2-6.md`, superseded by `DECISIONS_P58_onward.md` and `PASS2_STATUS.md`.
+
+Retired at the Pass 3 upload (PROJECT_SETUP, "Removed"): `PASS3_SUPERVISOR_HANDOFF_2026-10-06.md`, superseded by `DECISIONS_P71_onward.md` and `PASS3_STATUS.md`.
 
 ## Rules for any session working in this project
 
@@ -156,7 +166,7 @@ Retired at the Pass 2 upload (PROJECT_SETUP, "Removed"): `PASS2_SUPERVISOR_HANDO
    - 2022+ event release **dates** and calendars are allowed.
    - In Pass 2 the build **writes** the sealed panel and checks it only through dates, counts, hashes and in-memory equality booleans. It never prints or summarises sealed values.
 2. **Blinding until `spec-dev-v1` (P29, P36).** No computation whose output relates any predictor to any target on real data. "Predictor" includes FX, XAU, Japan 225, the US controls and session FX.
-   - **The one exception** is the sealed blind fit (`sim._sealed_blind_fit`). It is opt-in via `OFILT_RUN_SEALED=1`, must be sanctioned explicitly by Isaiah, is counted in `BLIND_FIT_LOG`, and returns no coefficient. None is sanctioned in Pass 2; Pass 3 gets exactly one.
+   - **The one exception** is the sealed blind fit (`sim._sealed_blind_fit`). It is opt-in via `OFILT_RUN_SEALED=1`, must be sanctioned explicitly by Isaiah, is counted in `BLIND_FIT_LOG`, and returns no coefficient. None is sanctioned in Pass 2; Pass 3 had exactly one, `BLIND_FIT_LOG` line 7 (P78).
    - **Allowed on real data:** hashes; structural checks; predictor-only statistics; target-only statistics without predictors (e.g. A7); gap-only statistics on dev (e.g. the index-staleness test).
    - Model and test code runs on synthetic panels until the tag.
 3. **Features come only from the explicit allowlist** in `ofilt/drift/schema.py` (P20). This replaces the old rule "features come from unprefixed columns".

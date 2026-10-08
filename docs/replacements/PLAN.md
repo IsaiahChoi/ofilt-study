@@ -1,14 +1,15 @@
-# Research Plan v2.4: Is overnight FX fully priced at the Tokyo open?
+# Research Plan v2.5: Is overnight FX fully priced at the Tokyo open?
 
 **Owner:** Isaiah Choi. **Executor:** Claude, with Isaiah as decision-maker.
 
-**Status:** 2026-10-06.
+**Status:** 2026-10-07.
 - Pass 1 (the analysis machine) is complete. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (2026-10-04/05). The rebuilt repository is the canonical study repository (P45).
 - Pass 2 inputs are pulled and verified. The pre-flight decisions of 2026-10-05 are recorded as P45–P57.
 - Pass 2 (data and rebuild) is complete: the 60-column panels were built on macOS arm64, the hedge is 1306 (AM-03), the switch commit applied AM-03 to AM-05, and the C7 rerun on the Mac reproduced every rejection decision (D16). Its decisions are P58–P70.
-- Pass 3 (calibration) is next.
+- Pass 3 (calibration, dev still blinded) is complete. One sanctioned sealed fit (`BLIND_FIT_LOG` line 7) calibrated the inference on dev-calibrated simulations. DK with the normal reference is kept for H1 (5.82% at b = 0, inside AM-02's band); the primary Clark–West comparison uses its calibrated critical value (AM-09); TOST is viable at the primary SESOI (AM-07); and the switch froze the spec (AM-10). Its decisions are P71–P81.
+- Next: the `spec-dev-v1` tag.
 
-**Supersedes:** v2.3 (2026-10-05), which superseded v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all four. If any wording differs, the decision log (P01–P70) and `spec/SPEC_AMENDMENTS.md` govern.
+**Supersedes:** v2.4 (2026-10-06), which superseded v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all five. If any wording differs, the decision log (P01–P81) and `spec/SPEC_AMENDMENTS.md` govern.
 
 **Companion files:**
 
@@ -22,6 +23,7 @@
 | `DECISIONS_P14_onward.md` | P14–P36 |
 | `DECISIONS_P37_onward.md` | P37–P57 |
 | `DECISIONS_P58_onward.md` | P58–P70 |
+| `DECISIONS_P71_onward.md` | P71–P81 |
 | `PASS2_HANDOFF.md` | How to run Pass 2 |
 | `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; builder prompt A′; reference numbers B′ |
 | `PASS1_STATUS.md`, `REBUILD_VERIFICATION.md` | The Pass 1 build record, and the rebuilt repo checked against the adopted text |
@@ -93,7 +95,7 @@ $$r^{abn}_{i,t} = \alpha_i + b\,e_t + a_2\,\text{eur}_t + \theta_i^\top x_{i,t} 
 
 ### 1.3 Hypotheses
 
-**H1 (primary).** b ≠ 0 in the design above, pooled across the three miners. Two-sided test at α = 0.05 [PREREG]. The inference method is decided in Pass 3 [CAL] (§3.4).
+**H1 (primary).** b ≠ 0 in the design above, pooled across the three miners. Two-sided test at α = 0.05 [PREREG]. The inference method is decided in Pass 3 [CAL] (§3.4): DK with the normal reference (P79).
 
 **H2: RETIRED (P16).** The auction-conditional specification, which adds the realized gap, is not a mispricing test. Under an efficient but noisy auction, its FX coefficient equals kδ > 0, with k = V_η/(V_f + V_η). Conditioning on the gap *surprise* instead reproduces the pre-open b exactly.
 - Numerical check (B6), at ρ = 1: auction-conditional coefficient 0.162, against kδ = 0.167.
@@ -116,7 +118,7 @@ The `ao_` columns are used only in the decomposition and the hedge.
 
 **Fraction unpriced (P24).** f = b / δ_cc, where δ_cc = δ_gap + b is the close-to-close loading. Joint Driscoll–Kraay covariance, with delta-method and Fieller intervals. **Confirmatory for 2022 only**, descriptive for 2023–2026, because of prior exposure (§2.3).
 
-**Equivalence (P23).** A TOST test against a smallest effect of interest (SESOI) derived from trading costs. The SESOI is PENDING the cost inputs. Its viability is decided in Pass 3 [CAL].
+**Equivalence (P23).** A TOST test against a smallest effect of interest (SESOI) derived from trading costs. The primary SESOI is 0.8652 (low 0.07152, high 2.719), from the cost model (P72; AM-07). TOST is viable at T_conf under DK-normal (D2.6; P79) [CAL].
 
 ### 1.4 What counts as success
 
@@ -221,6 +223,8 @@ The Pass 3 options (Flags 10 and 12, decided jointly) [CAL]:
 2. the bootstrap;
 3. a critical value taken from the b = 0 simulation itself.
 
+**Outcome (Pass 3, P79).** DK-normal rejected 291 of 5,000 draws at b = 0 (5.82%), inside [3.5%, 6.5%], so option 1 is kept and AM-02's bootstrap branch is not taken (AM-08 unused). Clark–West's normal reference rejected 66 of 2,000 (3.30%), outside the band, so the primary forecast comparison uses its calibrated critical value, 1.411608406163672 (AM-09).
+
 ### 3.5 Tails and influence (P22)
 
 OLS on unwinsorized data is primary. Pre-registered robustness:
@@ -290,6 +294,8 @@ A market-on-open → market-on-close trade in the miners, hedged with 1306 sized
 
 SESOI = round-trip cost / mean |partialled overnight FX|. The denominator uses predictor data only.
 
+**Pass 3 (P72).** The inputs are Isaiah's (2026-10-06; `docs/P3_COST_INPUTS.json`). The mean round trip per name-day, 24.5961 bp (low 2.0333, high 77.2878), over mean |ẽ| = 28.4288 bp gives SESOI 0.8652 (low 0.07152, high 2.719).
+
 ---
 
 ## 5. Power (PREVIEW; binding run in Pass 3)
@@ -304,6 +310,16 @@ The B7b preview: dev-calibrated simulations, T_conf = 1,013, one sealed fit, on 
 - Driscoll–Kraay SE/sd = 0.960.
 
 All of this is rerun in Pass 3 on the rebuilt panel with the 1306 hedge, and the binding numbers go into the pre-registration. A null is interpreted against the minimum detectable effect and, when viable, the equivalence test; never as "no effect".
+
+**Binding numbers (Pass 3, P79).** Dev-calibrated simulations on the 1306 hedge, T_conf = 1,013, one sealed fit (`BLIND_FIT_LOG` line 7), DK with the normal reference:
+
+| b | 0 (size) | 0.10 | 0.25 | 0.40 |
+|---|---|---|---|---|
+| H1 rejection rate | **5.82%** [5.20%, 6.50%] | 21.2% | 80.9% | 99.5% |
+
+- The minimum detectable effect at 80% power is **b = 0.2471** (probit interpolated; 0.2425 and 0.2400 by the normal approximations).
+- Clark–West (M3 against M2) with its calibrated critical value rejects 5.0%, 31.0% and 90.4% at b = 0, 0.10 and 0.25 (T3).
+- TOST at the primary SESOI declares equivalence in 5,000 of 5,000 draws at b = 0, and in 296 of 5,000 (5.92%) at b = +SESOI.
 
 ---
 
@@ -383,7 +399,7 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 |---|---|---|---|
 | 1 | Analysis machine | **Complete** (2026-10-02): 171 tests, 5 skipped by default; 6 sealed fits. Stage C4–D rebuilt 2026-10-05 (P45): 205 tests, 4 skipped in the sandbox and 5 on the Mac; the same 6 sealed fits | — |
 | 2 | Data and rebuild (`PASS2_HANDOFF.md`) | **Complete** (2026-10-06): see below; run as corrected by `PASS2_ADDENDUM.md` (P51); decisions P58–P70 | Yes, at every decision point, including one combined decision checkpoint before the switch commit |
-| 3 | Calibration, dev still blinded | See below | Each AM-xx |
+| 3 | Calibration, dev still blinded | **Complete** (2026-10-07): one sealed fit (`BLIND_FIT_LOG` line 7); the selection and the switch (AM-07, AM-09, AM-10); decisions P71–P81 | Each AM-xx |
 | — | **Tag `spec-dev-v1`** | Inference and calibration **locked** | — |
 | 4 | Dev first look (exploratory) + P13(b) dry run | Confirmation script recovers a known b on simulated data, runs end to end on dev; post-2024 row implemented | Yes |
 | 5 | Pre-registration (S4) | Prior exposure disclosed, sealed hash recorded, the sealed panel's old-column provenance disclosed (P59), advisor sign-off → **tag `prereg-v1`** | Yes |
@@ -446,10 +462,10 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 
 | Risk / flag | Mitigation |
 |---|---|
-| Low power at plausible effects (MDE80 ≈ 0.257) | Binding power analysis in Pass 3; interpret against the MDE; equivalence test where viable; the forward holdout adds data |
+| Low power at plausible effects (MDE80 0.2471, binding; P79) | Interpret against the MDE; the equivalence test (viable, P79); the forward holdout adds data |
 | **Flag 6:** TOPIX ex-dividend error in hedge gaps | Fixed in Pass 2: 1306 gap with its own dividends; the TOPIX total-return component on the fallback path |
-| **Flag 10:** DK slightly oversized (~6%) at T_conf | Pass 3 decision, jointly with Flag 12 |
-| **Flag 12:** CW conservative (3.00% in the rebuild; 2.67% in the original run; P54) | As above |
+| **Flag 10:** DK slightly oversized (~6%) at T_conf | RESOLVED (P79): 5.82% on the binding run, inside AM-02's band; DK-normal kept |
+| **Flag 12:** CW conservative (3.00% in the rebuild; 2.67% in the original run; P54) | RESOLVED (P79): 3.30% on the binding run; the primary comparison uses c_CW,cal (AM-09) |
 | **Flag 5:** guard signature | RESOLVED. The canonical repo has no external guard, and a conjunctive fail-closed adapter guards against one appearing (P45, P46) |
 | **Flags 2 and 4:** fingerprint check is a mislabelling net only; coarse early-dev ticks for 5706/5711 | Frozen; Flag 4 feeds the cost model and the Huber/winsor behaviour |
 | 1306 dividend factor (P39) | RESOLVED. Issuer documentation and published distributions confirm ÷10 (P47); the settings check is resolved by attestation (D2; P60) |
@@ -488,6 +504,10 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 ---
 
 ## 13. Change log
+
+**v2.4 → v2.5 (2026-10-07)**
+- Pass 3 recorded as P71–P81: the builder prompt and the one sealed fit (P71); the cost inputs and the SESOI (P72); inference and the joint rule (P73); the run's design and its tool (P74); T6's outputs (P75); the rehearsals (P76); DQ5, DQ6, salvage and the launcher (P77); the sanction and the seventh sealed fit (P78); the selection (P79); the switch (P80); this refresh (P81).
+- The status block, the companion files and §1.3, §3.4, §4.5, §5, §8 and §11 updated to match.
 
 **v2.3 → v2.4 (2026-10-06)**
 - Pass 2 recorded as P58–P70: the environment and Flag 16 (P58); the old-column sources (P59); the settings check by attestation and the TOPIX total-return ticker (P60); the build and its acceptance (P61); corrected input records (P62); D7, D8, D9 and D10 (P63–P66); AM-03 to AM-05 and the switch (P67); the C7 rerun on the Mac (P68); the repository and the accepted deviations (P69); this refresh (P70).

@@ -1,4 +1,4 @@
-# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-06)
+# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-07)
 
 This supersedes the earlier October 2026 versions: the pre-Pass-1 one, and the after-Pass-1 one of 2026-10-02.
 
@@ -27,12 +27,13 @@ The analysis machine is a git repository, not project files: `ofilt/drift/`, `sp
 ## In the project
 
 **Plan and status:**
-- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.4);
+- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.5);
 - `PASS2_HANDOFF.md`, `PASS2_ADDENDUM.md`;
 - `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`), `REBUILD_VERIFICATION.md`;
-- `PASS2_STATUS.md` and the Pass 2 reports.
+- `PASS2_STATUS.md` and the Pass 2 reports;
+- `PASS3_STATUS.md` and the Pass 3 reports.
 
-**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70).
+**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81).
 
 **Data documentation:** `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`, `MANIFEST.json`, `PASS2_INPUTS.json`.
 
@@ -51,6 +52,13 @@ After Pass 2 (replaced at the Pass 2 upload, after P2-7):
 
 The event files do not change in Pass 2.
 
+After Pass 3 (replaced at the Pass 3 upload, after the `spec-dev-v1` tag):
+- replaced: `README.md`, `PROJECT_SETUP.md`, `PLAN.md`, `DATA_PROVENANCE.md`, and `C7_mc.json` and `C7_h1_same_dgp.json` (regenerated at the switch, P80);
+- added: `DECISIONS_P71_onward.md`, `PASS3_STATUS.md`, and the Pass 3 reports `P3_1_sesoi.md`, `P3_4_sealed_run.md` and `P3_5_selection.md`;
+- retired: `PASS3_SUPERVISOR_HANDOFF_2026-10-06.md` ("Removed", below).
+
+The data, event and build files do not change in Pass 3.
+
 ## Chat uploads
 
 A file uploaded to a chat is not a Project file, but it stays in that chat.
@@ -58,6 +66,7 @@ A file uploaded to a chat is not a Project file, but it stays in that chat.
 - Both times they were hashed, and only integrity, predictor-only, calendar or dividend facts were read (DATA_PROVENANCE §4.5).
 - There is no need to do this again: the Pass 2 build runs on the Mac and verifies every hash itself.
 - The later supervisor chats (2026-10-05 and 2026-10-06) uploaded no raw file and worked on the Project copies only (DATA_PROVENANCE §4.5).
+- The Pass 3 supervisor chats (2026-10-06 and 2026-10-07) uploaded no raw or data file: only supervisor handoffs, status files and builder reports (DATA_PROVENANCE §4.5). The Pass 3 handoffs stay on the Mac, outside the Project.
 - Never upload the sealed panel to any chat.
 
 ## Removed from the project (superseded; they would mislead future sessions)
@@ -73,6 +82,7 @@ A file uploaded to a chat is not a Project file, but it stays in that chat.
 | `PASS2_SUPERVISOR_HANDOFF_2026-10-05.md` | Superseded by `DECISIONS_P58_onward.md` and `PASS2_STATUS.md`; its next-step instructions would mislead |
 | `PASS2_P2-6_RECORDS_REGISTER.md` | Superseded by `DECISIONS_P58_onward.md` and `PASS2_STATUS.md`; its next-step instructions would mislead |
 | `PASS2_SUPERVISOR_HANDOFF_P2-6.md` | Superseded by `DECISIONS_P58_onward.md` and `PASS2_STATUS.md`; its next-step instructions would mislead |
+| `PASS3_SUPERVISOR_HANDOFF_2026-10-06.md` | Superseded by `DECISIONS_P71_onward.md` and `PASS3_STATUS.md`; its next-step instructions would mislead |
 
 ## Never in the project (and never pushed to any git remote)
 
@@ -81,3 +91,4 @@ A file uploaded to a chat is not a Project file, but it stays in that chat.
 - The Pass 2 raw pulls: 1306 OHLC, session and US-session FX, a Nikkei proxy, XAU.
 - Any forward-holdout data (after 2026-03-05), before and after `prereg-v1`.
 - Anything from `build_out/` other than `MANIFEST.json`; `~/.claude/settings.json` and `settings.json.bak`.
+- Isaiah's cost note of 2026-10-06, which quotes 2026 prices (prior exposure; DECISIONS_P71_onward, carried item 4).
