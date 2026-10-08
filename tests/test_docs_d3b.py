@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
 from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import io  # noqa: E402
 from ofilt.drift.spec import SIZE_RULE, Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 TAGS = ("spec-dev-v1", "prereg-v1")
 
@@ -24,8 +26,8 @@ class TestP36(unittest.TestCase):
         self.assertEqual(B.REQUIRED_TAGS, {B.SYNTHETIC: (), B.DEV_REAL: ("spec-dev-v1",),
                                            B.CONFIRM_REAL: ("spec-dev-v1", "prereg-v1")})
         self.assertEqual(io.CONFIRM_TAG, "prereg-v1")                          # load_confirm gate (P29)
-        for t in TAGS:
-            self.assertFalse(B._tag_ok(t))                                      # neither exists in Pass 1
+        self.assertEqual(B._tag_ok("spec-dev-v1"), TS.spec_tagged())  # P3-8b: was "for t in TAGS: self.assertFalse(B._tag_ok(t))" ("neither exists in Pass 1")
+        self.assertFalse(B._tag_ok("prereg-v1"))  # P3-8b: prereg-v1 stays absent until Pass 5
         naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
                         if any(t in p.read_text() for t in TAGS))
         self.assertEqual(naming, ["ofilt/drift/blind.py", "ofilt/drift/io.py"])  # the only unblinding events

@@ -20,6 +20,8 @@ from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import forecast as F  # noqa: E402
 from ofilt.drift import sim as S  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 
 def find(obj, pred):
@@ -39,10 +41,12 @@ def find(obj, pred):
 class TestP29Blinding(unittest.TestCase):
     def test_tag_gates(self):
         tags = subprocess.run(["git", "-C", str(ROOT), "tag"], capture_output=True, text=True).stdout.split()
-        self.assertNotIn("spec-dev-v1", tags)                                   # Pass 1: neither tag exists
+        dev_open = "spec-dev-v1" in tags  # P3-8b: was self.assertNotIn("spec-dev-v1", tags) ("Pass 1: neither tag exists"); the state on both sides of the tag
+        if dev_open:  # P3-8b: with the tag, it is annotated, an ancestor of HEAD and on the frozen spec
+            TS.check_spec_tag(self)  # P3-8b
         self.assertNotIn("prereg-v1", tags)
         df = pd.DataFrame({"date": pd.to_datetime(["2030-01-07"]), "ticker": ["5706"], "x": [0.123456789]})
-        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, False), (B.CONFIRM_REAL, False), ("other", False)):
+        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, dev_open), (B.CONFIRM_REAL, False), ("other", False)):  # P3-8b: was (B.DEV_REAL, False)
             d = df.copy()
             d.attrs = {"provenance": prov}
             if ok:
@@ -57,6 +61,11 @@ class TestP29Blinding(unittest.TestCase):
         with self.assertRaises(B.BlindingError):                                # attrs and kwarg must agree
             B.require_unblinded(d, provenance=B.DEV_REAL)
         self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())
+        if dev_open:  # P3-8b: with the tag, confirm_real is refused for prereg-v1 alone
+            c = df.copy()  # P3-8b
+            c.attrs = {"provenance": B.CONFIRM_REAL}  # P3-8b
+            with self.assertRaisesRegex(B.BlindingError, r"\['prereg-v1'\]"):  # P3-8b
+                B.require_unblinded(c)  # P3-8b
 
     def test_sealed_fit_opt_in_and_record(self):
         self.assertTrue(callable(S._sealed_blind_fit))

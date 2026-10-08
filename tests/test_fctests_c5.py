@@ -18,6 +18,8 @@ from ofilt.drift import forecast as F  # noqa: E402
 from ofilt.drift import sim as S  # noqa: E402
 from ofilt.drift.models import M0, M1, M2, M3  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 TICKERS = ("5706", "5711", "5713")
 PT_SIZE_SEED = 20261001 + 5000
@@ -177,7 +179,7 @@ class TestPairing(unittest.TestCase):
                  lambda d: FT.run_comparisons(d)]
         for fn in calls:
             for d in (real, bare):
-                with self.assertRaises(B.BlindingError):
+                with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
                     fn(d)
         with self.assertRaises(B.BlindingError):              # attrs/kwarg conflict
             FT.pair(self.df, "M3", "M2", provenance=B.DEV_REAL)

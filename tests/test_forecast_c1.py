@@ -10,6 +10,8 @@ from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import forecast as F  # noqa: E402
 from ofilt.drift import sim as S  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 
 def masked_panel(n_dates=700, seed=0):
@@ -96,7 +98,7 @@ class TestWalkForward(unittest.TestCase):
                 F.walk_forward(self.df.assign(**{c: 0.0 for c in bad}), {"m": spy_factory([], bad)}, self.spec)
         real = self.df.copy()
         real.attrs = {"provenance": "dev_real"}
-        with self.assertRaises(B.BlindingError):
+        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
             F.walk_forward(real, {"m": spy_factory([])}, self.spec)
         with self.assertRaises(ValueError):
             F.walk_forward(self.df, {"m": spy_factory([])}, self.spec, target="usdjpy_ret")

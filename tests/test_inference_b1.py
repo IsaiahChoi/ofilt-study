@@ -10,6 +10,8 @@ from scipy import stats  # noqa: E402
 from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import inference as I  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 TICK = ["5706", "5711", "5713"]
 
@@ -97,7 +99,7 @@ class TestDesign(unittest.TestCase):
             I.build_design(self.df.assign(copx_oc=self.df.spy_oc), self.spec)   # rank-deficient
         real = self.df.copy()
         real.attrs = {"provenance": "dev_real"}
-        with self.assertRaises(B.BlindingError):
+        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
             I.build_design(real, self.spec)
         with self.assertRaises(B.BlindingError):
             I.build_design(self.df, self.spec, provenance="dev_real")      # attrs/kwarg conflict
@@ -105,7 +107,7 @@ class TestDesign(unittest.TestCase):
     def test_entry_points_recheck_provenance(self):
         d = I.build_design(self.df, self.spec)
         forged = I.Design(**{**d.__dict__, "provenance": "dev_real"})
-        with self.assertRaises(B.BlindingError):
+        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
             I.pooled_ols(forged)
 
 

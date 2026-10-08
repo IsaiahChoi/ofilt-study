@@ -13,6 +13,7 @@ from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import inference as I  # noqa: E402
 from ofilt.drift.spec import Spec, SpecPendingError  # noqa: E402
 from test_inference_b1 import panel  # noqa: E402
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 
 class TestHuber(unittest.TestCase):
@@ -121,7 +122,7 @@ class TestB2Blinding(unittest.TestCase):
         forged = I.Design(**{**d.__dict__, "provenance": "dev_real"})
         for fn in (lambda: I.fit_huber(forged, spec), lambda: I.date_influence(forged),
                    lambda: I.influence_curve(forged, spec)):
-            with self.assertRaises(B.BlindingError):
+            with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
                 fn()
 
 

@@ -11,6 +11,7 @@ from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import inference as I  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
 from test_inference_b1 import panel  # noqa: E402
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 
 def panel3(n_dates=400, seed=0, exclusions=True, const_beta=True, b=0.3, delta=0.6):
@@ -152,7 +153,7 @@ class TestB3Blinding(unittest.TestCase):
         df.attrs = {"provenance": "dev_real"}
         for fn in (lambda: I.fit_joint(df, spec), lambda: I.fit_market(df, spec),
                    lambda: I.decomposition(df, spec), lambda: I.secondary_family_tests(df, spec)):
-            with self.assertRaises(B.BlindingError):
+            with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
                 fn()
 
 

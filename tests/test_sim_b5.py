@@ -23,6 +23,8 @@ from ofilt.drift import io as IO  # noqa: E402
 from ofilt.drift import sim as S  # noqa: E402
 from ofilt.drift import targets as TG  # noqa: E402
 from ofilt.drift.spec import Spec  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 CORE = "_design_core"
 ALLOWED_CALLERS = [("inference.py", "build_design"), ("sim.py", "_sealed_blind_fit")]
@@ -174,7 +176,7 @@ class TestSealedFitMechanics(SyntheticBase):
                 S._sealed_blind_fit(d, self.spec)
         real = self.stand_in.copy()
         real.attrs = {"provenance": "dev_real"}
-        with self.assertRaises(B.BlindingError):
+        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
             I.build_design(real, self.spec)                                      # public path still guarded
 
 

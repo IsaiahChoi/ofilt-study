@@ -14,6 +14,7 @@ from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import io as IO  # noqa: E402
 from ofilt.drift.schema import PRE_OPEN_FEATURES  # noqa: E402
 from test_io import make_temp_repo  # noqa: E402
+import tag_state as TS  # noqa: E402  (P3-8b)
 
 
 def synth(n=600, seed=0, prov=True):
@@ -31,6 +32,10 @@ class TestGuard(unittest.TestCase):
         cls.dev = IO.load_dev()  # registers real target fingerprints as a side effect
 
     def test_dev_real_raises_in_main_repo(self):
+        if TS.spec_tagged():  # P3-8b: with the tag, REPO grants dev_real; the guard alone, nothing is computed
+            self.assertEqual(B.require_unblinded(self.dev), "dev_real")  # P3-8b
+            self.assertEqual(B.require_unblinded(self.dev.drop(columns=["y_oc"]), provenance="dev_real"), "dev_real")  # P3-8b
+            return  # P3-8b
         with self.assertRaises(B.BlindingError):
             B.require_unblinded(self.dev)
         with self.assertRaises(B.BlindingError):
