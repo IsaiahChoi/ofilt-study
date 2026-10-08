@@ -1,0 +1,342 @@
+2026-10-08T13:53:04Z
+96963b31d620ab98ff529458fcd095f412c443bd
+7e5dc34c34c7e1734bf0c90f9903c7b25062950066d713a09c0f1552cbc80be0  /tmp/p4_0a_msg.txt
+=== P4-0a report ===
+(line 3: the SHA-256 of /tmp/p4_0a_msg.txt, the P4-0a message saved verbatim from this session's transcript; expected values are read from it by script)
+--- a.1 Date gate ---
+$ date +%F
+2026-10-08
+(it ran first, before any other command of this item, and printed the same date)
+
+--- a.2 State check (read-only; /tmp/p4_0a_state.py) ---
+$ printenv OFILT_RUN_SEALED
+exit=1 (1: unset)
+Script in full:
+<<<<<<<<
+"""P4-0a step a.2: read-only state check. Expected values are read by script from the saved P4-0a message
+(/tmp/p4_0a_msg.txt, section a), never typed."""
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p4_0a_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("## a. Date gate and state")[1].split("## b.")[0]
+git = lambda *a: subprocess.run(["git", "-C", str(REPO), *a], capture_output=True, text=True)
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+head = git("rev-parse", "HEAD").stdout.strip()
+want = re.search(r"HEAD is `([0-9a-f]{40})`", sec).group(1)
+chk(f"HEAD {head} equals {want}", head == want)
+st = git("status", "--porcelain", "--untracked-files=all").stdout
+chk(f"git status --porcelain --untracked-files=all empty ({len(st.splitlines())} lines)", st == "")
+tw = re.findall(r"`([^`]+)`", re.search(r"`git tag -l` prints exactly (`[^`]+` and `[^`]+`)", sec).group(1))
+tags = git("tag", "-l").stdout.split()
+chk(f"git tag -l {tags} is exactly {tw}", sorted(tags) == sorted(tw) and len(tags) == 2)
+obj_w, c_w = re.search(r"`git rev-parse refs/tags/spec-dev-v1` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`", sec).groups()
+obj = git("rev-parse", "refs/tags/spec-dev-v1").stdout.strip()
+c = git("rev-parse", "spec-dev-v1^{commit}").stdout.strip()
+chk(f"refs/tags/spec-dev-v1 {obj} is {obj_w}; its commit {c} is {c_w}", obj == obj_w and c == c_w)
+bw = re.search(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines", sec).groups()
+b = (REPO / "BLIND_FIT_LOG").read_bytes()
+chk(f"BLIND_FIT_LOG sha256 {hashlib.sha256(b).hexdigest()} and {len(b.splitlines())} lines equal {bw[0]} and {bw[1]}",
+    hashlib.sha256(b).hexdigest() == bw[0] and len(b.splitlines()) == int(bw[1]))
+n = (REPO / "RUN_REGISTRY.jsonl").stat().st_size
+chk(f"RUN_REGISTRY.jsonl bytes {n} is 0", n == 0)
+chk("no ACCESS_LOG", not os.path.lexists(REPO / "ACCESS_LOG"))
+chk("OFILT_RUN_SEALED absent from this process's environment", "OFILT_RUN_SEALED" not in os.environ)
+for rel in re.findall(r"`\$HOME/([^`]+)`", re.search(r"neither (`\$HOME/[^`]+` nor `\$HOME/[^`]+`) exists", sec).group(1)):
+    p = Path(os.path.expanduser("~")) / rel
+    chk(f"{p} does not exist", not os.path.lexists(p))
+print("STATE CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p4_0a_state.py
+HEAD 96963b31d620ab98ff529458fcd095f412c443bd equals 96963b31d620ab98ff529458fcd095f412c443bd: True
+git status --porcelain --untracked-files=all empty (0 lines): True
+git tag -l ['pass1-final', 'spec-dev-v1'] is exactly ['pass1-final', 'spec-dev-v1']: True
+refs/tags/spec-dev-v1 cee3b49e81d16f1f32e546cac9524b209ac1e493 is cee3b49e81d16f1f32e546cac9524b209ac1e493; its commit f5271c03481b7514a1ec4b7e739fb85fbce8a774 is f5271c03481b7514a1ec4b7e739fb85fbce8a774: True
+BLIND_FIT_LOG sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 and 7 lines equal 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 and 7: True
+RUN_REGISTRY.jsonl bytes 0 is 0: True
+no ACCESS_LOG: True
+OFILT_RUN_SEALED absent from this process's environment: True
+/Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep does not exist: True
+/Users/isaiahchoi/Desktop/FX_Project/files/chat_upload_p4_0a does not exist: True
+STATE CHECK: True
+exit=0
+
+--- b. Keep the /tmp records (/tmp/p4_0a_keep.py) ---
+Script in full:
+<<<<<<<<
+"""P4-0a step b: keep the /tmp records outside /tmp. The folder, the five sources and their expected SHA-256 values, and
+the lines expected of /tmp/p3_9.txt are read by script from the saved P4-0a message (/tmp/p4_0a_msg.txt, section b),
+never typed. Copies are made with shutil.copy2 (bytes and modification time)."""
+import hashlib
+import os
+import re
+import shutil
+from pathlib import Path
+
+MSG = Path("/tmp/p4_0a_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("## b. Keep the /tmp records")[1].split("## c.")[0]
+b1 = sec.split("2. Of `/tmp/p3_9.txt`")[0]
+b2 = sec.split("2. Of `/tmp/p3_9.txt`")[1]
+KEEP = Path(os.path.expanduser("~")) / re.search(r"Create `\$HOME/([^`]+)` and copy", b1).group(1)
+rows = re.findall(r"^\| `(/tmp/[^`]+)` \| (?:`([0-9a-f]{64})`|\(printed\)) \|$", b1, re.M)
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+chk(f"sources read: {len(rows)} (must be 5)", len(rows) == 5)
+missing = [s for s, _ in rows if not Path(s).is_file()]
+chk(f"every source exists (missing: {missing})", not missing)
+if missing or os.path.lexists(KEEP):
+    print(f"STOP: a source is missing, or {KEEP} exists")
+    print("KEEP CHECK:", False)
+    raise SystemExit(1)
+KEEP.mkdir(parents=False)
+print(f"created {KEEP}")
+for src, want in rows:
+    dst = KEEP / Path(src).name
+    shutil.copy2(src, dst)
+    a, b = sha(dst), sha(src)
+    if want:
+        chk(f"{dst.name}: copy {a}; source {b}; equal; and equal to the table's value", a == b == want)
+    else:
+        chk(f"{dst.name}: copy {a}; source {b}; equal (printed; the table gives no value)", a == b)
+names = sorted(p.name for p in KEEP.iterdir())
+chk(f"the folder holds exactly the five copies ({names})", names == sorted(Path(s).name for s, _ in rows))
+
+# b.2: /tmp/p3_9.txt
+p = Path("/tmp/p3_9.txt")
+data = p.read_bytes()
+lines = [l.rstrip("\r\n") for l in data.decode("utf-8").splitlines(keepends=True)]
+nonempty = [l for l in lines if l.strip()]
+first = re.search(r"its first two lines are `([^`]+)` and `([^`]+)`", b2).groups()
+last = re.search(r"its last two non-empty lines are `([^`]+)` and `([^`]+)`", b2).groups()
+whole = re.search(r"exactly one of its lines is the whole line `([^`]+)`", b2).group(1)
+print(f"/tmp/p3_9.txt sha256 {hashlib.sha256(data).hexdigest()}; bytes {len(data)}")
+chk(f"/tmp/p3_9.txt first two lines {lines[:2]} equal {list(first)}", tuple(lines[:2]) == first)
+chk(f"/tmp/p3_9.txt last two non-empty lines {nonempty[-2:]} equal {list(last)}", tuple(nonempty[-2:]) == last)
+n = sum(l == whole for l in lines)
+chk(f"/tmp/p3_9.txt: lines that are exactly '{whole}': {n} (must be 1)", n == 1)
+print("KEEP CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p4_0a_keep.py
+sources read: 5 (must be 5): True
+every source exists (missing: []): True
+created /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep
+p3_8c.txt: copy 9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9; source 9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9; equal; and equal to the table's value: True
+p3_8c_msg.txt: copy 88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d; source 88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d; equal; and equal to the table's value: True
+p3_8c_cont_msg.txt: copy 70dc575250ccb997051fb3bdbf83b1c227e61a8dbbd448cd523b03922b96e86e; source 70dc575250ccb997051fb3bdbf83b1c227e61a8dbbd448cd523b03922b96e86e; equal; and equal to the table's value: True
+p3_9_msg.txt: copy ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd; source ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd; equal; and equal to the table's value: True
+p3_9.txt: copy dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad; source dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad; equal (printed; the table gives no value): True
+the folder holds exactly the five copies (['p3_8c.txt', 'p3_8c_cont_msg.txt', 'p3_8c_msg.txt', 'p3_9.txt', 'p3_9_msg.txt']): True
+/tmp/p3_9.txt sha256 dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad; bytes 15215
+/tmp/p3_9.txt first two lines ['2026-10-08T04:21:06Z', '96963b31d620ab98ff529458fcd095f412c443bd'] equal ['2026-10-08T04:21:06Z', '96963b31d620ab98ff529458fcd095f412c443bd']: True
+/tmp/p3_9.txt last two non-empty lines ['2026-10-08T04:21:29Z', '96963b31d620ab98ff529458fcd095f412c443bd'] equal ['2026-10-08T04:21:29Z', '96963b31d620ab98ff529458fcd095f412c443bd']: True
+/tmp/p3_9.txt: lines that are exactly 'ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd  /tmp/p3_9_msg.txt': 1 (must be 1): True
+KEEP CHECK: True
+exit=0
+
+--- c. The snapshot for the supervisor chat (/tmp/p4_0a_snap.py) ---
+Script in full:
+<<<<<<<<
+"""P4-0a step c: the snapshot of the committed tree for the supervisor chat. The folder, the exclusion rule (modes and
+suffixes), the file names and the expected values are read by script from the saved P4-0a message (/tmp/p4_0a_msg.txt,
+section c), and the value printed in b.2 from this report (/tmp/p4_0a.txt), never typed. Excluded entries are listed
+from `git ls-tree` only and never read. Included entries are read with `git show HEAD:<path>`; no content is printed."""
+import hashlib
+import io
+import os
+import re
+import shutil
+import subprocess
+import tarfile
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p4_0a_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("## c. The snapshot for the supervisor chat")[1].split("## d.")[0]
+FOLDER = Path(os.path.expanduser("~")) / re.search(r"1\. Create `\$HOME/([^`]+)`", sec).group(1)
+c1 = sec.split("2. For each included entry")[0]
+MODES = set(re.findall(r"its mode is neither (\d+) nor (\d+)", c1)[0])
+SUFFIXES = tuple(s.lower() for s in re.findall(r"`(\.[a-z0-9]+)`", c1.split("case-insensitively, in one of")[1]))
+MANIFEST = re.search(r"write `(REPO_MANIFEST[^`]+)` in the folder", sec).group(1)
+HEADER = re.findall(r"`([a-z0-9]+)`", re.search(r"a header line with the four fields (.*?), then one line", sec).group(1))
+TARNAME = re.search(r"write `(ofilt_study_snapshot[^`]+\.tar)` in the folder", sec).group(1)
+PROMPT = Path(os.path.expanduser("~")) / re.search(r"4\. Copy `\$HOME/([^`]+)` into the folder", sec).group(1)
+PROMPT_SHA = re.search(r"the copy's SHA-256 is `([0-9a-f]{64})`", sec).group(1)
+SUMS = re.search(r"5\. Write `(SHA256SUMS[^`]+)` in the folder", sec).group(1)
+N_FILES = {"five": 5}[re.search(r"The folder then holds exactly (\w+) files", sec).group(1)]
+REP = Path("/tmp/p4_0a.txt").read_text(encoding="utf-8")
+P39_SHA = re.search(r"^/tmp/p3_9\.txt sha256 ([0-9a-f]{64}); bytes \d+$", REP, re.M).group(1)
+sha = lambda b: hashlib.sha256(b).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+print(f"folder {FOLDER}; included modes {sorted(MODES)}; excluded suffixes {list(SUFFIXES)} ({len(SUFFIXES)})")
+chk(f"header fields read: {HEADER} (must be 4)", len(HEADER) == 4)
+if os.path.lexists(FOLDER):
+    raise SystemExit(f"STOP: {FOLDER} exists")
+FOLDER.mkdir(parents=False)
+print(f"created {FOLDER}")
+
+# c.1: the committed tree
+raw = subprocess.run(["git", "-C", str(REPO), "ls-tree", "-r", "-l", "-z", "HEAD"], capture_output=True, check=True).stdout
+entries = []
+for rec in raw.split(b"\0"):
+    if not rec:
+        continue
+    meta, path = rec.split(b"\t", 1)
+    mode, typ, oid, size = meta.decode().split()
+    entries.append((path.decode("utf-8"), mode, typ, oid, size))
+inc = [e for e in entries if e[1] in MODES and not e[0].lower().endswith(SUFFIXES)]
+exc = [e for e in entries if e not in inc]
+print(f"entries: {len(entries)}; included: {len(inc)}; excluded: {len(exc)}")
+for p, mode, typ, oid, size in sorted(exc):
+    print(f"  excluded: {p}  mode {mode}  object {oid}  size {size}")
+chk("no included path holds a tab or a newline", not any(("\t" in e[0] or "\n" in e[0]) for e in inc))
+
+# c.2: the manifest
+inc.sort(key=lambda e: e[0])
+data = {}
+rows = []
+for p, mode, typ, oid, size in inc:
+    b = subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{p}"], capture_output=True, check=True).stdout
+    data[p] = b
+    h = sha(b)
+    if len(b) != int(size):
+        chk(f"{p}: bytes {len(b)} equal the ls-tree size {size}", False)
+    wt = REPO / p
+    if not wt.is_file() or sha(wt.read_bytes()) != h:
+        chk(f"{p}: sha256 equals the working-tree file's", False)
+    rows.append(f"{p}\t{mode}\t{len(b)}\t{h}")
+chk(f"every included entry's byte count equals its git ls-tree size ({len(inc)} entries)",
+    all(len(data[e[0]]) == int(e[4]) for e in inc))
+chk("every included entry's SHA-256 equals the working-tree file's",
+    all((REPO / e[0]).is_file() and sha((REPO / e[0]).read_bytes()) == sha(data[e[0]]) for e in inc))
+man_text = "\t".join(HEADER) + "\n" + "".join(r + "\n" for r in rows)
+(FOLDER / MANIFEST).write_text(man_text, encoding="utf-8")
+mb = (FOLDER / MANIFEST).read_bytes()
+print(f"{MANIFEST}: {len(mb.decode().splitlines())} lines (header and {len(rows)} entries); sha256 {sha(mb)}")
+
+# c.3: the tar
+tpath = FOLDER / TARNAME
+with tarfile.open(tpath, "w", format=tarfile.PAX_FORMAT) as tf:
+    for p, mode, typ, oid, size in inc:
+        ti = tarfile.TarInfo(name=p)
+        ti.size = len(data[p])
+        ti.mode = 0o755 if mode == "100755" else 0o644
+        ti.mtime = 0
+        ti.uid = ti.gid = 0
+        ti.uname = ti.gname = ""
+        ti.type = tarfile.REGTYPE
+        tf.addfile(ti, io.BytesIO(data[p]))
+man = [l.split("\t") for l in mb.decode().splitlines()[1:]]
+with tarfile.open(tpath, "r") as tf:
+    members = tf.getmembers()
+    names = [m.name for m in members]
+    chk(f"the tar's member names ({len(names)}) equal the manifest's paths ({len(man)}), in order",
+        names == [r[0] for r in man])
+    shas = [sha(tf.extractfile(m).read()) for m in members]
+    chk("each member's SHA-256 equals the manifest's", shas == [r[3] for r in man])
+    chk("every member is a regular file with mtime 0, uid and gid 0, empty owner and group names, and permission bits "
+        "0644 or 0755 as its mode",
+        all(m.isreg() and m.mtime == 0 and m.uid == 0 and m.gid == 0 and m.uname == "" and m.gname == ""
+            and m.mode == (0o755 if r[1] == "100755" else 0o644) for m, r in zip(members, man)))
+tb = tpath.read_bytes()
+print(f"{TARNAME}: sha256 {sha(tb)}; bytes {len(tb)}")
+
+# c.4: the prompt and the P3-9 report
+shutil.copy2(PROMPT, FOLDER / PROMPT.name)
+g = sha((FOLDER / PROMPT.name).read_bytes())
+chk(f"{PROMPT.name}: copy sha256 {g} equals {PROMPT_SHA}", g == PROMPT_SHA)
+shutil.copy2("/tmp/p3_9.txt", FOLDER / "p3_9.txt")
+g = sha((FOLDER / "p3_9.txt").read_bytes())
+chk(f"p3_9.txt: copy sha256 {g} equals the value printed in b.2 ({P39_SHA})", g == P39_SHA)
+
+# c.5: the checksum file
+others = sorted(p.name for p in FOLDER.iterdir())
+text = "".join(f"{sha((FOLDER / n).read_bytes())}  {n}\n" for n in others)
+(FOLDER / SUMS).write_text(text, encoding="utf-8")
+print(f"== {SUMS}, in full ==")
+print(text, end="")
+print(f"{SUMS} sha256 {sha((FOLDER / SUMS).read_bytes())}")
+final = sorted(p.name for p in FOLDER.iterdir())
+chk(f"the folder holds exactly {N_FILES} files ({final})",
+    len(final) == N_FILES and set(final) == set(others) | {SUMS} and all((FOLDER / n).is_file() for n in final))
+print(f"$ ls -la {FOLDER}")
+print(subprocess.run(["ls", "-la", str(FOLDER)], capture_output=True, text=True).stdout, end="")
+print("SNAPSHOT CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p4_0a_snap.py
+folder /Users/isaiahchoi/Desktop/FX_Project/files/chat_upload_p4_0a; included modes ['100644', '100755']; excluded suffixes ['.csv', '.tsv', '.xlsx', '.xls', '.xlsm', '.parquet', '.feather', '.pkl', '.pickle', '.h5', '.hdf5', '.npy', '.npz', '.gz', '.tgz', '.tar', '.zip', '.xz', '.bz2', '.7z', '.db', '.sqlite'] (22)
+header fields read: ['path', 'mode', 'bytes', 'sha256'] (must be 4): True
+created /Users/isaiahchoi/Desktop/FX_Project/files/chat_upload_p4_0a
+entries: 178; included: 178; excluded: 0
+no included path holds a tab or a newline: True
+every included entry's byte count equals its git ls-tree size (178 entries): True
+every included entry's SHA-256 equals the working-tree file's: True
+REPO_MANIFEST_P4_0a.tsv: 179 lines (header and 178 entries); sha256 1d267a7462421125c11ac1c4a4e5954bff33a6c49edd4b773bca65b35dc79942
+the tar's member names (178) equal the manifest's paths (178), in order: True
+each member's SHA-256 equals the manifest's: True
+every member is a regular file with mtime 0, uid and gid 0, empty owner and group names, and permission bits 0644 or 0755 as its mode: True
+ofilt_study_snapshot_P4_0a.tar: sha256 17d11abb936c8f98a25e687d8b9a4400b9e0e5dfd4b185b511ec29a50a07efa7; bytes 5294080
+PASS3_BUILDER_PROMPT_2026-10-06.md: copy sha256 018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36 equals 018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36: True
+p3_9.txt: copy sha256 dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad equals the value printed in b.2 (dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad): True
+== SHA256SUMS_P4_0a_upload.txt, in full ==
+018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36  PASS3_BUILDER_PROMPT_2026-10-06.md
+1d267a7462421125c11ac1c4a4e5954bff33a6c49edd4b773bca65b35dc79942  REPO_MANIFEST_P4_0a.tsv
+17d11abb936c8f98a25e687d8b9a4400b9e0e5dfd4b185b511ec29a50a07efa7  ofilt_study_snapshot_P4_0a.tar
+dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad  p3_9.txt
+SHA256SUMS_P4_0a_upload.txt sha256 f1bd7a2a18f913e44794a770d17f96cd2d41d9aeb405084317c02269f1271316
+the folder holds exactly 5 files (['PASS3_BUILDER_PROMPT_2026-10-06.md', 'REPO_MANIFEST_P4_0a.tsv', 'SHA256SUMS_P4_0a_upload.txt', 'ofilt_study_snapshot_P4_0a.tar', 'p3_9.txt']): True
+$ ls -la /Users/isaiahchoi/Desktop/FX_Project/files/chat_upload_p4_0a
+total 10480
+drwxr-xr-x@  7 isaiahchoi  staff      224 Oct  8 09:53 .
+drwx------@ 23 isaiahchoi  staff      736 Oct  8 09:53 ..
+-rw-r--r--   1 isaiahchoi  staff  5294080 Oct  8 09:53 ofilt_study_snapshot_P4_0a.tar
+-rw-r--r--   1 isaiahchoi  staff    15215 Oct  8 00:21 p3_9.txt
+-rw-r--r--   1 isaiahchoi  staff    27286 Oct  6 14:26 PASS3_BUILDER_PROMPT_2026-10-06.md
+-rw-r--r--   1 isaiahchoi  staff    18366 Oct  8 09:53 REPO_MANIFEST_P4_0a.tsv
+-rw-r--r--   1 isaiahchoi  staff      363 Oct  8 09:53 SHA256SUMS_P4_0a_upload.txt
+SNAPSHOT CHECK: True
+exit=0
+$ git status --porcelain --untracked-files=all
+(end of status)
+
+--- Notes for the supervisor ---
+- Nothing in REPO changed and no commit was made; no test suite or sealed-run tool ran. Outside REPO the item wrote only /tmp/p4_0a*, ~/Desktop/FX_Project/files/pass3_tmp_keep (the five copies) and ~/Desktop/FX_Project/files/chat_upload_p4_0a (five files).
+- The exclusion rule of c.1 excluded no entry: the committed tree has 178 entries, all mode 100644 or 100755, none with a listed suffix. The snapshot therefore holds every tracked file, including BLIND_FIT_LOG, RUN_REGISTRY.jsonl (0 bytes), the reports of the steps that read the dev panel (aggregates and counts only, as committed) and the reports trail under reports/P3_reports/.
+- The tar is uncompressed PAX format (Python tarfile, PAX_FORMAT); member paths over 100 characters, if any, are carried in PAX headers.
+- The scripts end with their verdict lines: STATE CHECK, KEEP CHECK and SNAPSHOT CHECK, all True.
+- Deviations of this item: none.
+
+=== STOP (planned): Isaiah uploads the five files of chat_upload_p4_0a and /tmp/p4_0a.txt to the supervisor chat, and nothing to the Project; the supervisor drafts Pass 4's builder prompt. ===
+
+2026-10-08T13:53:35Z
+96963b31d620ab98ff529458fcd095f412c443bd

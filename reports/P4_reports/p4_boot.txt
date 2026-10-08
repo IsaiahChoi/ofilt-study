@@ -1,0 +1,430 @@
+2026-10-08T17:52:54Z
+96963b31d620ab98ff529458fcd095f412c443bd
+975c188a06d65071d003bc8ef5de57dd039b7d3faebcb5ea3233a274332e2677  /tmp/p4_boot_msg.txt
+=== P4-boot report ===
+(line 3: the SHA-256 of /tmp/p4_boot_msg.txt, the P4-boot message saved verbatim from this session's transcript right after a.1; every expected value is read from it by script)
+
+=== a.1 ===
+date +%F was this session's first command (its output was shown in the transcript, not captured to a file). Rerun now:
+2026-10-08
+
+=== how each step ran ===
+a.2 (env part), no Python, so not under env -u: bash /tmp/p4_boot_a2_env.sh 2>&1 | tee /tmp/p4_boot_a2_env.out
+a.2, a.3, a.4, b.1, b.2, each as: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_boot_<step>.py' 2>&1 | tee /tmp/p4_boot_<step>.out
+(python -B so that importing /tmp/p4_boot_common.py writes no /tmp/__pycache__)
+
+=== script /tmp/p4_boot_common.py (in full) ===
+# P4-boot shared helpers: every expected value is read from /tmp/p4_boot_msg.txt, never typed.
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_boot_msg.txt").read_text()
+REPO = Path(HOME) / "Desktop/FX_Project/ofilt_pass1"
+FILES = Path(HOME) / "Desktop/FX_Project/files"
+
+
+def sha256(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", str(REPO), *args],
+                          capture_output=True, text=True, check=True).stdout
+
+
+def one(pattern):
+    found = re.findall(pattern, MSG)
+    assert len(found) == 1, (pattern, found)
+    return found[0]
+
+
+def table(header):
+    """Rows of the markdown table whose header line is exactly `header`."""
+    lines = MSG.splitlines()
+    assert lines.count(header) == 1, header
+    i = lines.index(header)
+    assert set(lines[i + 1].replace("|", "")) == {"-"}, lines[i + 1]
+    rows = []
+    for ln in lines[i + 2:]:
+        if not ln.startswith("|"):
+            break
+        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        assert len(cells) == 2 and all(c.startswith("`") and c.endswith("`") for c in cells), ln
+        rows.append((cells[0][1:-1], cells[1][1:-1]))
+    return rows
+
+
+def expand(p):
+    return p.replace("$HOME", HOME)
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+=== script /tmp/p4_boot_a2_env.sh (in full) ===
+#!/bin/bash
+# P4-boot a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A2_ENV CHECK: $ok"
+
+=== script /tmp/p4_boot_a2.py (in full) ===
+# P4-boot a.2: REPO state, read-only; expected values from /tmp/p4_boot_msg.txt.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_boot_common import MSG, REPO, git, one, sha256, show, table  # noqa: E402
+
+oks = []
+print("REPO:", REPO)
+
+exp_head, exp_branch = one(r"HEAD is `([0-9a-f]{40})` on branch `([^`]+)`")
+oks.append(show("HEAD", exp_head, git("rev-parse", "HEAD").strip()))
+oks.append(show("branch", exp_branch, git("symbolic-ref", "--short", "HEAD").strip()))
+
+st = git("status", "--porcelain", "--untracked-files=all")
+oks.append(show("git status --porcelain --untracked-files=all", "", st))
+
+exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`"))
+oks.append(show("git tag -l", exp_tags, git("tag", "-l").splitlines()))
+
+ref, exp_obj, exp_commit = one(r"`git rev-parse (refs/tags/[^`]+)` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`")
+oks.append(show(f"git rev-parse {ref}", exp_obj, git("rev-parse", ref).strip()))
+oks.append(show(f"git rev-parse {ref}^{{commit}}", exp_commit, git("rev-parse", ref + "^{commit}").strip()))
+
+exp_bfl_sha, exp_bfl_lines = one(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines")
+bfl = REPO / "BLIND_FIT_LOG"
+oks.append(show("BLIND_FIT_LOG sha256", exp_bfl_sha, sha256(bfl)))
+data = bfl.read_bytes()
+oks.append(show("BLIND_FIT_LOG lines (newline count)", int(exp_bfl_lines), data.count(b"\n")))
+print("BLIND_FIT_LOG ends with newline:", data.endswith(b"\n"))
+
+exp_rr = one(r"`RUN_REGISTRY.jsonl` is (\d+) bytes")
+oks.append(show("RUN_REGISTRY.jsonl bytes", int(exp_rr), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+
+assert "no ACCESS_LOG exists" in MSG
+oks.append(show("ACCESS_LOG at REPO root exists", False, os.path.lexists(REPO / "ACCESS_LOG")))
+found = []
+for d, dirs, files in os.walk(REPO):
+    dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+    found += [os.path.join(d, n) for n in dirs + files if n.startswith("ACCESS_LOG")]
+oks.append(show("names starting ACCESS_LOG anywhere in REPO (outside .git)", [], found))
+
+for path, exp in table("| REPO file | SHA-256 |"):
+    oks.append(show(f"sha256 {path}", exp, sha256(REPO / path)))
+
+print("checks:", len(oks), "passed:", sum(oks))
+print("A2 CHECK:", all(oks))
+
+=== script /tmp/p4_boot_a3.py (in full) ===
+# P4-boot a.3: pass3_tmp_keep holds exactly the five files, with their SHA-256 values; read-only.
+import os
+import stat
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_boot_common import FILES, sha256, show, table  # noqa: E402
+
+oks = []
+keep = FILES / "pass3_tmp_keep"
+print("folder:", keep)
+rows = table("| Kept file | SHA-256 |")
+expected = dict(rows)
+print("expected files:", len(rows))
+entries = sorted(os.listdir(keep))
+print("entries found (all, hidden included):", entries)
+oks.append(show("names", sorted(expected), entries))
+for name in entries:
+    st = os.lstat(keep / name)
+    if not stat.S_ISREG(st.st_mode):
+        print(f"{name}: not a regular file ok=False")
+        oks.append(False)
+        continue
+    if name in expected:
+        oks.append(show(f"sha256 {name}", expected[name], sha256(keep / name)))
+    else:
+        print(f"{name}: extra, sha256={sha256(keep / name)} ok=False")
+        oks.append(False)
+print("checks:", len(oks), "passed:", sum(oks))
+print("A3 CHECK:", all(oks))
+
+=== script /tmp/p4_boot_a4.py (in full) ===
+# P4-boot a.4: the two P4-0a files in /tmp and in pass4_tmp_keep; read-only.
+# A copy with a different SHA-256 fails; a file found in neither place is reported only.
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_boot_common import FILES, sha256, show, table  # noqa: E402
+
+oks = []
+keep = FILES / "pass4_tmp_keep"
+print("pass4_tmp_keep exists:", keep.is_dir())
+for name, exp in table("| P4-0a file | SHA-256 |"):
+    found = 0
+    for where in (Path("/tmp"), keep):
+        p = where / name
+        ex = os.path.isfile(p)
+        print(f"{name} in {where}: exists={ex}")
+        if ex:
+            found += 1
+            oks.append(show(f"  sha256 {p}", exp, sha256(p)))
+    if not found:
+        print(f"{name}: found in neither place (reported, not a STOP)")
+print("copies compared:", len(oks), "matching:", sum(oks))
+print("A4 CHECK:", all(oks))
+
+=== script /tmp/p4_boot_b1.py (in full) ===
+# P4-boot b.1: hash every regular *.md file under FILES, recursively; exactly one must match.
+# Symlinks are neither followed nor hashed; nothing under raw or build_out is touched.
+import os
+import stat
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_boot_common import FILES, HOME, expand, one, sha256, show  # noqa: E402
+
+oks = []
+exp_sha, exp_path = one(r"standing prompt for Pass 4 is the file with SHA-256 `([0-9a-f]{64})`, which Isaiah has saved as `([^`]+)`")
+exp_path = expand(exp_path)
+forbidden = [os.path.join(HOME, "Desktop/FX_Project", d) for d in ("raw", "build_out")]
+root = os.path.realpath(FILES)
+print("root:", FILES, "realpath:", root)
+oks.append(show("root not under raw/build_out", True,
+                not any(root == f or root.startswith(f + os.sep) for f in forbidden)))
+hashed, matches = 0, []
+for d, dirs, files in os.walk(FILES, followlinks=False):
+    for n in sorted(files):
+        p = os.path.join(d, n)
+        if n.endswith(".md") and stat.S_ISREG(os.lstat(p).st_mode):
+            hashed += 1
+            if sha256(p) == exp_sha:
+                matches.append(p)
+print("files hashed:", hashed)
+print("expected sha256:", exp_sha)
+for m in matches:
+    print("match:", m)
+oks.append(show("number of matches", 1, len(matches)))
+oks.append(show("match path", [exp_path], matches))
+print("B1 CHECK:", all(oks))
+
+=== script /tmp/p4_boot_b2.py (in full) ===
+# P4-boot b.2: the standing prompt's line count, its `## ` lines, and the STOP block; read-only.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_boot_common import expand, one, sha256, show  # noqa: E402
+
+oks = []
+exp_sha, path = one(r"standing prompt for Pass 4 is the file with SHA-256 `([0-9a-f]{64})`, which Isaiah has saved as `([^`]+)`")
+path = expand(path)
+start, end = one(r"the lines from `([^`]+)` through `([^`]+)` inclusive")
+data = open(path, "rb").read()
+text = data.decode("utf-8")
+oks.append(show("sha256", exp_sha, sha256(path)))
+lines = text.splitlines()
+print("path:", path)
+print("line count (newlines):", data.count(b"\n"), "| splitlines:", len(lines),
+      "| ends with newline:", data.endswith(b"\n"))
+print("--- lines beginning '## ' (line number: text) ---")
+for i, ln in enumerate(lines, 1):
+    if ln.startswith("## "):
+        print(f"{i}: {ln}")
+starts = [i for i, ln in enumerate(lines) if start in ln]
+print(f"lines containing {start!r}:", [i + 1 for i in starts])
+oks.append(show("start marker found", True, bool(starts)))
+if starts:
+    s = starts[0]
+    ends = [i for i in range(s, len(lines)) if end in lines[i]]
+    print(f"lines containing {end!r} at or after line {s + 1}:", [i + 1 for i in ends])
+    oks.append(show("end marker found", True, bool(ends)))
+    if ends:
+        print(f"--- lines {s + 1} to {ends[0] + 1} inclusive ---")
+        for i in range(s, ends[0] + 1):
+            print(f"{i + 1}: {lines[i]}")
+        print("--- end ---")
+print("B2 CHECK:", all(oks))
+
+=== output of step a2_env (/tmp/p4_boot_a2_env.out) ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A2_ENV CHECK: True
+
+=== output of step a2 (/tmp/p4_boot_a2.out) ===
+REPO: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+HEAD: expected='96963b31d620ab98ff529458fcd095f412c443bd' actual='96963b31d620ab98ff529458fcd095f412c443bd' ok=True
+branch: expected='main' actual='main' ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+git rev-parse refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+git rev-parse refs/tags/spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines (newline count): expected=7 actual=7 ok=True
+BLIND_FIT_LOG ends with newline: True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+ACCESS_LOG at REPO root exists: expected=False actual=False ok=True
+names starting ACCESS_LOG anywhere in REPO (outside .git): expected=[] actual=[] ok=True
+sha256 spec/analysis_spec_dev_v1.yaml: expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+sha256 docs/P3_RUN_CONFIG.json: expected='ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e' actual='ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e' ok=True
+sha256 tests/tag_state.py: expected='2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684' actual='2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684' ok=True
+checks: 14 passed: 14
+A2 CHECK: True
+
+=== output of step a3 (/tmp/p4_boot_a3.out) ===
+folder: /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep
+expected files: 5
+entries found (all, hidden included): ['p3_8c.txt', 'p3_8c_cont_msg.txt', 'p3_8c_msg.txt', 'p3_9.txt', 'p3_9_msg.txt']
+names: expected=['p3_8c.txt', 'p3_8c_cont_msg.txt', 'p3_8c_msg.txt', 'p3_9.txt', 'p3_9_msg.txt'] actual=['p3_8c.txt', 'p3_8c_cont_msg.txt', 'p3_8c_msg.txt', 'p3_9.txt', 'p3_9_msg.txt'] ok=True
+sha256 p3_8c.txt: expected='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' actual='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' ok=True
+sha256 p3_8c_cont_msg.txt: expected='70dc575250ccb997051fb3bdbf83b1c227e61a8dbbd448cd523b03922b96e86e' actual='70dc575250ccb997051fb3bdbf83b1c227e61a8dbbd448cd523b03922b96e86e' ok=True
+sha256 p3_8c_msg.txt: expected='88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d' actual='88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d' ok=True
+sha256 p3_9.txt: expected='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' actual='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' ok=True
+sha256 p3_9_msg.txt: expected='ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd' actual='ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd' ok=True
+checks: 6 passed: 6
+A3 CHECK: True
+
+=== output of step a4 (/tmp/p4_boot_a4.out) ===
+pass4_tmp_keep exists: False
+p4_0a.txt in /tmp: exists=True
+  sha256 /tmp/p4_0a.txt: expected='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' actual='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' ok=True
+p4_0a.txt in /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep: exists=False
+p4_0a_msg.txt in /tmp: exists=True
+  sha256 /tmp/p4_0a_msg.txt: expected='7e5dc34c34c7e1734bf0c90f9903c7b25062950066d713a09c0f1552cbc80be0' actual='7e5dc34c34c7e1734bf0c90f9903c7b25062950066d713a09c0f1552cbc80be0' ok=True
+p4_0a_msg.txt in /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep: exists=False
+copies compared: 2 matching: 2
+A4 CHECK: True
+
+=== output of step b1 (/tmp/p4_boot_b1.out) ===
+root: /Users/isaiahchoi/Desktop/FX_Project/files realpath: /Users/isaiahchoi/Desktop/FX_Project/files
+root not under raw/build_out: expected=True actual=True ok=True
+files hashed: 52
+expected sha256: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+match: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md
+number of matches: expected=1 actual=1 ok=True
+match path: expected=['/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md'] actual=['/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md'] ok=True
+B1 CHECK: True
+
+=== output of step b2 (/tmp/p4_boot_b2.out) ===
+sha256: expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+path: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md
+line count (newlines): 226 | splitlines: 226 | ends with newline: True
+--- lines beginning '## ' (line number: text) ---
+7: ## Paths (always quote them)
+18: ## Read first, in this order
+33: ## How Pass 4 runs
+67: ## Decisions already taken: P4Q1 to P4Q8
+102: ## Hard rules
+162: ## Environment (macOS arm64)
+190: ## Reports, STOP and checkpointing
+lines containing '**STOP** means:': [204]
+start marker found: expected=True actual=True ok=True
+lines containing 'Isaiah decides what happens next.' at or after line 204: [210]
+end marker found: expected=True actual=True ok=True
+--- lines 204 to 210 inclusive ---
+204: **STOP** means:
+205: - write what you have into the report, including the reason;
+206: - change nothing further (no commit, no revert) unless the item says so;
+207: - run no further command;
+208: - end your response with one line: `STOPPED at <item, step>: <reason>`.
+209: 
+210: Isaiah decides what happens next.
+--- end ---
+B2 CHECK: True
+
+=== b.2: the standing prompt was also read in full in this session (Read tool); its line count is the one B2 prints above ===
+
+=== verdict lines ===
+A2_ENV CHECK: True
+A2 CHECK: True
+A3 CHECK: True
+A4 CHECK: True
+B1 CHECK: True
+B2 CHECK: True
+
+=== files outside REPO written by this message (all /tmp/p4_boot*; the report itself excluded) ===
+9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_boot_a2_env.out
+56e20d774bd8745f21e436a986051417cb6a25ca204e0bace4a4faba888da89b  /tmp/p4_boot_a2_env.sh
+900dd9b5d2a409ef6e9d86cbb809719628bdfaf086573fb48d24a90c2614d3e4  /tmp/p4_boot_a2.out
+15349b47200ace0967d1beefbe19a13866f103144619fb3796bca72677e36771  /tmp/p4_boot_a2.py
+4cb4cc9e2e813aaf3d197bd77305e3d12bc3336d3f796ec1c486953a47976767  /tmp/p4_boot_a3.out
+dbd006462e8aefdc7067a9486040223f9158a346dabaa4ce25d8457e63d24faa  /tmp/p4_boot_a3.py
+c7f906398e4b1c118a10338f4d4bef67995c458fdef270f2e1cace333d7be3a0  /tmp/p4_boot_a4.out
+c045875f8d77bf2ddff98ef91dd478af8d1b8786e4db63d0b6d124939828a57f  /tmp/p4_boot_a4.py
+8c3a166cc89f726cbe96de43be36b3668a6b6a402ac863479798380127a356c0  /tmp/p4_boot_b1.out
+660a97735d3608123ac3c5c8bdc191b7b7f9744ae56dc12b58642bef9e51485f  /tmp/p4_boot_b1.py
+153b1f117e42b734588f3b460fbba4c947b198e6d1fb657bd91a428347db8fbb  /tmp/p4_boot_b2.out
+a4998f3da91b1c90950d6fd86ca373ef7d790e1c8a42b436f3a97dbc47706215  /tmp/p4_boot_b2.py
+85b3d55b6218d6160b32fa625a0f2b887eebb774e0fca875df8b7b45e13dc268  /tmp/p4_boot_common.py
+975c188a06d65071d003bc8ef5de57dd039b7d3faebcb5ea3233a274332e2677  /tmp/p4_boot_msg.txt
+1b6294b47c6de8f88121ebf0d461409750ed180e344b3b590596a83dc47206c5  /tmp/p4_boot_report.sh
+/tmp/__pycache__ exists: False
+
+=== script /tmp/p4_boot_report.sh (this assembly, in full) ===
+#!/bin/bash
+# P4-boot c: assemble /tmp/p4_boot.txt from command output only (no Python).
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='env -u OFILT_RUN_SEALED bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_boot_<step>.py'\'' 2>&1 | tee /tmp/p4_boot_<step>.out'
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 /tmp/p4_boot_msg.txt
+echo "=== P4-boot report ==="
+echo "(line 3: the SHA-256 of /tmp/p4_boot_msg.txt, the P4-boot message saved verbatim from this session's transcript right after a.1; every expected value is read from it by script)"
+echo
+echo "=== a.1 ==="
+echo "date +%F was this session's first command (its output was shown in the transcript, not captured to a file). Rerun now:"
+date +%F
+echo
+echo "=== how each step ran ==="
+echo "a.2 (env part), no Python, so not under env -u: bash /tmp/p4_boot_a2_env.sh 2>&1 | tee /tmp/p4_boot_a2_env.out"
+echo "a.2, a.3, a.4, b.1, b.2, each as: $PY"
+echo "(python -B so that importing /tmp/p4_boot_common.py writes no /tmp/__pycache__)"
+for f in common.py a2_env.sh a2.py a3.py a4.py b1.py b2.py; do
+  echo
+  echo "=== script /tmp/p4_boot_$f (in full) ==="
+  cat "/tmp/p4_boot_$f"
+done
+for s in a2_env a2 a3 a4 b1 b2; do
+  echo
+  echo "=== output of step $s (/tmp/p4_boot_$s.out) ==="
+  cat "/tmp/p4_boot_$s.out"
+done
+echo
+echo "=== b.2: the standing prompt was also read in full in this session (Read tool); its line count is the one B2 prints above ==="
+echo
+echo "=== verdict lines ==="
+grep -h ' CHECK: ' /tmp/p4_boot_a2_env.out /tmp/p4_boot_a2.out /tmp/p4_boot_a3.out /tmp/p4_boot_a4.out /tmp/p4_boot_b1.out /tmp/p4_boot_b2.out
+echo
+echo "=== files outside REPO written by this message (all /tmp/p4_boot*; the report itself excluded) ==="
+ls /tmp/p4_boot* | grep -vx '/tmp/p4_boot.txt' | xargs shasum -a 256
+echo "/tmp/__pycache__ exists: $( [ -e /tmp/__pycache__ ] && echo True || echo False )"
+echo
+echo "=== script /tmp/p4_boot_report.sh (this assembly, in full) ==="
+cat /tmp/p4_boot_report.sh
+echo
+echo "=== STOP (planned): Isaiah uploads /tmp/p4_boot.txt to the supervisor chat; the supervisor reviews it and drafts P4-0b. ==="
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > /tmp/p4_boot.txt
+
+=== STOP (planned): Isaiah uploads /tmp/p4_boot.txt to the supervisor chat; the supervisor reviews it and drafts P4-0b. ===
+
+2026-10-08T17:52:54Z
+96963b31d620ab98ff529458fcd095f412c443bd
