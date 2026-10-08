@@ -1,0 +1,2205 @@
+2026-10-08T02:55:52Z
+25dad69ca184de575905b7aee80620fcb29172ca
+87bb98c99294752d3204e00d208144a3965f60a0e8d1da33f93b6cf8126b442b  /tmp/p3_8b_msg.txt
+=== P3-8b report ===
+(line 3: the SHA-256 of /tmp/p3_8b_msg.txt, the P3-8b message saved verbatim from this session's transcript; expected values are read from it by script)
+--- a.1 Date gate ---
+$ date +%F
+2026-10-07
+(The first paste of this message was cut off in step f.2. The date gate ran then (2026-10-07), and the builder asked how to proceed; the question was declined and the full message pasted. The date gate ran again first, printing 2026-10-07, and the full message was saved. Nothing else ran on the first paste.)
+--- Pre-check: the tests/tag_state.py block of the saved message (read-only) ---
+50 lines; its SHA-256 equals the message value 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684: True (an inline python -c, printed in section g)
+
+--- a.2 State check (read-only; /tmp/p3_8b_state.py) ---
+$ printenv OFILT_RUN_SEALED
+exit=1 (1: unset)
+Script in full:
+<<<<<<<<
+"""P3-8b step a.2: read-only state check. Expected values are read by script from the saved P3-8b message
+(/tmp/p3_8b_msg.txt, section a), never typed."""
+import hashlib
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec_a = MSG.split("## a. Date gate and state")[1].split("## b.")[0]
+git = lambda *a: subprocess.run(["git", "-C", str(REPO), *a], check=True, capture_output=True, text=True).stdout
+sha = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+head = git("rev-parse", "HEAD").strip()
+want = re.search(r"HEAD is `([0-9a-f]{40})`", sec_a).group(1)
+chk(f"HEAD {head} equals the listed {want}", head == want)
+st = git("status", "--porcelain", "--untracked-files=all")
+chk(f"git status --porcelain --untracked-files=all empty ({len(st.splitlines())} lines)", st == "")
+table = re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|$", sec_a, re.M)
+n_said = int(re.search(r"These (\d+) SHA-256 values hold", sec_a).group(1))
+chk(f"table rows read: {len(table)}; the message says {n_said}", len(table) == n_said == 31)
+for f, v in table:
+    g = sha(REPO / f)
+    chk(f"{f} {g} equals the listed value", g == v)
+absent = re.search(r"^`([^`]+)` and `([^`]+)` do not exist;", sec_a, re.M).groups()
+present = re.search(r"; `([^`]+)` and `([^`]+)` exist\.", sec_a).groups()
+for p in absent:
+    chk(f"{p} does not exist", not (REPO / p).exists())
+for p in present:
+    chk(f"{p} exists", Path(p).exists())
+recs = [json.loads(l) for l in (REPO / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines() if l.strip()]
+nd = sum(r.get("provenance") == "dev_real" for r in recs)
+chk(f"BLIND_FIT_LOG: {len(recs)} lines, {nd} with provenance dev_real (must be 7 and 7)", len(recs) == 7 and nd == 7)
+n = (REPO / "RUN_REGISTRY.jsonl").stat().st_size
+chk(f"RUN_REGISTRY.jsonl bytes {n} is 0", n == 0)
+tags = git("tag", "-l").split()
+chk(f"git tag -l {tags} is ['pass1-final']", tags == ["pass1-final"])
+chk("OFILT_RUN_SEALED absent from this process's environment", "OFILT_RUN_SEALED" not in os.environ)
+chk("no ACCESS_LOG", not os.path.lexists(REPO / "ACCESS_LOG"))
+partial = [str(p.relative_to(REPO)) for p in REPO.rglob("*.partial*") if ".git" not in p.relative_to(REPO).parts]
+chk(f"no '.partial' file in REPO (outside .git): {partial}", partial == [])
+print("STATE CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_state.py
+HEAD 25dad69ca184de575905b7aee80620fcb29172ca equals the listed 25dad69ca184de575905b7aee80620fcb29172ca: True
+git status --porcelain --untracked-files=all empty (0 lines): True
+table rows read: 31; the message says 31: True
+spec/analysis_spec_dev_v1.yaml feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26 equals the listed value: True
+ofilt/drift/spec.py 1aa32e1798c76fce05448340d6d47d8c84e264525df27aae692112803a251fa9 equals the listed value: True
+docs/P3_6_switch.patch cd9d317db33ee04c8c627d1386565e3c5ad19f9ddeb511286c576a946515281a equals the listed value: True
+docs/P3_RUN_CONFIG.json ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e equals the listed value: True
+tools/p3_sealed_run.py bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837 equals the listed value: True
+ofilt/drift/calib.py 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6 equals the listed value: True
+tools/p3_4_launch.sh d80296d490ea7cad5cdeb49cdfa7bb71f01edad1a4da6cf30f2f9ab0b51686ba equals the listed value: True
+BLIND_FIT_LOG 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 equals the listed value: True
+reports/P3_4_sealed_run.json 65e68c8cf9a76afda05869e8772b345e49f30fa24bcad6790de28d6bcab58942 equals the listed value: True
+reports/C7_mc.json 72d4a6bc4ffa5084169cfa18534a7480c252afab1224b6dce5eb113d6a5d4b9a equals the listed value: True
+reports/C7_h1_same_dgp.json 5644e6168cd7c100a2fd01c6eaef3ecda9bb0542b30df34ff2a807e0a5ed7821 equals the listed value: True
+docs/replacements/PLAN.md cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772 equals the listed value: True
+docs/replacements/README.md 12d56d1270f41d385977bcb9d3622a5a3410eceab4483711298e469be8130cd0 equals the listed value: True
+docs/replacements/PROJECT_SETUP.md 267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f equals the listed value: True
+docs/DATA_PROVENANCE.md 48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd equals the listed value: True
+docs/DECISIONS_P71_onward.md c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83 equals the listed value: True
+tests/test_docs_p2.py c75f4be3f7d2131bbd33725ec6eec57e80c96a1fa602e8e739930c717b6865a3 equals the listed value: True
+tests/test_docs_d4.py b3673edf363f22e72fe4421da66db562ba0d743eb040984082a1de734a729d87 equals the listed value: True
+tests/test_docs_d6.py d6267dfc43e070eaca0219f93b419f80ca0d8f9d5b3ef69a65315719091307c3 equals the listed value: True
+reports/P3_reports/p3_7a.txt 3321556df44c1caa52f48b89633acec69d88d5bf669bf75c9aecf804fb815727 equals the listed value: True
+reports/P3_reports/p3_7a2.txt 378db0461a105b2bb5b17ff10b94706b7f0b8021fedd5382349b1fef9335e3d1 equals the listed value: True
+reports/P3_reports/p3_7b.txt 43b39cd1b99d633cbbb01023d49160a0532e9bc39f9d01010c32694d5fb1166e equals the listed value: True
+tests/test_docs_d3.py b40e4ffc8071dc5f10805ca48378513016a01cabe50b657adb05758050ec5f2e equals the listed value: True
+tests/test_docs_d3b.py 9c46ae79ca5ccfc81fed4bb05e1c24b034c516452439c78971a6903661908e0d equals the listed value: True
+tests/test_blind.py cb886c0a979693180c574c484cb525990dc7e0b7e42089f5d1a10b1c9d13687e equals the listed value: True
+tests/test_fctests_c5.py de61e26f937f9e42393445a82f027a37f80d1e487ad03bec51c5b5e5714c5629 equals the listed value: True
+tests/test_forecast_c1.py 9a2288e0890c6e83450e6a8a352e8831ec8feca92515188fa2385b8812cd89fc equals the listed value: True
+tests/test_inference_b1.py c94ce725b8d9026279fc8522014cb2c310560c541d1f1bfbfd8033a464399642 equals the listed value: True
+tests/test_inference_b2.py 30e72bb5d79c3ab66a7d9b4bd87eb96e90facabf670fec4d59b5eedce695effd equals the listed value: True
+tests/test_inference_b3.py 99a0aac428dcd79c58b3e03cfe79b04e87d423d87fe424d9bb49aca12f8739f7 equals the listed value: True
+tests/test_sim_b5.py b2c98611cf397444b4938aded58cff408e7d44fca97e8559c3c887e7e4f01b3d equals the listed value: True
+tests/tag_state.py does not exist: True
+reports/P3_reports/p3_8a.txt does not exist: True
+/tmp/p3_8a.txt exists: True
+/tmp/p3_8a_suite_v.log exists: True
+BLIND_FIT_LOG: 7 lines, 7 with provenance dev_real (must be 7 and 7): True
+RUN_REGISTRY.jsonl bytes 0 is 0: True
+git tag -l ['pass1-final'] is ['pass1-final']: True
+OFILT_RUN_SEALED absent from this process's environment: True
+no ACCESS_LOG: True
+no '.partial' file in REPO (outside .git): []: True
+STATE CHECK: True
+exit=0
+
+--- a.3 The configuration check (/tmp/p3_8b_cfg.py, made by sed from /tmp/p3_8a_cfg.py) ---
+Script in full:
+<<<<<<<<
+"""P3-8b, the configuration check of the records rule (post-switch form), at steps a.3, e.8 and f.2. Runs
+`tools/p3_sealed_run.py --check-config` and `validate_config` of the committed configuration in process. Expected values
+are read by script from the saved P3-8b message's records-rule paragraph."""
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+para = MSG.split("**The records rule, post-switch form (DQ6).**")[1].split("**Files that may change")[0]
+cfg_sha_want = re.search(r"`docs/P3_RUN_CONFIG\.json` keeps SHA-256 `([0-9a-f]{64})`", para).group(1)
+line_want = re.search(r"--check-config` prints exactly `([^`]+)`", para).group(1)
+code_want = int(re.search(r"and exits (\d+)", para).group(1))
+probs_want = json.loads(re.search(r"returns exactly `(\[[^`]+\])`", para).group(1))
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+cfg_path = REPO / "docs" / "P3_RUN_CONFIG.json"
+g = hashlib.sha256(cfg_path.read_bytes()).hexdigest()
+chk(f"docs/P3_RUN_CONFIG.json sha256 {g} is still {cfg_sha_want}", g == cfg_sha_want)
+print("$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config")
+r = subprocess.run([sys.executable, "tools/p3_sealed_run.py", "--check-config"], cwd=REPO, capture_output=True, text=True)
+print(r.stdout, end="")
+print(r.stderr, end="")
+print(f"exit={r.returncode}")
+chk(f"output is exactly '{line_want}', no stderr", r.stdout.strip() == line_want and r.stderr == "")
+chk(f"exit code {r.returncode} is {code_want}", r.returncode == code_want)
+sys.path.insert(0, str(REPO / "tools"))
+import p3_sealed_run as P                                              # noqa: E402
+
+probs = P.validate_config(json.loads(cfg_path.read_text(encoding="utf-8")))
+print(f"validate_config(committed configuration) = {json.dumps(probs)}")
+chk(f"it is exactly {json.dumps(probs_want)}", probs == probs_want)
+print("CONFIG CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_cfg.py
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e is still ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False
+exit=2
+output is exactly 'config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False', no stderr: True
+exit code 2 is 2: True
+validate_config(committed configuration) = ["key 'spec_sha256' differs from the registry"]
+it is exactly ["key 'spec_sha256' differs from the registry"]: True
+CONFIG CHECK: True
+exit=0
+
+--- b. The reports trail (bash; check /tmp/p3_8b_b.py, made by sed from /tmp/p3_8a_d.py) ---
+$ ls -la /tmp/p3_8a.txt
+-rw-r--r--  1 isaiahchoi  wheel  282941 Oct  7 22:07 /tmp/p3_8a.txt
+$ cp -p /tmp/p3_8a.txt reports/P3_reports/p3_8a.txt
+exit=0
+Script in full:
+<<<<<<<<
+"""P3-8b step b: the copy of the P3-8a report. Expected lines are read by script from the saved P3-8b message
+(/tmp/p3_8b_msg.txt, section b), never typed."""
+import hashlib
+import os
+import re
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("## b. The reports trail")[1].split("## c.")[0]
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+src, dst = Path("/tmp/p3_8a.txt"), REPO / "reports" / "P3_reports" / "p3_8a.txt"
+a, b = sha(dst), sha(src)
+print(f"copy   {dst.relative_to(REPO)} sha256 {a}")
+print(f"source {src} sha256 {b}")
+chk("p3_8a.txt: copy equals source", a == b)
+first = re.search(r"first two lines are `([^`]+)` and `([^`]+)`", sec).groups()
+last = re.search(r"last two non-empty lines are `([^`]+)` and `([^`]+)`", sec).groups()
+line = re.search(r"it contains, once, the line `([^`]+)`", sec).group(1)
+lines = dst.read_text(encoding="utf-8").splitlines()
+nonempty = [l for l in lines if l.strip()]
+chk(f"p3_8a.txt: first two lines {lines[:2]} equal {list(first)}", tuple(lines[:2]) == first)
+chk(f"p3_8a.txt: last two non-empty lines {nonempty[-2:]} equal {list(last)}", tuple(nonempty[-2:]) == last)
+n = sum(l == line for l in lines)
+chk(f"p3_8a.txt: the line '{line}' occurs exactly once ({n})", n == 1)
+print("B CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_b.py
+copy   reports/P3_reports/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
+source /tmp/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
+p3_8a.txt: copy equals source: True
+p3_8a.txt: first two lines ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059'] equal ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059']: True
+p3_8a.txt: last two non-empty lines ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca'] equal ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca']: True
+p3_8a.txt: the line '3cfc9a66f0bd764b52b49616eda745209078c4f6e171205f46a3cce044cb9bfc  /tmp/p3_8a_msg.txt' occurs exactly once (1): True
+B CHECK: True
+exit=0
+$ git status --porcelain --untracked-files=all
+?? reports/P3_reports/p3_8a.txt
+
+--- c.1 The clone ---
+/tmp/p3_8b_clone exists before: False
+$ git clone --no-hardlinks -q REPO /tmp/p3_8b_clone
+exit=0
+$ git -C /tmp/p3_8b_clone remote remove origin
+exit=0
+clone HEAD 25dad69ca184de575905b7aee80620fcb29172ca; REPO HEAD 25dad69ca184de575905b7aee80620fcb29172ca; equal: True
+clone remotes: []
+clone status empty: True
+clone tags: [pass1-final]; only pass1-final: True
+
+--- c.2 Apply in the clone (/tmp/p3_8b_apply.py) ---
+Script in full:
+<<<<<<<<
+"""P3-8b steps c.2 and d.1: write tests/tag_state.py and make the edits E1 to E22 in the given root (the scratch clone
+/tmp/p3_8b_clone first, then REPO). Everything is read by script from the saved P3-8b message (/tmp/p3_8b_msg.txt):
+the nine tests' SHA-256 (step a.2), the helper's text and SHA-256, each edit's file, anchor, action and given lines
+(step c.2), and the numstat table. Anchors are located in the unmodified file; each file's edits are applied from the
+last line to the first. Any failed check stops the script with a non-zero exit, before or after writing.
+usage: python /tmp/p3_8b_apply.py <root>"""
+import ast
+import hashlib
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")).resolve()
+CLONE = Path("/tmp/p3_8b_clone").resolve()
+root = Path(sys.argv[1]).resolve()
+if root not in (REPO, CLONE):
+    raise SystemExit(f"REFUSED: {root} is neither REPO nor {CLONE}")
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec_a = MSG.split("## a. Date gate and state")[1].split("## b.")[0]
+sec_b = MSG.split("## b. The reports trail")[1].split("## c.")[0]
+sec_c2 = MSG.split("2. **Apply**")[1].split("3. **The suite in the clone, no tag**")[0]
+sha_b = lambda b: hashlib.sha256(b).hexdigest()
+PAIR = "with self.assertRaises(B.BlindingError):"
+print(f"root: {root}")
+
+
+def stop(msg):
+    print(f"STOP: {msg}")
+    raise SystemExit(1)
+
+
+# the numstat table and the nine tests
+numstat = {f: (int(a), int(d)) for f, a, d in re.findall(r"^\| `(tests/[^`]+)` \| \+(\d+) -(\d+) \|$", sec_c2, re.M)}
+a2 = dict(re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|$", sec_a, re.M))
+NINE = list(numstat)
+if len(NINE) != 9 or any(f not in a2 for f in NINE):
+    stop(f"the numstat table names {len(NINE)} files, or one lacks an a.2 value")
+
+# the helper
+helper_text = sec_c2.split("<<<<<<<< tests/tag_state.py\n")[1].split("\n>>>>>>>> tests/tag_state.py")[0] + "\n"
+helper_want = re.search(r"its SHA-256 must be `([0-9a-f]{64})`", sec_c2).group(1)
+
+# the edits
+HEAD_RX = re.compile(r"^E(\d+)\. `([^`]+)`; (?:the line containing `(.+?)`|the pair whose next line starts with `(.+?)`); "
+                     r"(replace it with the lines E\d+|insert after it the lines E\d+|delete it)[:.] Record: (.*)$")
+edits = []
+for line in sec_c2.splitlines():
+    m = HEAD_RX.match(line)
+    if not m:
+        continue
+    n, f, contains, pair, action, record = m.groups()
+    lines = None
+    if not action.startswith("delete"):
+        blk = sec_c2.split(f"\n<<<<<<<< E{n}\n")[1].split(f"\n>>>>>>>> E{n}")[0]
+        lines = blk.split("\n")
+    edits.append({"n": int(n), "file": f, "contains": contains, "pair": pair,
+                  "action": action.split(" ")[0], "lines": lines, "record": record})
+print(f"edits read: {len(edits)} ({', '.join('E' + str(e['n']) for e in edits)})")
+if [e["n"] for e in edits] != list(range(1, 23)):
+    stop("the edits are not E1 to E22 in order")
+if {e["file"] for e in edits} != set(NINE):
+    stop("the edits' files differ from the numstat table's")
+
+# checks before writing
+for f in NINE:
+    g = sha_b((root / f).read_bytes())
+    print(f"{f}: sha256 {g}; equals step a.2: {g == a2[f]}")
+    if g != a2[f]:
+        stop(f"{f} is not at its step a.2 value")
+helper = root / "tests" / "tag_state.py"
+print(f"tests/tag_state.py does not exist: {not helper.exists()}")
+if helper.exists():
+    stop("tests/tag_state.py exists")
+print(f"the helper's text from the message: {len(helper_text.splitlines())} lines; sha256 {sha_b(helper_text.encode())}; "
+      f"equals the message value: {sha_b(helper_text.encode()) == helper_want}")
+if sha_b(helper_text.encode()) != helper_want:
+    stop("the helper's text does not have the message's SHA-256")
+
+# locate every anchor in the unmodified files
+plans = {}
+for f in NINE:
+    L = (root / f).read_text(encoding="utf-8").splitlines(keepends=True)
+    plan = []
+    for e in [e for e in edits if e["file"] == f]:
+        if e["contains"] is not None:
+            hit = [i for i, l in enumerate(L) if e["contains"] in l]
+            kind = f"the line containing {e['contains']!r}"
+        else:
+            hit = [i for i, l in enumerate(L) if l.strip() == PAIR and i + 1 < len(L)
+                   and L[i + 1].lstrip().startswith(e["pair"])]
+            kind = f"the pair whose next line starts with {e['pair']!r}"
+        if len(hit) != 1:
+            stop(f"E{e['n']} ({f}): {kind} is on {len(hit)} lines")
+        i = hit[0]
+        indent = re.match(r"^[ \t]*", L[i]).group(0)
+        print(f"E{e['n']}: {f}:{i + 1} ({e['action']}; {kind})")
+        plan.append((i, e, indent))
+    if len({p[0] for p in plan}) != len(plan):
+        stop(f"{f}: two edits share an anchor line")
+    plans[f] = (L, plan)
+
+# write: the helper, then each file's edits from the last line to the first
+helper.write_text(helper_text, encoding="utf-8")
+print("written tests/tag_state.py")
+for f, (L, plan) in plans.items():
+    for i, e, indent in sorted(plan, key=lambda p: p[0], reverse=True):
+        new = [indent + x + "\n" for x in (e["lines"] or [])]
+        if e["action"] == "replace":
+            L[i:i + 1] = new
+        elif e["action"] == "insert":
+            L[i + 1:i + 1] = new
+        elif e["action"] == "delete":
+            del L[i]
+        else:
+            stop(f"E{e['n']}: unknown action {e['action']}")
+    (root / f).write_text("".join(L), encoding="utf-8")
+    print(f"written {f}")
+
+# checks after writing
+ok = True
+g = sha_b(helper.read_bytes())
+print(f"tests/tag_state.py sha256 {g}; equals the message value: {g == helper_want}")
+ok &= g == helper_want
+ns = subprocess.run(["git", "-C", str(root), "diff", "--numstat", "--", *NINE], capture_output=True, text=True,
+                    check=True).stdout
+got = {f: (int(a), int(d)) for a, d, f in (l.split("\t") for l in ns.splitlines() if l.strip())}
+for f, (a, d) in numstat.items():
+    print(f"{f}: numstat +{got.get(f, ('?', '?'))[0]} -{got.get(f, ('?', '?'))[1]}; expected +{a} -{d}: {got.get(f) == (a, d)}")
+    ok &= got.get(f) == (a, d)
+for f in NINE + ["tests/tag_state.py"]:
+    src = (root / f).read_text(encoding="utf-8")
+    try:
+        ast.parse(src, filename=f)
+        compile(src, str(root / f), "exec")
+        print(f"{f}: parses and compiles: True")
+    except SyntaxError as ex:
+        print(f"{f}: parses and compiles: False ({type(ex).__name__} at line {ex.lineno})")
+        ok = False
+st = subprocess.run(["git", "-C", str(root), "status", "--porcelain", "--untracked-files=all"], capture_output=True,
+                    text=True, check=True).stdout.splitlines()
+want = {f" M {f}" for f in NINE} | {"?? tests/tag_state.py"}
+if root == REPO:
+    copy = re.search(r"cp -p /tmp/\S+ (reports/P3_reports/\S+?)`", sec_b).group(1)
+    want |= {f"?? {copy}"}
+    print(f"(in REPO, step b's report copy {copy} is also expected untracked)")
+print("git status --porcelain --untracked-files=all:")
+for l in st:
+    print(f"  {l!r}")
+c = set(st) == want and len(st) == len(want)
+print(f"status lines ({len(st)}) are exactly the nine ' M', '?? tests/tag_state.py'"
+      f"{' and the report copy' if root == REPO else ''}, as a set: {c}")
+ok &= c
+print("APPLY CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_apply.py /tmp/p3_8b_clone
+root: /private/tmp/p3_8b_clone
+edits read: 22 (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20, E21, E22)
+tests/test_docs_d3.py: sha256 b40e4ffc8071dc5f10805ca48378513016a01cabe50b657adb05758050ec5f2e; equals step a.2: True
+tests/test_docs_d3b.py: sha256 9c46ae79ca5ccfc81fed4bb05e1c24b034c516452439c78971a6903661908e0d; equals step a.2: True
+tests/test_blind.py: sha256 cb886c0a979693180c574c484cb525990dc7e0b7e42089f5d1a10b1c9d13687e; equals step a.2: True
+tests/test_fctests_c5.py: sha256 de61e26f937f9e42393445a82f027a37f80d1e487ad03bec51c5b5e5714c5629; equals step a.2: True
+tests/test_forecast_c1.py: sha256 9a2288e0890c6e83450e6a8a352e8831ec8feca92515188fa2385b8812cd89fc; equals step a.2: True
+tests/test_inference_b1.py: sha256 c94ce725b8d9026279fc8522014cb2c310560c541d1f1bfbfd8033a464399642; equals step a.2: True
+tests/test_inference_b2.py: sha256 30e72bb5d79c3ab66a7d9b4bd87eb96e90facabf670fec4d59b5eedce695effd; equals step a.2: True
+tests/test_inference_b3.py: sha256 99a0aac428dcd79c58b3e03cfe79b04e87d423d87fe424d9bb49aca12f8739f7; equals step a.2: True
+tests/test_sim_b5.py: sha256 b2c98611cf397444b4938aded58cff408e7d44fca97e8559c3c887e7e4f01b3d; equals step a.2: True
+tests/tag_state.py does not exist: True
+the helper's text from the message: 50 lines; sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; equals the message value: True
+E1: tests/test_docs_d3.py:42 (replace; the line containing 'self.assertNotIn("spec-dev-v1", tags)')
+E2: tests/test_docs_d3.py:45 (replace; the line containing '(B.DEV_REAL, False)')
+E3: tests/test_docs_d3.py:59 (insert; the line containing 'self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())')
+E4: tests/test_docs_d3.py:22 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E5: tests/test_docs_d3b.py:27 (replace; the line containing 'for t in TAGS:')
+E6: tests/test_docs_d3b.py:28 (delete; the line containing 'self.assertFalse(B._tag_ok(t))')
+E7: tests/test_docs_d3b.py:17 (insert; the line containing 'from ofilt.drift.spec import SIZE_RULE, Spec')
+E8: tests/test_blind.py:33 (insert; the line containing 'def test_dev_real_raises_in_main_repo(self):')
+E9: tests/test_blind.py:16 (insert; the line containing 'from test_io import make_temp_repo')
+E10: tests/test_fctests_c5.py:180 (replace; the pair whose next line starts with 'fn(d)')
+E11: tests/test_fctests_c5.py:20 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E12: tests/test_forecast_c1.py:99 (replace; the pair whose next line starts with 'F.walk_forward(real,')
+E13: tests/test_forecast_c1.py:12 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E14: tests/test_inference_b1.py:100 (replace; the pair whose next line starts with 'I.build_design(real, self.spec)')
+E15: tests/test_inference_b1.py:108 (replace; the pair whose next line starts with 'I.pooled_ols(forged)')
+E16: tests/test_inference_b1.py:12 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E17: tests/test_inference_b2.py:124 (replace; the pair whose next line starts with 'fn()')
+E18: tests/test_inference_b2.py:15 (insert; the line containing 'from test_inference_b1 import panel')
+E19: tests/test_inference_b3.py:155 (replace; the pair whose next line starts with 'fn()')
+E20: tests/test_inference_b3.py:13 (insert; the line containing 'from test_inference_b1 import panel')
+E21: tests/test_sim_b5.py:177 (replace; the pair whose next line starts with 'I.build_design(real, self.spec)')
+E22: tests/test_sim_b5.py:25 (insert; the line containing 'from ofilt.drift.spec import Spec')
+written tests/tag_state.py
+written tests/test_docs_d3.py
+written tests/test_docs_d3b.py
+written tests/test_blind.py
+written tests/test_fctests_c5.py
+written tests/test_forecast_c1.py
+written tests/test_inference_b1.py
+written tests/test_inference_b2.py
+written tests/test_inference_b3.py
+written tests/test_sim_b5.py
+tests/tag_state.py sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; equals the message value: True
+tests/test_docs_d3.py: numstat +11 -2; expected +11 -2: True
+tests/test_docs_d3b.py: numstat +4 -2; expected +4 -2: True
+tests/test_blind.py: numstat +5 -0; expected +5 -0: True
+tests/test_fctests_c5.py: numstat +3 -1; expected +3 -1: True
+tests/test_forecast_c1.py: numstat +3 -1; expected +3 -1: True
+tests/test_inference_b1.py: numstat +4 -2; expected +4 -2: True
+tests/test_inference_b2.py: numstat +2 -1; expected +2 -1: True
+tests/test_inference_b3.py: numstat +2 -1; expected +2 -1: True
+tests/test_sim_b5.py: numstat +3 -1; expected +3 -1: True
+tests/test_docs_d3.py: parses and compiles: True
+tests/test_docs_d3b.py: parses and compiles: True
+tests/test_blind.py: parses and compiles: True
+tests/test_fctests_c5.py: parses and compiles: True
+tests/test_forecast_c1.py: parses and compiles: True
+tests/test_inference_b1.py: parses and compiles: True
+tests/test_inference_b2.py: parses and compiles: True
+tests/test_inference_b3.py: parses and compiles: True
+tests/test_sim_b5.py: parses and compiles: True
+tests/tag_state.py: parses and compiles: True
+git status --porcelain --untracked-files=all:
+  ' M tests/test_blind.py'
+  ' M tests/test_docs_d3.py'
+  ' M tests/test_docs_d3b.py'
+  ' M tests/test_fctests_c5.py'
+  ' M tests/test_forecast_c1.py'
+  ' M tests/test_inference_b1.py'
+  ' M tests/test_inference_b2.py'
+  ' M tests/test_inference_b3.py'
+  ' M tests/test_sim_b5.py'
+  '?? tests/tag_state.py'
+status lines (10) are exactly the nine ' M', '?? tests/tag_state.py', as a set: True
+APPLY CHECK: True
+exit=0
+
+--- c.3 The suite in the clone, no tag (/tmp/p3_8b_suite.py notag; log /tmp/p3_8b_suite_notag.log, not printed) ---
+Script in full:
+<<<<<<<<
+"""P3-8b steps c.3 and c.6: the suite in the scratch clone, verbose (env -u OFILT_RUN_SEALED, OFILT_DATA_DIR = DATA,
+python -m unittest discover -s tests -v, from the clone's root, after checking that ofilt imports from the clone), then
+the clone's state. The log is parsed with the rule of /tmp/p3_8a_suite_parse.py (copied below as `parse`) and only what
+that script printed is printed from it, followed by the comparisons the message asks for: with /tmp/p3_8a_suite_v.log
+(parsed by the same rule), the six skipped tests and reasons and the set of test ids; at c.6, also every test's result
+against the c.3 log. Expected values are read from the saved P3-8b message.
+usage: python /tmp/p3_8b_suite.py notag     (step c.3; log /tmp/p3_8b_suite_notag.log)
+       python /tmp/p3_8b_suite.py tag       (step c.6; log /tmp/p3_8b_suite_tag.log; compared with the c.3 log)"""
+import collections
+import hashlib
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+mode = sys.argv[1]
+if mode not in ("notag", "tag"):
+    raise SystemExit("usage: notag | tag")
+clone = Path("/tmp/p3_8b_clone").resolve()
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec_c3 = MSG.split("3. **The suite in the clone, no tag**")[1].split("4. **The scratch tag")[0]
+sec_c6 = MSG.split("6. **The suite in the clone, with the scratch tag**")[1].split("## d.")[0]
+LOG = Path(re.search(r"Save the log as `([^`]+)`", sec_c3).group(1)) if mode == "notag" else \
+    Path(re.search(r"\(as c\.3; log `([^`]+)`\)", sec_c6).group(1))
+REF = Path(re.search(r"exactly those of `([^`]+)`", sec_c3).group(1))
+BLIND_WANT = re.search(r"`BLIND_FIT_LOG` SHA-256 `([0-9a-f]{64})`", sec_c3).group(1)
+NOTAG_LOG = Path(re.search(r"Save the log as `([^`]+)`", sec_c3).group(1))
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+IDRX = re.compile(r"^(\w+) \(([\w.]+)\)")
+RESRX = re.compile(r" \.\.\. (ok|skipped .*|FAIL|ERROR|expected failure|unexpected success)$")
+
+
+def is_id(l):
+    m = IDRX.match(l)
+    return bool(m and m.group(2).endswith("." + m.group(1)))
+
+
+def parse(path):
+    """The rule of /tmp/p3_8a_suite_parse.py: a test's result is on its own line, or on the next line only if that line
+    is not another test's line. Returns (ran, res, results by id, unknown ids)."""
+    L = Path(path).read_text(encoding="utf-8").splitlines()
+    ran = [l for l in L if re.match(r"^Ran \d+ tests? in [0-9.]+s$", l)]
+    res = [l for l in L if re.match(r"^(OK|FAILED)( \(.*\))?$", l)]
+    results, unknown = {}, []
+    for i, l in enumerate(L):
+        if not is_id(l):
+            continue
+        tid = IDRX.match(l).group(2)
+        r = RESRX.search(L[i])
+        if not r and i + 1 < len(L) and not is_id(L[i + 1]):
+            r = RESRX.search(L[i + 1])
+        if not r:
+            unknown.append(tid)
+            continue
+        results[tid] = r.group(1)
+    return ran, res, results, unknown
+
+
+env = {k: v for k, v in os.environ.items() if k != "OFILT_RUN_SEALED"}
+env["OFILT_DATA_DIR"] = os.path.expanduser("~/Desktop/FX_Project/data")
+which = subprocess.run([sys.executable, "-c", "import ofilt; print(ofilt.__file__)"], cwd=clone, env=env,
+                       capture_output=True, text=True).stdout.strip()
+under = Path(which).resolve().is_relative_to(clone)
+print(f"[{mode}] python {sys.executable}; ofilt imported from {which}; under the clone: {under}")
+if not under:
+    raise SystemExit("STOP: ofilt does not import from the clone")
+with open(LOG, "w", encoding="utf-8") as fh:
+    rc = subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"], cwd=clone, env=env,
+                        stdout=fh, stderr=subprocess.STDOUT).returncode
+print(f"exit {rc}; log {LOG}")
+
+# what /tmp/p3_8a_suite_parse.py printed
+ran, res, results, unknown = parse(LOG)
+print(f"Ran line: {ran}")
+print(f"result line: {res}")
+kinds = collections.Counter(v.split(" ")[0] for v in results.values())
+skipped = [(t, v) for t, v in results.items() if v.startswith("skipped")]
+print("skipped tests, with their reasons (verbatim):")
+for t, v in skipped:
+    print(f"  {t}: {v}")
+print(f"result kinds: {dict(kinds)}; tests with no result found: {unknown}")
+per = collections.Counter(t.rsplit(".", 2)[0] for t in list(results) + unknown)
+print("tests per module:")
+for m in sorted(per):
+    print(f"  {m}: {per[m]}")
+total = sum(per.values())
+nran = int(re.match(r"^Ran (\d+)", ran[-1]).group(1)) if ran else None
+nskip_res = int(re.search(r"skipped=(\d+)", res[-1]).group(1)) if res and "skipped=" in res[-1] else 0
+print(f"sum: {total}; Ran count: {nran}; equal: {total == nran}")
+print(f"skipped found: {len(skipped)}; the result line's skipped count: {nskip_res}; equal: {len(skipped) == nskip_res}")
+print(f"results found for every test: {not unknown and sum(kinds.values()) == total}")
+pc = (ran and ran[-1].startswith("Ran 285 tests") and res and res[-1] == "OK (skipped=6)" and total == nran
+      and len(skipped) == nskip_res == 6 and not unknown and sum(kinds.values()) == total)
+print("PARSE CHECK:", bool(pc))
+ok &= bool(pc)
+
+# the comparisons
+chk(f"result kinds are 279 ok and 6 skipped ({dict(kinds)})", dict(kinds) == {"ok": 279, "skipped": 6})
+r_ran, r_res, r_results, r_unknown = parse(REF)
+chk(f"the six skipped tests and their reasons equal those of {REF} (parsed by the same rule)",
+    sorted(skipped) == sorted((t, v) for t, v in r_results.items() if v.startswith("skipped")))
+chk(f"the set of test ids ({len(results)}) equals that of {REF} ({len(r_results)})",
+    set(results) == set(r_results) and len(results) == 285 and not r_unknown)
+if mode == "tag":
+    n_ran, n_res, n_results, n_unknown = parse(NOTAG_LOG)
+    diff = sorted(t for t in set(results) | set(n_results) if results.get(t) != n_results.get(t))
+    chk(f"every test has the same result as in c.3 ({NOTAG_LOG}); tests that differ: {diff}", diff == [] and not n_unknown)
+fails = [t for t, v in results.items() if v in ("FAIL", "ERROR")]
+if fails:
+    print(f"failures and errors: {fails}")
+
+# the clone's state
+g = hashlib.sha256((clone / "BLIND_FIT_LOG").read_bytes()).hexdigest()
+chk(f"clone BLIND_FIT_LOG sha256 {g} equals {BLIND_WANT}", g == BLIND_WANT)
+n = (clone / "RUN_REGISTRY.jsonl").stat().st_size
+chk(f"clone RUN_REGISTRY.jsonl bytes {n} is 0", n == 0)
+chk("no ACCESS_LOG in the clone", not os.path.lexists(clone / "ACCESS_LOG"))
+tags = subprocess.run(["git", "-C", str(clone), "tag", "-l"], capture_output=True, text=True).stdout.split()
+if mode == "notag":
+    chk(f"clone git tag -l {tags} is only pass1-final", tags == ["pass1-final"])
+else:
+    print(f"clone git tag -l: {tags}")
+    st = subprocess.run(["git", "-C", str(clone), "status", "--porcelain", "--untracked-files=all"], capture_output=True,
+                        text=True).stdout.splitlines()
+    nine = re.findall(r"`(tests/test_[^`]+\.py)` \| \+", MSG)
+    base = {f" M {f}" for f in nine} | {"?? tests/tag_state.py"}
+    print("clone git status --porcelain --untracked-files=all:")
+    for l in st:
+        print(f"  {l!r}")
+    chk(f"the nine ({len(nine)}) as ' M', '?? tests/tag_state.py' and at most ' M reports/B6_coverage.json'",
+        len(nine) == 9 and base <= set(st) and set(st) - base <= {" M reports/B6_coverage.json"})
+print(f"SUITE CHECK ({mode}):", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_suite.py notag
+start 2026-10-08T02:58:33Z
+[notag] python /Users/isaiahchoi/venvs/ofilt_p2/bin/python; ofilt imported from /private/tmp/p3_8b_clone/ofilt/__init__.py; under the clone: True
+exit 0; log /tmp/p3_8b_suite_notag.log
+Ran line: ['Ran 285 tests in 305.429s']
+result line: ['OK (skipped=6)']
+skipped tests, with their reasons (verbatim):
+  test_docs_d6.TestProjectSetup.test_project_claims: skipped 'Claude Project not mounted'
+  test_io.TestGuardFallback.test_main_repo_has_no_unblinding_tags_while_draft: skipped 'spec frozen; tags expected'
+  test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_sim_b5.TestRealDev.test_logged_and_silent: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical: skipped 'slow tier (OFILT_SLOW=1)'
+  test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical: skipped 'slow tier (OFILT_SLOW=1)'
+result kinds: {'ok': 279, 'skipped': 6}; tests with no result found: []
+tests per module:
+  test_b6_identities: 6
+  test_blind: 15
+  test_build_pass1_pin: 2
+  test_calendar: 5
+  test_docs_d1: 8
+  test_docs_d2: 7
+  test_docs_d3: 6
+  test_docs_d3b: 2
+  test_docs_d4: 4
+  test_docs_d5: 3
+  test_docs_d6: 3
+  test_docs_p2: 3
+  test_fctests_c5: 10
+  test_fill_A6: 4
+  test_forecast_c1: 6
+  test_guard_p46: 4
+  test_importance_registry_c6: 7
+  test_inference_b1: 10
+  test_inference_b2: 8
+  test_inference_b3: 9
+  test_io: 8
+  test_lookahead: 7
+  test_models_c2: 6
+  test_models_c3: 5
+  test_models_c4: 7
+  test_p2_build: 11
+  test_p2_columns: 19
+  test_p3_0b_preflight: 3
+  test_p3_1_sesoi: 5
+  test_p3_2d_structural: 1
+  test_p3_calib: 8
+  test_p3_launch: 8
+  test_p3_sealed_run: 13
+  test_schema: 15
+  test_sim_b4: 7
+  test_sim_b5: 12
+  test_spec: 12
+  test_targets: 10
+  test_validation_c7: 6
+sum: 285; Ran count: 285; equal: True
+skipped found: 6; the result line's skipped count: 6; equal: True
+results found for every test: True
+PARSE CHECK: True
+result kinds are 279 ok and 6 skipped ({'ok': 279, 'skipped': 6}): True
+the six skipped tests and their reasons equal those of /tmp/p3_8a_suite_v.log (parsed by the same rule): True
+the set of test ids (285) equals that of /tmp/p3_8a_suite_v.log (285): True
+clone BLIND_FIT_LOG sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 equals 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383: True
+clone RUN_REGISTRY.jsonl bytes 0 is 0: True
+no ACCESS_LOG in the clone: True
+clone git tag -l ['pass1-final'] is only pass1-final: True
+SUITE CHECK (notag): True
+exit=0 end 2026-10-08T03:03:40Z
+
+--- c.4 The scratch tag, in the clone only ---
+$ git -C /tmp/p3_8b_clone -c user.name=p3-8b-scratch -c user.email=scratch@invalid tag -a spec-dev-v1 -m "scratch tag in the P3-8b clone" HEAD
+exit=0
+Script in full:
+<<<<<<<<
+"""P3-8b step c.4: the scratch tag's checks. The expected commit is read from the saved P3-8b message (section c.4)."""
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+CLONE = Path("/tmp/p3_8b_clone")
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("4. **The scratch tag, in the clone only:**")[1].split("5. **The guard check")[0]
+want_commit = re.search(r"is the clone's HEAD, `([0-9a-f]{40})`", sec).group(1)
+git = lambda repo, *a: subprocess.run(["git", "-C", str(repo), *a], capture_output=True, text=True).stdout.strip()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+t = git(CLONE, "cat-file", "-t", "spec-dev-v1")
+chk(f"git -C clone cat-file -t spec-dev-v1 prints {t!r} (must be 'tag')", t == "tag")
+c = git(CLONE, "rev-parse", "spec-dev-v1^{commit}")
+h = git(CLONE, "rev-parse", "HEAD")
+chk(f"the tag's commit {c} is the clone's HEAD {h} and equals {want_commit}", c == h == want_commit)
+ct = git(CLONE, "tag", "-l").split()
+chk(f"the clone's git tag -l {ct} is pass1-final and spec-dev-v1", ct == ["pass1-final", "spec-dev-v1"])
+rt = git(REPO, "tag", "-l").split()
+chk(f"REPO's git tag -l {rt} is still only pass1-final", rt == ["pass1-final"])
+print("TAG CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_tagcheck.py
+git -C clone cat-file -t spec-dev-v1 prints 'tag' (must be 'tag'): True
+the tag's commit 25dad69ca184de575905b7aee80620fcb29172ca is the clone's HEAD 25dad69ca184de575905b7aee80620fcb29172ca and equals 25dad69ca184de575905b7aee80620fcb29172ca: True
+the clone's git tag -l ['pass1-final', 'spec-dev-v1'] is pass1-final and spec-dev-v1: True
+REPO's git tag -l ['pass1-final'] is still only pass1-final: True
+TAG CHECK: True
+exit=0
+
+--- c.5 The guard check, in the clone (/tmp/p3_8b_guard.py, run from the clone's root) ---
+Script in full:
+<<<<<<<<
+"""P3-8b step c.5: the guard check in the scratch clone, which holds the scratch annotated spec-dev-v1. Run from the
+clone's root with ofilt imported from the clone. No data file is opened: the guard is called with provenances only, and
+load_confirm with io.DATA_DIR patched to a folder that does not exist and io.ACCESS_LOG_PATH patched to
+/tmp/p3_8b_access.jsonl (which must not exist first). Paths are read from the saved P3-8b message (section c.5)."""
+import json
+import os
+import re
+import sys
+from pathlib import Path
+from unittest import mock
+
+CLONE = Path("/tmp/p3_8b_clone").resolve()
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec = MSG.split("5. **The guard check, in the clone**")[1].split("6. **The suite in the clone, with the scratch tag**")[0]
+ACC = Path(re.search(r"patched to `(/tmp/[^`]+\.jsonl)`", sec).group(1))
+NODATA = Path("/tmp/p3_8b_nodata_does_not_exist")
+if Path.cwd().resolve() != CLONE:
+    raise SystemExit(f"STOP: run from the clone's root ({Path.cwd()})")
+sys.path.insert(0, str(CLONE))
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import io as IO  # noqa: E402
+
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+chk(f"ofilt.drift.blind imported from the clone ({B.__file__})", Path(B.__file__).resolve().is_relative_to(CLONE))
+chk(f"ofilt.drift.io imported from the clone ({IO.__file__})", Path(IO.__file__).resolve().is_relative_to(CLONE))
+chk(f"blind._GUARD_REPO {B._GUARD_REPO} resolves to the clone", Path(B._GUARD_REPO).resolve() == CLONE)
+chk(f"io._GUARD_REPO {IO._GUARD_REPO} resolves to the clone", Path(IO._GUARD_REPO).resolve() == CLONE)
+print(f"blind._external_check_access: {B._external_check_access!r}; io._external_check_access: {IO._external_check_access!r}")
+chk("blind._tag_ok('spec-dev-v1') is True", B._tag_ok("spec-dev-v1") is True)
+chk("blind._tag_ok('prereg-v1') is False", B._tag_ok("prereg-v1") is False)
+r = B.require_unblinded(provenance="dev_real")
+chk(f"blind.require_unblinded(provenance='dev_real') returns {r!r} (must be 'dev_real')", r == "dev_real")
+try:
+    B.require_unblinded(provenance="confirm_real")
+    chk("blind.require_unblinded(provenance='confirm_real') raises BlindingError", False)
+except B.BlindingError as e:
+    msg = str(e)
+    print(f"BlindingError message: {msg}")
+    chk("it raises BlindingError; the message contains ['prereg-v1'] and not spec-dev-v1",
+        "['prereg-v1']" in msg and "spec-dev-v1" not in msg)
+chk(f"{ACC} does not exist first", not ACC.exists())
+chk(f"the data folder {NODATA} does not exist", not NODATA.exists())
+with mock.patch.object(IO, "ACCESS_LOG_PATH", ACC), mock.patch.object(IO, "DATA_DIR", NODATA):
+    try:
+        IO.load_confirm()
+        chk("io.load_confirm() raises AccessDenied", False)
+    except IO.AccessDenied as e:
+        print(f"AccessDenied: {type(e).__name__}: {e}")
+        chk("io.load_confirm() raises AccessDenied", True)
+lines = ACC.read_text(encoding="utf-8").splitlines() if ACC.exists() else []
+chk(f"{ACC} holds exactly one line ({len(lines)})", len(lines) == 1)
+rec = json.loads(lines[0]) if len(lines) == 1 else {}
+print(f"the line's keys: {sorted(rec)}; tag {rec.get('tag')!r}; result {rec.get('result')!r}")
+chk("its tag is prereg-v1 and its result DENIED", rec.get("tag") == "prereg-v1" and rec.get("result") == "DENIED")
+chk("no ACCESS_LOG in the clone afterwards", not os.path.lexists(CLONE / "ACCESS_LOG"))
+chk(f"the data folder {NODATA} still does not exist", not NODATA.exists())
+print("GUARD CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ cd /tmp/p3_8b_clone && source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_guard.py
+ofilt.drift.blind imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/blind.py): True
+ofilt.drift.io imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/io.py): True
+blind._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
+io._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
+blind._external_check_access: None; io._external_check_access: None
+blind._tag_ok('spec-dev-v1') is True: True
+blind._tag_ok('prereg-v1') is False: True
+blind.require_unblinded(provenance='dev_real') returns 'dev_real' (must be 'dev_real'): True
+BlindingError message: confirm_real data is blinded: required tag(s) ['prereg-v1'] not ancestors of HEAD
+it raises BlindingError; the message contains ['prereg-v1'] and not spec-dev-v1: True
+/tmp/p3_8b_access.jsonl does not exist first: True
+the data folder /tmp/p3_8b_nodata_does_not_exist does not exist: True
+AccessDenied: AccessDenied: load_confirm refused: access denied: git tag 'prereg-v1' is not an ancestor of HEAD (repo=/private/tmp/p3_8b_clone)
+io.load_confirm() raises AccessDenied: True
+/tmp/p3_8b_access.jsonl holds exactly one line (1): True
+the line's keys: ['caller', 'guard', 'head', 'reason', 'result', 'tag', 'utc']; tag 'prereg-v1'; result 'DENIED'
+its tag is prereg-v1 and its result DENIED: True
+no ACCESS_LOG in the clone afterwards: True
+the data folder /tmp/p3_8b_nodata_does_not_exist still does not exist: True
+GUARD CHECK: True
+exit=0
+
+--- c.6 The suite in the clone, with the scratch tag (/tmp/p3_8b_suite.py tag, printed at c.3; log /tmp/p3_8b_suite_tag.log, not printed) ---
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_suite.py tag
+start 2026-10-08T03:04:34Z
+[tag] python /Users/isaiahchoi/venvs/ofilt_p2/bin/python; ofilt imported from /private/tmp/p3_8b_clone/ofilt/__init__.py; under the clone: True
+exit 0; log /tmp/p3_8b_suite_tag.log
+Ran line: ['Ran 285 tests in 305.364s']
+result line: ['OK (skipped=6)']
+skipped tests, with their reasons (verbatim):
+  test_docs_d6.TestProjectSetup.test_project_claims: skipped 'Claude Project not mounted'
+  test_io.TestGuardFallback.test_main_repo_has_no_unblinding_tags_while_draft: skipped 'spec frozen; tags expected'
+  test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_sim_b5.TestRealDev.test_logged_and_silent: skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+  test_validation_c7.TestSlowReproduce.test_first_reps_bit_identical: skipped 'slow tier (OFILT_SLOW=1)'
+  test_validation_c7.TestSlowReproduce.test_last_reps_bit_identical: skipped 'slow tier (OFILT_SLOW=1)'
+result kinds: {'ok': 279, 'skipped': 6}; tests with no result found: []
+tests per module:
+  test_b6_identities: 6
+  test_blind: 15
+  test_build_pass1_pin: 2
+  test_calendar: 5
+  test_docs_d1: 8
+  test_docs_d2: 7
+  test_docs_d3: 6
+  test_docs_d3b: 2
+  test_docs_d4: 4
+  test_docs_d5: 3
+  test_docs_d6: 3
+  test_docs_p2: 3
+  test_fctests_c5: 10
+  test_fill_A6: 4
+  test_forecast_c1: 6
+  test_guard_p46: 4
+  test_importance_registry_c6: 7
+  test_inference_b1: 10
+  test_inference_b2: 8
+  test_inference_b3: 9
+  test_io: 8
+  test_lookahead: 7
+  test_models_c2: 6
+  test_models_c3: 5
+  test_models_c4: 7
+  test_p2_build: 11
+  test_p2_columns: 19
+  test_p3_0b_preflight: 3
+  test_p3_1_sesoi: 5
+  test_p3_2d_structural: 1
+  test_p3_calib: 8
+  test_p3_launch: 8
+  test_p3_sealed_run: 13
+  test_schema: 15
+  test_sim_b4: 7
+  test_sim_b5: 12
+  test_spec: 12
+  test_targets: 10
+  test_validation_c7: 6
+sum: 285; Ran count: 285; equal: True
+skipped found: 6; the result line's skipped count: 6; equal: True
+results found for every test: True
+PARSE CHECK: True
+result kinds are 279 ok and 6 skipped ({'ok': 279, 'skipped': 6}): True
+the six skipped tests and their reasons equal those of /tmp/p3_8a_suite_v.log (parsed by the same rule): True
+the set of test ids (285) equals that of /tmp/p3_8a_suite_v.log (285): True
+every test has the same result as in c.3 (/tmp/p3_8b_suite_notag.log); tests that differ: []: True
+clone BLIND_FIT_LOG sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 equals 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383: True
+clone RUN_REGISTRY.jsonl bytes 0 is 0: True
+no ACCESS_LOG in the clone: True
+clone git tag -l: ['pass1-final', 'spec-dev-v1']
+clone git status --porcelain --untracked-files=all:
+  ' M reports/B6_coverage.json'
+  ' M tests/test_blind.py'
+  ' M tests/test_docs_d3.py'
+  ' M tests/test_docs_d3b.py'
+  ' M tests/test_fctests_c5.py'
+  ' M tests/test_forecast_c1.py'
+  ' M tests/test_inference_b1.py'
+  ' M tests/test_inference_b2.py'
+  ' M tests/test_inference_b3.py'
+  ' M tests/test_sim_b5.py'
+  '?? tests/tag_state.py'
+the nine (9) as ' M', '?? tests/tag_state.py' and at most ' M reports/B6_coverage.json': True
+SUITE CHECK (tag): True
+exit=0 end 2026-10-08T03:09:40Z
+
+--- d.1 Apply in REPO (/tmp/p3_8b_apply.py, printed at c.2) ---
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_apply.py REPO
+root: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+edits read: 22 (E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15, E16, E17, E18, E19, E20, E21, E22)
+tests/test_docs_d3.py: sha256 b40e4ffc8071dc5f10805ca48378513016a01cabe50b657adb05758050ec5f2e; equals step a.2: True
+tests/test_docs_d3b.py: sha256 9c46ae79ca5ccfc81fed4bb05e1c24b034c516452439c78971a6903661908e0d; equals step a.2: True
+tests/test_blind.py: sha256 cb886c0a979693180c574c484cb525990dc7e0b7e42089f5d1a10b1c9d13687e; equals step a.2: True
+tests/test_fctests_c5.py: sha256 de61e26f937f9e42393445a82f027a37f80d1e487ad03bec51c5b5e5714c5629; equals step a.2: True
+tests/test_forecast_c1.py: sha256 9a2288e0890c6e83450e6a8a352e8831ec8feca92515188fa2385b8812cd89fc; equals step a.2: True
+tests/test_inference_b1.py: sha256 c94ce725b8d9026279fc8522014cb2c310560c541d1f1bfbfd8033a464399642; equals step a.2: True
+tests/test_inference_b2.py: sha256 30e72bb5d79c3ab66a7d9b4bd87eb96e90facabf670fec4d59b5eedce695effd; equals step a.2: True
+tests/test_inference_b3.py: sha256 99a0aac428dcd79c58b3e03cfe79b04e87d423d87fe424d9bb49aca12f8739f7; equals step a.2: True
+tests/test_sim_b5.py: sha256 b2c98611cf397444b4938aded58cff408e7d44fca97e8559c3c887e7e4f01b3d; equals step a.2: True
+tests/tag_state.py does not exist: True
+the helper's text from the message: 50 lines; sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; equals the message value: True
+E1: tests/test_docs_d3.py:42 (replace; the line containing 'self.assertNotIn("spec-dev-v1", tags)')
+E2: tests/test_docs_d3.py:45 (replace; the line containing '(B.DEV_REAL, False)')
+E3: tests/test_docs_d3.py:59 (insert; the line containing 'self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())')
+E4: tests/test_docs_d3.py:22 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E5: tests/test_docs_d3b.py:27 (replace; the line containing 'for t in TAGS:')
+E6: tests/test_docs_d3b.py:28 (delete; the line containing 'self.assertFalse(B._tag_ok(t))')
+E7: tests/test_docs_d3b.py:17 (insert; the line containing 'from ofilt.drift.spec import SIZE_RULE, Spec')
+E8: tests/test_blind.py:33 (insert; the line containing 'def test_dev_real_raises_in_main_repo(self):')
+E9: tests/test_blind.py:16 (insert; the line containing 'from test_io import make_temp_repo')
+E10: tests/test_fctests_c5.py:180 (replace; the pair whose next line starts with 'fn(d)')
+E11: tests/test_fctests_c5.py:20 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E12: tests/test_forecast_c1.py:99 (replace; the pair whose next line starts with 'F.walk_forward(real,')
+E13: tests/test_forecast_c1.py:12 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E14: tests/test_inference_b1.py:100 (replace; the pair whose next line starts with 'I.build_design(real, self.spec)')
+E15: tests/test_inference_b1.py:108 (replace; the pair whose next line starts with 'I.pooled_ols(forged)')
+E16: tests/test_inference_b1.py:12 (insert; the line containing 'from ofilt.drift.spec import Spec')
+E17: tests/test_inference_b2.py:124 (replace; the pair whose next line starts with 'fn()')
+E18: tests/test_inference_b2.py:15 (insert; the line containing 'from test_inference_b1 import panel')
+E19: tests/test_inference_b3.py:155 (replace; the pair whose next line starts with 'fn()')
+E20: tests/test_inference_b3.py:13 (insert; the line containing 'from test_inference_b1 import panel')
+E21: tests/test_sim_b5.py:177 (replace; the pair whose next line starts with 'I.build_design(real, self.spec)')
+E22: tests/test_sim_b5.py:25 (insert; the line containing 'from ofilt.drift.spec import Spec')
+written tests/tag_state.py
+written tests/test_docs_d3.py
+written tests/test_docs_d3b.py
+written tests/test_blind.py
+written tests/test_fctests_c5.py
+written tests/test_forecast_c1.py
+written tests/test_inference_b1.py
+written tests/test_inference_b2.py
+written tests/test_inference_b3.py
+written tests/test_sim_b5.py
+tests/tag_state.py sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; equals the message value: True
+tests/test_docs_d3.py: numstat +11 -2; expected +11 -2: True
+tests/test_docs_d3b.py: numstat +4 -2; expected +4 -2: True
+tests/test_blind.py: numstat +5 -0; expected +5 -0: True
+tests/test_fctests_c5.py: numstat +3 -1; expected +3 -1: True
+tests/test_forecast_c1.py: numstat +3 -1; expected +3 -1: True
+tests/test_inference_b1.py: numstat +4 -2; expected +4 -2: True
+tests/test_inference_b2.py: numstat +2 -1; expected +2 -1: True
+tests/test_inference_b3.py: numstat +2 -1; expected +2 -1: True
+tests/test_sim_b5.py: numstat +3 -1; expected +3 -1: True
+tests/test_docs_d3.py: parses and compiles: True
+tests/test_docs_d3b.py: parses and compiles: True
+tests/test_blind.py: parses and compiles: True
+tests/test_fctests_c5.py: parses and compiles: True
+tests/test_forecast_c1.py: parses and compiles: True
+tests/test_inference_b1.py: parses and compiles: True
+tests/test_inference_b2.py: parses and compiles: True
+tests/test_inference_b3.py: parses and compiles: True
+tests/test_sim_b5.py: parses and compiles: True
+tests/tag_state.py: parses and compiles: True
+(in REPO, step b's report copy reports/P3_reports/p3_8a.txt is also expected untracked)
+git status --porcelain --untracked-files=all:
+  ' M tests/test_blind.py'
+  ' M tests/test_docs_d3.py'
+  ' M tests/test_docs_d3b.py'
+  ' M tests/test_fctests_c5.py'
+  ' M tests/test_forecast_c1.py'
+  ' M tests/test_inference_b1.py'
+  ' M tests/test_inference_b2.py'
+  ' M tests/test_inference_b3.py'
+  ' M tests/test_sim_b5.py'
+  '?? reports/P3_reports/p3_8a.txt'
+  '?? tests/tag_state.py'
+status lines (11) are exactly the nine ' M', '?? tests/tag_state.py' and the report copy, as a set: True
+APPLY CHECK: True
+exit=0
+
+--- d.2 REPO against the clone (/tmp/p3_8b_d2.py) ---
+Script in full:
+<<<<<<<<
+"""P3-8b step d.2: REPO against the clone. The ten paths (the nine tests of the numstat table and tests/tag_state.py)
+and step b's report copy are read by script from the saved P3-8b message; status lines are compared as a set."""
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+CLONE = Path("/tmp/p3_8b_clone")
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+nine = re.findall(r"^\| `(tests/test_[^`]+\.py)` \| \+\d+ -\d+ \|$", MSG, re.M)
+copy = re.search(r"cp -p /tmp/\S+ (reports/P3_reports/\S+?)`", MSG.split("## b. The reports trail")[1]).group(1)
+sha = lambda p: hashlib.sha256(p.read_bytes()).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+paths = nine + ["tests/tag_state.py"]
+chk(f"paths read: {len(paths)} (must be 10)", len(paths) == 10)
+for p in paths:
+    a, b = sha(REPO / p), sha(CLONE / p)
+    chk(f"{p}: REPO {a}; clone {b}; equal", a == b)
+st = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--untracked-files=all"], capture_output=True,
+                    text=True, check=True).stdout.splitlines()
+print("$ git status --porcelain --untracked-files=all")
+for l in st:
+    print(f"  {l!r}")
+want = {f" M {p}" for p in nine} | {"?? tests/tag_state.py", f"?? {copy}"}
+chk(f"status ({len(st)} lines) is exactly the nine ' M', '?? tests/tag_state.py' and '?? {copy}', as a set",
+    set(st) == want and len(st) == len(want) == 11)
+print("D2 CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+$ source $HOME/venvs/ofilt_p2/bin/activate && env -u OFILT_RUN_SEALED python /tmp/p3_8b_d2.py
+paths read: 10 (must be 10): True
+tests/test_docs_d3.py: REPO 60e3a6c894551989aab44bc8bc59ac80ca8872319c23d7ab3be83f8f8a2d3416; clone 60e3a6c894551989aab44bc8bc59ac80ca8872319c23d7ab3be83f8f8a2d3416; equal: True
+tests/test_docs_d3b.py: REPO 4f8ee6c9f8baf9e001c28fec346f592006e36440226b3c36f6445d8e45805bf2; clone 4f8ee6c9f8baf9e001c28fec346f592006e36440226b3c36f6445d8e45805bf2; equal: True
+tests/test_blind.py: REPO 18d63c56c8f1d6deea1ff63a157b44d59ec675ced8ad10d86ec1e087d328b52a; clone 18d63c56c8f1d6deea1ff63a157b44d59ec675ced8ad10d86ec1e087d328b52a; equal: True
+tests/test_fctests_c5.py: REPO b63d42d98e83e4d45c6ad18997b6f18a7066c529adb0bd4ea98252009bd80491; clone b63d42d98e83e4d45c6ad18997b6f18a7066c529adb0bd4ea98252009bd80491; equal: True
+tests/test_forecast_c1.py: REPO c86839578239c138132bd99a2cab9b734a7625c62c4e56d73d4b88e6003a9b40; clone c86839578239c138132bd99a2cab9b734a7625c62c4e56d73d4b88e6003a9b40; equal: True
+tests/test_inference_b1.py: REPO 5ebd1f03bdf0cde27797b8839ae3ff58ad78b83c999c804f2525009fe4c6c749; clone 5ebd1f03bdf0cde27797b8839ae3ff58ad78b83c999c804f2525009fe4c6c749; equal: True
+tests/test_inference_b2.py: REPO 107ea41112b1e724cde7b86c8bd88dcb74057231bf20a1f488ffc98f23eb2226; clone 107ea41112b1e724cde7b86c8bd88dcb74057231bf20a1f488ffc98f23eb2226; equal: True
+tests/test_inference_b3.py: REPO af4a4627f662046c5cf985059f8e0a188228e66a8aead77b41da34f3f93a3e9e; clone af4a4627f662046c5cf985059f8e0a188228e66a8aead77b41da34f3f93a3e9e; equal: True
+tests/test_sim_b5.py: REPO 5f9df5223bcbf3ffdf4194c68223362231b9ec33490b62c2165e1b54b1dd6ca8; clone 5f9df5223bcbf3ffdf4194c68223362231b9ec33490b62c2165e1b54b1dd6ca8; equal: True
+tests/tag_state.py: REPO 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; clone 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684; equal: True
+$ git status --porcelain --untracked-files=all
+  ' M tests/test_blind.py'
+  ' M tests/test_docs_d3.py'
+  ' M tests/test_docs_d3b.py'
+  ' M tests/test_fctests_c5.py'
+  ' M tests/test_forecast_c1.py'
+  ' M tests/test_inference_b1.py'
+  ' M tests/test_inference_b2.py'
+  ' M tests/test_inference_b3.py'
+  ' M tests/test_sim_b5.py'
+  '?? reports/P3_reports/p3_8a.txt'
+  '?? tests/tag_state.py'
+status (11 lines) is exactly the nine ' M', '?? tests/tag_state.py' and '?? reports/P3_reports/p3_8a.txt', as a set: True
+D2 CHECK: True
+exit=0
+
+--- d.3 git diff of the nine tests, in full ---
+$ git diff -- tests/test_docs_d3.py tests/test_docs_d3b.py tests/test_blind.py tests/test_fctests_c5.py tests/test_forecast_c1.py tests/test_inference_b1.py tests/test_inference_b2.py tests/test_inference_b3.py tests/test_sim_b5.py
+diff --git a/tests/test_blind.py b/tests/test_blind.py
+index 0058148..27b1575 100644
+--- a/tests/test_blind.py
++++ b/tests/test_blind.py
+@@ -14,6 +14,7 @@ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import io as IO  # noqa: E402
+ from ofilt.drift.schema import PRE_OPEN_FEATURES  # noqa: E402
+ from test_io import make_temp_repo  # noqa: E402
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ 
+ def synth(n=600, seed=0, prov=True):
+@@ -31,6 +32,10 @@ class TestGuard(unittest.TestCase):
+         cls.dev = IO.load_dev()  # registers real target fingerprints as a side effect
+ 
+     def test_dev_real_raises_in_main_repo(self):
++        if TS.spec_tagged():  # P3-8b: with the tag, REPO grants dev_real; the guard alone, nothing is computed
++            self.assertEqual(B.require_unblinded(self.dev), "dev_real")  # P3-8b
++            self.assertEqual(B.require_unblinded(self.dev.drop(columns=["y_oc"]), provenance="dev_real"), "dev_real")  # P3-8b
++            return  # P3-8b
+         with self.assertRaises(B.BlindingError):
+             B.require_unblinded(self.dev)
+         with self.assertRaises(B.BlindingError):
+diff --git a/tests/test_docs_d3.py b/tests/test_docs_d3.py
+index d0451f2..ebad517 100644
+--- a/tests/test_docs_d3.py
++++ b/tests/test_docs_d3.py
+@@ -20,6 +20,8 @@ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import forecast as F  # noqa: E402
+ from ofilt.drift import sim as S  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ 
+ def find(obj, pred):
+@@ -39,10 +41,12 @@ def find(obj, pred):
+ class TestP29Blinding(unittest.TestCase):
+     def test_tag_gates(self):
+         tags = subprocess.run(["git", "-C", str(ROOT), "tag"], capture_output=True, text=True).stdout.split()
+-        self.assertNotIn("spec-dev-v1", tags)                                   # Pass 1: neither tag exists
++        dev_open = "spec-dev-v1" in tags  # P3-8b: was self.assertNotIn("spec-dev-v1", tags) ("Pass 1: neither tag exists"); the state on both sides of the tag
++        if dev_open:  # P3-8b: with the tag, it is annotated, an ancestor of HEAD and on the frozen spec
++            TS.check_spec_tag(self)  # P3-8b
+         self.assertNotIn("prereg-v1", tags)
+         df = pd.DataFrame({"date": pd.to_datetime(["2030-01-07"]), "ticker": ["5706"], "x": [0.123456789]})
+-        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, False), (B.CONFIRM_REAL, False), ("other", False)):
++        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, dev_open), (B.CONFIRM_REAL, False), ("other", False)):  # P3-8b: was (B.DEV_REAL, False)
+             d = df.copy()
+             d.attrs = {"provenance": prov}
+             if ok:
+@@ -57,6 +61,11 @@ class TestP29Blinding(unittest.TestCase):
+         with self.assertRaises(B.BlindingError):                                # attrs and kwarg must agree
+             B.require_unblinded(d, provenance=B.DEV_REAL)
+         self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())
++        if dev_open:  # P3-8b: with the tag, confirm_real is refused for prereg-v1 alone
++            c = df.copy()  # P3-8b
++            c.attrs = {"provenance": B.CONFIRM_REAL}  # P3-8b
++            with self.assertRaisesRegex(B.BlindingError, r"\['prereg-v1'\]"):  # P3-8b
++                B.require_unblinded(c)  # P3-8b
+ 
+     def test_sealed_fit_opt_in_and_record(self):
+         self.assertTrue(callable(S._sealed_blind_fit))
+diff --git a/tests/test_docs_d3b.py b/tests/test_docs_d3b.py
+index 6cb9118..efbe486 100644
+--- a/tests/test_docs_d3b.py
++++ b/tests/test_docs_d3b.py
+@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
+ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import io  # noqa: E402
+ from ofilt.drift.spec import SIZE_RULE, Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ TAGS = ("spec-dev-v1", "prereg-v1")
+ 
+@@ -24,8 +26,8 @@ class TestP36(unittest.TestCase):
+         self.assertEqual(B.REQUIRED_TAGS, {B.SYNTHETIC: (), B.DEV_REAL: ("spec-dev-v1",),
+                                            B.CONFIRM_REAL: ("spec-dev-v1", "prereg-v1")})
+         self.assertEqual(io.CONFIRM_TAG, "prereg-v1")                          # load_confirm gate (P29)
+-        for t in TAGS:
+-            self.assertFalse(B._tag_ok(t))                                      # neither exists in Pass 1
++        self.assertEqual(B._tag_ok("spec-dev-v1"), TS.spec_tagged())  # P3-8b: was "for t in TAGS: self.assertFalse(B._tag_ok(t))" ("neither exists in Pass 1")
++        self.assertFalse(B._tag_ok("prereg-v1"))  # P3-8b: prereg-v1 stays absent until Pass 5
+         naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
+                         if any(t in p.read_text() for t in TAGS))
+         self.assertEqual(naming, ["ofilt/drift/blind.py", "ofilt/drift/io.py"])  # the only unblinding events
+diff --git a/tests/test_fctests_c5.py b/tests/test_fctests_c5.py
+index c372c27..2c3bd91 100644
+--- a/tests/test_fctests_c5.py
++++ b/tests/test_fctests_c5.py
+@@ -18,6 +18,8 @@ from ofilt.drift import forecast as F  # noqa: E402
+ from ofilt.drift import sim as S  # noqa: E402
+ from ofilt.drift.models import M0, M1, M2, M3  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ TICKERS = ("5706", "5711", "5713")
+ PT_SIZE_SEED = 20261001 + 5000
+@@ -177,7 +179,7 @@ class TestPairing(unittest.TestCase):
+                  lambda d: FT.run_comparisons(d)]
+         for fn in calls:
+             for d in (real, bare):
+-                with self.assertRaises(B.BlindingError):
++                with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+                     fn(d)
+         with self.assertRaises(B.BlindingError):              # attrs/kwarg conflict
+             FT.pair(self.df, "M3", "M2", provenance=B.DEV_REAL)
+diff --git a/tests/test_forecast_c1.py b/tests/test_forecast_c1.py
+index 674bd4a..1ab09e5 100644
+--- a/tests/test_forecast_c1.py
++++ b/tests/test_forecast_c1.py
+@@ -10,6 +10,8 @@ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import forecast as F  # noqa: E402
+ from ofilt.drift import sim as S  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ 
+ def masked_panel(n_dates=700, seed=0):
+@@ -96,7 +98,7 @@ class TestWalkForward(unittest.TestCase):
+                 F.walk_forward(self.df.assign(**{c: 0.0 for c in bad}), {"m": spy_factory([], bad)}, self.spec)
+         real = self.df.copy()
+         real.attrs = {"provenance": "dev_real"}
+-        with self.assertRaises(B.BlindingError):
++        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+             F.walk_forward(real, {"m": spy_factory([])}, self.spec)
+         with self.assertRaises(ValueError):
+             F.walk_forward(self.df, {"m": spy_factory([])}, self.spec, target="usdjpy_ret")
+diff --git a/tests/test_inference_b1.py b/tests/test_inference_b1.py
+index 726069b..ff9e0c8 100644
+--- a/tests/test_inference_b1.py
++++ b/tests/test_inference_b1.py
+@@ -10,6 +10,8 @@ from scipy import stats  # noqa: E402
+ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import inference as I  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ TICK = ["5706", "5711", "5713"]
+ 
+@@ -97,7 +99,7 @@ class TestDesign(unittest.TestCase):
+             I.build_design(self.df.assign(copx_oc=self.df.spy_oc), self.spec)   # rank-deficient
+         real = self.df.copy()
+         real.attrs = {"provenance": "dev_real"}
+-        with self.assertRaises(B.BlindingError):
++        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+             I.build_design(real, self.spec)
+         with self.assertRaises(B.BlindingError):
+             I.build_design(self.df, self.spec, provenance="dev_real")      # attrs/kwarg conflict
+@@ -105,7 +107,7 @@ class TestDesign(unittest.TestCase):
+     def test_entry_points_recheck_provenance(self):
+         d = I.build_design(self.df, self.spec)
+         forged = I.Design(**{**d.__dict__, "provenance": "dev_real"})
+-        with self.assertRaises(B.BlindingError):
++        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+             I.pooled_ols(forged)
+ 
+ 
+diff --git a/tests/test_inference_b2.py b/tests/test_inference_b2.py
+index fc86397..a4ae498 100644
+--- a/tests/test_inference_b2.py
++++ b/tests/test_inference_b2.py
+@@ -13,6 +13,7 @@ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import inference as I  # noqa: E402
+ from ofilt.drift.spec import Spec, SpecPendingError  # noqa: E402
+ from test_inference_b1 import panel  # noqa: E402
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ 
+ class TestHuber(unittest.TestCase):
+@@ -121,7 +122,7 @@ class TestB2Blinding(unittest.TestCase):
+         forged = I.Design(**{**d.__dict__, "provenance": "dev_real"})
+         for fn in (lambda: I.fit_huber(forged, spec), lambda: I.date_influence(forged),
+                    lambda: I.influence_curve(forged, spec)):
+-            with self.assertRaises(B.BlindingError):
++            with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+                 fn()
+ 
+ 
+diff --git a/tests/test_inference_b3.py b/tests/test_inference_b3.py
+index 9764944..5b42104 100644
+--- a/tests/test_inference_b3.py
++++ b/tests/test_inference_b3.py
+@@ -11,6 +11,7 @@ from ofilt.drift import blind as B  # noqa: E402
+ from ofilt.drift import inference as I  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
+ from test_inference_b1 import panel  # noqa: E402
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ 
+ def panel3(n_dates=400, seed=0, exclusions=True, const_beta=True, b=0.3, delta=0.6):
+@@ -152,7 +153,7 @@ class TestB3Blinding(unittest.TestCase):
+         df.attrs = {"provenance": "dev_real"}
+         for fn in (lambda: I.fit_joint(df, spec), lambda: I.fit_market(df, spec),
+                    lambda: I.decomposition(df, spec), lambda: I.secondary_family_tests(df, spec)):
+-            with self.assertRaises(B.BlindingError):
++            with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+                 fn()
+ 
+ 
+diff --git a/tests/test_sim_b5.py b/tests/test_sim_b5.py
+index c41bed4..82411b5 100644
+--- a/tests/test_sim_b5.py
++++ b/tests/test_sim_b5.py
+@@ -23,6 +23,8 @@ from ofilt.drift import io as IO  # noqa: E402
+ from ofilt.drift import sim as S  # noqa: E402
+ from ofilt.drift import targets as TG  # noqa: E402
+ from ofilt.drift.spec import Spec  # noqa: E402
++sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
++import tag_state as TS  # noqa: E402  (P3-8b)
+ 
+ CORE = "_design_core"
+ ALLOWED_CALLERS = [("inference.py", "build_design"), ("sim.py", "_sealed_blind_fit")]
+@@ -174,7 +176,7 @@ class TestSealedFitMechanics(SyntheticBase):
+                 S._sealed_blind_fit(d, self.spec)
+         real = self.stand_in.copy()
+         real.attrs = {"provenance": "dev_real"}
+-        with self.assertRaises(B.BlindingError):
++        with TS.blinded(), self.assertRaises(B.BlindingError):  # P3-8b: was with self.assertRaises(B.BlindingError):; the guard in a repository without the tags
+             I.build_design(real, self.spec)                                      # public path still guarded
+ 
+ 
+exit=0
+$ git diff --stat -- (the nine)
+ tests/test_blind.py        |  5 +++++
+ tests/test_docs_d3.py      | 13 +++++++++++--
+ tests/test_docs_d3b.py     |  6 ++++--
+ tests/test_fctests_c5.py   |  4 +++-
+ tests/test_forecast_c1.py  |  4 +++-
+ tests/test_inference_b1.py |  6 ++++--
+ tests/test_inference_b2.py |  3 ++-
+ tests/test_inference_b3.py |  3 ++-
+ tests/test_sim_b5.py       |  4 +++-
+ 9 files changed, 37 insertions(+), 11 deletions(-)
+
+--- e. Records (/tmp/p3_8b_records.py; printed in full in section g) ---
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_records.py
+Decision-log block: 8 lines, copied from the P3-8b message's section e.1
+checks read from the report: {'apply_clone': 'True', 'suite_notag': 'True', 'tag': 'True', 'guard': 'True', 'suite_tag': 'True', 'apply_repo': 'True', 'd2': 'True'}
+== Decision-log text added (verbatim, as in the file) ==
+<<<<<<<<
+> - P3-8a accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - Checkpoint `25dad69ca184de575905b7aee80620fcb29172ca`, including its recorded deviations (the clone's verbose log parsed a second time under the rerun-once rule; the readings of b.7) and the notes in its report.
+>   - The code read (the supervisor, on P3-8a's step b): once `spec-dev-v1` is an ancestor of HEAD, the only change in the code is that `require_unblinded` grants dev_real; `load_confirm` stays denied, because it requires `prereg-v1`, and the sealed fit does not read the tags. Ten test functions depend on REPO's tags: three assert REPO's state, and seven pass synthetic frames or designs labelled dev_real to an entry point and expect a refusal. No test passes real dev data past the guard; granted, `test_forecast_c1`'s call would append a dev_real line to the tracked `RUN_REGISTRY.jsonl`.
+> - The tag-aware tests (Isaiah, 2026-10-07, on the supervisor's recommendation).
+>   - `test_docs_d3.TestP29Blinding.test_tag_gates`, `test_docs_d3b.TestP36.test_tag_semantics_as_implemented` and `test_blind.TestGuard.test_dev_real_raises_in_main_repo` assert REPO's state on both sides of the tag: without `spec-dev-v1`, as before; with it, that it is annotated, an ancestor of HEAD and on the frozen spec (`feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`), that dev_real is granted, and that confirm_real is refused for `prereg-v1` alone. `prereg-v1` stays absent on both sides.
+>   - The seven refusal tests (in `test_fctests_c5`, `test_forecast_c1`, `test_inference_b1` (two), `test_inference_b2`, `test_inference_b3` and `test_sim_b5`) make their dev_real calls with the guard pointed at a throwaway repository without the tags (`tests/tag_state.py`, `blinded`), so they refuse whatever REPO's tags are, and nothing runs past the guard.
+>   - Rehearsed in a scratch clone without a tag and with a scratch annotated `spec-dev-v1`, deleted with the clone; the suite is 285 tests, 6 skipped, with the same result for every test on both sides.
+> - The tag (a routing record, not a decision): after the supervisor's review of P3-8b, Isaiah creates the annotated `spec-dev-v1` on this commit, which locks the calibration, and pushes it by name. P3-8c verifies it read-only; P3-8d copies the P3-8b and P3-8c reports and closes the Pass 3 row.
+>>>>>>>>
+== Progress rows ==
+<<<<<<<<
+| Item | Status | Notes |
+|---|---|---|
+| P3-0 Setup, integrity, code survey | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0`. Date gate 2026-10-06. arm64, macOS 26.6.2; VENV Python 3.12.4, numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, scikit-learn 1.8.0, PyYAML 6.0.3, openpyxl 3.1.5; BLAS accelerate, LAPACK accelerate. HEAD `c9cea24` on `main`, tree clean, tags `pass1-final` only (lightweight). Five hashes agree three ways (computed, registry, prompt); DATA holds exactly the four expected files. BLIND_FIT_LOG 6 dev_real lines, SHA-256 `dad93285d2911abc6c7145c160d729df1126b24b439302bd8577cf407d397301`; RUN_REGISTRY.jsonl 0 bytes. Suite and slow tier pass (Test results). B7/B7b reports: structure only, no per-replication values. Code survey Q1–Q14 in the P3-0 report (`/tmp/p3_0.txt`). Saved prompt SHA-256 `018c489ff53db0aa069881874e0c4faea0e165a2e23ba02b875963b034dfee36`. Planned STOP for the supervisor's review |
+| P3-0b Records and pre-flight facts | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-0b`. Decisions recorded (P3-0 accepted; the rerun-once rule; step f). P3-0 report copied byte for byte to `reports/P3_0_report.txt`. `tools/p3_0b_preflight.py` (dev only, facts only; no rule applied) ran once on the real dev panel and wrote `reports/P3_0b_preflight.md`: Part A, the AM-03 estimation sample (the counts DQ1.3 needs; T_source); Part B, the miners' price levels, grids and one tick in bp. Synthetic tests in `tests/test_p3_0b_preflight.py` (3, OK). Report `/tmp/p3_0b.txt`. Planned STOP for the supervisor's review |
+| P3-1 Cost model and SESOI | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1`. P3-0b acceptance, the cost inputs and DQ2 (D2.1–D2.9) recorded. `docs/P3_COST_INPUTS.json`; `tools/p3_1_sesoi.py` (dev only: mean \|ẽ\|, β̄, the round trips and the primary, low and high SESOI) ran once on the real dev panel, all three gates True, and wrote `reports/P3_1_sesoi.md`; synthetic tests in `tests/test_p3_1_sesoi.py` (5, OK). Report `/tmp/p3_1.txt`. Planned STOP: supervisor review and Isaiah's approval of the computation (D2.9) |
+| P3-1b Records; synthetic timing probe | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-1b`. Report `/tmp/p3_1b.txt`; planned STOP for DQ3, DQ4 and DQ7. P3-1 acceptance and the SESOI approval (D2.9) recorded. Synthetic timing and feasibility probe `/tmp/p3_1b_probe.py` (not committed; existing code only; `OFILT_DATA_DIR` an empty folder, `TMPDIR` the probe's own folder); its facts inform DQ3 and DQ4 and decide nothing |
+| P3-2a DQ3, DQ4, DQ7; calibration module; warp-speed check | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2a`. P3-1b acceptance, DQ3, DQ4, DQ7, the DQ1 clarifications, the G2 STOP's resolution and the D3.2/D3.3 amendment recorded. New module `ofilt/drift/calib.py` (outside the C7 key) with 8 synthetic tests in `tests/test_p3_calib.py`, all OK. Synthetic warp-speed check `tools/p3_2a_warp_check.py`: run 1 (`reports/P3_2a_warp_check_run1.md`) passed G1 and failed G2, which was then superseded as mis-specified (STOP); run 2 (`reports/P3_2a_warp_check.md`, fresh seeds) passed G1 and G2′. Synthetic only; no data file read. Reports `/tmp/p3_2a.txt` and `/tmp/p3_2a_cont.txt`. Planned STOP |
+| P3-2b Warp-path check; sealed-run tool, configuration, smoke run | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2b`. Report `/tmp/p3_2b.txt`; planned STOP. P3-2a acceptance and the sealed-run tool's design recorded. Warp-path gate (step b) passed (9 of 9). K = 409. Configuration valid; 9 tests OK (after one test-setup fix); smoke gates passed; projected full run 1.54 h with an empty registry. `tools/p3_2b_preflight.py` (K_early, target-only), `docs/P3_RUN_CONFIG.json`, `tools/p3_sealed_run.py` with tests `tests/test_p3_sealed_run.py`, and a synthetic smoke run (`reports/P3_2b_smoke.md`). No `--real` or `--rehearsal` run |
+| P3-2c Records; tool listing; test output hygiene | done; accepted by Isaiah 2026-10-06 | `checkpoint: P3-2c`. Report `/tmp/p3_2c.txt`; planned STOP for the supervisor's full review of the tool before the rehearsal. P3-2b acceptance and the DQ1.3 clean-tree clarification recorded. Read-only listing of `tools/p3_sealed_run.py` (unchanged) for the supervisor's full review; test 4's refusal output captured in `tests/test_p3_sealed_run.py` (test-only change) |
+| P3-2d Review changes R1, R2; structural check; rehearsal script | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-2d`. Report `/tmp/p3_2d.txt`; planned STOP for the supervisor's review before Isaiah starts the full rehearsal. Structural gate passed; smoke rehearsal PASSED (projected full run 1.92 h with the registry populated). P3-2c acceptance, the review's decisions (R1, R2, R3), the rehearsal procedure and the records rule recorded. R1 and R2 in `tools/p3_sealed_run.py` (configuration unchanged); the structural check `tools/p3_2d_structural.py` (R3); `tools/p3_3_rehearse.sh` with a `--smoke 20` run. No `--real` run; the full rehearsal not started |
+| P3-3a Rehearsal on record; DQ5 line-7 patch; DQ6 facts | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3a`. Report `/tmp/p3_3a.txt`; planned STOP for the supervisor's review of the patch, the plausibility table (P9 False: the early-window flag) and the DQ6 facts. P3-2d acceptance, the P3-2e facts, the rehearsal (PASSED; about 2 h) and DQ5 recorded. The rehearsal's log, run 1's outputs and the P3-2e report copied into `reports/`; plausibility table of the synthetic outputs; the line-7 test changes rehearsed in scratch clones and written to `docs/P3_DQ5_line7.patch` (applied only after the real run); read-only listing for DQ6 |
+| P3-3b T6 leak fixed; rehearsal script bound to the configuration; reports trail | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3b`. Report `/tmp/p3_3b.txt`; planned STOP: the supervisor reviews the report, then gives Isaiah the full-rehearsal command with the new hash. P3-3a acceptance, D4.3 amended (D4.3a centred outputs; D4.3b flag rule), the rehearsal script's binding and the extended records rule recorded. T6 writes only the centred outputs (`centred_block` in `tools/p3_sealed_run.py`); configuration regenerated, SHA-256 `ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e` (key diff exactly `methods.t6`, `centred_reject` added to `outputs`, `rules.D4.3_flag`); `tools/p3_3_rehearse.sh` requires `--expect-config-sha256`; `tests/test_p3_sealed_run.py` 16 tests OK (3 new, test 13 extended); smoke rehearsal PASSED in a scratch clone, and both refusals as stated; the 9 Pass 3 reports copied to `reports/P3_reports/`. No `--real` run; the full rehearsal not started |
+| P3-3c P3-3b accepted; D4.3a qualified; rehearsal 2 on record; plausibility table | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3c`. Report `/tmp/p3_3c.txt`; planned STOP: the supervisor reviews the report, then gives P3-3d, the DQ6 amendment drafts. P3-3b acceptance, D4.3a qualified (winsorised OLS-DK in cells 7 and 8) and rehearsal 2 (PASSED; 1.88 h) recorded. Rehearsal 2's log, its run 1's outputs and the P3-3b report copied into `reports/`; run 2 checked equal to run 1 apart from runtime; plausibility table P1 to P11 of the synthetic outputs, all True (P11, the regression against rehearsal 1, included); read-only fact on `z2` and alpha. No `--real` run; the sealed-run tool run only as `--check-config`; the rehearsal script not run |
+| P3-3d P3-3c accepted; read-only facts for DQ6 and the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3d`. Report `/tmp/p3_3d.txt`; planned STOP: the supervisor reviews the report, then drafts P3-3e. P3-3c acceptance recorded, with its two post-checkpoint notes under Deviations. The P3-3c report copied to `reports/P3_reports/`. Read-only facts for DQ6 (`calib.py`'s functions; the readers of the spec fields DQ6 would change; the confirmation path; every pin a spec edit could touch; the amendment record format) and for the launcher (the real-mode refusals and log checks; `OFILT_RUN_SEALED=1`; PLAN's pins), in the P3-3d report. No code, test, spec or configuration changed |
+| P3-3e P3-3d accepted; DQ6 drafts and dry switches | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3e`. Report `/tmp/p3_3e.txt`; planned STOP: the supervisor reviews the report and the drafts; Isaiah decides on DQ6; then P3-3f. P3-3d acceptance and the DQ6 drafts' routing recorded. The P3-3d report copied to `reports/P3_reports/`. Read-only facts (the SESOIs; Clark-West in the sealed run; AM-04's record format; the stand-in values). `docs/P3_DQ6_drafts.md`: the supervisor's amendment texts (AM-07 to AM-10), the current lines and records, the `spec.py` validation diffs, the confirmation-code plan, the dry switches and a draft test-change table. Dry switches D1 to D3 in scratch clones (deleted). No code, test, spec or configuration changed in REPO |
+| P3-3f P3-3e accepted; DQ6 decided; salvage (b); the launcher | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-3f`. Report `/tmp/p3_3f.txt`; planned STOP: the supervisor reviews the launcher, then gives P3-4. The clone rehearsal ran twice: the first run stopped at the dry run for the power source, and the second, on AC power, passed every gate. P3-3e acceptance, DQ6, salvage option (b) and the launcher's design recorded. The P3-3e report copied to `reports/P3_reports/`. `tools/p3_4_launch.sh` (constants filled by script from their sources) with 8 tests in `tests/test_p3_launch.py`; rehearsed in a scratch clone with `--dry-run` and refusal cases (a) to (k), with a data folder that does not exist. No `--real` run; `OFILT_RUN_SEALED=1` never set |
+| P3-4 P3-3f accepted; Isaiah's sanction of the one real sealed fit | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4`, the sanction commit. Report `/tmp/p3_4.txt`; planned STOP: the supervisor confirms the report, then Isaiah runs the command printed in it. P3-3f acceptance and Isaiah's sanction of the one real sealed fit (DQ1.7) recorded. The P3-3f report copied to `reports/P3_reports/`. After the checkpoint: one launcher dry run at the sanction commit, with a data folder that does not exist, and the command for Isaiah, both in the P3-4 report. No `--real` run; `OFILT_RUN_SEALED=1` never set |
+| P3-4b The real sealed fit on record; the post-run checkpoint | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-4b`. Report `/tmp/p3_4b.txt`; planned STOP: the supervisor reviews the report, then gives P3-5. P3-4 acceptance and the real sealed fit recorded (Isaiah's Terminal, 2026-10-07T18:51:20Z to 20:45:12Z; COMPLETE, 0 errors; launcher exit 0). BLIND_FIT_LOG's line 7 and the two outputs committed as the run left them; the launcher's log and the P3-4 report copied into `reports/`; `docs/P3_DQ5_line7.patch` applied unchanged. The outputs read for six structural keys only |
+| P3-5 The pre-stated rules applied to the sealed run's outputs | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-5`. Report `/tmp/p3_5.txt` (continued after a STOP under the rerun-once rule); planned STOP: the supervisor reviews the application of the rules, Isaiah approves the selection, then P3-6. P3-4b acceptance recorded. D3.4, D2.6 and D4.3b applied by script to `reports/P3_4_sealed_run.json`: M = dk_normal; CW = calibrated; viable: True; D4.3b flags: none. The binding numbers, the switch's branch and its placeholder values in `reports/P3_5_selection.md` and `.json` (the second run's files; Deviations). Plausibility checks as information. The P3-4b report copied to `reports/P3_reports/` |
+| P3-6a P3-5 accepted; the selection approved; the switch rehearsed and written as a patch | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-6a`. Report `/tmp/p3_6a.txt`; planned STOP: the supervisor reviews the switch patch, then gives P3-6b. P3-5 acceptance, Isaiah's approval of the selection, the switch's C7 rerun (D16) and the patch's routing recorded. The P3-5 report copied to `reports/P3_reports/`. The switch (AM-07 ("viable"), AM-09, AM-10; `<date>` 2026-10-07) built in a scratch clone: the spec lines, `spec/SPEC_AMENDMENTS.md`, `spec.py`'s AM-09 validation and the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). In the clone: the C7 rerun PASS under D16; the suite OK (skipped=6) on 285 tests; the slow tier OK. Written as `docs/P3_6_switch.patch` and checked in a second clone; both clones deleted. No spec, code or test changed in REPO |
+| P3-6b The switch: AM-07, AM-09 and AM-10; the C7 rerun | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-6b`. Report `/tmp/p3_6b.txt`; planned STOP: the supervisor reviews the switch commit, then gives P3-7. P3-6a acceptance and the switch recorded. The P3-6a report copied to `reports/P3_reports/`. `docs/P3_6_switch.patch` applied unchanged in REPO (`git apply --check` and `git apply` exit 0; the eight files equal the rehearsal's first clone by SHA-256): the spec FROZEN, SHA-256 `feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`, with AM-07 ("viable"), AM-09 and AM-10 in `spec/SPEC_AMENDMENTS.md`; `spec.py`'s AM-09 validation; the test changes (tiny-run tests 5, 6, 9 and 15 retired; test 17 added). The C7 rerun in REPO (4 chunks) passed D16 (C7_mc.json PASS; C7_h1_same_dgp.json PASS), 0 floats differing; the slow tier OK. `--check-config`: valid: False, exit 2, the one `spec_sha256` problem (DQ6). No `--real` run; `OFILT_RUN_SEALED=1` never set |
+| P3-7a P3-6b accepted; read-only facts for the final records and the tag | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7a`. Report `/tmp/p3_7a.txt`; planned STOP: the supervisor reviews the facts, then gives P3-7b. P3-6b acceptance, the new builder session and the final records' routing recorded. The boot and P3-6b reports copied to `reports/P3_reports/`. Read-only facts for P3-7b and P3-8 (step c, in the report): of the 16 named documents, 14 are tracked, each equal to its Project copy (14 of 14); not tracked: `DECISIONS_ADDENDUM.md`, `MANIFEST.json`; every pin on them; PLAN.md §8 and its Pass 3 lines; DATA_PROVENANCE §4.5; PROJECT_SETUP and `test_project_claims`; Flag 4; the handoffs by hash (H2, H3 found; H0, H1 not found); the reports trail; the checkpoint chain; the tag gate; the hygiene checks. No code, test, spec or configuration changed |
+| P3-7a2 Read-only facts, continued: the tests that pin the documents, read the tags or call the guard | done; accepted by Isaiah 2026-10-07 | Read-only; no checkpoint. Report /tmp/p3_7a2.txt, copied at P3-7b. Its step b ran twice under the rerun-once rule (b.4's own matching rules). |
+| P3-7b P3-7a and P3-7a2 accepted; the final Pass 3 records, rehearsed in a scratch clone | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7b`. Report `/tmp/p3_7b.txt`; planned STOP: the supervisor reviews the report, then gives P3-8. P3-7a and P3-7a2 acceptance and the final records recorded. The P3-7a and P3-7a2 reports copied to `reports/P3_reports/`. Read-only facts for P3-8 (step c, in the report). From the supervisor's kit, checked by SHA-256: `docs/DECISIONS_P71_onward.md` new; PLAN v2.5, README, PROJECT_SETUP and DATA_PROVENANCE replaced whole; their pins moved in three tests (12 rows, P81). Rehearsed first in a scratch clone: the apply's checks True; the suite OK (skipped=6) (Ran 285 tests). REPO equals the clone on the eight paths. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
+| P3-8a P3-7b accepted; read-only facts for the tag-aware tests | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-8a`. Report `/tmp/p3_8a.txt`; planned STOP: the supervisor reads the facts of step b, then gives P3-8b. P3-7b acceptance, the tag-aware tests' routing and the note on the fifth supervisor chat recorded. The P3-7b report copied to `reports/P3_reports/`. Read-only facts for P3-8b (step b, in the report): the tag and guard tests, the tests that pass dev_real frames to an entry point and their classes, the code they reach, the skips, the data paths, `tools/checkpoint.sh`, git, and the SHA-256 of every tracked file under `tests/`, `ofilt/` and `tools/` (84). The suite in a scratch clone, verbose: `Ran 285 tests`, `OK (skipped=6)`, by module (39 modules); the six skips named. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
+| P3-8b P3-8a accepted; the tag-aware tests, rehearsed in a scratch clone with a scratch tag; the commit to be tagged | in progress | P3-8a acceptance, the code read, the tag-aware tests and the tag's routing recorded. The P3-8a report copied to `reports/P3_reports/`. `tests/tag_state.py` (new) and the edits E1 to E22 in nine tests, applied by one script, first in a scratch clone and then in REPO (equal by SHA-256). In the clone: the suite without a tag, `Ran 285 tests`, `OK (skipped=6)`; a scratch annotated `spec-dev-v1` on HEAD; the guard check (dev_real granted, confirm_real refused for `prereg-v1` alone, `load_confirm` denied and logged); the suite with the scratch tag, `Ran 285 tests`, `OK (skipped=6)`, every test's result the same; the clone, with its tag, deleted. No tag in REPO; `tools/p3_sealed_run.py` run only with `--check-config` |
+| Pass 3 | in progress | |
+>>>>>>>>
+== Next action ==
+The supervisor reviews P3-8b. Then Isaiah creates the annotated `spec-dev-v1` on the P3-8b commit and pushes it by name. Then P3-8c (read-only): the tag, and the suite and the guard with the tag present. Then P3-8d: the P3-8b and P3-8c reports copied, the tag on record, and the Pass 3 row closed.
+== Test changes added ==
+<<<<<<<<
+**Applied at P3-8b, the tag-aware tests.** Line numbers are those before the change.
+
+| Test (line) | Old | New | Entry | Phase |
+|---|---|---|---|---|
+| `tests/test_docs_d3.py` (42) | `self.assertNotIn("spec-dev-v1", tags)                                   # Pass 1: neither tag exists` | `dev_open`, whether REPO has `spec-dev-v1`; with it, `TS.check_spec_tag` (annotated, an ancestor of HEAD, the frozen spec). | P3-8b | P3-8b |
+| `tests/test_docs_d3.py` (45) | `for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, False), (B.CONFIRM_REAL, False), ("other", False)):` | `(B.DEV_REAL, dev_open)`: dev_real granted with the tag, refused without it. | P3-8b | P3-8b |
+| `tests/test_docs_d3.py` (after 59) | (none) | with the tag, confirm_real refused, the message naming `['prereg-v1']` alone. | P3-8b | P3-8b |
+| `tests/test_docs_d3.py` (after 22) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_docs_d3b.py` (27) | `for t in TAGS:` | `_tag_ok("spec-dev-v1")` equals whether REPO has the tag; `_tag_ok("prereg-v1")` False. | P3-8b | P3-8b |
+| `tests/test_docs_d3b.py` (28) | `self.assertFalse(B._tag_ok(t))                                      # neither exists in Pass 1` | deleted (the loop's body; replaced by E5's two lines). | P3-8b | P3-8b |
+| `tests/test_docs_d3b.py` (after 17) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_blind.py` (after 33) | (none) | with the tag, both calls granted (`dev_real`); without it, the refusals as before. | P3-8b | P3-8b |
+| `tests/test_blind.py` (after 16) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_fctests_c5.py` (180) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_fctests_c5.py` (after 20) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_forecast_c1.py` (99) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_forecast_c1.py` (after 12) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_inference_b1.py` (100) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_inference_b1.py` (108) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_inference_b1.py` (after 12) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_inference_b2.py` (124) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_inference_b2.py` (after 15) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_inference_b3.py` (155) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_inference_b3.py` (after 13) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/test_sim_b5.py` (177) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
+| `tests/test_sim_b5.py` (after 25) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
+| `tests/tag_state.py` (new) | (none) | the helper module (spec_tagged, check_spec_tag, blinded), SHA-256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684 | P3-8b | P3-8b |
+>>>>>>>>
+== Test results added ==
+<<<<<<<<
+**P3-8b:**
+- The report copy (step b; bash, `cp -p /tmp/p3_8a.txt reports/P3_reports/p3_8a.txt`), checked by `/tmp/p3_8b_b.py`:
+  - copy   reports/P3_reports/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
+  - source /tmp/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
+  - p3_8a.txt: copy equals source: True
+  - p3_8a.txt: first two lines ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059'] equal ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059']: True
+  - p3_8a.txt: last two non-empty lines ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca'] equal ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca']: True
+  - p3_8a.txt: the line '3cfc9a66f0bd764b52b49616eda745209078c4f6e171205f46a3cce044cb9bfc  /tmp/p3_8a_msg.txt' occurs exactly once (1): True
+- The apply (`/tmp/p3_8b_apply.py`): in the clone, APPLY CHECK True (the nine tests at their step a.2 values; `tests/tag_state.py` written with the message's SHA-256; every anchor found once; the numstat exactly the table's; every file parses and compiles; the status exact):
+  - tests/test_docs_d3.py: numstat +11 -2; expected +11 -2: True
+  - tests/test_docs_d3b.py: numstat +4 -2; expected +4 -2: True
+  - tests/test_blind.py: numstat +5 -0; expected +5 -0: True
+  - tests/test_fctests_c5.py: numstat +3 -1; expected +3 -1: True
+  - tests/test_forecast_c1.py: numstat +3 -1; expected +3 -1: True
+  - tests/test_inference_b1.py: numstat +4 -2; expected +4 -2: True
+  - tests/test_inference_b2.py: numstat +2 -1; expected +2 -1: True
+  - tests/test_inference_b3.py: numstat +2 -1; expected +2 -1: True
+  - tests/test_sim_b5.py: numstat +3 -1; expected +3 -1: True
+- The suite in the clone, no tag (`/tmp/p3_8b_suite.py notag`): `Ran 285 tests in 305.429s`, `OK (skipped=6)`; result kinds {'ok': 279, 'skipped': 6}; the skips and the set of test ids equal to P3-8a's verbose log; the clone's BLIND_FIT_LOG, RUN_REGISTRY.jsonl and tags unchanged (SUITE CHECK True).
+- The scratch tag (`/tmp/p3_8b_tagcheck.py`): TAG CHECK True:
+  - git -C clone cat-file -t spec-dev-v1 prints 'tag' (must be 'tag'): True
+  - the tag's commit 25dad69ca184de575905b7aee80620fcb29172ca is the clone's HEAD 25dad69ca184de575905b7aee80620fcb29172ca and equals 25dad69ca184de575905b7aee80620fcb29172ca: True
+  - the clone's git tag -l ['pass1-final', 'spec-dev-v1'] is pass1-final and spec-dev-v1: True
+  - REPO's git tag -l ['pass1-final'] is still only pass1-final: True
+- The guard check in the clone (`/tmp/p3_8b_guard.py`): GUARD CHECK True:
+  - ofilt.drift.blind imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/blind.py): True
+  - ofilt.drift.io imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/io.py): True
+  - blind._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
+  - io._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
+  - blind._tag_ok('spec-dev-v1') is True: True
+  - blind._tag_ok('prereg-v1') is False: True
+  - blind.require_unblinded(provenance='dev_real') returns 'dev_real' (must be 'dev_real'): True
+  - it raises BlindingError; the message contains ['prereg-v1'] and not spec-dev-v1: True
+  - /tmp/p3_8b_access.jsonl does not exist first: True
+  - the data folder /tmp/p3_8b_nodata_does_not_exist does not exist: True
+  - io.load_confirm() raises AccessDenied: True
+  - /tmp/p3_8b_access.jsonl holds exactly one line (1): True
+  - its tag is prereg-v1 and its result DENIED: True
+  - no ACCESS_LOG in the clone afterwards: True
+  - the data folder /tmp/p3_8b_nodata_does_not_exist still does not exist: True
+- The suite in the clone, with the scratch tag (`/tmp/p3_8b_suite.py tag`): `Ran 285 tests in 305.364s`, `OK (skipped=6)`; result kinds {'ok': 279, 'skipped': 6}; every test has the same result as in c.3 (/tmp/p3_8b_suite_notag.log); tests that differ: []: True (SUITE CHECK True).
+- The apply in REPO (the same script): APPLY CHECK True. REPO against the clone (`/tmp/p3_8b_d2.py`): D2 CHECK True; the ten paths equal by SHA-256.
+- The full suite ran inside the P3-8b checkpoint; its result is in the P3-8b report (`/tmp/p3_8b.txt`).
+>>>>>>>>
+== Blinding attestation added ==
+<<<<<<<<
+- **P3-8b (supervisor message of 2026-10-07)**, by category:
+  - Records: document edits to PASS3_STATUS.md. The report copy (`reports/P3_reports/p3_8a.txt`, byte for byte). The test edits and `tests/tag_state.py`, written by one script from the message, in the clone and then in REPO.
+  - No script of this item opened a data file. The three suites (two in the clone, one inside the checkpoint) read the dev panel only through the tests' structural and target-only reads; only the parsed lines of the clone's verbose logs were printed.
+  - The scratch annotated `spec-dev-v1` existed only in `/tmp/p3_8b_clone` and was deleted with it; no tag was created, moved or deleted in REPO. The guard check called the guard with provenances only, and `load_confirm` with a data folder that does not exist; its one access record went to `/tmp/p3_8b_access.jsonl`.
+  - `tools/p3_sealed_run.py` ran only with `--check-config`. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+>>>>>>>>
+== Deviations lines added ==
+<<<<<<<<
+- P3-8b a.1, the message: its first paste was cut off in step f.2. The builder ran the date gate and asked how to proceed; the question was declined and the full message pasted. The date gate then ran again first, and the full message was saved. Nothing else ran on the first paste. Before a.2, a read-only `python -c` checked that the saved message's `tests/tag_state.py` block has the given SHA-256 (True).
+- P3-8b c.2 and d.1, a reading the item left open: the apply's status check expects exactly the nine ` M` and `?? tests/tag_state.py`; in REPO it also expects step b's report copy (`?? reports/P3_reports/p3_8a.txt`), which step d.2 lists.
+>>>>>>>>
+RECORDS: written
+exit=0
+
+--- e.8 Checks (/tmp/p3_8b_rule.py, made by sed from /tmp/p3_8a_rule.py, printed in full in section g; then /tmp/p3_8b_cfg.py, printed at a.3) ---
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_rule.py
+reserved prefixes (6): ['>   - D2.6 Viability', '>   - D2.7 Claim wording', '>   - D3.4 The joint T1/T4 rule', '>   - D4.3 T6.', '> - D3.2 and D3.3 amended', '>   - D4.3b The flag rule.']
+six prefixes: True
+lines added since HEAD: 91; beginning with a reserved prefix: 0 (must be 0): True
+  lines beginning with '>   - D2.6 Viability': 1 (line [138]): True
+  lines beginning with '>   - D2.7 Claim wording': 1 (line [139]): True
+  lines beginning with '>   - D3.4 The joint T1/T4 rule': 1 (line [159]): True
+  lines beginning with '>   - D4.3 T6.': 1 (line [173]): True
+  lines beginning with '> - D3.2 and D3.3 amended': 1 (line [193]): True
+  lines beginning with '>   - D4.3b The flag rule.': 1 (line [281]): True
+the decision block's checkpoint 25dad69ca184de575905b7aee80620fcb29172ca is HEAD 25dad69ca184de575905b7aee80620fcb29172ca: True
+Decision-log lines added: 8; the checkpoint appears in them 1 time(s) (must be 1): True
+BLIND_FIT_LOG: 7 lines, 7 with provenance dev_real (must be 7 and 7): True
+RUN_REGISTRY.jsonl bytes 0 is 0: True
+RECORDS RULE: True
+exit=0
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_cfg.py
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e is still ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False
+exit=2
+output is exactly 'config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False', no stderr: True
+exit code 2 is 2: True
+validate_config(committed configuration) = ["key 'spec_sha256' differs from the registry"]
+it is exactly ["key 'spec_sha256' differs from the registry"]: True
+CONFIG CHECK: True
+exit=0
+$ git status --porcelain --untracked-files=all
+ M PASS3_STATUS.md
+ M tests/test_blind.py
+ M tests/test_docs_d3.py
+ M tests/test_docs_d3b.py
+ M tests/test_fctests_c5.py
+ M tests/test_forecast_c1.py
+ M tests/test_inference_b1.py
+ M tests/test_inference_b2.py
+ M tests/test_inference_b3.py
+ M tests/test_sim_b5.py
+?? reports/P3_reports/p3_8a.txt
+?? tests/tag_state.py
+
+--- f. Suite and checkpoint ---
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_done.py   (the P3-8b Progress row set to done; made by sed from /tmp/p3_8a_done.py; printed in full in section g)
+anchor found 1 times
+| P3-8b P3-8a accepted; the tag-aware tests, rehearsed in a scratch clone with a scratch tag; the commit to be tagged | done | `checkpoint: P3-8b`. Report `/tmp/p3_8b.txt`; planned STOP: the supervisor reviews the report, then Isaiah tags. P3-8a acceptance, the code read, the tag-aware tests and the tag's routing recorded. The P3-8a report copied to `reports/P3_reports/`. `tests/tag_state.py` (new) and the edits E1 to E22 in nine tests, applied by one script, first in a scratch clone and then in REPO (equal by SHA-256). In the clone: the suite without a tag, `Ran 285 tests`, `OK (skipped=6)`; a scratch annotated `spec-dev-v1` on HEAD; the guard check (dev_real granted, confirm_real refused for `prereg-v1` alone, `load_confirm` denied and logged); the suite with the scratch tag, `Ran 285 tests`, `OK (skipped=6)`, every test's result the same; the clone, with its tag, deleted. No tag in REPO; `tools/p3_sealed_run.py` run only with `--check-config` |
+exit=0
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_rule.py
+reserved prefixes (6): ['>   - D2.6 Viability', '>   - D2.7 Claim wording', '>   - D3.4 The joint T1/T4 rule', '>   - D4.3 T6.', '> - D3.2 and D3.3 amended', '>   - D4.3b The flag rule.']
+six prefixes: True
+lines added since HEAD: 91; beginning with a reserved prefix: 0 (must be 0): True
+  lines beginning with '>   - D2.6 Viability': 1 (line [138]): True
+  lines beginning with '>   - D2.7 Claim wording': 1 (line [139]): True
+  lines beginning with '>   - D3.4 The joint T1/T4 rule': 1 (line [159]): True
+  lines beginning with '>   - D4.3 T6.': 1 (line [173]): True
+  lines beginning with '> - D3.2 and D3.3 amended': 1 (line [193]): True
+  lines beginning with '>   - D4.3b The flag rule.': 1 (line [281]): True
+the decision block's checkpoint 25dad69ca184de575905b7aee80620fcb29172ca is HEAD 25dad69ca184de575905b7aee80620fcb29172ca: True
+Decision-log lines added: 8; the checkpoint appears in them 1 time(s) (must be 1): True
+BLIND_FIT_LOG: 7 lines, 7 with provenance dev_real (must be 7 and 7): True
+RUN_REGISTRY.jsonl bytes 0 is 0: True
+RECORDS RULE: True
+exit=0
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_cfg.py
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e is still ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False
+exit=2
+output is exactly 'config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False', no stderr: True
+exit code 2 is 2: True
+validate_config(committed configuration) = ["key 'spec_sha256' differs from the registry"]
+it is exactly ["key 'spec_sha256' differs from the registry"]: True
+CONFIG CHECK: True
+exit=0
+
+--- f. git diff HEAD -- PASS3_STATUS.md, in full (just before the checkpoint) ---
+$ git diff HEAD -- PASS3_STATUS.md
+diff --git a/PASS3_STATUS.md b/PASS3_STATUS.md
+index c3a57ea..37061c9 100644
+--- a/PASS3_STATUS.md
++++ b/PASS3_STATUS.md
+@@ -28,12 +28,13 @@ Pass 3 (calibration, dev still blinded), run per the Pass 3 builder prompt (2026
+ | P3-7a P3-6b accepted; read-only facts for the final records and the tag | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7a`. Report `/tmp/p3_7a.txt`; planned STOP: the supervisor reviews the facts, then gives P3-7b. P3-6b acceptance, the new builder session and the final records' routing recorded. The boot and P3-6b reports copied to `reports/P3_reports/`. Read-only facts for P3-7b and P3-8 (step c, in the report): of the 16 named documents, 14 are tracked, each equal to its Project copy (14 of 14); not tracked: `DECISIONS_ADDENDUM.md`, `MANIFEST.json`; every pin on them; PLAN.md §8 and its Pass 3 lines; DATA_PROVENANCE §4.5; PROJECT_SETUP and `test_project_claims`; Flag 4; the handoffs by hash (H2, H3 found; H0, H1 not found); the reports trail; the checkpoint chain; the tag gate; the hygiene checks. No code, test, spec or configuration changed |
+ | P3-7a2 Read-only facts, continued: the tests that pin the documents, read the tags or call the guard | done; accepted by Isaiah 2026-10-07 | Read-only; no checkpoint. Report /tmp/p3_7a2.txt, copied at P3-7b. Its step b ran twice under the rerun-once rule (b.4's own matching rules). |
+ | P3-7b P3-7a and P3-7a2 accepted; the final Pass 3 records, rehearsed in a scratch clone | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-7b`. Report `/tmp/p3_7b.txt`; planned STOP: the supervisor reviews the report, then gives P3-8. P3-7a and P3-7a2 acceptance and the final records recorded. The P3-7a and P3-7a2 reports copied to `reports/P3_reports/`. Read-only facts for P3-8 (step c, in the report). From the supervisor's kit, checked by SHA-256: `docs/DECISIONS_P71_onward.md` new; PLAN v2.5, README, PROJECT_SETUP and DATA_PROVENANCE replaced whole; their pins moved in three tests (12 rows, P81). Rehearsed first in a scratch clone: the apply's checks True; the suite OK (skipped=6) (Ran 285 tests). REPO equals the clone on the eight paths. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
+-| P3-8a P3-7b accepted; read-only facts for the tag-aware tests | done | `checkpoint: P3-8a`. Report `/tmp/p3_8a.txt`; planned STOP: the supervisor reads the facts of step b, then gives P3-8b. P3-7b acceptance, the tag-aware tests' routing and the note on the fifth supervisor chat recorded. The P3-7b report copied to `reports/P3_reports/`. Read-only facts for P3-8b (step b, in the report): the tag and guard tests, the tests that pass dev_real frames to an entry point and their classes, the code they reach, the skips, the data paths, `tools/checkpoint.sh`, git, and the SHA-256 of every tracked file under `tests/`, `ofilt/` and `tools/` (84). The suite in a scratch clone, verbose: `Ran 285 tests`, `OK (skipped=6)`, by module (39 modules); the six skips named. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
++| P3-8a P3-7b accepted; read-only facts for the tag-aware tests | done; accepted by Isaiah 2026-10-07 | `checkpoint: P3-8a`. Report `/tmp/p3_8a.txt`; planned STOP: the supervisor reads the facts of step b, then gives P3-8b. P3-7b acceptance, the tag-aware tests' routing and the note on the fifth supervisor chat recorded. The P3-7b report copied to `reports/P3_reports/`. Read-only facts for P3-8b (step b, in the report): the tag and guard tests, the tests that pass dev_real frames to an entry point and their classes, the code they reach, the skips, the data paths, `tools/checkpoint.sh`, git, and the SHA-256 of every tracked file under `tests/`, `ofilt/` and `tools/` (84). The suite in a scratch clone, verbose: `Ran 285 tests`, `OK (skipped=6)`, by module (39 modules); the six skips named. No tag created or deleted; `tools/p3_sealed_run.py` run only with `--check-config` |
++| P3-8b P3-8a accepted; the tag-aware tests, rehearsed in a scratch clone with a scratch tag; the commit to be tagged | done | `checkpoint: P3-8b`. Report `/tmp/p3_8b.txt`; planned STOP: the supervisor reviews the report, then Isaiah tags. P3-8a acceptance, the code read, the tag-aware tests and the tag's routing recorded. The P3-8a report copied to `reports/P3_reports/`. `tests/tag_state.py` (new) and the edits E1 to E22 in nine tests, applied by one script, first in a scratch clone and then in REPO (equal by SHA-256). In the clone: the suite without a tag, `Ran 285 tests`, `OK (skipped=6)`; a scratch annotated `spec-dev-v1` on HEAD; the guard check (dev_real granted, confirm_real refused for `prereg-v1` alone, `load_confirm` denied and logged); the suite with the scratch tag, `Ran 285 tests`, `OK (skipped=6)`, every test's result the same; the clone, with its tag, deleted. No tag in REPO; `tools/p3_sealed_run.py` run only with `--check-config` |
+ | Pass 3 | in progress | |
+ 
+ ## Next action
+ 
+-The supervisor reviews P3-8a and reads the code of its step b. Then P3-8b: the tests that read the repository's tags or call its guard are made to hold before and after `spec-dev-v1`; once the code read shows that no test computes on real dev data when the guard grants dev_real, the guard is checked in a scratch clone with a scratch tag (dev_real granted, confirm_real still refused). P3-8b is the final records commit, and Isaiah creates the annotated `spec-dev-v1` on it.
++The supervisor reviews P3-8b. Then Isaiah creates the annotated `spec-dev-v1` on the P3-8b commit and pushes it by name. Then P3-8c (read-only): the tag, and the suite and the guard with the tag present. Then P3-8d: the P3-8b and P3-8c reports copied, the tag on record, and the Pass 3 row closed.
+ 
+ ## Decision log
+ 
+@@ -393,6 +394,15 @@ The supervisor reviews P3-8a and reads the code of its step b. Then P3-8b: the t
+ > - The tag-aware tests (a routing record, not a decision): P3-8a prints the read-only facts the code read needs. P3-8b makes the tests that read the repository's tags or call its guard hold before and after `spec-dev-v1`, checks the guard in a scratch clone with a scratch tag, and is the final records commit, which Isaiah tags.
+ > - The fifth Pass 3 supervisor chat (from the P3-7b review on) is not in DATA_PROVENANCE §4.5, which the P3-7b kit wrote before that chat began. Its real-data contact is recorded in its handoff and is added to DATA_PROVENANCE §4.5 at Pass 4's first records refresh.
+ 
++> - P3-8a accepted (Isaiah, 2026-10-07, on the supervisor's recommendation).
++>   - Checkpoint `25dad69ca184de575905b7aee80620fcb29172ca`, including its recorded deviations (the clone's verbose log parsed a second time under the rerun-once rule; the readings of b.7) and the notes in its report.
++>   - The code read (the supervisor, on P3-8a's step b): once `spec-dev-v1` is an ancestor of HEAD, the only change in the code is that `require_unblinded` grants dev_real; `load_confirm` stays denied, because it requires `prereg-v1`, and the sealed fit does not read the tags. Ten test functions depend on REPO's tags: three assert REPO's state, and seven pass synthetic frames or designs labelled dev_real to an entry point and expect a refusal. No test passes real dev data past the guard; granted, `test_forecast_c1`'s call would append a dev_real line to the tracked `RUN_REGISTRY.jsonl`.
++> - The tag-aware tests (Isaiah, 2026-10-07, on the supervisor's recommendation).
++>   - `test_docs_d3.TestP29Blinding.test_tag_gates`, `test_docs_d3b.TestP36.test_tag_semantics_as_implemented` and `test_blind.TestGuard.test_dev_real_raises_in_main_repo` assert REPO's state on both sides of the tag: without `spec-dev-v1`, as before; with it, that it is annotated, an ancestor of HEAD and on the frozen spec (`feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26`), that dev_real is granted, and that confirm_real is refused for `prereg-v1` alone. `prereg-v1` stays absent on both sides.
++>   - The seven refusal tests (in `test_fctests_c5`, `test_forecast_c1`, `test_inference_b1` (two), `test_inference_b2`, `test_inference_b3` and `test_sim_b5`) make their dev_real calls with the guard pointed at a throwaway repository without the tags (`tests/tag_state.py`, `blinded`), so they refuse whatever REPO's tags are, and nothing runs past the guard.
++>   - Rehearsed in a scratch clone without a tag and with a scratch annotated `spec-dev-v1`, deleted with the clone; the suite is 285 tests, 6 skipped, with the same result for every test on both sides.
++> - The tag (a routing record, not a decision): after the supervisor's review of P3-8b, Isaiah creates the annotated `spec-dev-v1` on this commit, which locks the calibration, and pushes it by name. P3-8c verifies it read-only; P3-8d copies the P3-8b and P3-8c reports and closes the Pass 3 row.
++
+ ## Test results
+ 
+ **P3-0 e** (`env -u OFILT_RUN_SEALED`, VENV, `OFILT_DATA_DIR` = DATA):
+@@ -752,6 +762,50 @@ The supervisor reviews P3-8a and reads the code of its step b. Then P3-8b: the t
+ - The read-only facts of step b are in the P3-8a report (`/tmp/p3_8a.txt`).
+ - The full suite ran inside the P3-8a checkpoint; its result is in the P3-8a report (`/tmp/p3_8a.txt`).
+ 
++**P3-8b:**
++- The report copy (step b; bash, `cp -p /tmp/p3_8a.txt reports/P3_reports/p3_8a.txt`), checked by `/tmp/p3_8b_b.py`:
++  - copy   reports/P3_reports/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
++  - source /tmp/p3_8a.txt sha256 0c25520592f759d9b006b3422e9997e9488036b10bb44d82e101362b3e248661
++  - p3_8a.txt: copy equals source: True
++  - p3_8a.txt: first two lines ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059'] equal ['2026-10-08T01:47:29Z', '42a88bc987321871687097742226dceeb3631059']: True
++  - p3_8a.txt: last two non-empty lines ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca'] equal ['2026-10-08T02:07:15Z', '25dad69ca184de575905b7aee80620fcb29172ca']: True
++  - p3_8a.txt: the line '3cfc9a66f0bd764b52b49616eda745209078c4f6e171205f46a3cce044cb9bfc  /tmp/p3_8a_msg.txt' occurs exactly once (1): True
++- The apply (`/tmp/p3_8b_apply.py`): in the clone, APPLY CHECK True (the nine tests at their step a.2 values; `tests/tag_state.py` written with the message's SHA-256; every anchor found once; the numstat exactly the table's; every file parses and compiles; the status exact):
++  - tests/test_docs_d3.py: numstat +11 -2; expected +11 -2: True
++  - tests/test_docs_d3b.py: numstat +4 -2; expected +4 -2: True
++  - tests/test_blind.py: numstat +5 -0; expected +5 -0: True
++  - tests/test_fctests_c5.py: numstat +3 -1; expected +3 -1: True
++  - tests/test_forecast_c1.py: numstat +3 -1; expected +3 -1: True
++  - tests/test_inference_b1.py: numstat +4 -2; expected +4 -2: True
++  - tests/test_inference_b2.py: numstat +2 -1; expected +2 -1: True
++  - tests/test_inference_b3.py: numstat +2 -1; expected +2 -1: True
++  - tests/test_sim_b5.py: numstat +3 -1; expected +3 -1: True
++- The suite in the clone, no tag (`/tmp/p3_8b_suite.py notag`): `Ran 285 tests in 305.429s`, `OK (skipped=6)`; result kinds {'ok': 279, 'skipped': 6}; the skips and the set of test ids equal to P3-8a's verbose log; the clone's BLIND_FIT_LOG, RUN_REGISTRY.jsonl and tags unchanged (SUITE CHECK True).
++- The scratch tag (`/tmp/p3_8b_tagcheck.py`): TAG CHECK True:
++  - git -C clone cat-file -t spec-dev-v1 prints 'tag' (must be 'tag'): True
++  - the tag's commit 25dad69ca184de575905b7aee80620fcb29172ca is the clone's HEAD 25dad69ca184de575905b7aee80620fcb29172ca and equals 25dad69ca184de575905b7aee80620fcb29172ca: True
++  - the clone's git tag -l ['pass1-final', 'spec-dev-v1'] is pass1-final and spec-dev-v1: True
++  - REPO's git tag -l ['pass1-final'] is still only pass1-final: True
++- The guard check in the clone (`/tmp/p3_8b_guard.py`): GUARD CHECK True:
++  - ofilt.drift.blind imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/blind.py): True
++  - ofilt.drift.io imported from the clone (/private/tmp/p3_8b_clone/ofilt/drift/io.py): True
++  - blind._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
++  - io._GUARD_REPO /private/tmp/p3_8b_clone resolves to the clone: True
++  - blind._tag_ok('spec-dev-v1') is True: True
++  - blind._tag_ok('prereg-v1') is False: True
++  - blind.require_unblinded(provenance='dev_real') returns 'dev_real' (must be 'dev_real'): True
++  - it raises BlindingError; the message contains ['prereg-v1'] and not spec-dev-v1: True
++  - /tmp/p3_8b_access.jsonl does not exist first: True
++  - the data folder /tmp/p3_8b_nodata_does_not_exist does not exist: True
++  - io.load_confirm() raises AccessDenied: True
++  - /tmp/p3_8b_access.jsonl holds exactly one line (1): True
++  - its tag is prereg-v1 and its result DENIED: True
++  - no ACCESS_LOG in the clone afterwards: True
++  - the data folder /tmp/p3_8b_nodata_does_not_exist still does not exist: True
++- The suite in the clone, with the scratch tag (`/tmp/p3_8b_suite.py tag`): `Ran 285 tests in 305.364s`, `OK (skipped=6)`; result kinds {'ok': 279, 'skipped': 6}; every test has the same result as in c.3 (/tmp/p3_8b_suite_notag.log); tests that differ: []: True (SUITE CHECK True).
++- The apply in REPO (the same script): APPLY CHECK True. REPO against the clone (`/tmp/p3_8b_d2.py`): D2 CHECK True; the ten paths equal by SHA-256.
++- The full suite ran inside the P3-8b checkpoint; its result is in the P3-8b report (`/tmp/p3_8b.txt`).
++
+ ## Test changes
+ 
+ Protocol: PASS2_ADDENDUM §5, rules 2–4, read for Pass 3. No test that existed before Pass 3 was changed or deleted before the post-run checkpoint (P3-4b). Since then, such tests changed only through DQ5's patch (P3-4b) and the switch's patch (P3-6b), in the two tables below; changes to Pass 3's own tests are in their rows.
+@@ -808,6 +862,34 @@ Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.p
+ | `tests/test_docs_d6.py` (58) | `` `PLAN.md` (v2.4) `` | `` `PLAN.md` (v2.5) `` | P81 | P3-7b |
+ | `tests/test_docs_d6.py` (59) | `# Research Plan v2.4` | `# Research Plan v2.5` | P81 | P3-7b |
+ 
++**Applied at P3-8b, the tag-aware tests.** Line numbers are those before the change.
++
++| Test (line) | Old | New | Entry | Phase |
++|---|---|---|---|---|
++| `tests/test_docs_d3.py` (42) | `self.assertNotIn("spec-dev-v1", tags)                                   # Pass 1: neither tag exists` | `dev_open`, whether REPO has `spec-dev-v1`; with it, `TS.check_spec_tag` (annotated, an ancestor of HEAD, the frozen spec). | P3-8b | P3-8b |
++| `tests/test_docs_d3.py` (45) | `for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, False), (B.CONFIRM_REAL, False), ("other", False)):` | `(B.DEV_REAL, dev_open)`: dev_real granted with the tag, refused without it. | P3-8b | P3-8b |
++| `tests/test_docs_d3.py` (after 59) | (none) | with the tag, confirm_real refused, the message naming `['prereg-v1']` alone. | P3-8b | P3-8b |
++| `tests/test_docs_d3.py` (after 22) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_docs_d3b.py` (27) | `for t in TAGS:` | `_tag_ok("spec-dev-v1")` equals whether REPO has the tag; `_tag_ok("prereg-v1")` False. | P3-8b | P3-8b |
++| `tests/test_docs_d3b.py` (28) | `self.assertFalse(B._tag_ok(t))                                      # neither exists in Pass 1` | deleted (the loop's body; replaced by E5's two lines). | P3-8b | P3-8b |
++| `tests/test_docs_d3b.py` (after 17) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_blind.py` (after 33) | (none) | with the tag, both calls granted (`dev_real`); without it, the refusals as before. | P3-8b | P3-8b |
++| `tests/test_blind.py` (after 16) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_fctests_c5.py` (180) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_fctests_c5.py` (after 20) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_forecast_c1.py` (99) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_forecast_c1.py` (after 12) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_inference_b1.py` (100) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_inference_b1.py` (108) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_inference_b1.py` (after 12) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_inference_b2.py` (124) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_inference_b2.py` (after 15) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_inference_b3.py` (155) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_inference_b3.py` (after 13) | (none) | `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/test_sim_b5.py` (177) | `with self.assertRaises(B.BlindingError):` | `with TS.blinded(), self.assertRaises(B.BlindingError):`. | P3-8b | P3-8b |
++| `tests/test_sim_b5.py` (after 25) | (none) | the tests folder on `sys.path`; `import tag_state as TS`. | P3-8b | P3-8b |
++| `tests/tag_state.py` (new) | (none) | the helper module (spec_tagged, check_spec_tag, blinded), SHA-256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684 | P3-8b | P3-8b |
++
+ ## Flags
+ 
+ - (P3-0, for the supervisor) T3 and DQ1.2: every `walk_forward` call appends one line to a run registry. For synthetic provenance, which DevCalibrator draws carry, the line goes to `<system temp>/ofilt_RUN_REGISTRY_synthetic.jsonl` (registry.py:34, 41-46). It holds the input frame's `data_sha256` (the frame contains `y_sim`), the seed and per-fold row counts, and each call runs `git rev-parse HEAD` and `git status` (registry.py:87-90). In the real run, that is a per-replication write outside DQ1.2's list of outputs.
+@@ -1026,6 +1108,11 @@ Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.p
+   - No script of this item opened a data file. The code of step b (tracked files under `tests/`, `ofilt/` and `tools/`) was read as text, and hashed.
+   - The two suites (in a scratch clone, verbose, and inside the checkpoint) read the dev panel only through the tests' structural and target-only reads; only the Ran and result lines, the skips and the per-module counts of the clone's log were printed.
+   - No tag was created, moved or deleted, in REPO or in the clone. `tools/p3_sealed_run.py` ran only with `--check-config`. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
++- **P3-8b (supervisor message of 2026-10-07)**, by category:
++  - Records: document edits to PASS3_STATUS.md. The report copy (`reports/P3_reports/p3_8a.txt`, byte for byte). The test edits and `tests/tag_state.py`, written by one script from the message, in the clone and then in REPO.
++  - No script of this item opened a data file. The three suites (two in the clone, one inside the checkpoint) read the dev panel only through the tests' structural and target-only reads; only the parsed lines of the clone's verbose logs were printed.
++  - The scratch annotated `spec-dev-v1` existed only in `/tmp/p3_8b_clone` and was deleted with it; no tag was created, moved or deleted in REPO. The guard check called the guard with provenances only, and `load_confirm` with a data folder that does not exist; its one access record went to `/tmp/p3_8b_access.jsonl`.
++  - `tools/p3_sealed_run.py` ran only with `--check-config`. No viewer was used. RAW and OUT: untouched. `OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes.
+ 
+ ## Deviations
+ 
+@@ -1164,3 +1251,5 @@ Retired at the switch (DQ6): tests 5, 6, 9 and 15 of `tests/test_p3_sealed_run.p
+ - P3-7b f, an omission in the records script's output: the P3-7b Test results listed the kit check without its lines, because `/tmp/p3_7b_records.py` reused the name `k`, which held the report's d.1 section, as a loop variable before using it. The lines were inserted from the report's d.1 output by exact replacement (`/tmp/p3_7b_fix.py`); the records script was not rerun. No result changed.
+ - P3-8a c.2, the parse: the first parse of the clone's verbose log (`/tmp/p3_8a_suite.py`) listed 10 skipped tests where the result line says skipped=6. It took a test's result from its own line or the next one, so four tests whose result was not on their own line took the next test's "skipped". Under the rerun-once rule the parse was fixed (the next line is read only if it is not another test's line) and run once more on the saved log (`/tmp/p3_8a_suite_parse.py`): 279 ok and 6 skipped, the six expected. The suite itself ran once, correctly; both parses are in the report.
+ - P3-8a b, choices the item left open: in b.7, "every function that contains" a line is read as the outermost function containing it (for a method, the method), and b.7.2 prints the module's top-level functions and methods, not nested functions separately (one edit before the script's only run); b.1 also prints each file's SHA-256 and line count.
++- P3-8b a.1, the message: its first paste was cut off in step f.2. The builder ran the date gate and asked how to proceed; the question was declined and the full message pasted. The date gate then ran again first, and the full message was saved. Nothing else ran on the first paste. Before a.2, a read-only `python -c` checked that the saved message's `tests/tag_state.py` block has the given SHA-256 (True).
++- P3-8b c.2 and d.1, a reading the item left open: the apply's status check expects exactly the nine ` M` and `?? tests/tag_state.py`; in REPO it also expects step b's report copy (`?? reports/P3_reports/p3_8a.txt`), which step d.2 lists.
+exit=0
+
+$ git log -1 --format=%B
+checkpoint: P3-8a (P3-7b accepted; read-only facts for the tag-aware tests)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ source VENV && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "P3-8b (the tag-aware tests; the commit to be tagged spec-dev-v1)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+start 2026-10-08T03:12:24Z
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 db843d6d1d321127bff1a10686f1d59f01c0d60b1b9a0cd94903bb25157b3f49
+before suite: git status --porcelain
+ M PASS3_STATUS.md
+ M tests/test_blind.py
+ M tests/test_docs_d3.py
+ M tests/test_docs_d3b.py
+ M tests/test_fctests_c5.py
+ M tests/test_forecast_c1.py
+ M tests/test_inference_b1.py
+ M tests/test_inference_b2.py
+ M tests/test_inference_b3.py
+ M tests/test_sim_b5.py
+?? reports/P3_reports/p3_8a.txt
+?? tests/tag_state.py
+----------------------------------------------------------------------
+Ran 285 tests in 349.706s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS3_STATUS.md
+ M tests/test_blind.py
+ M tests/test_docs_d3.py
+ M tests/test_docs_d3b.py
+ M tests/test_fctests_c5.py
+ M tests/test_forecast_c1.py
+ M tests/test_inference_b1.py
+ M tests/test_inference_b2.py
+ M tests/test_inference_b3.py
+ M tests/test_sim_b5.py
+?? reports/P3_reports/p3_8a.txt
+?? tests/tag_state.py
+commit f5271c03481b7514a1ec4b7e739fb85fbce8a774
+exit=0 end 2026-10-08T03:18:15Z
+
+--- f.2 After the commit (/tmp/p3_8b_after.py, printed in full in section g; then /tmp/p3_8b_cfg.py) ---
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_after.py
+tree clean, untracked files included (0 lines): True
+$ git log -1 --format='%H %s'
+f5271c03481b7514a1ec4b7e739fb85fbce8a774 checkpoint: P3-8b (the tag-aware tests; the commit to be tagged spec-dev-v1)
+$ git log -1 --format=%B
+checkpoint: P3-8b (the tag-aware tests; the commit to be tagged spec-dev-v1)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+$ git show --stat --format= HEAD
+ PASS3_STATUS.md              |   93 +-
+ reports/P3_reports/p3_8a.txt | 3725 ++++++++++++++++++++++++++++++++++++++++++
+ tests/tag_state.py           |   50 +
+ tests/test_blind.py          |    5 +
+ tests/test_docs_d3.py        |   13 +-
+ tests/test_docs_d3b.py       |    6 +-
+ tests/test_fctests_c5.py     |    4 +-
+ tests/test_forecast_c1.py    |    4 +-
+ tests/test_inference_b1.py   |    6 +-
+ tests/test_inference_b2.py   |    3 +-
+ tests/test_inference_b3.py   |    3 +-
+ tests/test_sim_b5.py         |    4 +-
+ 12 files changed, 3903 insertions(+), 13 deletions(-)
+the commit's files (12) are exactly the nine, tests/tag_state.py, PASS3_STATUS.md and reports/P3_reports/p3_8a.txt (12), as sets: True
+step a.2 values read: 31 (must be 31); the nine among them: True: True
+spec/analysis_spec_dev_v1.yaml feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26 still equals its step a.2 value: True
+ofilt/drift/spec.py 1aa32e1798c76fce05448340d6d47d8c84e264525df27aae692112803a251fa9 still equals its step a.2 value: True
+docs/P3_6_switch.patch cd9d317db33ee04c8c627d1386565e3c5ad19f9ddeb511286c576a946515281a still equals its step a.2 value: True
+docs/P3_RUN_CONFIG.json ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e still equals its step a.2 value: True
+tools/p3_sealed_run.py bd21c4503490aee0561c618f6ee02fd50e6be0dea4e5152f10d7579e4e609837 still equals its step a.2 value: True
+ofilt/drift/calib.py 31f7b8ac3d81ff5123f8dc3f0bc2cf1871652f132d15653915c94b5a79224ad6 still equals its step a.2 value: True
+tools/p3_4_launch.sh d80296d490ea7cad5cdeb49cdfa7bb71f01edad1a4da6cf30f2f9ab0b51686ba still equals its step a.2 value: True
+BLIND_FIT_LOG 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383 still equals its step a.2 value: True
+reports/P3_4_sealed_run.json 65e68c8cf9a76afda05869e8772b345e49f30fa24bcad6790de28d6bcab58942 still equals its step a.2 value: True
+reports/C7_mc.json 72d4a6bc4ffa5084169cfa18534a7480c252afab1224b6dce5eb113d6a5d4b9a still equals its step a.2 value: True
+reports/C7_h1_same_dgp.json 5644e6168cd7c100a2fd01c6eaef3ecda9bb0542b30df34ff2a807e0a5ed7821 still equals its step a.2 value: True
+docs/replacements/PLAN.md cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772 still equals its step a.2 value: True
+docs/replacements/README.md 12d56d1270f41d385977bcb9d3622a5a3410eceab4483711298e469be8130cd0 still equals its step a.2 value: True
+docs/replacements/PROJECT_SETUP.md 267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f still equals its step a.2 value: True
+docs/DATA_PROVENANCE.md 48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd still equals its step a.2 value: True
+docs/DECISIONS_P71_onward.md c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83 still equals its step a.2 value: True
+tests/test_docs_p2.py c75f4be3f7d2131bbd33725ec6eec57e80c96a1fa602e8e739930c717b6865a3 still equals its step a.2 value: True
+tests/test_docs_d4.py b3673edf363f22e72fe4421da66db562ba0d743eb040984082a1de734a729d87 still equals its step a.2 value: True
+tests/test_docs_d6.py d6267dfc43e070eaca0219f93b419f80ca0d8f9d5b3ef69a65315719091307c3 still equals its step a.2 value: True
+reports/P3_reports/p3_7a.txt 3321556df44c1caa52f48b89633acec69d88d5bf669bf75c9aecf804fb815727 still equals its step a.2 value: True
+reports/P3_reports/p3_7a2.txt 378db0461a105b2bb5b17ff10b94706b7f0b8021fedd5382349b1fef9335e3d1 still equals its step a.2 value: True
+reports/P3_reports/p3_7b.txt 43b39cd1b99d633cbbb01023d49160a0532e9bc39f9d01010c32694d5fb1166e still equals its step a.2 value: True
+step d.2's clone values read: 10 (must be 10): True
+tests/test_docs_d3.py 60e3a6c894551989aab44bc8bc59ac80ca8872319c23d7ab3be83f8f8a2d3416 equals the clone's value of d.2: True
+tests/test_docs_d3b.py 4f8ee6c9f8baf9e001c28fec346f592006e36440226b3c36f6445d8e45805bf2 equals the clone's value of d.2: True
+tests/test_blind.py 18d63c56c8f1d6deea1ff63a157b44d59ec675ced8ad10d86ec1e087d328b52a equals the clone's value of d.2: True
+tests/test_fctests_c5.py b63d42d98e83e4d45c6ad18997b6f18a7066c529adb0bd4ea98252009bd80491 equals the clone's value of d.2: True
+tests/test_forecast_c1.py c86839578239c138132bd99a2cab9b734a7625c62c4e56d73d4b88e6003a9b40 equals the clone's value of d.2: True
+tests/test_inference_b1.py 5ebd1f03bdf0cde27797b8839ae3ff58ad78b83c999c804f2525009fe4c6c749 equals the clone's value of d.2: True
+tests/test_inference_b2.py 107ea41112b1e724cde7b86c8bd88dcb74057231bf20a1f488ffc98f23eb2226 equals the clone's value of d.2: True
+tests/test_inference_b3.py af4a4627f662046c5cf985059f8e0a188228e66a8aead77b41da34f3f93a3e9e equals the clone's value of d.2: True
+tests/test_sim_b5.py 5f9df5223bcbf3ffdf4194c68223362231b9ec33490b62c2165e1b54b1dd6ca8 equals the clone's value of d.2: True
+tests/tag_state.py 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684 equals the clone's value of d.2: True
+BLIND_FIT_LOG has 7 lines (7): True
+RUN_REGISTRY.jsonl bytes 0 is 0: True
+git tag -l ['pass1-final'] is ['pass1-final']: True
+no ACCESS_LOG: True
+the new commit, in full: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+AFTER CHECK: True
+exit=0
+$ env -u OFILT_RUN_SEALED python /tmp/p3_8b_cfg.py
+docs/P3_RUN_CONFIG.json sha256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e is still ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e: True
+$ env -u OFILT_RUN_SEALED python tools/p3_sealed_run.py --check-config
+config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False
+exit=2
+output is exactly 'config docs/P3_RUN_CONFIG.json SHA-256 ca989095436c97da723d233267af9a8b454d4dee0e5b528835a6bb88323e574e; valid: False', no stderr: True
+exit code 2 is 2: True
+validate_config(committed configuration) = ["key 'spec_sha256' differs from the registry"]
+it is exactly ["key 'spec_sha256' differs from the registry"]: True
+CONFIG CHECK: True
+exit=0
+
+--- f.3 Delete the clone (and its scratch tag) ---
+$ git -C /tmp/p3_8b_clone tag -l   (before deletion)
+pass1-final
+spec-dev-v1
+$ git -C /tmp/p3_8b_clone rev-parse HEAD
+25dad69ca184de575905b7aee80620fcb29172ca
+$ rm -rf /tmp/p3_8b_clone
+exit=0
+/tmp/p3_8b_clone now: absent
+$ git -C REPO tag -l
+pass1-final
+$ git status --porcelain --untracked-files=all
+(end of status)
+
+--- g. Scripts not printed above, in full (the forms that ran) ---
+== /tmp/p3_8b_records.py (sha256 00f715b0fa0f6ae8b6cc44ab147f1e6dffb53b285bad27f63e62020fcf96bb5b) ==
+<<<<<<<<
+"""P3-8b step e: targeted PASS3_STATUS.md edits. Copied verbatim from the saved P3-8b message (/tmp/p3_8b_msg.txt,
+section e): the Decision-log block, P3-8a's new status, the Next action, and the Test changes heading, header, Entry,
+Phase and helper row. Built by script: the Test changes rows E1 to E22 (each anchor located in the file at HEAD by the
+rules of step c.2; Old and New from the files at HEAD and the message), the P3-8b row and the Test results (from the
+report so far, /tmp/p3_8b.txt). Each anchor must occur exactly once. Nothing is written unless every step succeeds."""
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+F = REPO / "PASS3_STATUS.md"
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+sec_c2 = MSG.split("2. **Apply**")[1].split("3. **The suite in the clone, no tag**")[0]
+sec_e = MSG.split("## e. Records (PASS3_STATUS.md)")[1].split("## f.")[0]
+REP = Path("/tmp/p3_8b.txt").read_text(encoding="utf-8")
+git = lambda *a: subprocess.run(["git", "-C", str(REPO), *a], check=True, capture_output=True, text=True).stdout
+PAIR = "with self.assertRaises(B.BlindingError):"
+s = F.read_text(encoding="utf-8")
+
+
+def sub(a, b):
+    global s
+    n = s.count(a)
+    if n != 1:
+        raise SystemExit(f"anchor found {n} times: {a[:80]!r}")
+    s = s.replace(a, b)
+
+
+def item(n):
+    return re.split(r"^\d+\. \*\*", sec_e, flags=re.M)[n]
+
+
+def section(start, end):
+    a = REP.index("\n" + start)
+    return REP[a:REP.index("\n" + end, a + 1)]
+
+
+checks = lambda t: [l for l in t.splitlines() if re.match(r"^\S.*: (True|False)$", l)]
+
+# 1. Decision log
+block = [l for l in item(1).splitlines() if l.startswith(">")]
+print(f"Decision-log block: {len(block)} lines, copied from the P3-8b message's section e.1")
+if len(block) != 8:
+    raise SystemExit("the block is not 8 lines")
+sub("\n\n## Test results\n", "\n\n" + "\n".join(block) + "\n\n## Test results\n")
+
+# the report's facts
+b = section("--- b. ", "--- c.1 ").split("python /tmp/p3_8b_b.py\n", 1)[1]
+b_lines = [l for l in b.splitlines() if l.startswith(("copy ", "source ")) or re.match(r"^p3_8a\.txt: .*: (True|False)$", l)]
+c2 = section("--- c.2 ", "--- c.3 ").split("python /tmp/p3_8b_apply.py /tmp/p3_8b_clone\n", 1)[1]
+c3 = section("--- c.3 ", "--- c.4 ").split("python /tmp/p3_8b_suite.py notag\n", 1)[1]
+c4 = section("--- c.4 ", "--- c.5 ")
+c5 = section("--- c.5 ", "--- c.6 ").split("python /tmp/p3_8b_guard.py\n", 1)[1]
+c6 = section("--- c.6 ", "--- d.1 ")
+d1 = section("--- d.1 ", "--- d.2 ")
+d2 = section("--- d.2 ", "--- d.3 ").split("python /tmp/p3_8b_d2.py\n", 1)[1]
+ranres = lambda t: (re.search(r"^Ran line: \['([^']+)'\]$", t, re.M).group(1),
+                    re.search(r"^result line: \['([^']+)'\]$", t, re.M).group(1),
+                    re.search(r"^result kinds: (\{[^}]*\})", t, re.M).group(1))
+r3, r6 = ranres(c3), ranres(c6)
+same = re.search(r"^(every test has the same result as in c\.3 .*: (?:True|False))$", c6, re.M).group(1)
+all_ok = {name: re.search(rf"^{rx}: (True|False)$", t, re.M).group(1) for name, rx, t in
+          (("apply_clone", "APPLY CHECK", c2), ("suite_notag", r"SUITE CHECK \(notag\)", c3), ("tag", "TAG CHECK", c4),
+           ("guard", "GUARD CHECK", c5), ("suite_tag", r"SUITE CHECK \(tag\)", c6), ("apply_repo", "APPLY CHECK", d1),
+           ("d2", "D2 CHECK", d2))}
+print(f"checks read from the report: {all_ok}")
+
+# 2. Progress
+p8a = "| P3-8a P3-7b accepted; read-only facts for the tag-aware tests | done |"
+status = re.search(r"P3-8a's status becomes `([^`]+)`", item(2)).group(1)
+sub(p8a, p8a.replace("| done |", f"| {status} |"))
+title = "P3-8b " + re.search(r"^# Pass 3, item P3-8b: (.+?) \(supervisor message", MSG, re.M).group(1)
+notes = ("P3-8a acceptance, the code read, the tag-aware tests and the tag's routing recorded. The P3-8a report copied "
+         "to `reports/P3_reports/`. `tests/tag_state.py` (new) and the edits E1 to E22 in nine tests, applied by one "
+         "script, first in a scratch clone and then in REPO (equal by SHA-256). In the clone: the suite without a tag, "
+         f"`{r3[0].split(' in ')[0]}`, `{r3[1]}`; a scratch annotated `spec-dev-v1` on HEAD; the guard check (dev_real "
+         "granted, confirm_real refused for `prereg-v1` alone, `load_confirm` denied and logged); the suite with the "
+         f"scratch tag, `{r6[0].split(' in ')[0]}`, `{r6[1]}`, every test's result the same; the clone, with its tag, "
+         "deleted. No tag in REPO; `tools/p3_sealed_run.py` run only with `--check-config`")
+row8b = f"| {title} | in progress | {notes} |"
+i = s.index(p8a.replace("| done |", f"| {status} |"))
+j = s.index("\n", i)
+if not s[j + 1:].startswith("| Pass 3 | in progress | |"):
+    raise SystemExit("the P3-8a row is not followed by the Pass 3 row")
+s = s[:j + 1] + row8b + "\n" + s[j + 1:]
+
+# 3. Next action
+na = re.search(r'becomes: "([^"]+)"', item(3)).group(1)
+cur = s.split("## Next action\n\n")[1].split("\n\n## Decision log")[0]
+if "\n" in cur:
+    raise SystemExit("the Next action is not one line")
+sub("## Next action\n\n" + cur + "\n\n## Decision log", "## Next action\n\n" + na + "\n\n## Decision log")
+
+# 4. Test changes
+t4 = item(4)
+heading = re.search(r"add the heading `([^`]+)`", t4).group(1)
+header = re.search(r"a table with the existing header `([^`]+)`", t4).group(1)
+entry, phase = re.search(r"Entry `([^`]+)`, Phase `([^`]+)`", t4).groups()
+helper_new = re.search(r"New `(the helper module [^`]+)`", t4).group(1)
+HEAD_RX = re.compile(r"^E(\d+)\. `([^`]+)`; (?:the line containing `(.+?)`|the pair whose next line starts with `(.+?)`); "
+                     r"(replace it with the lines E\d+|insert after it the lines E\d+|delete it)[:.] Record: (.*)$")
+head_src = {}
+rows = []
+for line in sec_c2.splitlines():
+    m = HEAD_RX.match(line)
+    if not m:
+        continue
+    n, f, contains, pair, action, record = m.groups()
+    if f not in head_src:
+        head_src[f] = git("show", f"HEAD:{f}").splitlines()
+    L = head_src[f]
+    if contains is not None:
+        hit = [i for i, l in enumerate(L) if contains in l]
+    else:
+        hit = [i for i, l in enumerate(L) if l.strip() == PAIR and i + 1 < len(L) and L[i + 1].lstrip().startswith(pair)]
+    if len(hit) != 1:
+        raise SystemExit(f"E{n}: anchor on {len(hit)} lines at HEAD")
+    i = hit[0]
+    kind = action.split(" ")[0]
+    where = f"(after {i + 1})" if kind == "insert" else f"({i + 1})"
+    old = "(none)" if kind == "insert" else f"`{L[i].strip()}`"
+    rows.append(f"| `{f}` {where} | {old} | {record} | {entry} | {phase} |")
+if len(rows) != 22:
+    raise SystemExit(f"{len(rows)} edit rows, not 22")
+rows.append(f"| `tests/tag_state.py` (new) | (none) | {helper_new} | {entry} | {phase} |")
+TC = [heading, "", header, "|---|---|---|---|---|", *rows]
+sub("\n\n## Flags\n", "\n\n" + "\n".join(TC) + "\n\n## Flags\n")
+
+# 5. Test results
+TR = ["**P3-8b:**",
+      "- The report copy (step b; bash, `cp -p /tmp/p3_8a.txt reports/P3_reports/p3_8a.txt`), checked by `/tmp/p3_8b_b.py`:",
+      *[f"  - {l}" for l in b_lines],
+      f"- The apply (`/tmp/p3_8b_apply.py`): in the clone, APPLY CHECK {all_ok['apply_clone']} (the nine tests at their "
+      "step a.2 values; `tests/tag_state.py` written with the message's SHA-256; every anchor found once; the numstat "
+      "exactly the table's; every file parses and compiles; the status exact):",
+      *[f"  - {l}" for l in c2.splitlines() if re.match(r"^tests/\S+: numstat ", l)],
+      f"- The suite in the clone, no tag (`/tmp/p3_8b_suite.py notag`): `{r3[0]}`, `{r3[1]}`; result kinds {r3[2]}; the "
+      "skips and the set of test ids equal to P3-8a's verbose log; the clone's BLIND_FIT_LOG, RUN_REGISTRY.jsonl and "
+      f"tags unchanged (SUITE CHECK {all_ok['suite_notag']}).",
+      f"- The scratch tag (`/tmp/p3_8b_tagcheck.py`): TAG CHECK {all_ok['tag']}:",
+      *[f"  - {l}" for l in checks(c4) if not l.startswith("TAG CHECK")],
+      f"- The guard check in the clone (`/tmp/p3_8b_guard.py`): GUARD CHECK {all_ok['guard']}:",
+      *[f"  - {l}" for l in checks(c5) if not l.startswith("GUARD CHECK")],
+      f"- The suite in the clone, with the scratch tag (`/tmp/p3_8b_suite.py tag`): `{r6[0]}`, `{r6[1]}`; result kinds "
+      f"{r6[2]}; {same} (SUITE CHECK {all_ok['suite_tag']}).",
+      f"- The apply in REPO (the same script): APPLY CHECK {all_ok['apply_repo']}. REPO against the clone "
+      f"(`/tmp/p3_8b_d2.py`): D2 CHECK {all_ok['d2']}; the ten paths equal by SHA-256.",
+      "- The full suite ran inside the P3-8b checkpoint; its result is in the P3-8b report (`/tmp/p3_8b.txt`)."]
+sub("\n\n## Test changes\n", "\n\n" + "\n".join(TR) + "\n\n## Test changes\n")
+
+# 6. Blinding attestation
+BA = ["- **P3-8b (supervisor message of 2026-10-07)**, by category:",
+      "  - Records: document edits to PASS3_STATUS.md. The report copy (`reports/P3_reports/p3_8a.txt`, byte for byte). "
+      "The test edits and `tests/tag_state.py`, written by one script from the message, in the clone and then in REPO.",
+      "  - No script of this item opened a data file. The three suites (two in the clone, one inside the checkpoint) read "
+      "the dev panel only through the tests' structural and target-only reads; only the parsed lines of the clone's "
+      "verbose logs were printed.",
+      "  - The scratch annotated `spec-dev-v1` existed only in `/tmp/p3_8b_clone` and was deleted with it; no tag was "
+      "created, moved or deleted in REPO. The guard check called the guard with provenances only, and `load_confirm` "
+      "with a data folder that does not exist; its one access record went to `/tmp/p3_8b_access.jsonl`.",
+      "  - `tools/p3_sealed_run.py` ran only with `--check-config`. No viewer was used. RAW and OUT: untouched. "
+      "`OFILT_RUN_SEALED=1` was never set; every Python command ran in the venv under `env -u OFILT_RUN_SEALED`. "
+      "BLIND_FIT_LOG has 7 dev_real lines, and RUN_REGISTRY.jsonl is 0 bytes."]
+sub("\n\n## Deviations\n", "\n" + "\n".join(BA) + "\n\n## Deviations\n")
+
+# 7. Deviations
+OWN = ["- P3-8b a.1, the message: its first paste was cut off in step f.2. The builder ran the date gate and asked how to "
+       "proceed; the question was declined and the full message pasted. The date gate then ran again first, and the full "
+       "message was saved. Nothing else ran on the first paste. Before a.2, a read-only `python -c` checked that the "
+       "saved message's `tests/tag_state.py` block has the given SHA-256 (True).",
+       "- P3-8b c.2 and d.1, a reading the item left open: the apply's status check expects exactly the nine ` M` and "
+       "`?? tests/tag_state.py`; in REPO it also expects step b's report copy (`?? reports/P3_reports/p3_8a.txt`), which "
+       "step d.2 lists."]
+if not s.endswith("\n"):
+    raise SystemExit("PASS3_STATUS.md does not end with a newline")
+s = s + "\n".join(OWN) + "\n"
+F.write_text(s, encoding="utf-8")
+
+t = F.read_text(encoding="utf-8")
+print("== Decision-log text added (verbatim, as in the file) ==")
+print("<<<<<<<<"); print("\n".join(block)); print(">>>>>>>>")
+print("== Progress rows ==")
+print("<<<<<<<<"); print(t.split("## Progress\n\n")[1].split("\n\n## Next action")[0]); print(">>>>>>>>")
+print("== Next action ==")
+print(t.split("## Next action\n\n")[1].split("\n\n## Decision log")[0])
+print("== Test changes added ==")
+print("<<<<<<<<"); print("\n".join(TC)); print(">>>>>>>>")
+print("== Test results added ==")
+print("<<<<<<<<"); print("\n".join(TR)); print(">>>>>>>>")
+print("== Blinding attestation added ==")
+print("<<<<<<<<"); print("\n".join(BA)); print(">>>>>>>>")
+print("== Deviations lines added ==")
+print("<<<<<<<<"); print("\n".join(OWN)); print(">>>>>>>>")
+print("RECORDS: written")
+>>>>>>>>
+== /tmp/p3_8b_rule.py (sha256 4fdc14b37ccd95d64e8ac117778fc13773fe5b205e8e8c5ff020421b9b3ca9aa) ==
+<<<<<<<<
+"""P3-8b step e.8, the records rule in its post-switch form (DQ6). The six reserved prefixes are read from the saved
+P3-8b message's records-rule paragraph, and the decision block's checkpoint from its step e.8. Checks: lines added to
+PASS3_STATUS.md since HEAD that begin with a reserved prefix (must be 0); lines in the file beginning with each prefix
+(exactly 1 each); the checkpoint is HEAD and appears exactly once in the added Decision-log lines. Also BLIND_FIT_LOG's
+dev_real count and RUN_REGISTRY.jsonl's size. The configuration check is /tmp/p3_8b_cfg.py."""
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+para = MSG.split("**The records rule, post-switch form (DQ6).**")[1].split("**Files that may change")[0]
+PREFIXES = re.findall(r"`([^`]+)`", para.split("one of the six reserved prefixes")[1].split(", and each of them")[0])
+git = lambda *a: subprocess.run(["git", "-C", str(REPO), *a], check=True, capture_output=True, text=True).stdout
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+print(f"reserved prefixes ({len(PREFIXES)}): {PREFIXES}")
+chk("six prefixes", len(PREFIXES) == 6)
+d = git("diff", "-U0", "HEAD", "--", "PASS3_STATUS.md")
+added = [l[1:] for l in d.splitlines() if l.startswith("+") and not l.startswith("+++")]
+n_added = sum(any(l.startswith(p) for p in PREFIXES) for l in added)
+chk(f"lines added since HEAD: {len(added)}; beginning with a reserved prefix: {n_added} (must be 0)", n_added == 0)
+lines = (REPO / "PASS3_STATUS.md").read_text(encoding="utf-8").splitlines()
+for p in PREFIXES:
+    hits = [i + 1 for i, l in enumerate(lines) if l.startswith(p)]
+    chk(f"  lines beginning with {p!r}: {len(hits)} (line {hits})", len(hits) == 1)
+sec7 = MSG.split("8. **Checks**")[1].split("## f.")[0]
+cp = re.search(r"the decision block's checkpoint `([0-9a-f]{40})` is HEAD", sec7).group(1)
+head = git("rev-parse", "HEAD").strip()
+chk(f"the decision block's checkpoint {cp} is HEAD {head}", cp == head)
+dl = [l for l in added if l.startswith(">")]
+n = sum(cp in l for l in dl)
+chk(f"Decision-log lines added: {len(dl)}; the checkpoint appears in them {n} time(s) (must be 1)", n == 1)
+recs = [json.loads(l) for l in (REPO / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines() if l.strip()]
+nd = sum(r.get("provenance") == "dev_real" for r in recs)
+chk(f"BLIND_FIT_LOG: {len(recs)} lines, {nd} with provenance dev_real (must be 7 and 7)", len(recs) == 7 and nd == 7)
+nb = (REPO / "RUN_REGISTRY.jsonl").stat().st_size
+chk(f"RUN_REGISTRY.jsonl bytes {nb} is 0", nb == 0)
+print("RECORDS RULE:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+== /tmp/p3_8b_done.py (sha256 bb0fef5b85ab1b881b15dc5e43c63740f66d8b648caef9b8537767a64273514e) ==
+<<<<<<<<
+"""P3-8b step f: the P3-8b Progress row set to done, with the checkpoint name (targeted replacement; the anchor must occur
+exactly once). The row's title is read from the saved message's title line."""
+import os
+import re
+from pathlib import Path
+
+F = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")) / "PASS3_STATUS.md"
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+title = "P3-8b " + re.search(r"^# Pass 3, item P3-8b: (.+?) \(supervisor message", MSG, re.M).group(1)
+s = F.read_text(encoding="utf-8")
+a = f"| {title} | in progress | P3-8a acceptance"
+n = s.count(a)
+print(f"anchor found {n} times")
+if n != 1:
+    raise SystemExit("not exactly once")
+s = s.replace(a, f"| {title} | done | `checkpoint: P3-8b`. Report `/tmp/p3_8b.txt`; planned STOP: the supervisor reviews "
+                 "the report, then Isaiah tags. P3-8a acceptance")
+F.write_text(s, encoding="utf-8")
+print([l for l in s.splitlines() if l.startswith(f"| {title} |")][0])
+>>>>>>>>
+== /tmp/p3_8b_after.py (sha256 2ee28d4f9d5d4bec1704abc6ded925cd07cc857e8371f21991300afa66b952b6) ==
+<<<<<<<<
+"""P3-8b step f.2: checks after the checkpoint. Expected values are read by script: the step a.2 table and the nine
+tests from the saved P3-8b message; the ten paths' values from this report's step d.2 lines (the clone's values); the
+commit's twelve paths from the message (the nine, tests/tag_state.py, PASS3_STATUS.md and step b's report copy).
+File lists compared as sets. The configuration check is /tmp/p3_8b_cfg.py."""
+import hashlib
+import json
+import os
+import re
+import subprocess
+from pathlib import Path
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+MSG = Path("/tmp/p3_8b_msg.txt").read_text(encoding="utf-8")
+REP = Path("/tmp/p3_8b.txt").read_text(encoding="utf-8")
+sec_a = MSG.split("## a. Date gate and state")[1].split("## b.")[0]
+a2 = dict(re.findall(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|$", sec_a, re.M))
+nine = re.findall(r"^\| `(tests/test_[^`]+\.py)` \| \+\d+ -\d+ \|$", MSG, re.M)
+copy = re.search(r"cp -p /tmp/\S+ (reports/P3_reports/\S+?)`", MSG.split("## b. The reports trail")[1]).group(1)
+d2 = REP[REP.index("\n--- d.2 "):REP.index("\n--- d.3 ")]
+clone_vals = dict(re.findall(r"^(tests/\S+): REPO [0-9a-f]{64}; clone ([0-9a-f]{64}); equal: True$", d2, re.M))
+git = lambda *a: subprocess.run(["git", "-C", str(REPO), *a], capture_output=True, text=True).stdout
+sha = lambda p: hashlib.sha256((REPO / p).read_bytes()).hexdigest()
+ok = True
+
+
+def chk(label, cond):
+    global ok
+    ok &= bool(cond)
+    print(f"{label}: {bool(cond)}")
+
+
+st = git("status", "--porcelain", "--untracked-files=all")
+chk(f"tree clean, untracked files included ({len(st.splitlines())} lines)", st == "")
+print("$ git log -1 --format='%H %s'")
+print(git("log", "-1", "--format=%H %s"), end="")
+print("$ git log -1 --format=%B")
+print(git("log", "-1", "--format=%B"), end="")
+print("$ git show --stat --format= HEAD")
+print(git("show", "--stat", "--format=", "HEAD"), end="")
+names = {l for l in git("show", "--name-only", "--format=", "HEAD").splitlines() if l.strip()}
+want = set(nine) | {"tests/tag_state.py", "PASS3_STATUS.md", copy}
+chk(f"the commit's files ({len(names)}) are exactly the nine, tests/tag_state.py, PASS3_STATUS.md and {copy} "
+    f"({len(want)}), as sets", names == want and len(want) == 12)
+chk(f"step a.2 values read: {len(a2)} (must be 31); the nine among them: {all(f in a2 for f in nine)}",
+    len(a2) == 31 and len(nine) == 9 and all(f in a2 for f in nine))
+for f, v in a2.items():
+    if f in nine:
+        continue
+    g = sha(f)
+    chk(f"{f} {g} still equals its step a.2 value", g == v)
+chk(f"step d.2's clone values read: {len(clone_vals)} (must be 10)", len(clone_vals) == 10)
+for f in nine + ["tests/tag_state.py"]:
+    g = sha(f)
+    chk(f"{f} {g} equals the clone's value of d.2", g == clone_vals.get(f))
+recs = [json.loads(l) for l in (REPO / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines() if l.strip()]
+chk(f"BLIND_FIT_LOG has 7 lines ({len(recs)})", len(recs) == 7)
+n = (REPO / "RUN_REGISTRY.jsonl").stat().st_size
+chk(f"RUN_REGISTRY.jsonl bytes {n} is 0", n == 0)
+tags = git("tag", "-l").split()
+chk(f"git tag -l {tags} is ['pass1-final']", tags == ["pass1-final"])
+chk("no ACCESS_LOG", not os.path.lexists(REPO / "ACCESS_LOG"))
+print(f"the new commit, in full: {git('rev-parse', 'HEAD').strip()}")
+print("AFTER CHECK:", ok)
+raise SystemExit(0 if ok else 1)
+>>>>>>>>
+== the pre-check before a.2 (an inline python -c, as it ran) ==
+<<<<<<<<
+source "$HOME/venvs/ofilt_p2/bin/activate" && env -u OFILT_RUN_SEALED python -c '
+import hashlib, re
+m = open("/tmp/p3_8b_msg.txt", encoding="utf-8").read()
+blk = m.split("<<<<<<<< tests/tag_state.py\n")[1].split("\n>>>>>>>> tests/tag_state.py")[0]
+want = re.search(r"its SHA-256 must be `([0-9a-f]{64})`", m).group(1)
+got = hashlib.sha256((blk + "\n").encode()).hexdigest()
+print(len(blk.splitlines()), "lines; sha256", got, "; equals the message value:", got == want)
+'
+output: 50 lines; sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684 ; equals the message value: True
+>>>>>>>>
+(/tmp/p3_8b_records.py: before its only run, one exact edit gave each check result its own key, because two runs of the apply shared the key "APPLY CHECK". The form above is the one that ran.)
+
+--- g. The new commit ---
+$ git log -1 --format=%H
+f5271c03481b7514a1ec4b7e739fb85fbce8a774
+
+--- g. The Deviations lines this item added, verbatim (read from PASS3_STATUS.md at HEAD) ---
+- P3-8b a.1, the message: its first paste was cut off in step f.2. The builder ran the date gate and asked how to proceed; the question was declined and the full message pasted. The date gate then ran again first, and the full message was saved. Nothing else ran on the first paste. Before a.2, a read-only `python -c` checked that the saved message's `tests/tag_state.py` block has the given SHA-256 (True).
+- P3-8b c.2 and d.1, a reading the item left open: the apply's status check expects exactly the nine ` M` and `?? tests/tag_state.py`; in REPO it also expects step b's report copy (`?? reports/P3_reports/p3_8a.txt`), which step d.2 lists.
+
+--- g. Notes for the supervisor ---
+- The saved message: /tmp/p3_8b_msg.txt, saved verbatim from this session's transcript of the full (second) paste; its SHA-256 is line 3 of this report. Every expected value was read from it by script.
+- The records written at step e (the P3-8b Progress row and the Blinding attestation) say that the clone, with its scratch tag, was deleted, as the message words them; the deletion ran at f.3, after the checkpoint committed those records.
+- The suites: in the clone without a tag, Ran 285 tests in 305.429s, OK (skipped=6); with the scratch tag, Ran 285 tests in 305.364s, OK (skipped=6), every test's result the same; inside the checkpoint, Ran 285 tests in 349.706s, OK (skipped=6). The two clone logs (/tmp/p3_8b_suite_notag.log, /tmp/p3_8b_suite_tag.log) are kept and were not printed.
+- The scratch tag existed only in the clone (created at c.4, deleted with the clone at f.3); REPO's git tag -l printed only pass1-final at every check. The guard check's access record is in /tmp/p3_8b_access.jsonl.
+- Temporary outputs kept under /tmp/p3_8b*: the apply outputs, the suite outputs, /tmp/p3_8b_rec.out and /tmp/p3_8b_after.out; each was appended to this report.
+
+=== STOP (planned): the supervisor reviews the report; then Isaiah tags. ===
+
+2026-10-08T03:19:03Z
+f5271c03481b7514a1ec4b7e739fb85fbce8a774
