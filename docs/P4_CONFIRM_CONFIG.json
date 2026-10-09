@@ -1,0 +1,599 @@
+{
+  "config": "P4_CONFIRM_CONFIG",
+  "version": 1,
+  "status": "Written at P4-2 from Isaiah's decisions P4Q9 to P4Q31 (PASS4_STATUS.md, Decision log). It holds only what the frozen spec leaves open (P4Q4); everything else is as the spec, the amendments and the decision records define it. The confirmation module reads this file from P4-4 and refuses any other, and a test pins its SHA-256 then. A change before the dev run makes a new version, recorded with its reason; a change after it is a disclosed deviation (P4Q1).",
+  "sources": {
+    "spec": {
+      "path": "spec/analysis_spec_dev_v1.yaml",
+      "sha256": "feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26"
+    },
+    "audit": {
+      "path": "reports/P4_reports/p4_1_audit.md",
+      "sha256": "fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894"
+    },
+    "m2_note": {
+      "path": "docs/P4_M2_note.md",
+      "sha256": "a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22"
+    },
+    "m2_check": {
+      "path": "docs/P4_M2_check.py",
+      "sha256": "faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4"
+    },
+    "decisions": "PASS4_STATUS.md, Decision log: P4Q1 to P4Q8 (the standing prompt) and P4Q9 to P4Q31 (P4-2)"
+  },
+  "gap_decisions": {
+    "G1": "P4Q9",
+    "G2": "P4Q10",
+    "G3": "P4Q11",
+    "G4": "P4Q12",
+    "G5": "P4Q13",
+    "G6": "P4Q14",
+    "G7": "P4Q15",
+    "G8": "P4Q16",
+    "G9": "P4Q17",
+    "G10": "P4Q18",
+    "G11": "P4Q19",
+    "G12": "P4Q20",
+    "G13": "P4Q21",
+    "G14": "P4Q22",
+    "G15": "P4Q23",
+    "G16": "P4Q24",
+    "G17": "P4Q25",
+    "G18": "P4Q26",
+    "G19": "P4Q27",
+    "G20": "P4Q28",
+    "G21": "P4Q29",
+    "G22": "P4Q30"
+  },
+  "frame": {
+    "dev": {
+      "loader": "io.load_dev (the dev panel, verified by the spec's hash)",
+      "provenance": "dev_real",
+      "dates": [
+        "2015-01-06",
+        "2021-12-30"
+      ],
+      "targets": "targets.add_targets on the dev rows"
+    },
+    "confirmation": {
+      "loader": "io.load_confirm (Pass 6 only)",
+      "provenance": "confirm_real",
+      "join": "the dev rows and the confirmation rows concatenated, then targets.add_targets on the joined frame, so that every beta continues across the samples (AM-03, P17)",
+      "inference": "restricted to the confirmation dates",
+      "t_conf": 1013,
+      "last_date": "2026-03-05"
+    },
+    "synthetic": {
+      "loader": "the full-schema simulator (P4-3)",
+      "provenance": "synthetic"
+    }
+  },
+  "constants": {
+    "spec_seed": 20261001,
+    "c_cw_cal": 1.411608406163672,
+    "c_cw_rule": "the primary forecast comparison (Clark-West, M3 against M2, one-sided) rejects if and only if its statistic is strictly greater than c_cw_cal (AM-09); a helper applies it to the statistic of fctests.clark_west",
+    "sesoi": {
+      "primary": 0.8652,
+      "low": 0.07152,
+      "high": 2.719
+    },
+    "mde80": 0.2471,
+    "post_break_date": "2024-11-05"
+  },
+  "f": {
+    "confirmatory": {
+      "from": "2022-01-01",
+      "to": "2022-12-31",
+      "fit": "one joint fit (inference.fit_joint) on the confirmation rows dated in the period, with its own T and its own DK lag by the spec's lag rule",
+      "decision": "P4Q9"
+    },
+    "descriptive": {
+      "from": "2023-01-01",
+      "to": "2026-03-05",
+      "fit": "one joint fit on the confirmation rows dated in the period, with its own T and its own DK lag",
+      "decision": "P4Q9"
+    },
+    "disclosure": "the 2022 fit has about a quarter of T_conf, so its DK-normal intervals are not calibrated at its T",
+    "dev": {
+      "fit": "one joint fit on the whole dev estimation sample",
+      "label": "dev stand-in",
+      "periods": "not applicable on dev by design (dev ends 2021-12-30); exercised on synthetic data",
+      "decision": "P4Q10"
+    }
+  },
+  "robustness": {
+    "reporting_form": {
+      "with_and_without": [
+        "beta_rolling_250",
+        "beta_rolling_500",
+        "raw_target",
+        "copx_to_fcx",
+        "ewj_yen_denominated",
+        "xau_control",
+        "nikkei_proxy_p42",
+        "mechanism_session_fx_gotobi"
+      ],
+      "with_and_without_rule": "b with and without the row's change on the same rows, next to the full-sample primary b, with the DK lag at that row's T (AM-05; P56)",
+      "own_estimates": [
+        "exclusion_d_plus_2",
+        "exclude_audit_flag",
+        "exclude_boj_day",
+        "exclude_sq_major",
+        "post_2024_11_05_indicator_CONFIRMATION_ONLY",
+        "per_ticker_slopes_holm"
+      ],
+      "own_estimates_rule": "the row's own estimates with DK SEs, next to the full-sample primary b",
+      "decision": "P4Q12"
+    },
+    "beta_rolling_250": {
+      "beta": "the past-only OLS slope of y_oc on y_1306_oc over the last 250 eligible rows (non-excluded, lag 1 day, continued across samples), as targets.past_beta computes the rolling-500 beta of AM-05",
+      "rows": "the primary rows with a finite rolling-250 beta",
+      "decision": "P4Q11"
+    },
+    "copx_to_fcx": {
+      "rows": "the primary rows with a finite fcx_oc",
+      "decision": "P4Q13"
+    },
+    "xau_control": {
+      "rows": "the primary rows with a finite xau_ret; the rows and dates dropped are reported",
+      "decision": "P4Q14"
+    },
+    "mechanism_session_fx_gotobi": {
+      "rows": "the primary rows on which c_usdjpy_sess_ret, c_eurusd_sess_ret and gotobi_day are all finite; the rows and dates dropped are reported",
+      "decision": "P4Q14"
+    },
+    "post_2024_11_05_indicator_CONFIRMATION_ONLY": {
+      "on_dev": "not applicable by design (post is identically 0 on dev); exercised on synthetic data with a known break (P4Q5)"
+    },
+    "per_ticker_slopes_holm": {
+      "design": "one pooled DK fit with usdjpy_ret and eurusd_ret both ticker-specific (the fixed effects and controls already are), so its point estimates equal per-stock regressions",
+      "test": "Holm across the three two-sided p-values of the usdjpy_ret slopes",
+      "decision": "P4Q15"
+    }
+  },
+  "forecast": {
+    "confirmation": {
+      "rule": "each walk_forward call runs on the joined dev and confirmation rows; the comparisons, the report_all items, the importance and the economic evaluation use only the evaluation rows on confirmation dates",
+      "decision": "P4Q20"
+    },
+    "dev": {
+      "rule": "every dev forecast row, from the first forecast after the 500th eligible training date to 2021-12-30; the confirmation-date restriction is exercised on synthetic data; Clark-West is shown against both the normal reference and c_cw_cal, as exploratory",
+      "decision": "P4Q21"
+    },
+    "m7_call": {
+      "models": [
+        "M7",
+        "M1",
+        "M0"
+      ],
+      "rule": "M0 is added to M7's call, so that M7's OOS R2 against M0 is reported; M0 reads no feature, so the call's sample is unchanged",
+      "decision": "P4Q22"
+    },
+    "importance": {
+      "models": [
+        "M7"
+      ],
+      "rule": "permutation importance for M7 only, calibrated against its noise column",
+      "decision": "P4Q23"
+    },
+    "seeds": {
+      "rule": "every walk_forward call uses the spec seed, the engine's default",
+      "decision": "P4Q27"
+    }
+  },
+  "economic_evaluation": {
+    "outputs": [
+      "the break-even of M3, of M2 and their difference (mean gross P&L per name-day, bp)",
+      "the primary, low and high mean round trips beside them",
+      "the mean net P&L per name-day under each of the three cost cases"
+    ],
+    "aggregation": "pooled; not per ticker",
+    "decision": "P4Q24",
+    "tick_terms": {
+      "rule": "at the confirmation, x_m and x_h are recomputed by D2.4's and D2.5's rules on the confirmation rows' own open and close prices; the locked SESOI is unchanged",
+      "decision": "P4Q25"
+    }
+  },
+  "claims": {
+    "tier_i": {
+      "wording": "overnight USD/JPY predicts session drift",
+      "requires": "H1 rejected (R4)",
+      "decision": "P4Q18"
+    },
+    "tier_ii": {
+      "wording": "the exposure channel",
+      "requires": "AM-05's criterion on the eligible confirmation nights",
+      "condition_3": "signed: b_with / b_without >= 0.5 on point estimates; it fails if the two differ in sign, or if b_without is zero or not finite",
+      "decision": "P4Q16"
+    },
+    "tier_iii": {
+      "claimed": false,
+      "report_without_tier_reading": [
+        "H3: a2-hat, its DK SE and two-sided p",
+        "copx_to_fcx, with and without the swap on the same rows",
+        "xau_control, with and without XAU",
+        "raw_target, with the gap a2-hat(raw) minus a2-hat(abn)"
+      ],
+      "a2_reading": "a2 is the session drift on EUR/USD conditional on usdjpy_ret, SPY and COPX; its sign is not attributed to the metals channel (docs/P4_M2_note.md, Propositions 1, 2 and 5)",
+      "decision": "P4Q17"
+    },
+    "equivalence": {
+      "wording": "no drift exploitable net of costs",
+      "when": "TOST declares equivalence at the primary SESOI",
+      "beside": "whether TOST also declares it at the low and at the high SESOI",
+      "decision": "P4Q19"
+    },
+    "null_h1": {
+      "rule": "a null H1 is read against MDE80, never as no effect; the sentences of P23 and PLAN 1.4 on full pricing are not used",
+      "decision": "P4Q19"
+    },
+    "reading_of_b": "qualified in the pre-registration (flag F4-3; docs/P4_M2_note.md, Proposition 4)"
+  },
+  "dry_run": {
+    "recovery": {
+      "rule": "P4Q5's criteria plus numeric tolerances for b-hat and b_post against the known values, stated in the dry-run item's message before the run",
+      "decision": "P4Q28"
+    },
+    "seeds": {
+      "rule": "the spec seed plus a new offset block, disjoint from the B7, B7b, C7 and sealed-run blocks (D4.5's pattern); the offset is set in the dry-run item",
+      "decision": "P4Q29"
+    }
+  },
+  "not_examined_on_dev": {
+    "items": [
+      "the D4.3 window deviations"
+    ],
+    "decision": "P4Q26"
+  },
+  "forward_holdout": {
+    "rule": "what it evaluates is fixed in the pre-registration (Pass 5)",
+    "decision": "P4Q30"
+  },
+  "contingencies": {
+    "decision": "P4Q31",
+    "principle": "the confirmation run never stops to ask (P13(c))",
+    "not_estimable": "a row with no rows, a rank-deficient design, or a non-finite estimate or SE it reports is reported as not estimable, with its reason and its row and date counts, and the run continues",
+    "undefined_ratio": "a ratio with a zero or non-finite denominator is undefined, and a criterion that needs it fails",
+    "holm": "a member of a Holm family that is not estimable enters with p = 1, so the family size is unchanged",
+    "claims": "a claim whose inputs include a not-estimable result is not made",
+    "missing_added_columns": "P4Q14"
+  },
+  "rows": {
+    "O1": {
+      "decisions": []
+    },
+    "R1": {
+      "decisions": []
+    },
+    "R2": {
+      "decisions": []
+    },
+    "R3": {
+      "decisions": []
+    },
+    "R4": {
+      "decisions": []
+    },
+    "R5": {
+      "decisions": []
+    },
+    "O2": {
+      "decisions": [
+        "P4Q17"
+      ]
+    },
+    "O3": {
+      "decisions": []
+    },
+    "O4": {
+      "decisions": []
+    },
+    "O5": {
+      "decisions": []
+    },
+    "O6": {
+      "decisions": []
+    },
+    "R6": {
+      "decisions": []
+    },
+    "O7": {
+      "decisions": [
+        "P4Q9",
+        "P4Q10"
+      ]
+    },
+    "O8": {
+      "decisions": [
+        "P4Q9",
+        "P4Q10"
+      ]
+    },
+    "O9": {
+      "decisions": []
+    },
+    "O10": {
+      "decisions": [
+        "P4Q19"
+      ]
+    },
+    "O11": {
+      "decisions": [
+        "P4Q19"
+      ]
+    },
+    "O12": {
+      "decisions": []
+    },
+    "O13": {
+      "decisions": []
+    },
+    "O14": {
+      "decisions": []
+    },
+    "O15": {
+      "decisions": [
+        "P4Q11",
+        "P4Q12"
+      ]
+    },
+    "O16": {
+      "decisions": []
+    },
+    "O17": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O18": {
+      "decisions": [
+        "P4Q12",
+        "P4Q13"
+      ]
+    },
+    "O19": {
+      "decisions": []
+    },
+    "O20": {
+      "decisions": [
+        "P4Q14"
+      ]
+    },
+    "O21": {
+      "decisions": [
+        "P4Q16"
+      ]
+    },
+    "O22": {
+      "decisions": [
+        "P4Q14"
+      ]
+    },
+    "O23": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O24": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O25": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O26": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O27": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O28": {
+      "decisions": [
+        "P4Q12",
+        "P4Q15"
+      ]
+    },
+    "R7": {
+      "decisions": [
+        "P4Q15"
+      ]
+    },
+    "R8": {
+      "decisions": [
+        "P4Q12"
+      ]
+    },
+    "O29": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O30": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O31": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O32": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O33": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O34": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O35": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "R9": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O36": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O37": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O38": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O39": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O40": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O41": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21",
+        "P4Q22"
+      ]
+    },
+    "O42": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O43": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21"
+      ]
+    },
+    "O44": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21",
+        "P4Q23"
+      ]
+    },
+    "O45": {
+      "decisions": [
+        "P4Q20",
+        "P4Q21",
+        "P4Q24",
+        "P4Q25"
+      ]
+    },
+    "R10": {
+      "decisions": [
+        "P4Q18"
+      ]
+    },
+    "R11": {
+      "decisions": [
+        "P4Q16"
+      ]
+    },
+    "R12": {
+      "decisions": [
+        "P4Q17"
+      ]
+    },
+    "R13": {
+      "decisions": []
+    },
+    "R14": {
+      "decisions": [
+        "P4Q19"
+      ]
+    },
+    "R15": {
+      "decisions": []
+    },
+    "R16": {
+      "decisions": []
+    },
+    "R17": {
+      "decisions": []
+    },
+    "R18": {
+      "decisions": [
+        "P4Q26"
+      ]
+    },
+    "R19": {
+      "decisions": [
+        "P4Q26"
+      ]
+    },
+    "R20": {
+      "decisions": []
+    },
+    "R21": {
+      "decisions": [
+        "P4Q19"
+      ]
+    },
+    "R22": {
+      "decisions": [
+        "P4Q27",
+        "P4Q29"
+      ]
+    },
+    "R23": {
+      "decisions": []
+    },
+    "R24": {
+      "decisions": [
+        "P4Q28",
+        "P4Q29"
+      ]
+    },
+    "R25": {
+      "decisions": [
+        "P4Q30"
+      ]
+    },
+    "R26": {
+      "decisions": []
+    }
+  }
+}

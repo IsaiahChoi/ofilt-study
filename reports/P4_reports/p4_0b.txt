@@ -1,0 +1,1003 @@
+2026-10-08T18:12:14Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+e44628a17d86020377441ab48a2a6aac110d7cc9dbcdcb1695c7cf06711268ea  /tmp/p4_0b_msg.txt
+=== P4-0b report ===
+(line 3: the SHA-256 of /tmp/p4_0b_msg.txt, the P4-0b message saved verbatim from this session's transcript right after a.1; every expected value is read from it by script)
+
+=== a.1: date +%F, this item's first command, captured by tee to /tmp/p4_0b_a1.out ===
+2026-10-08
+
+=== how each step ran ===
+a.2 (env part), no Python, so not under env -u: bash /tmp/p4_0b_a2_env.sh 2>&1 | tee /tmp/p4_0b_a2_env.out
+every Python step, as: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_0b_<script>.py [arg]' 2>&1 | tee /tmp/p4_0b_<out>.out
+  a.2 run 1 -> a2_run1.out (scripts a2_run1.py with common_run1.py); a.2 run 2 -> a2.out; b.1 act -> b1_copy.out; b.1 check -> b1.out; b.2 -> b2.out;
+  c.1 act -> c1.out; c.2 -> c2.out; d.1 -> c2.py d1 -> d1_status.out, then d1.py -> d1.out; d.2 check -> d2.py -> d2_check.out; d.3 -> d3.out
+d.1 edit: the P4-0b row of PASS4_STATUS.md, one line, by the Edit tool (old: '... reports copied | in progress |', new: '... reports copied | done |')
+d.2, run in REPO: { date -u +%FT%TZ; source "$HOME/venvs/ofilt_p2/bin/activate" && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "P4-0b (Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied)" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"; echo "checkpoint exit: $?"; date -u +%FT%TZ; } 2>&1 | tee /tmp/p4_0b_d2.out
+(python -B so that importing the /tmp helper modules writes no /tmp/__pycache__)
+
+=== script /tmp/p4_0b_a2_env.sh (in full) ===
+#!/bin/bash
+# P4-0b a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A2_ENV CHECK: $ok"
+
+=== script /tmp/p4_0b_common_run1.py (in full) ===
+# P4-0b shared helpers: every expected value is read from /tmp/p4_0b_msg.txt, never typed.
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_0b_msg.txt").read_text()
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+
+
+def sha256(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", str(REPO), *args],
+                          capture_output=True, text=True, check=True).stdout
+
+
+def one(pattern, text=None, flags=0):
+    found = re.findall(pattern, MSG if text is None else text, flags)
+    assert len(found) == 1, (pattern, found)
+    return found[0]
+
+
+def ticks(s):
+    """The backticked items of s, in order."""
+    return re.findall(r"`([^`]+)`", s)
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def prompt():
+    """(path, expected SHA-256) of the standing prompt, as this message names it."""
+    rel, sha = one(r"standing Pass 4 prompt \(`([^`]+)`, SHA-256 `([0-9a-f]{64})`\)")
+    return FXP / rel, sha
+
+
+def five_new():
+    s = one(r"\*\*Files that may change in REPO:\*\* the five new files (.+?); and the B6")
+    names = ticks(s)
+    assert len(names) == 5, names
+    return names
+
+
+def status_block():
+    """The PASS4_STATUS.md template: the lines strictly between the two marker lines."""
+    a, b = ticks(one(r"between the marker lines (`[^`]+` and `[^`]+`)"))
+    lines = MSG.split("\n")
+    assert lines.count(a) == 1 and lines.count(b) == 1, (a, b)
+    return lines[lines.index(a) + 1:lines.index(b)]
+
+
+def prompt_block():
+    """(placeholder line, the prompt's '>' lines between the two named lines, expected count)."""
+    s = one(r"with its one line (`\[[^`]+\]`) replaced by the (\d+) lines of the standing prompt "
+            r"that begin with `>` between its lines (`[^`]+`) and (`[^`]+`), copied by script")
+    placeholder, n, start, end = ticks(s[0])[0], int(s[1]), ticks(s[2])[0], ticks(s[3])[0]
+    path, sha = prompt()
+    assert sha256(path) == sha, "standing prompt hash"
+    plines = path.read_bytes().decode("utf-8").split("\n")
+    assert plines.count(start) == 1 and plines.count(end) == 1, (start, end)
+    i, j = plines.index(start), plines.index(end)
+    block = [ln for ln in plines[i + 1:j] if ln.startswith(">")]
+    return placeholder, block, n
+
+
+def expected_status_text():
+    placeholder, block, n = prompt_block()
+    tmpl = status_block()
+    assert tmpl.count(placeholder) == 1, placeholder
+    k = tmpl.index(placeholder)
+    return "\n".join(tmpl[:k] + block + tmpl[k + 1:]) + "\n", block, n
+
+
+def blind_state(oks):
+    """BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG and PASS3_STATUS.md, as this message states them."""
+    sha, n = one(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines")
+    data = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", sha, sha256(REPO / "BLIND_FIT_LOG")))
+    oks.append(show("BLIND_FIT_LOG lines (newline count)", int(n), data.count(b"\n")))
+    rr = one(r"`RUN_REGISTRY.jsonl` is (\d+) bytes")
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(rr), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    assert "no ACCESS_LOG exists" in MSG
+    oks.append(show("ACCESS_LOG at REPO root exists", False, os.path.lexists(REPO / "ACCESS_LOG")))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG anywhere in REPO (outside .git)", [], found))
+    p3 = one(r"`PASS3_STATUS.md` has SHA-256 `([0-9a-f]{64})`")
+    oks.append(show("PASS3_STATUS.md sha256", p3, sha256(REPO / "PASS3_STATUS.md")))
+
+
+def tags_state(oks):
+    exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`"))
+    oks.append(show("git tag -l", exp_tags, git("tag", "-l").splitlines()))
+    ref, obj, commit = one(r"`git rev-parse (refs/tags/[^`]+)` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`")
+    oks.append(show(f"git rev-parse {ref}", obj, git("rev-parse", ref).strip()))
+    oks.append(show(f"git rev-parse {ref}^{{commit}}", commit, git("rev-parse", ref + "^{commit}").strip()))
+    return ref, commit
+
+=== script /tmp/p4_0b_a2_run1.py (in full) ===
+# P4-0b a.2: REPO state before the item, read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import MSG, REPO, blind_state, git, one, prompt, sha256, show, tags_state, ticks  # noqa: E402
+
+oks = []
+print("REPO:", REPO)
+head = one(r"HEAD is `([0-9a-f]{40})` and `git status --porcelain --untracked-files=all` is empty")
+oks.append(show("HEAD", head, git("rev-parse", "HEAD").strip()))
+oks.append(show("branch", "main", git("symbolic-ref", "--short", "HEAD").strip()))
+oks.append(show("git status --porcelain --untracked-files=all", "", git("status", "--porcelain", "--untracked-files=all")))
+tags_state(oks)
+blind_state(oks)
+path, psha = prompt()
+oks.append(show(f"sha256 {path}", psha, sha256(path)))
+absent = ticks(one(r"and none of (.+?) exists\. Any difference: STOP\."))
+print("must not exist:", absent)
+for rel in absent:
+    oks.append(show(f"exists {rel}", False, os.path.lexists(REPO / rel)))
+print("reports/P3_reports is a directory (copy destination):", (REPO / "reports/P3_reports").is_dir())
+print("checks:", len(oks), "passed:", sum(oks))
+print("A2 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_common.py (in full) ===
+# P4-0b shared helpers: every expected value is read from /tmp/p4_0b_msg.txt, never typed.
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_0b_msg.txt").read_text()
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+# Step a's text: the state facts are stated there; d.3 restates some of them in shorter form.
+SEC_A = MSG.split("\n## a. ")[1].split("\n## b. ")[0]
+
+
+def sha256(p):
+    h = hashlib.sha256()
+    with open(p, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", str(REPO), *args],
+                          capture_output=True, text=True, check=True).stdout
+
+
+def one(pattern, text=None, flags=0):
+    found = re.findall(pattern, MSG if text is None else text, flags)
+    assert len(found) == 1, (pattern, found)
+    return found[0]
+
+
+def ticks(s):
+    """The backticked items of s, in order."""
+    return re.findall(r"`([^`]+)`", s)
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def prompt():
+    """(path, expected SHA-256) of the standing prompt, as this message names it."""
+    rel, sha = one(r"standing Pass 4 prompt \(`([^`]+)`, SHA-256 `([0-9a-f]{64})`\)")
+    return FXP / rel, sha
+
+
+def five_new():
+    s = one(r"\*\*Files that may change in REPO:\*\* the five new files (.+?); and the B6")
+    names = ticks(s)
+    assert len(names) == 5, names
+    return names
+
+
+def status_block():
+    """The PASS4_STATUS.md template: the lines strictly between the two marker lines."""
+    a, b = ticks(one(r"between the marker lines (`[^`]+` and `[^`]+`)"))
+    lines = MSG.split("\n")
+    assert lines.count(a) == 1 and lines.count(b) == 1, (a, b)
+    return lines[lines.index(a) + 1:lines.index(b)]
+
+
+def prompt_block():
+    """(placeholder line, the prompt's '>' lines between the two named lines, expected count)."""
+    s = one(r"with its one line (`\[[^`]+\]`) replaced by the (\d+) lines of the standing prompt "
+            r"that begin with `>` between its lines (`[^`]+`) and (`[^`]+`), copied by script")
+    placeholder, n, start, end = ticks(s[0])[0], int(s[1]), ticks(s[2])[0], ticks(s[3])[0]
+    path, sha = prompt()
+    assert sha256(path) == sha, "standing prompt hash"
+    plines = path.read_bytes().decode("utf-8").split("\n")
+    assert plines.count(start) == 1 and plines.count(end) == 1, (start, end)
+    i, j = plines.index(start), plines.index(end)
+    block = [ln for ln in plines[i + 1:j] if ln.startswith(">")]
+    return placeholder, block, n
+
+
+def expected_status_text():
+    placeholder, block, n = prompt_block()
+    tmpl = status_block()
+    assert tmpl.count(placeholder) == 1, placeholder
+    k = tmpl.index(placeholder)
+    return "\n".join(tmpl[:k] + block + tmpl[k + 1:]) + "\n", block, n
+
+
+def blind_state(oks):
+    """BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG and PASS3_STATUS.md, as this message states them."""
+    sha, n = one(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines", SEC_A)
+    data = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", sha, sha256(REPO / "BLIND_FIT_LOG")))
+    oks.append(show("BLIND_FIT_LOG lines (newline count)", int(n), data.count(b"\n")))
+    rr = one(r"`RUN_REGISTRY.jsonl` is (\d+) bytes", SEC_A)
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(rr), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    assert "no ACCESS_LOG exists" in SEC_A
+    oks.append(show("ACCESS_LOG at REPO root exists", False, os.path.lexists(REPO / "ACCESS_LOG")))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG anywhere in REPO (outside .git)", [], found))
+    p3 = one(r"`PASS3_STATUS.md` has SHA-256 `([0-9a-f]{64})`", SEC_A)
+    oks.append(show("PASS3_STATUS.md sha256", p3, sha256(REPO / "PASS3_STATUS.md")))
+
+
+def tags_state(oks):
+    exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`", SEC_A))
+    oks.append(show("git tag -l", exp_tags, git("tag", "-l").splitlines()))
+    ref, obj, commit = one(r"`git rev-parse (refs/tags/[^`]+)` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`", SEC_A)
+    oks.append(show(f"git rev-parse {ref}", obj, git("rev-parse", ref).strip()))
+    oks.append(show(f"git rev-parse {ref}^{{commit}}", commit, git("rev-parse", ref + "^{commit}").strip()))
+    return ref, commit
+
+=== script /tmp/p4_0b_a2.py (in full) ===
+# P4-0b a.2: REPO state before the item, read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import REPO, SEC_A, blind_state, git, one, prompt, sha256, show, tags_state, ticks  # noqa: E402
+
+oks = []
+print("REPO:", REPO)
+head = one(r"HEAD is `([0-9a-f]{40})` and `git status --porcelain --untracked-files=all` is empty", SEC_A)
+oks.append(show("HEAD", head, git("rev-parse", "HEAD").strip()))
+oks.append(show("branch", "main", git("symbolic-ref", "--short", "HEAD").strip()))
+oks.append(show("git status --porcelain --untracked-files=all", "", git("status", "--porcelain", "--untracked-files=all")))
+tags_state(oks)
+blind_state(oks)
+path, psha = prompt()
+oks.append(show(f"sha256 {path}", psha, sha256(path)))
+absent = ticks(one(r"and none of (.+?) exists\. Any difference: STOP\.", SEC_A))
+print("must not exist:", absent)
+for rel in absent:
+    oks.append(show(f"exists {rel}", False, os.path.lexists(REPO / rel)))
+print("reports/P3_reports is a directory (copy destination):", (REPO / "reports/P3_reports").is_dir())
+print("checks:", len(oks), "passed:", sum(oks))
+print("A2 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_table.py (in full) ===
+# P4-0b b: the copy table of step b.1, read from /tmp/p4_0b_msg.txt.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import HOME, MSG, REPO  # noqa: E402
+
+HEADER = "| Source | Destination | SHA-256 |"
+
+
+def rows():
+    """[(source Path, destination Path, expected SHA-256 or None)] in table order."""
+    from pathlib import Path
+    lines = MSG.split("\n")
+    assert lines.count(HEADER) == 1
+    i = lines.index(HEADER)
+    assert set(lines[i + 1].replace("|", "")) == {"-"}, lines[i + 1]
+    out = []
+    for ln in lines[i + 2:]:
+        if not ln.startswith("|"):
+            break
+        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        assert len(cells) == 3, ln
+        assert all(c.startswith("`") and c.endswith("`") for c in cells[:2]), ln
+        src = Path(cells[0][1:-1].replace("$HOME", HOME))
+        dst = REPO / cells[1][1:-1]
+        if cells[2] == "(printed)":
+            sha = None
+        else:
+            assert cells[2].startswith("`") and cells[2].endswith("`") and len(cells[2]) == 66, ln
+            sha = cells[2][1:-1]
+        out.append((src, dst, sha))
+    assert len(out) == 4, out
+    return out
+
+=== script /tmp/p4_0b_b1_copy.py (in full) ===
+# P4-0b b.1 (act): create reports/P4_reports and copy each source with cp -p.
+# Refuses before acting if any source is missing or any destination already exists.
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import REPO  # noqa: E402
+from p4_0b_table import rows  # noqa: E402
+
+ok = True
+table = rows()
+for src, dst, _ in table:
+    print(f"source {src}: exists={src.is_file()}; destination {dst}: exists={os.path.lexists(dst)}")
+    ok &= src.is_file() and not os.path.lexists(dst)
+if ok:
+    cmd = ["mkdir", str(REPO / "reports/P4_reports")]
+    print("run:", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+    for src, dst, _ in table:
+        assert dst.parent.is_dir(), dst.parent
+        cmd = ["cp", "-p", str(src), str(dst)]
+        print("run:", " ".join(cmd))
+        subprocess.run(cmd, check=True)
+        ok &= dst.is_file()
+else:
+    print("refused: nothing created or copied")
+print("B1_COPY CHECK:", ok)
+
+=== script /tmp/p4_0b_b1.py (in full) ===
+# P4-0b b.1 (check): each copy's SHA-256 equals its source's and, where the table gives one, that value.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import sha256, show  # noqa: E402
+from p4_0b_table import rows  # noqa: E402
+
+oks = []
+for src, dst, exp in rows():
+    s, d = sha256(src), sha256(dst)
+    print(f"source      {s}  {src}")
+    print(f"destination {d}  {dst}")
+    oks.append(show(f"  copy equals source ({dst.name})", s, d))
+    if exp is None:
+        print(f"  table value: (printed) -> {d}")
+    else:
+        oks.append(show(f"  copy equals table ({dst.name})", exp, d))
+print("checks:", len(oks), "passed:", sum(oks))
+print("B1 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_b2.py (in full) ===
+# P4-0b b.2: first two lines, last two non-empty lines, the third line and whole-line counts of each copy.
+# Lines are compared after removing only their line endings (\n, and a \r before it).
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import MSG, REPO, show, ticks  # noqa: E402
+from p4_0b_table import rows  # noqa: E402
+
+sec = MSG.split("\n2. By script, of each copy,")[1].split("\n## c. ")[0]
+bullets = [ln for ln in sec.split("\n") if ln.startswith("- `reports/")]
+print("bullets read from the message:", len(bullets))
+dests = [str(d.relative_to(REPO)) for _, d, _ in rows()]
+oks = [show("bullet paths = the copy table's destinations", dests, [ticks(b)[0] for b in bullets])]
+
+
+def lines_of(p):
+    parts = p.read_bytes().decode("utf-8").split("\n")
+    if parts and parts[-1] == "":
+        parts.pop()
+    return [x[:-1] if x.endswith("\r") else x for x in parts]
+
+
+for b in bullets:
+    m = re.match(r"- `([^`]+)`: first two lines `([^`]+)` and `([^`]+)`; last two non-empty lines `([^`]+)` and `([^`]+)`; "
+                 r"third line `([^`]+)`; that whole line occurs exactly (\d+) times?(.*)$", b)
+    assert m, b
+    rel, f1, f2, l1, l2, third, n3, rest = m.groups()
+    extra = re.findall(r"the whole line `([^`]+)` occurs exactly (\d+) times?", rest)
+    lines = lines_of(REPO / rel)
+    nonempty = [x for x in lines if x != ""]
+    print(f"--- {rel}: {len(lines)} lines; last 3 lines as read: {lines[-3:]!r}")
+    oks.append(show("  first two lines", [f1, f2], lines[:2]))
+    oks.append(show("  last two non-empty lines", [l1, l2], nonempty[-2:]))
+    oks.append(show("  third line", third, lines[2]))
+    oks.append(show("  occurrences of the third line", int(n3), lines.count(third)))
+    for text, n in extra:
+        oks.append(show(f"  occurrences of {text!r}", int(n), lines.count(text)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("B2 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_c1.py (in full) ===
+# P4-0b c.1 (act): write PASS4_STATUS.md = the message's template, its placeholder line replaced by the
+# standing prompt's '>' lines (copied by script). Refuses to overwrite.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import REPO, expected_status_text, show  # noqa: E402
+
+text, block, n = expected_status_text()
+ok = show("lines copied from the prompt", n, len(block))
+dst = REPO / "PASS4_STATUS.md"
+if ok:
+    with open(dst, "x", encoding="utf-8", newline="") as f:
+        f.write(text)
+    print("written:", dst, len(text.encode("utf-8")), "bytes")
+print("C1_WRITE CHECK:", ok)
+
+=== script /tmp/p4_0b_c2.py (in full) ===
+# P4-0b c.2 (check), also run at d.1 with the argument "d1": PASS4_STATUS.md equals the message's text
+# with the replacement; the replacement is the prompt's lines, byte-identical; the nine headings in order.
+# With "d1": the expected text is the same with only the P4-0b row's status changed (`in progress` -> `done`).
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import MSG, REPO, expected_status_text, one, prompt_block, sha256, show, ticks  # noqa: E402
+
+mode = sys.argv[1] if len(sys.argv) > 1 else "c2"
+oks = []
+text, block, n = expected_status_text()
+placeholder, _, _ = prompt_block()
+if mode == "d1":
+    old, new = ticks(one(r"change the P4-0b row's status in Progress from (`[^`]+` to `[^`]+`)"))
+    rows = [ln for ln in text.split("\n") if ln.startswith("| P4-0b ")]
+    oks.append(show("P4-0b rows in the template", 1, len(rows)))
+    row = rows[0]
+    cells = row.split(" | ")
+    oks.append(show("P4-0b row's status cell before the edit", old, cells[1]))
+    cells[1] = new
+    text = text.replace(row + "\n", " | ".join(cells) + "\n")
+    print("expected P4-0b row after the edit:", " | ".join(cells))
+data = (REPO / "PASS4_STATUS.md").read_bytes()
+actual = data.decode("utf-8")
+oks.append(show("PASS4_STATUS.md equals the expected text", True, actual == text))
+print("sha256 PASS4_STATUS.md:", sha256(REPO / "PASS4_STATUS.md"), "| bytes:", len(data), "| lines:", data.count(b"\n"))
+oks.append(show("ends with exactly one newline", True, data.endswith(b"\n") and not data.endswith(b"\n\n")))
+oks.append(show("replacement line count", n, len(block)))
+flines = actual.split("\n")
+tmpl_first = [ln for ln in flines if ln.startswith("> - P4Q1 ")]
+oks.append(show("lines starting '> - P4Q1 ' in the file", 1, len(tmpl_first)))
+k = flines.index(tmpl_first[0])
+pblock = prompt_block()[1]
+oks.append(show("the file's lines at the replacement equal the prompt's, byte for byte", True,
+                [x.encode("utf-8") for x in flines[k:k + n]] == [x.encode("utf-8") for x in pblock]))
+oks.append(show("placeholder line absent from the file", False, placeholder in actual))
+heads = ticks(one(r"its lines that begin with `## ` are exactly, in order, (.+?)\. Any failure: STOP\."))
+oks.append(show("## headings", heads, [ln for ln in flines if ln.startswith("## ")]))
+label = "D1_STATUS" if mode == "d1" else "C2"
+print("checks:", len(oks), "passed:", sum(oks))
+print(f"{label} CHECK:", all(oks))
+
+=== script /tmp/p4_0b_d1.py (in full) ===
+# P4-0b d.1 (check): just before the checkpoint, git status lists exactly the five new files, each as ??;
+# PASS3_STATUS.md keeps its SHA-256. (PASS4_STATUS.md's text and headings: /tmp/p4_0b_c2.py d1.)
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import REPO, SEC_A, five_new, git, one, sha256, show  # noqa: E402
+
+oks = []
+st = git("status", "--porcelain", "--untracked-files=all").splitlines()
+print("git status --porcelain --untracked-files=all:")
+for ln in st:
+    print("  " + ln)
+exp = sorted("?? " + p for p in five_new())
+oks.append(show("status lines as a set", exp, sorted(set(st))))
+oks.append(show("no duplicate status lines", len(st), len(set(st))))
+p3 = one(r"`PASS3_STATUS.md` has SHA-256 `([0-9a-f]{64})`", SEC_A)
+oks.append(show("PASS3_STATUS.md sha256", p3, sha256(REPO / "PASS3_STATUS.md")))
+print("checks:", len(oks), "passed:", sum(oks))
+print("D1 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_d2.py (in full) ===
+# P4-0b d.2 (check): the checkpoint's output holds the expected suite result, exit 0, and a commit line.
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import one, show  # noqa: E402
+
+out = open("/tmp/p4_0b_d2.out", encoding="utf-8").read().split("\n")
+ran, okline = one(r"Expected `(Ran \d+ tests)` and `(OK \(skipped=\d+\))`")
+oks = []
+oks.append(show(f"lines starting '{ran} in '", 1, sum(ln.startswith(ran + " in ") for ln in out)))
+oks.append(show(f"lines equal to '{okline}'", 1, out.count(okline)))
+oks.append(show("lines starting 'Ran '", 1, sum(ln.startswith("Ran ") for ln in out)))
+oks.append(show("'TESTS FAILED' absent", False, any("TESTS FAILED" in ln for ln in out)))
+oks.append(show("'not checkpointing' absent", False, any("not checkpointing" in ln for ln in out)))
+oks.append(show("checkpoint exit", ["checkpoint exit: 0"], [ln for ln in out if ln.startswith("checkpoint exit:")]))
+commits = [ln for ln in out if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+oks.append(show("commit lines", 1, len(commits)))
+print("commit line:", commits)
+print("checks:", len(oks), "passed:", sum(oks))
+print("D2 CHECK:", all(oks))
+
+=== script /tmp/p4_0b_d3.py (in full) ===
+# P4-0b d.3 (check): after the commit.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_0b_common import REPO, SEC_A, blind_state, five_new, git, one, show, tags_state  # noqa: E402
+
+oks = []
+head = git("rev-parse", "HEAD").strip()
+print("new HEAD:", head)
+d2 = [ln for ln in open("/tmp/p4_0b_d2.out", encoding="utf-8").read().split("\n") if ln.startswith("commit ")]
+oks.append(show("HEAD = the commit checkpoint.sh printed", [f"commit {head}"], d2))
+oks.append(show("git status --porcelain --untracked-files=all", "", git("status", "--porcelain", "--untracked-files=all")))
+parent = one(r"HEAD is `([0-9a-f]{40})` and `git status --porcelain --untracked-files=all` is empty", SEC_A)
+parents = git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+oks.append(show("HEAD's parents", [parent], parents))
+oks.append(show("git show --name-only --format= HEAD (as a set)", sorted(five_new()),
+                sorted(set(git("show", "--name-only", "--format=", "HEAD").split("\n")) - {""})))
+oks.append(show("number of files in the commit", len(five_new()),
+                len([x for x in git("show", "--name-only", "--format=", "HEAD").split("\n") if x])))
+print("commit message:")
+print(git("log", "-1", "--format=%B", "HEAD").rstrip("\n"))
+ref, commit = tags_state(oks)
+anc = __import__("subprocess").run(["git", "-C", str(REPO), "merge-base", "--is-ancestor", commit, "HEAD"]).returncode
+oks.append(show(f"{ref}^{{commit}} is an ancestor of HEAD", 0, anc))
+blind_state(oks)
+print("checks:", len(oks), "passed:", sum(oks))
+print("NEW COMMIT:", head)
+print("D3 CHECK:", all(oks))
+
+=== a.2 rerun-once rule: diff run 1 -> run 2 of the scripts ===
+11a12,13
+> # Step a's text: the state facts are stated there; d.3 restates some of them in shorter form.
+> SEC_A = MSG.split("\n## a. ")[1].split("\n## b. ")[0]
+89c91
+<     sha, n = one(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines")
+---
+>     sha, n = one(r"`BLIND_FIT_LOG` has SHA-256 `([0-9a-f]{64})` and (\d+) lines", SEC_A)
+93c95
+<     rr = one(r"`RUN_REGISTRY.jsonl` is (\d+) bytes")
+---
+>     rr = one(r"`RUN_REGISTRY.jsonl` is (\d+) bytes", SEC_A)
+95c97
+<     assert "no ACCESS_LOG exists" in MSG
+---
+>     assert "no ACCESS_LOG exists" in SEC_A
+102c104
+<     p3 = one(r"`PASS3_STATUS.md` has SHA-256 `([0-9a-f]{64})`")
+---
+>     p3 = one(r"`PASS3_STATUS.md` has SHA-256 `([0-9a-f]{64})`", SEC_A)
+107c109
+<     exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`"))
+---
+>     exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`", SEC_A))
+109c111
+<     ref, obj, commit = one(r"`git rev-parse (refs/tags/[^`]+)` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`")
+---
+>     ref, obj, commit = one(r"`git rev-parse (refs/tags/[^`]+)` is `([0-9a-f]{40})` and its commit is `([0-9a-f]{40})`", SEC_A)
+6c6
+< from p4_0b_common import MSG, REPO, blind_state, git, one, prompt, sha256, show, tags_state, ticks  # noqa: E402
+---
+> from p4_0b_common import REPO, SEC_A, blind_state, git, one, prompt, sha256, show, tags_state, ticks  # noqa: E402
+10c10
+< head = one(r"HEAD is `([0-9a-f]{40})` and `git status --porcelain --untracked-files=all` is empty")
+---
+> head = one(r"HEAD is `([0-9a-f]{40})` and `git status --porcelain --untracked-files=all` is empty", SEC_A)
+18c18
+< absent = ticks(one(r"and none of (.+?) exists\. Any difference: STOP\."))
+---
+> absent = ticks(one(r"and none of (.+?) exists\. Any difference: STOP\.", SEC_A))
+
+=== output /tmp/p4_0b_a2_env.out ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A2_ENV CHECK: True
+
+=== output /tmp/p4_0b_a2_run1.out ===
+REPO: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+HEAD: expected='96963b31d620ab98ff529458fcd095f412c443bd' actual='96963b31d620ab98ff529458fcd095f412c443bd' ok=True
+branch: expected='main' actual='main' ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+Traceback (most recent call last):
+  File "/tmp/p4_0b_a2.py", line 14, in <module>
+    tags_state(oks)
+  File "/tmp/p4_0b_common.py", line 107, in tags_state
+    exp_tags = list(one(r"`git tag -l` prints exactly `([^`]+)` and `([^`]+)`"))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/p4_0b_common.py", line 29, in one
+    assert len(found) == 1, (pattern, found)
+           ^^^^^^^^^^^^^^^
+AssertionError: ('`git tag -l` prints exactly `([^`]+)` and `([^`]+)`', [('pass1-final', 'spec-dev-v1'), ('pass1-final', 'spec-dev-v1')])
+
+=== output /tmp/p4_0b_a2.out ===
+REPO: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+HEAD: expected='96963b31d620ab98ff529458fcd095f412c443bd' actual='96963b31d620ab98ff529458fcd095f412c443bd' ok=True
+branch: expected='main' actual='main' ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+git rev-parse refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+git rev-parse refs/tags/spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines (newline count): expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+ACCESS_LOG at REPO root exists: expected=False actual=False ok=True
+names starting ACCESS_LOG anywhere in REPO (outside .git): expected=[] actual=[] ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+sha256 /Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md: expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+must not exist: ['PASS4_STATUS.md', 'reports/P4_reports', 'reports/P3_reports/p3_8c.txt', 'reports/P3_reports/p3_9.txt']
+exists PASS4_STATUS.md: expected=False actual=False ok=True
+exists reports/P4_reports: expected=False actual=False ok=True
+exists reports/P3_reports/p3_8c.txt: expected=False actual=False ok=True
+exists reports/P3_reports/p3_9.txt: expected=False actual=False ok=True
+reports/P3_reports is a directory (copy destination): True
+checks: 17 passed: 17
+A2 CHECK: True
+
+=== output /tmp/p4_0b_b1_copy.out ===
+source /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_8c.txt: exists=True; destination /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_8c.txt: exists=False
+source /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_9.txt: exists=True; destination /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_9.txt: exists=False
+source /tmp/p4_0a.txt: exists=True; destination /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_0a.txt: exists=False
+source /tmp/p4_boot.txt: exists=True; destination /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_boot.txt: exists=False
+run: mkdir /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_8c.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_8c.txt
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_9.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_9.txt
+run: cp -p /tmp/p4_0a.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_0a.txt
+run: cp -p /tmp/p4_boot.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_boot.txt
+B1_COPY CHECK: True
+
+=== output /tmp/p4_0b_b1.out ===
+source      9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9  /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_8c.txt
+destination 9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9  /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_8c.txt
+  copy equals source (p3_8c.txt): expected='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' actual='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' ok=True
+  copy equals table (p3_8c.txt): expected='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' actual='9097e969132948c285c80f45433b7cdad7f16951a8749cfe8ec1dcc0ef3d8eb9' ok=True
+source      dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad  /Users/isaiahchoi/Desktop/FX_Project/files/pass3_tmp_keep/p3_9.txt
+destination dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad  /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P3_reports/p3_9.txt
+  copy equals source (p3_9.txt): expected='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' actual='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' ok=True
+  copy equals table (p3_9.txt): expected='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' actual='dd78925cb928fefc51a32c266b4d4fab93e719efeddea8cd7e9ba48a974e8bad' ok=True
+source      e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c  /tmp/p4_0a.txt
+destination e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c  /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_0a.txt
+  copy equals source (p4_0a.txt): expected='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' actual='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' ok=True
+  copy equals table (p4_0a.txt): expected='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' actual='e592b7c4eecadae887e4858529e19d06d948bf33061dfcf0aff9dc265b010f7c' ok=True
+source      ec7f2381101b15f144b090a593a5153a775ef42519e2c9e2976cbd722ef0f690  /tmp/p4_boot.txt
+destination ec7f2381101b15f144b090a593a5153a775ef42519e2c9e2976cbd722ef0f690  /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_boot.txt
+  copy equals source (p4_boot.txt): expected='ec7f2381101b15f144b090a593a5153a775ef42519e2c9e2976cbd722ef0f690' actual='ec7f2381101b15f144b090a593a5153a775ef42519e2c9e2976cbd722ef0f690' ok=True
+  table value: (printed) -> ec7f2381101b15f144b090a593a5153a775ef42519e2c9e2976cbd722ef0f690
+checks: 7 passed: 7
+B1 CHECK: True
+
+=== output /tmp/p4_0b_b2.out ===
+bullets read from the message: 4
+bullet paths = the copy table's destinations: expected=['reports/P3_reports/p3_8c.txt', 'reports/P3_reports/p3_9.txt', 'reports/P4_reports/p4_0a.txt', 'reports/P4_reports/p4_boot.txt'] actual=['reports/P3_reports/p3_8c.txt', 'reports/P3_reports/p3_9.txt', 'reports/P4_reports/p4_0a.txt', 'reports/P4_reports/p4_boot.txt'] ok=True
+--- reports/P3_reports/p3_8c.txt: 1573 lines; last 3 lines as read: ['', '2026-10-08T04:13:31Z', '96963b31d620ab98ff529458fcd095f412c443bd']
+  first two lines: expected=['2026-10-08T03:31:49Z', 'f5271c03481b7514a1ec4b7e739fb85fbce8a774'] actual=['2026-10-08T03:31:49Z', 'f5271c03481b7514a1ec4b7e739fb85fbce8a774'] ok=True
+  last two non-empty lines: expected=['2026-10-08T04:13:31Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T04:13:31Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  third line: expected='88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d  /tmp/p3_8c_msg.txt' actual='88ab36608fdf6e963a447b0848f8d40286a24f99b7c23d07cbe42af8a6a74d4d  /tmp/p3_8c_msg.txt' ok=True
+  occurrences of the third line: expected=1 actual=1 ok=True
+  occurrences of '70dc575250ccb997051fb3bdbf83b1c227e61a8dbbd448cd523b03922b96e86e  /tmp/p3_8c_cont_msg.txt': expected=1 actual=1 ok=True
+--- reports/P3_reports/p3_9.txt: 245 lines; last 3 lines as read: ['', '2026-10-08T04:21:29Z', '96963b31d620ab98ff529458fcd095f412c443bd']
+  first two lines: expected=['2026-10-08T04:21:06Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T04:21:06Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  last two non-empty lines: expected=['2026-10-08T04:21:29Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T04:21:29Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  third line: expected='ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd  /tmp/p3_9_msg.txt' actual='ed429666244718c08a007ed462db43e3d6cf166b4350e74a7440663f6e512efd  /tmp/p3_9_msg.txt' ok=True
+  occurrences of the third line: expected=1 actual=1 ok=True
+--- reports/P4_reports/p4_0a.txt: 342 lines; last 3 lines as read: ['', '2026-10-08T13:53:35Z', '96963b31d620ab98ff529458fcd095f412c443bd']
+  first two lines: expected=['2026-10-08T13:53:04Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T13:53:04Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  last two non-empty lines: expected=['2026-10-08T13:53:35Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T13:53:35Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  third line: expected='7e5dc34c34c7e1734bf0c90f9903c7b25062950066d713a09c0f1552cbc80be0  /tmp/p4_0a_msg.txt' actual='7e5dc34c34c7e1734bf0c90f9903c7b25062950066d713a09c0f1552cbc80be0  /tmp/p4_0a_msg.txt' ok=True
+  occurrences of the third line: expected=1 actual=1 ok=True
+--- reports/P4_reports/p4_boot.txt: 430 lines; last 3 lines as read: ['', '2026-10-08T17:52:54Z', '96963b31d620ab98ff529458fcd095f412c443bd']
+  first two lines: expected=['2026-10-08T17:52:54Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T17:52:54Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  last two non-empty lines: expected=['2026-10-08T17:52:54Z', '96963b31d620ab98ff529458fcd095f412c443bd'] actual=['2026-10-08T17:52:54Z', '96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+  third line: expected='975c188a06d65071d003bc8ef5de57dd039b7d3faebcb5ea3233a274332e2677  /tmp/p4_boot_msg.txt' actual='975c188a06d65071d003bc8ef5de57dd039b7d3faebcb5ea3233a274332e2677  /tmp/p4_boot_msg.txt' ok=True
+  occurrences of the third line: expected=2 actual=2 ok=True
+checks: 18 passed: 18
+B2 CHECK: True
+
+=== output /tmp/p4_0b_c1.out ===
+lines copied from the prompt: expected=31 actual=31 ok=True
+written: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/PASS4_STATUS.md 10414 bytes
+C1_WRITE CHECK: True
+
+=== output /tmp/p4_0b_c2.out ===
+PASS4_STATUS.md equals the expected text: expected=True actual=True ok=True
+sha256 PASS4_STATUS.md: b0800cce7bd3776bd6dc584417e5ca072d2bd875d8e5f847b83c043059276648 | bytes: 10414 | lines: 94
+ends with exactly one newline: expected=True actual=True ok=True
+replacement line count: expected=31 actual=31 ok=True
+lines starting '> - P4Q1 ' in the file: expected=1 actual=1 ok=True
+the file's lines at the replacement equal the prompt's, byte for byte: expected=True actual=True ok=True
+placeholder line absent from the file: expected=False actual=False ok=True
+## headings: expected=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] actual=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] ok=True
+checks: 7 passed: 7
+C2 CHECK: True
+
+=== output /tmp/p4_0b_d1_status.out ===
+P4-0b rows in the template: expected=1 actual=1 ok=True
+P4-0b row's status cell before the edit: expected='in progress' actual='in progress' ok=True
+expected P4-0b row after the edit: | P4-0b Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied | done | `checkpoint: P4-0b`. Report `/tmp/p4_0b.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-1. |
+PASS4_STATUS.md equals the expected text: expected=True actual=True ok=True
+sha256 PASS4_STATUS.md: 1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9 | bytes: 10407 | lines: 94
+ends with exactly one newline: expected=True actual=True ok=True
+replacement line count: expected=31 actual=31 ok=True
+lines starting '> - P4Q1 ' in the file: expected=1 actual=1 ok=True
+the file's lines at the replacement equal the prompt's, byte for byte: expected=True actual=True ok=True
+placeholder line absent from the file: expected=False actual=False ok=True
+## headings: expected=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] actual=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] ok=True
+checks: 9 passed: 9
+D1_STATUS CHECK: True
+
+=== output /tmp/p4_0b_d1.out ===
+git status --porcelain --untracked-files=all:
+  ?? PASS4_STATUS.md
+  ?? reports/P3_reports/p3_8c.txt
+  ?? reports/P3_reports/p3_9.txt
+  ?? reports/P4_reports/p4_0a.txt
+  ?? reports/P4_reports/p4_boot.txt
+status lines as a set: expected=['?? PASS4_STATUS.md', '?? reports/P3_reports/p3_8c.txt', '?? reports/P3_reports/p3_9.txt', '?? reports/P4_reports/p4_0a.txt', '?? reports/P4_reports/p4_boot.txt'] actual=['?? PASS4_STATUS.md', '?? reports/P3_reports/p3_8c.txt', '?? reports/P3_reports/p3_9.txt', '?? reports/P4_reports/p4_0a.txt', '?? reports/P4_reports/p4_boot.txt'] ok=True
+no duplicate status lines: expected=5 actual=5 ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+checks: 3 passed: 3
+D1 CHECK: True
+
+=== output /tmp/p4_0b_d2.out ===
+2026-10-08T18:04:26Z
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+before suite: git status --porcelain
+?? PASS4_STATUS.md
+?? reports/P3_reports/p3_8c.txt
+?? reports/P3_reports/p3_9.txt
+?? reports/P4_reports/
+----------------------------------------------------------------------
+Ran 285 tests in 337.073s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+?? PASS4_STATUS.md
+?? reports/P3_reports/p3_8c.txt
+?? reports/P3_reports/p3_9.txt
+?? reports/P4_reports/
+commit 795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+checkpoint exit: 0
+2026-10-08T18:10:07Z
+
+=== output /tmp/p4_0b_d2_check.out ===
+lines starting 'Ran 285 tests in ': expected=1 actual=1 ok=True
+lines equal to 'OK (skipped=6)': expected=1 actual=1 ok=True
+lines starting 'Ran ': expected=1 actual=1 ok=True
+'TESTS FAILED' absent: expected=False actual=False ok=True
+'not checkpointing' absent: expected=False actual=False ok=True
+checkpoint exit: expected=['checkpoint exit: 0'] actual=['checkpoint exit: 0'] ok=True
+commit lines: expected=1 actual=1 ok=True
+commit line: ['commit 795385fa709f4cf6c8e7f441d879cc1c1b89e46b']
+checks: 7 passed: 7
+D2 CHECK: True
+
+=== output /tmp/p4_0b_d3.out ===
+new HEAD: 795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+HEAD = the commit checkpoint.sh printed: expected=['commit 795385fa709f4cf6c8e7f441d879cc1c1b89e46b'] actual=['commit 795385fa709f4cf6c8e7f441d879cc1c1b89e46b'] ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+HEAD's parents: expected=['96963b31d620ab98ff529458fcd095f412c443bd'] actual=['96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+git show --name-only --format= HEAD (as a set): expected=['PASS4_STATUS.md', 'reports/P3_reports/p3_8c.txt', 'reports/P3_reports/p3_9.txt', 'reports/P4_reports/p4_0a.txt', 'reports/P4_reports/p4_boot.txt'] actual=['PASS4_STATUS.md', 'reports/P3_reports/p3_8c.txt', 'reports/P3_reports/p3_9.txt', 'reports/P4_reports/p4_0a.txt', 'reports/P4_reports/p4_boot.txt'] ok=True
+number of files in the commit: expected=5 actual=5 ok=True
+commit message:
+checkpoint: P4-0b (Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+git rev-parse refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+git rev-parse refs/tags/spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+refs/tags/spec-dev-v1^{commit} is an ancestor of HEAD: expected=0 actual=0 ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines (newline count): expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+ACCESS_LOG at REPO root exists: expected=False actual=False ok=True
+names starting ACCESS_LOG anywhere in REPO (outside .git): expected=[] actual=[] ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+checks: 15 passed: 15
+NEW COMMIT: 795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+D3 CHECK: True
+
+=== verdict lines (a.2 run 1 printed none: it failed on its own bug before its verdict) ===
+a2_env.out: A2_ENV CHECK: True
+a2_run1.out: (no verdict line)
+a2.out: A2 CHECK: True
+b1_copy.out: B1_COPY CHECK: True
+b1.out: B1 CHECK: True
+b2.out: B2 CHECK: True
+c1.out: C1_WRITE CHECK: True
+c2.out: C2 CHECK: True
+d1_status.out: D1_STATUS CHECK: True
+d1.out: D1 CHECK: True
+d2_check.out: D2 CHECK: True
+d3.out: D3 CHECK: True
+
+=== the new commit ===
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+96963b31d620ab98ff529458fcd095f412c443bd
+checkpoint: P4-0b (Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md                |   94 +++
+ reports/P3_reports/p3_8c.txt   | 1573 ++++++++++++++++++++++++++++++++++++++++
+ reports/P3_reports/p3_9.txt    |  245 +++++++
+ reports/P4_reports/p4_0a.txt   |  342 +++++++++
+ reports/P4_reports/p4_boot.txt |  430 +++++++++++
+ 5 files changed, 2684 insertions(+)
+
+=== PASS4_STATUS.md as committed: SHA-256 ===
+1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9  -
+
+=== Deviations and notes ===
+1. Deviation (standing prompt, Environment): one text edit of /tmp/p4_0b_b2.py ran as 'cd /tmp && python3 - <<EOF ... EOF', without activating the venv in that command and without env -u OFILT_RUN_SEALED. It replaced two strings in that script (the bullet-count check became a comparison with the copy table's destinations), before b.2's only run; it read no data and wrote nothing else.
+   Which python3 it resolved to was not recorded. Facts now: this session's shell, after d.2's 'source .../activate', has the venv first on PATH:
+   VIRTUAL_ENV=[/Users/isaiahchoi/venvs/ofilt_p2]; python3 -> /Users/isaiahchoi/venvs/ofilt_p2/bin/python3
+   while a fresh login zsh (env -i HOME PATH=/usr/bin:/bin zsh -lic) resolves:
+   VIRTUAL_ENV=[]; python3 -> /Applications/anaconda3/bin/python3
+   So the edit ran either the venv's python3 (if the session inherited an activated venv at launch) or anaconda's; in both cases outside the rule. OFILT_RUN_SEALED was absent from the session (A2_ENV above).
+   Not recorded in PASS4_STATUS.md, Deviations: that file was committed before this report was written; it is for the supervisor to route.
+2. Rerun-once rule (standing prompt): a.2 run 1 stopped with an AssertionError in its own helper one(): the sentence giving the tag list occurs twice in the message (a.2 and d.3), and the regex required exactly one match. The fix scoped every step-a lookup to step a's text (SEC_A); diff above. Run 2 passed. Both runs are recorded above.
+3. Note (outside /tmp/p4_0b*): checkpoint.sh, run as the item prescribes, writes its suite log by mktemp in $TMPDIR, and the suite's own temporary files go there too, as at every Pass 3 checkpoint. This session's TMPDIR and the newest checkpoint log there:
+   TMPDIR=/var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T/
+-rw-------  1 isaiahchoi  staff  399 Oct  8 14:10 /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.uN0mHr
+4. /tmp/p4_boot.txt's SHA-256, printed at b.1 (the table gave none): see B1's output above.
+
+=== files outside REPO written by this item under /tmp (all /tmp/p4_0b*; the report itself excluded) ===
+ec4edbd6f96a5cb8162e3310823b9a545a725c9f3f7fe7f6569b59149b450cbd  /tmp/p4_0b_a1.out
+9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_0b_a2_env.out
+b6df96c6744d966079582de7733273cf0e4d03a6969f677d8e64a211c172f402  /tmp/p4_0b_a2_env.sh
+72459f836dabf2946dedb44ee4b710dee6219e1a190c758586c74b26a4962fb1  /tmp/p4_0b_a2_run1.out
+ad86a2119910efc20841f884b07c8d29feba793faaf174fac7065d6685d72647  /tmp/p4_0b_a2_run1.py
+296d35c39d4984d261216557eceebcc6fa5f29c51d723583e15e2ab97cd1d217  /tmp/p4_0b_a2.out
+1a655a61e01023c55c898940ce93fc3b1214e7e566a337294925152da1b2cd94  /tmp/p4_0b_a2.py
+5138e6156d25df4a09c1948f58fd02c2c6d2fc31e79abea47fd2e85bf9c5039a  /tmp/p4_0b_b1_copy.out
+28964d5a181437cb350c6cc03e2f9d6436a29991ecc32b92a71e92930341b7d9  /tmp/p4_0b_b1_copy.py
+935542674b56783b25734458b465f98dcd04c2fa1e6175b7a360fb3b86e80664  /tmp/p4_0b_b1.out
+6a3ff62a4254f7db8e38463ad193b943672cc88b0855d3cf24f412c4f28691ab  /tmp/p4_0b_b1.py
+b85f53e31995e915c222d863b1c8eaae8904c868cbc5817f4bbc147eb1be89b5  /tmp/p4_0b_b2.out
+e530287f0158f21afc7f3cc9353d4d8f84237f1f448f7bf78a997df6e2499d4d  /tmp/p4_0b_b2.py
+1c080152dce9d3b0f68aea97fc5b09a018209a150bace9cf4b949140c9591948  /tmp/p4_0b_c1.out
+6e8f03d8c77485c1f8dec6ba13e39fdf05ab485686772fcf47fbe10e35a5b970  /tmp/p4_0b_c1.py
+d431540c47bb26a153ed7a200e5875f340a1e99bc2da5fc68aa426bd5433a3ec  /tmp/p4_0b_c2.out
+ee89df6b6ae1bcabf80c0b8d90b1009f66636f6fd155bae7a3253adf01539c66  /tmp/p4_0b_c2.py
+99e743a98b44550ad0ac7aa936480de13f21d4a466ac1b62827810ef25e6dd64  /tmp/p4_0b_common_run1.py
+93a5cdce5ea15cfc765261cd096bb7540b63d08f9667123c57972ed3d086943a  /tmp/p4_0b_common.py
+ba0b779e1eb94cabfedb4b8c53ddfe2c730624a449913d4e6411f12a609fabf9  /tmp/p4_0b_d1_status.out
+3a606dc1101a4186eb7dab6531e9bedd36c73b559b1087195f26aa73212d6ed1  /tmp/p4_0b_d1.out
+2bf44420ba637db91be95f7636a75dc9c49b9c6626296a73eb9c6db50faf1edb  /tmp/p4_0b_d1.py
+cd6aff44cbe1d92ba418ba3f1e7010efa314433f133299bec2c31b528ea4a3da  /tmp/p4_0b_d2_check.out
+9e113fd1949823ca99f2318efe44d005aa858b48c605547e2083c0c4547aef6f  /tmp/p4_0b_d2.out
+4c1c503f5645bed7aa13c21f76f8fbcef3b8bb0dbc3ac0bc8fea808b5897c3f2  /tmp/p4_0b_d2.py
+3175f95fbaaba6018533ed1be756a160c02af06b21a2b4f782770453458a88ea  /tmp/p4_0b_d3.out
+60b1be3e691b10a3f52c7cfc998fff2d8be0ef7a84bd513aea2521333beb59fd  /tmp/p4_0b_d3.py
+e44628a17d86020377441ab48a2a6aac110d7cc9dbcdcb1695c7cf06711268ea  /tmp/p4_0b_msg.txt
+5449f1920890765c00fc4cb52faa57db91af1ce508e7245389a32d90877fd74c  /tmp/p4_0b_report.sh
+eb9d57e04f00bafaf58973fdf654367c3e9a3a12a029355f0b0822aa965e3480  /tmp/p4_0b_table.py
+/tmp/__pycache__ exists: False
+
+=== script /tmp/p4_0b_report.sh (this assembly, in full) ===
+#!/bin/bash
+# P4-0b e: assemble /tmp/p4_0b.txt from command output only (no Python).
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='env -u OFILT_RUN_SEALED bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_0b_<script>.py [arg]'\'' 2>&1 | tee /tmp/p4_0b_<out>.out'
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 /tmp/p4_0b_msg.txt
+echo "=== P4-0b report ==="
+echo "(line 3: the SHA-256 of /tmp/p4_0b_msg.txt, the P4-0b message saved verbatim from this session's transcript right after a.1; every expected value is read from it by script)"
+echo
+echo "=== a.1: date +%F, this item's first command, captured by tee to /tmp/p4_0b_a1.out ==="
+cat /tmp/p4_0b_a1.out
+echo
+echo "=== how each step ran ==="
+echo "a.2 (env part), no Python, so not under env -u: bash /tmp/p4_0b_a2_env.sh 2>&1 | tee /tmp/p4_0b_a2_env.out"
+echo "every Python step, as: $PY"
+echo "  a.2 run 1 -> a2_run1.out (scripts a2_run1.py with common_run1.py); a.2 run 2 -> a2.out; b.1 act -> b1_copy.out; b.1 check -> b1.out; b.2 -> b2.out;"
+echo "  c.1 act -> c1.out; c.2 -> c2.out; d.1 -> c2.py d1 -> d1_status.out, then d1.py -> d1.out; d.2 check -> d2.py -> d2_check.out; d.3 -> d3.out"
+echo "d.1 edit: the P4-0b row of PASS4_STATUS.md, one line, by the Edit tool (old: '... reports copied | in progress |', new: '... reports copied | done |')"
+echo "d.2, run in REPO: { date -u +%FT%TZ; source \"\$HOME/venvs/ofilt_p2/bin/activate\" && env -u OFILT_RUN_SEALED OFILT_DATA_DIR=\"\$HOME/Desktop/FX_Project/data\" bash tools/checkpoint.sh \"P4-0b (Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied)\" \"Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\"; echo \"checkpoint exit: \$?\"; date -u +%FT%TZ; } 2>&1 | tee /tmp/p4_0b_d2.out"
+echo "(python -B so that importing the /tmp helper modules writes no /tmp/__pycache__)"
+for f in a2_env.sh common_run1.py a2_run1.py common.py a2.py table.py b1_copy.py b1.py b2.py c1.py c2.py d1.py d2.py d3.py; do
+  echo
+  echo "=== script /tmp/p4_0b_$f (in full) ==="
+  cat "/tmp/p4_0b_$f"
+done
+echo
+echo "=== a.2 rerun-once rule: diff run 1 -> run 2 of the scripts ==="
+diff /tmp/p4_0b_common_run1.py /tmp/p4_0b_common.py
+diff /tmp/p4_0b_a2_run1.py /tmp/p4_0b_a2.py
+for s in a2_env a2_run1 a2 b1_copy b1 b2 c1 c2 d1_status d1 d2 d2_check d3; do
+  echo
+  echo "=== output /tmp/p4_0b_$s.out ==="
+  cat "/tmp/p4_0b_$s.out"
+done
+echo
+echo "=== verdict lines (a.2 run 1 printed none: it failed on its own bug before its verdict) ==="
+for s in a2_env a2_run1 a2 b1_copy b1 b2 c1 c2 d1_status d1 d2_check d3; do
+  printf '%s: ' "$s.out"; grep -h ' CHECK: ' "/tmp/p4_0b_$s.out" || echo "(no verdict line)"
+done
+echo
+echo "=== the new commit ==="
+git -C "$REPO" log -1 --format='%H%n%P%n%B' HEAD
+git -C "$REPO" show --stat --format= HEAD
+echo
+echo "=== PASS4_STATUS.md as committed: SHA-256 ==="
+git -C "$REPO" show HEAD:PASS4_STATUS.md | shasum -a 256
+echo
+echo "=== Deviations and notes ==="
+echo "1. Deviation (standing prompt, Environment): one text edit of /tmp/p4_0b_b2.py ran as 'cd /tmp && python3 - <<EOF ... EOF', without activating the venv in that command and without env -u OFILT_RUN_SEALED. It replaced two strings in that script (the bullet-count check became a comparison with the copy table's destinations), before b.2's only run; it read no data and wrote nothing else."
+echo "   Which python3 it resolved to was not recorded. Facts now: this session's shell, after d.2's 'source .../activate', has the venv first on PATH:"
+echo "   VIRTUAL_ENV=[${VIRTUAL_ENV-}]; python3 -> $(command -v python3)"
+echo "   while a fresh login zsh (env -i HOME PATH=/usr/bin:/bin zsh -lic) resolves:"
+env -i HOME="$HOME" PATH=/usr/bin:/bin zsh -lic 'echo "   VIRTUAL_ENV=[${VIRTUAL_ENV-}]; python3 -> $(command -v python3)"' 2>/dev/null
+echo "   So the edit ran either the venv's python3 (if the session inherited an activated venv at launch) or anaconda's; in both cases outside the rule. OFILT_RUN_SEALED was absent from the session (A2_ENV above)."
+echo "   Not recorded in PASS4_STATUS.md, Deviations: that file was committed before this report was written; it is for the supervisor to route."
+echo "2. Rerun-once rule (standing prompt): a.2 run 1 stopped with an AssertionError in its own helper one(): the sentence giving the tag list occurs twice in the message (a.2 and d.3), and the regex required exactly one match. The fix scoped every step-a lookup to step a's text (SEC_A); diff above. Run 2 passed. Both runs are recorded above."
+echo "3. Note (outside /tmp/p4_0b*): checkpoint.sh, run as the item prescribes, writes its suite log by mktemp in \$TMPDIR, and the suite's own temporary files go there too, as at every Pass 3 checkpoint. This session's TMPDIR and the newest checkpoint log there:"
+echo "   TMPDIR=$TMPDIR"
+ls -lt "${TMPDIR:-/tmp}"/ckpt_tests.* 2>/dev/null | head -n 1
+echo "4. /tmp/p4_boot.txt's SHA-256, printed at b.1 (the table gave none): see B1's output above."
+echo
+echo "=== files outside REPO written by this item under /tmp (all /tmp/p4_0b*; the report itself excluded) ==="
+ls /tmp/p4_0b* | grep -vx '/tmp/p4_0b.txt' | xargs shasum -a 256
+echo "/tmp/__pycache__ exists: $( [ -e /tmp/__pycache__ ] && echo True || echo False )"
+echo
+echo "=== script /tmp/p4_0b_report.sh (this assembly, in full) ==="
+cat /tmp/p4_0b_report.sh
+echo
+echo "=== STOP (planned): Isaiah pushes; the supervisor reviews the report, then gives P4-1. ==="
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > /tmp/p4_0b.txt
+
+=== STOP (planned): Isaiah pushes; the supervisor reviews the report, then gives P4-1. ===
+
+2026-10-08T18:12:16Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
