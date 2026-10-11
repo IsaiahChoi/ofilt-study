@@ -1,0 +1,1473 @@
+2026-10-09T14:39:48Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+3fac2abeeb07a021e0675bd2b1030e679ebafbb6147691e117bf8727ec8b941f  /tmp/p4_2_run2_msg.txt
+=== P4-2 report (run 2) ===
+(lines 1-4 written after run 2's step 1 and P4-2's a.1, before a.2: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_2_msg.txt; shasum -a 256 /tmp/p4_2_run2_msg.txt; } > /tmp/p4_2_head.out, then cp to /tmp/p4_2.txt)
+2026-10-09T14:39:48Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+3fac2abeeb07a021e0675bd2b1030e679ebafbb6147691e117bf8727ec8b941f  /tmp/p4_2_run2_msg.txt
+
+=== the run-2 message (cat /tmp/p4_2_run2_msg.txt) ===
+# Pass 4, item P4-2, run 2: the rerun after the kit folder was fixed (supervisor message, 2026-10-09)
+
+Pasting this records Isaiah's decision, on the supervisor's recommendation, to rerun P4-2 in full. Its first run stopped correctly at b.1 (`B1 CHECK: False`): KIT held a sixth file, `P4_2_MSG_2026-10-08.txt`, which Isaiah had placed there by mistake. Isaiah has since moved that file up into KIT4 itself (`$HOME/Desktop/FX_Project/files/pass4`), so KIT holds exactly the five kit files, and he has checked all five and the message file against their SHA-256. The first run changed nothing in REPO: its a.2 passed, and the working tree is clean at the P4-0b checkpoint.
+
+Save this message verbatim as `/tmp/p4_2_run2_msg.txt` from this session's transcript. Do not save P4-2's message again; step 1 below settles `/tmp/p4_2_msg.txt`.
+
+Everything in P4-2's message still applies (its rules, its files that may change, its STOP, its expected values, its steps), with these additions. Outside REPO, the only paths that may change are still `/tmp/p4_2*`, which include `/tmp/p4_2_run1/` and this message's saved copy. Edit your own scripts with your file-editing tool, never through an interpreter.
+
+## 0. Date gate
+`date +%F` runs first and must print 2026-10-09. Any other date: STOP. (P4-2's own a.1 accepts this date as its DATE_B.)
+
+## 1. Before P4-2's step a.1, by script
+- Move every path matching `/tmp/p4_2*`, except `/tmp/p4_2_msg.txt` and `/tmp/p4_2_run2_msg.txt`, into a new folder `/tmp/p4_2_run1/`, unchanged. Print each moved file's name and SHA-256 (for a moved folder, each file inside it).
+- Compare `/tmp/p4_2_msg.txt` with KIT4's `P4_2_MSG_2026-10-08.txt`, the supervisor's original. If they differ, print the diff, then replace `/tmp/p4_2_msg.txt` with a copy of KIT4's file. Either way, `/tmp/p4_2_msg.txt` must then be byte-identical to KIT4's file, whose SHA-256 must be ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800.
+- Any difference that cannot be settled this way: STOP. Verdict line `RUN2_PREP CHECK`.
+
+## 2. Then P4-2 itself
+Run P4-2 from its step a.1 to its step f, exactly as its message says.
+
+## 3. The report
+`/tmp/p4_2.txt` keeps P4-2's three header lines first (UTC time, HEAD, the SHA-256 line of `/tmp/p4_2_msg.txt`). Its line 4 is the SHA-256 line of `/tmp/p4_2_run2_msg.txt`. Then, in order:
+- this message, printed with `cat` from its saved copy;
+- step 0's and step 1's output;
+- a line `=== P4-2 run 1 (STOP at b.1) ===`, then the first run's report in full, printed with `cat` from `/tmp/p4_2_run1/p4_2.txt`;
+- this run's steps, scripts and outputs, as P4-2's step f lists them;
+- the last lines, as P4-2's step f says.
+
+## 4. Records
+The first run's STOP and this rerun are recorded at the next records item (P4-3), as P4-0b's rerun was recorded at P4-2. The kit's edits file is not changed.
+
+STOP (planned): as in P4-2's message. Isaiah pushes, and uploads `/tmp/p4_2.txt` to the supervisor chat.
+
+=== run 2, step 0: date +%F, its first command, captured by tee to /tmp/p4_2_run2_date.out ===
+2026-10-09
+
+=== run 2, step 1: script /tmp/p4_2_run2_prep.py (in full), run as: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_2_run2_prep.py' 2>&1 | tee /tmp/p4_2_run2_prep.out ===
+# P4-2 run 2, step 1 (before P4-2's a.1): archive run 1's /tmp files and settle /tmp/p4_2_msg.txt.
+# Moves every path matching /tmp/p4_2* into /tmp/p4_2_run1/ unchanged (os.rename), except /tmp/p4_2_msg.txt,
+# /tmp/p4_2_run2_msg.txt and run 2's own files (names starting /tmp/p4_2_run2: this script, its output and the step-0
+# date capture), which belong to run 2. Then compares /tmp/p4_2_msg.txt with KIT4's P4_2_MSG_2026-10-08.txt.
+import difflib
+import glob
+import hashlib
+import os
+import re
+import shutil
+from pathlib import Path
+
+RUN2_MSG = Path("/tmp/p4_2_run2_msg.txt").read_text(encoding="utf-8")
+KIT4 = Path(os.environ["HOME"]) / "Desktop/FX_Project/files/pass4"
+ORIG = KIT4 / "P4_2_MSG_2026-10-08.txt"
+MSG = Path("/tmp/p4_2_msg.txt")
+DEST = Path("/tmp/p4_2_run1")
+expected = re.findall(r"whose SHA-256 must be ([0-9a-f]{64})", RUN2_MSG)
+assert len(expected) == 1, expected
+expected = expected[0]
+
+
+def sha(p):
+    return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+
+
+oks = []
+print("expected SHA-256 of KIT4's message file (from /tmp/p4_2_run2_msg.txt):", expected)
+assert not os.path.lexists(DEST), "the run-1 folder already exists"
+paths = sorted(glob.glob("/tmp/p4_2*"))
+keep = [p for p in paths if p in (str(MSG), "/tmp/p4_2_run2_msg.txt") or p.startswith("/tmp/p4_2_run2")]
+move = [p for p in paths if p not in keep]
+print("paths matching /tmp/p4_2*:", len(paths))
+for p in keep:
+    print(f"not moved: {p}  ({'named by the message' if p in (str(MSG), '/tmp/p4_2_run2_msg.txt') else 'run 2 file'})")
+before = {}
+for p in move:
+    if os.path.isdir(p) and not os.path.islink(p):
+        for d, _, files in os.walk(p):
+            for f in files:
+                q = os.path.join(d, f)
+                before[q] = sha(q)
+    else:
+        before[p] = sha(p)
+os.mkdir(DEST)
+for p in move:
+    os.rename(p, DEST / os.path.basename(p))
+for p, h in before.items():
+    q = str(DEST / os.path.relpath(p, "/tmp"))
+    h2 = sha(q)
+    oks.append(h2 == h)
+    print(f"moved: {h2}  {p} -> {q}  unchanged: {h2 == h}")
+print("moved paths:", len(move), "files:", len(before))
+oks.append(not any(os.path.lexists(p) for p in move))
+
+# /tmp/p4_2_msg.txt against the supervisor's original.
+h_orig, h_msg = sha(ORIG), sha(MSG)
+print(f"{h_orig}  {ORIG}")
+print(f"{h_msg}  {MSG}")
+oks.append(h_orig == expected)
+print("KIT4's message file has the expected SHA-256:", h_orig == expected)
+if h_msg != h_orig:
+    a, b = MSG.read_text(encoding="utf-8").splitlines(), ORIG.read_text(encoding="utf-8").splitlines()
+    print("they differ; diff (saved copy -> original):")
+    for ln in difflib.unified_diff(a, b, str(MSG), str(ORIG), lineterm=""):
+        print(ln)
+    shutil.copyfile(ORIG, MSG)
+    print("/tmp/p4_2_msg.txt replaced by a copy of KIT4's file")
+else:
+    print("they are byte-identical; /tmp/p4_2_msg.txt kept")
+final = sha(MSG)
+oks.append(MSG.read_bytes() == ORIG.read_bytes() and final == expected)
+print(f"after: {final}  {MSG}  byte-identical to KIT4's file: {MSG.read_bytes() == ORIG.read_bytes()}")
+print("checks:", len(oks), "passed:", sum(oks))
+print("RUN2_PREP CHECK:", all(oks))
+
+=== run 2, step 1: output /tmp/p4_2_run2_prep.out ===
+expected SHA-256 of KIT4's message file (from /tmp/p4_2_run2_msg.txt): ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800
+paths matching /tmp/p4_2*: 17
+not moved: /tmp/p4_2_msg.txt  (named by the message)
+not moved: /tmp/p4_2_run2_date.out  (run 2 file)
+not moved: /tmp/p4_2_run2_msg.txt  (named by the message)
+not moved: /tmp/p4_2_run2_prep.out  (run 2 file)
+not moved: /tmp/p4_2_run2_prep.py  (run 2 file)
+moved: 4547aeb96078b152b930cf5bab15009159ad98bb12bff45076ffa93604d34dda  /tmp/p4_2.txt -> /tmp/p4_2_run1/p4_2.txt  unchanged: True
+moved: a344f917b2f67111c69de1f03526712334088632b708b9fa08bc448230283d0b  /tmp/p4_2_a1.out -> /tmp/p4_2_run1/p4_2_a1.out  unchanged: True
+moved: 3f3d157ce4949b17704d4ecfa8a3aa201e9ca6973435cf32d3e28f5c8ce1ec79  /tmp/p4_2_a2.out -> /tmp/p4_2_run1/p4_2_a2.out  unchanged: True
+moved: 0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_a2.py -> /tmp/p4_2_run1/p4_2_a2.py  unchanged: True
+moved: 9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_2_a2_env.out -> /tmp/p4_2_run1/p4_2_a2_env.out  unchanged: True
+moved: b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_a2_env.sh -> /tmp/p4_2_run1/p4_2_a2_env.sh  unchanged: True
+moved: 7a0fbf18092ef8d1a81e7d9451b9f0590bdc1b1350282ab128f802466cbf1522  /tmp/p4_2_b1.out -> /tmp/p4_2_run1/p4_2_b1.out  unchanged: True
+moved: 2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_b1.py -> /tmp/p4_2_run1/p4_2_b1.py  unchanged: True
+moved: d7f9189d9d1da80e26520ada7f8fa1722d42f0887fd11df1e4493a3f9f725285  /tmp/p4_2_b1_pass4_listing.out -> /tmp/p4_2_run1/p4_2_b1_pass4_listing.out  unchanged: True
+moved: e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_common.py -> /tmp/p4_2_run1/p4_2_common.py  unchanged: True
+moved: 286fbe43662ec97e3840ac926305bf2ccdfa81dcf7236d2eb4fded82af4cd44f  /tmp/p4_2_head.out -> /tmp/p4_2_run1/p4_2_head.out  unchanged: True
+moved: f7cfc90089c97d1be8fc9f8ce3d37ce8d1091c128e20fe5624c13a7df238b310  /tmp/p4_2_report.sh -> /tmp/p4_2_run1/p4_2_report.sh  unchanged: True
+moved paths: 12 files: 12
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /Users/isaiahchoi/Desktop/FX_Project/files/pass4/P4_2_MSG_2026-10-08.txt
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+KIT4's message file has the expected SHA-256: True
+they are byte-identical; /tmp/p4_2_msg.txt kept
+after: ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt  byte-identical to KIT4's file: True
+checks: 15 passed: 15
+RUN2_PREP CHECK: True
+
+=== P4-2 run 1 (STOP at b.1) ===
+2026-10-09T14:06:10Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+=== P4-2 report (STOP at b.1) ===
+(lines 1-3 written before a.2: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_2_msg.txt; } > /tmp/p4_2_head.out, then cp to /tmp/p4_2.txt; line 3 is the SHA-256 of /tmp/p4_2_msg.txt, the P4-2 message saved verbatim from this session's transcript right after a.1)
+2026-10-09T14:06:10Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+
+=== a.1: date +%F, this item's first command, captured by tee to /tmp/p4_2_a1.out ===
+2026-10-09
+
+=== how each step ran ===
+a.2 (env part), no Python, so not under env -u: bash /tmp/p4_2_a2_env.sh 2>&1 | tee /tmp/p4_2_a2_env.out
+a.2 and b.1, as: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_2_<script>.py' 2>&1 | tee /tmp/p4_2_<script>.out
+b.1, for information after its check: ls -la "$HOME/Desktop/FX_Project/files/pass4" | tee /tmp/p4_2_b1_pass4_listing.out
+(python -B, so importing the /tmp helper module writes no /tmp/__pycache__; no script imports a module of ofilt)
+
+=== script /tmp/p4_2_common.py (in full) ===
+# P4-2 shared helpers. Every expected value is read from /tmp/p4_2_msg.txt's list "Expected values" by its label;
+# the tables of steps b and c are read from the message too. Reads files as text or bytes; imports no module of ofilt.
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_2_msg.txt").read_text(encoding="utf-8")
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+KIT = FXP / "files/pass4/p4_2_kit"
+KEEP4 = FXP / "files/pass4_tmp_keep"
+PROMPT = FXP / "files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md"
+
+
+def _expected():
+    sec = MSG.split("\n## Expected values\n")[1].split("\n## ")[0]
+    out = {}
+    for ln in sec.split("\n"):
+        if ln.startswith("- "):
+            m = re.fullmatch(r"- ([A-Z0-9_]+) = (.+)", ln)
+            assert m, ln
+            assert m.group(1) not in out, m.group(1)
+            out[m.group(1)] = m.group(2)
+    return out
+
+
+EV = _expected()
+
+
+def ev(name):
+    """The value of a label; each label begins exactly one line of the list."""
+    sec = MSG.split("\n## Expected values\n")[1].split("\n## ")[0]
+    assert sum(ln.startswith(f"- {name} = ") for ln in sec.split("\n")) == 1, name
+    return EV[name]
+
+
+def sha256_bytes(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha256(p):
+    return sha256_bytes(Path(p).read_bytes())
+
+
+def git(*args, check=True):
+    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, check=check)
+
+
+def table(header):
+    """The body rows of the message's table whose header line is `header`, as lists of stripped cells."""
+    lines = MSG.split("\n")
+    assert lines.count(header) == 1, header
+    i = lines.index(header)
+    assert set(lines[i + 1].replace("|", "")) == {"-"}
+    rows = []
+    for ln in lines[i + 2:]:
+        if not ln.startswith("|"):
+            break
+        rows.append([c.strip() for c in ln.strip()[1:-1].split("|")])
+    return rows
+
+
+def tick(cell):
+    m = re.fullmatch(r"`([^`]+)`", cell)
+    return m.group(1) if m else None
+
+
+def kit_rows():
+    """[(kit file name, label, destination or None)] of step b's table."""
+    out = []
+    for name, label, dest in table("| Kit file | SHA-256 | Destination in REPO |"):
+        out.append((tick(name), label, tick(dest)))
+    return out
+
+
+def record_rows():
+    """[(name, destination, label, line checks)] of step c's table."""
+    return [(tick(n), tick(d), lab, lc) for n, d, lab, lc in table("| Name | Destination | SHA-256 | Line checks |")]
+
+
+def destinations():
+    return [d for _, _, d in kit_rows() if d] + [d for _, d, _, _ in record_rows()]
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def blind_state(oks):
+    """Step a.2's tags, BLIND_FIT_LOG, RUN_REGISTRY.jsonl and ACCESS_LOG checks (also run at e.3)."""
+    oks.append(show("git tag -l", ev("TAG_LIST").split(), git("tag", "-l").stdout.split()))
+    oks.append(show("refs/tags/spec-dev-v1", ev("TAG_OBJECT"), git("rev-parse", "refs/tags/spec-dev-v1").stdout.strip()))
+    oks.append(show("spec-dev-v1^{commit}", ev("TAG_COMMIT"),
+                    git("rev-parse", "refs/tags/spec-dev-v1^{commit}").stdout.strip()))
+    oks.append(show("tag commit is an ancestor of HEAD", 0,
+                    git("merge-base", "--is-ancestor", ev("TAG_COMMIT"), "HEAD", check=False).returncode))
+    bfl = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", ev("BLIND_FIT_LOG_SHA256"), sha256_bytes(bfl)))
+    oks.append(show("BLIND_FIT_LOG lines", int(ev("BLIND_FIT_LOG_LINES")), bfl.count(b"\n")))
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(ev("RUN_REGISTRY_BYTES")), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG in REPO outside .git", [], found))
+    oks.append(show("spec sha256", ev("SPEC_SHA256"), sha256(REPO / "spec/analysis_spec_dev_v1.yaml")))
+    oks.append(show("PASS3_STATUS.md sha256", ev("PASS3_STATUS_SHA256"), sha256(REPO / "PASS3_STATUS.md")))
+
+=== script /tmp/p4_2_a2_env.sh (in full) ===
+#!/bin/bash
+# P4-2 a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A2_ENV CHECK: $ok"
+
+=== script /tmp/p4_2_a2.py (in full) ===
+# P4-2 a.1 (from its captured output) and a.2: REPO state before the item, read-only.
+import os
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import MSG, PROMPT, REPO, blind_state, destinations, ev, git, sha256, show  # noqa: E402
+
+oks = []
+printed = Path("/tmp/p4_2_a1.out").read_text().strip()
+oks.append(show("a.1 date is DATE_A or DATE_B", True, printed in (ev("DATE_A"), ev("DATE_B"))))
+print("a.1 date (the date of the acceptance of P4-1 and of P4Q9 to P4Q31):", printed)
+
+oks.append(show("HEAD", ev("HEAD_BEFORE"), git("rev-parse", "HEAD").stdout.strip()))
+oks.append(show("HEAD's parents", [ev("PARENT_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+oks.append(show("git status --porcelain --untracked-files=all", "",
+                git("status", "--porcelain", "--untracked-files=all").stdout))
+blind_state(oks)
+oks.append(show("standing prompt sha256", ev("PROMPT_SHA256"), sha256(PROMPT)))
+oks.append(show("PASS4_STATUS.md sha256", ev("STATUS_BEFORE_SHA256"), sha256(REPO / "PASS4_STATUS.md")))
+
+held = re.findall(r"`([^`]+)`", re.search(r"`reports/P4_reports/` holds exactly (.+?), and none", MSG).group(1))
+oks.append(show("reports/P4_reports/ entries", sorted(held), sorted(os.listdir(REPO / "reports/P4_reports"))))
+dests = destinations()
+print("the seven destinations of steps b and c:", dests)
+oks.append(show("number of destinations (COMMIT_FILE_COUNT - 1, PASS4_STATUS.md being the other)",
+                int(ev("COMMIT_FILE_COUNT")) - 1, len(dests)))
+for d in dests:
+    oks.append(show(f"exists {d}", False, os.path.lexists(REPO / d)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("A2 CHECK:", all(oks))
+
+=== script /tmp/p4_2_b1.py (in full) ===
+# P4-2 b.1: KIT holds exactly the five files of step b's table, each with the SHA-256 its label gives. Read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KIT, ev, kit_rows, sha256, show  # noqa: E402
+
+oks = []
+rows = kit_rows()
+expected = {name: ev(label) for name, label, _ in rows}
+print("KIT:", KIT, "| exists:", KIT.is_dir())
+entries = sorted(os.listdir(KIT)) if KIT.is_dir() else []
+print("entries (all, hidden included):", entries)
+oks.append(show("KIT entries", sorted(expected), entries))
+for name, label, dest in rows:
+    p = KIT / name
+    if p.is_file():
+        oks.append(show(f"sha256 {name} ({label})", expected[name], sha256(p)))
+    else:
+        print(f"{name} ({label}): missing ok=False")
+        oks.append(False)
+print("checks:", len(oks), "passed:", sum(oks))
+print("B1 CHECK:", all(oks))
+
+=== output /tmp/p4_2_a2_env.out ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A2_ENV CHECK: True
+
+=== output /tmp/p4_2_a2.out ===
+a.1 date is DATE_A or DATE_B: expected=True actual=True ok=True
+a.1 date (the date of the acceptance of P4-1 and of P4Q9 to P4Q31): 2026-10-09
+HEAD: expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+HEAD's parents: expected=['96963b31d620ab98ff529458fcd095f412c443bd'] actual=['96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+tag commit is an ancestor of HEAD: expected=0 actual=0 ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+spec sha256: expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+standing prompt sha256: expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+PASS4_STATUS.md sha256: expected='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' actual='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' ok=True
+reports/P4_reports/ entries: expected=['p4_0a.txt', 'p4_boot.txt'] actual=['p4_0a.txt', 'p4_boot.txt'] ok=True
+the seven destinations of steps b and c: ['docs/P4_CONFIRM_CONFIG.json', 'docs/P4_M2_note.md', 'docs/P4_M2_check.py', 'docs/P4_M2_prompt.md', 'reports/P4_reports/p4_0b.txt', 'reports/P4_reports/p4_1.txt', 'reports/P4_reports/p4_1_audit.md']
+number of destinations (COMMIT_FILE_COUNT - 1, PASS4_STATUS.md being the other): expected=7 actual=7 ok=True
+exists docs/P4_CONFIRM_CONFIG.json: expected=False actual=False ok=True
+exists docs/P4_M2_note.md: expected=False actual=False ok=True
+exists docs/P4_M2_check.py: expected=False actual=False ok=True
+exists docs/P4_M2_prompt.md: expected=False actual=False ok=True
+exists reports/P4_reports/p4_0b.txt: expected=False actual=False ok=True
+exists reports/P4_reports/p4_1.txt: expected=False actual=False ok=True
+exists reports/P4_reports/p4_1_audit.md: expected=False actual=False ok=True
+checks: 25 passed: 25
+A2 CHECK: True
+
+=== output /tmp/p4_2_b1.out ===
+KIT: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit | exists: True
+entries (all, hidden included): []
+KIT entries: expected=['p4_2_P4_CONFIRM_CONFIG.json', 'p4_2_P4_M2_check.py', 'p4_2_P4_M2_note.md', 'p4_2_P4_M2_prompt.md', 'p4_2_STATUS_EDITS.txt'] actual=[] ok=False
+p4_2_P4_CONFIRM_CONFIG.json (KIT_CONFIG_SHA256): missing ok=False
+p4_2_P4_M2_note.md (KIT_NOTE_SHA256): missing ok=False
+p4_2_P4_M2_check.py (KIT_CHECK_SHA256): missing ok=False
+p4_2_P4_M2_prompt.md (KIT_PROMPT_SHA256): missing ok=False
+p4_2_STATUS_EDITS.txt (KIT_EDITS_SHA256): missing ok=False
+checks: 6 passed: 0
+B1 CHECK: False
+
+=== output /tmp/p4_2_b1_pass4_listing.out ===
+total 336
+drwxr-xr-x@ 11 isaiahchoi  staff    352 Oct  9 10:04 .
+drwx------@ 26 isaiahchoi  staff    832 Oct  8 17:25 ..
+-rw-r--r--@  1 isaiahchoi  staff   8196 Oct  9 10:04 .DS_Store
+drwxr-xr-x   2 isaiahchoi  staff     64 Oct  8 22:24 p4_2_kit
+-rw-------@  1 isaiahchoi  staff  11224 Oct  9 02:24 P4_2_MSG_2026-10-08.txt
+-rw-------@  1 isaiahchoi  staff  15227 Oct  9 02:24 p4_2_P4_CONFIRM_CONFIG.json
+-rw-------@  1 isaiahchoi  staff  17442 Oct  9 02:24 p4_2_P4_M2_check.py
+-rw-------@  1 isaiahchoi  staff  61188 Oct  9 02:24 p4_2_P4_M2_note.md
+-rw-------@  1 isaiahchoi  staff  10090 Oct  9 02:24 p4_2_P4_M2_prompt.md
+-rw-------@  1 isaiahchoi  staff  15375 Oct  9 02:24 p4_2_STATUS_EDITS.txt
+-rw-r--r--@  1 isaiahchoi  staff  19521 Oct  8 13:48 PASS4_BUILDER_PROMPT_2026-10-08.md
+
+=== verdict lines ===
+a2_env.out: A2_ENV CHECK: True
+a2.out: A2 CHECK: True
+b1.out: B1 CHECK: False
+
+=== STOP at b.1 ===
+Reason: B1 CHECK False. KIT ($HOME/Desktop/FX_Project/files/pass4/p4_2_kit) exists and is empty. Files with the five kit names are listed in its parent folder, $HOME/Desktop/FX_Project/files/pass4 (listing above); they were not hashed, read or moved.
+Nothing after b.1 ran: no kit file read, no copy made, PASS4_STATUS.md unchanged, no suite, no commit. REPO is as at a.2 (git status below).
+Steps c's sources were not used; /tmp/p4_0b.txt, /tmp/p4_1.txt and /tmp/p4_1_audit.md exist (listed, not hashed, before b.1).
+
+=== files outside REPO written by this item (all /tmp/p4_2*; the report itself excluded) ===
+a344f917b2f67111c69de1f03526712334088632b708b9fa08bc448230283d0b  /tmp/p4_2_a1.out
+9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_2_a2_env.out
+b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_a2_env.sh
+3f3d157ce4949b17704d4ecfa8a3aa201e9ca6973435cf32d3e28f5c8ce1ec79  /tmp/p4_2_a2.out
+0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_a2.py
+d7f9189d9d1da80e26520ada7f8fa1722d42f0887fd11df1e4493a3f9f725285  /tmp/p4_2_b1_pass4_listing.out
+7a0fbf18092ef8d1a81e7d9451b9f0590bdc1b1350282ab128f802466cbf1522  /tmp/p4_2_b1.out
+2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_b1.py
+e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_common.py
+286fbe43662ec97e3840ac926305bf2ccdfa81dcf7236d2eb4fded82af4cd44f  /tmp/p4_2_head.out
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+f7cfc90089c97d1be8fc9f8ce3d37ce8d1091c128e20fe5624c13a7df238b310  /tmp/p4_2_report.sh
+/tmp/__pycache__ exists: False
+
+=== script /tmp/p4_2_report.sh (this assembly, in full) ===
+#!/bin/bash
+# P4-2 f (at the STOP in b.1): append the report so far and its last lines to /tmp/p4_2.txt, whose first three lines
+# (UTC time, HEAD, the message's SHA-256 line) were written before a.2. Command output only; no Python.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='env -u OFILT_RUN_SEALED bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_2_<script>.py'\'' 2>&1 | tee /tmp/p4_2_<script>.out'
+{
+echo "=== P4-2 report (STOP at b.1) ==="
+echo "(lines 1-3 written before a.2: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_2_msg.txt; } > /tmp/p4_2_head.out, then cp to /tmp/p4_2.txt; line 3 is the SHA-256 of /tmp/p4_2_msg.txt, the P4-2 message saved verbatim from this session's transcript right after a.1)"
+cat /tmp/p4_2_head.out
+echo
+echo "=== a.1: date +%F, this item's first command, captured by tee to /tmp/p4_2_a1.out ==="
+cat /tmp/p4_2_a1.out
+echo
+echo "=== how each step ran ==="
+echo "a.2 (env part), no Python, so not under env -u: bash /tmp/p4_2_a2_env.sh 2>&1 | tee /tmp/p4_2_a2_env.out"
+echo "a.2 and b.1, as: $PY"
+echo "b.1, for information after its check: ls -la \"\$HOME/Desktop/FX_Project/files/pass4\" | tee /tmp/p4_2_b1_pass4_listing.out"
+echo "(python -B, so importing the /tmp helper module writes no /tmp/__pycache__; no script imports a module of ofilt)"
+for f in common.py a2_env.sh a2.py b1.py; do
+  echo
+  echo "=== script /tmp/p4_2_$f (in full) ==="
+  cat "/tmp/p4_2_$f"
+done
+for s in a2_env a2 b1 b1_pass4_listing; do
+  echo
+  echo "=== output /tmp/p4_2_$s.out ==="
+  cat "/tmp/p4_2_$s.out"
+done
+echo
+echo "=== verdict lines ==="
+for s in a2_env a2 b1; do
+  printf '%s: ' "$s.out"; grep -h ' CHECK: ' "/tmp/p4_2_$s.out" || echo "(no verdict line)"
+done
+echo
+echo "=== STOP at b.1 ==="
+echo "Reason: B1 CHECK False. KIT (\$HOME/Desktop/FX_Project/files/pass4/p4_2_kit) exists and is empty. Files with the five kit names are listed in its parent folder, \$HOME/Desktop/FX_Project/files/pass4 (listing above); they were not hashed, read or moved."
+echo "Nothing after b.1 ran: no kit file read, no copy made, PASS4_STATUS.md unchanged, no suite, no commit. REPO is as at a.2 (git status below)."
+echo "Steps c's sources were not used; /tmp/p4_0b.txt, /tmp/p4_1.txt and /tmp/p4_1_audit.md exist (listed, not hashed, before b.1)."
+echo
+echo "=== files outside REPO written by this item (all /tmp/p4_2*; the report itself excluded) ==="
+ls /tmp/p4_2* | grep -vx '/tmp/p4_2.txt' | xargs shasum -a 256
+echo "/tmp/__pycache__ exists: $( [ -e /tmp/__pycache__ ] && echo True || echo False )"
+echo
+echo "=== script /tmp/p4_2_report.sh (this assembly, in full) ==="
+cat /tmp/p4_2_report.sh
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} >> /tmp/p4_2.txt
+
+2026-10-09T14:08:02Z
+795385fa709f4cf6c8e7f441d879cc1c1b89e46b
+
+=== P4-2 run 2: a.1, date +%F, P4-2's first command, captured by tee to /tmp/p4_2_a1.out ===
+2026-10-09
+
+=== how each step ran ===
+a.2 (env part), no Python, so not under env -u: bash /tmp/p4_2_a2_env.sh 2>&1 | tee /tmp/p4_2_a2_env.out
+every Python step, as: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_2_<script>.py' 2>&1 | tee /tmp/p4_2_<script>.out  (a2, b1, b2, c, d, e1, e3)
+e.2, in REPO: { date -u +%FT%TZ; COMMIT_ITEM read from /tmp/p4_2_msg.txt by grep and sed; source the venv && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "$ITEM" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"; echo "checkpoint exit: $?"; date -u +%FT%TZ; the newest ckpt_tests.* under $TMPDIR; } 2>&1 | tee /tmp/p4_2_e2.out
+(python -B, so importing the /tmp helper modules writes no /tmp/__pycache__; no script imports a module of ofilt; docs/P4_M2_check.py was not run)
+
+=== run 1's four scripts reused unchanged (cp -p from /tmp/p4_2_run1/), by SHA-256 ===
+e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_run1/p4_2_common.py
+e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_common.py
+0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_run1/p4_2_a2.py
+0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_a2.py
+b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_run1/p4_2_a2_env.sh
+b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_a2_env.sh
+2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_run1/p4_2_b1.py
+2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_b1.py
+
+=== script /tmp/p4_2_common.py (in full) ===
+# P4-2 shared helpers. Every expected value is read from /tmp/p4_2_msg.txt's list "Expected values" by its label;
+# the tables of steps b and c are read from the message too. Reads files as text or bytes; imports no module of ofilt.
+import hashlib
+import os
+import re
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_2_msg.txt").read_text(encoding="utf-8")
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+KIT = FXP / "files/pass4/p4_2_kit"
+KEEP4 = FXP / "files/pass4_tmp_keep"
+PROMPT = FXP / "files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md"
+
+
+def _expected():
+    sec = MSG.split("\n## Expected values\n")[1].split("\n## ")[0]
+    out = {}
+    for ln in sec.split("\n"):
+        if ln.startswith("- "):
+            m = re.fullmatch(r"- ([A-Z0-9_]+) = (.+)", ln)
+            assert m, ln
+            assert m.group(1) not in out, m.group(1)
+            out[m.group(1)] = m.group(2)
+    return out
+
+
+EV = _expected()
+
+
+def ev(name):
+    """The value of a label; each label begins exactly one line of the list."""
+    sec = MSG.split("\n## Expected values\n")[1].split("\n## ")[0]
+    assert sum(ln.startswith(f"- {name} = ") for ln in sec.split("\n")) == 1, name
+    return EV[name]
+
+
+def sha256_bytes(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha256(p):
+    return sha256_bytes(Path(p).read_bytes())
+
+
+def git(*args, check=True):
+    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, check=check)
+
+
+def table(header):
+    """The body rows of the message's table whose header line is `header`, as lists of stripped cells."""
+    lines = MSG.split("\n")
+    assert lines.count(header) == 1, header
+    i = lines.index(header)
+    assert set(lines[i + 1].replace("|", "")) == {"-"}
+    rows = []
+    for ln in lines[i + 2:]:
+        if not ln.startswith("|"):
+            break
+        rows.append([c.strip() for c in ln.strip()[1:-1].split("|")])
+    return rows
+
+
+def tick(cell):
+    m = re.fullmatch(r"`([^`]+)`", cell)
+    return m.group(1) if m else None
+
+
+def kit_rows():
+    """[(kit file name, label, destination or None)] of step b's table."""
+    out = []
+    for name, label, dest in table("| Kit file | SHA-256 | Destination in REPO |"):
+        out.append((tick(name), label, tick(dest)))
+    return out
+
+
+def record_rows():
+    """[(name, destination, label, line checks)] of step c's table."""
+    return [(tick(n), tick(d), lab, lc) for n, d, lab, lc in table("| Name | Destination | SHA-256 | Line checks |")]
+
+
+def destinations():
+    return [d for _, _, d in kit_rows() if d] + [d for _, d, _, _ in record_rows()]
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def blind_state(oks):
+    """Step a.2's tags, BLIND_FIT_LOG, RUN_REGISTRY.jsonl and ACCESS_LOG checks (also run at e.3)."""
+    oks.append(show("git tag -l", ev("TAG_LIST").split(), git("tag", "-l").stdout.split()))
+    oks.append(show("refs/tags/spec-dev-v1", ev("TAG_OBJECT"), git("rev-parse", "refs/tags/spec-dev-v1").stdout.strip()))
+    oks.append(show("spec-dev-v1^{commit}", ev("TAG_COMMIT"),
+                    git("rev-parse", "refs/tags/spec-dev-v1^{commit}").stdout.strip()))
+    oks.append(show("tag commit is an ancestor of HEAD", 0,
+                    git("merge-base", "--is-ancestor", ev("TAG_COMMIT"), "HEAD", check=False).returncode))
+    bfl = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", ev("BLIND_FIT_LOG_SHA256"), sha256_bytes(bfl)))
+    oks.append(show("BLIND_FIT_LOG lines", int(ev("BLIND_FIT_LOG_LINES")), bfl.count(b"\n")))
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(ev("RUN_REGISTRY_BYTES")), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG in REPO outside .git", [], found))
+    oks.append(show("spec sha256", ev("SPEC_SHA256"), sha256(REPO / "spec/analysis_spec_dev_v1.yaml")))
+    oks.append(show("PASS3_STATUS.md sha256", ev("PASS3_STATUS_SHA256"), sha256(REPO / "PASS3_STATUS.md")))
+
+=== script /tmp/p4_2_a2_env.sh (in full) ===
+#!/bin/bash
+# P4-2 a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A2_ENV CHECK: $ok"
+
+=== script /tmp/p4_2_a2.py (in full) ===
+# P4-2 a.1 (from its captured output) and a.2: REPO state before the item, read-only.
+import os
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import MSG, PROMPT, REPO, blind_state, destinations, ev, git, sha256, show  # noqa: E402
+
+oks = []
+printed = Path("/tmp/p4_2_a1.out").read_text().strip()
+oks.append(show("a.1 date is DATE_A or DATE_B", True, printed in (ev("DATE_A"), ev("DATE_B"))))
+print("a.1 date (the date of the acceptance of P4-1 and of P4Q9 to P4Q31):", printed)
+
+oks.append(show("HEAD", ev("HEAD_BEFORE"), git("rev-parse", "HEAD").stdout.strip()))
+oks.append(show("HEAD's parents", [ev("PARENT_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+oks.append(show("git status --porcelain --untracked-files=all", "",
+                git("status", "--porcelain", "--untracked-files=all").stdout))
+blind_state(oks)
+oks.append(show("standing prompt sha256", ev("PROMPT_SHA256"), sha256(PROMPT)))
+oks.append(show("PASS4_STATUS.md sha256", ev("STATUS_BEFORE_SHA256"), sha256(REPO / "PASS4_STATUS.md")))
+
+held = re.findall(r"`([^`]+)`", re.search(r"`reports/P4_reports/` holds exactly (.+?), and none", MSG).group(1))
+oks.append(show("reports/P4_reports/ entries", sorted(held), sorted(os.listdir(REPO / "reports/P4_reports"))))
+dests = destinations()
+print("the seven destinations of steps b and c:", dests)
+oks.append(show("number of destinations (COMMIT_FILE_COUNT - 1, PASS4_STATUS.md being the other)",
+                int(ev("COMMIT_FILE_COUNT")) - 1, len(dests)))
+for d in dests:
+    oks.append(show(f"exists {d}", False, os.path.lexists(REPO / d)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("A2 CHECK:", all(oks))
+
+=== script /tmp/p4_2_b1.py (in full) ===
+# P4-2 b.1: KIT holds exactly the five files of step b's table, each with the SHA-256 its label gives. Read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KIT, ev, kit_rows, sha256, show  # noqa: E402
+
+oks = []
+rows = kit_rows()
+expected = {name: ev(label) for name, label, _ in rows}
+print("KIT:", KIT, "| exists:", KIT.is_dir())
+entries = sorted(os.listdir(KIT)) if KIT.is_dir() else []
+print("entries (all, hidden included):", entries)
+oks.append(show("KIT entries", sorted(expected), entries))
+for name, label, dest in rows:
+    p = KIT / name
+    if p.is_file():
+        oks.append(show(f"sha256 {name} ({label})", expected[name], sha256(p)))
+    else:
+        print(f"{name} ({label}): missing ok=False")
+        oks.append(False)
+print("checks:", len(oks), "passed:", sum(oks))
+print("B1 CHECK:", all(oks))
+
+=== script /tmp/p4_2_b2.py (in full) ===
+# P4-2 b.2: the kit's configuration, by Python's json module (no module of ofilt). Read-only.
+import json
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KEEP4, KIT, MSG, ev, sha256, show  # noqa: E402
+
+oks = []
+cfg_path = KIT / "p4_2_P4_CONFIRM_CONFIG.json"
+oks.append(show("config sha256 (KIT_CONFIG_SHA256)", ev("KIT_CONFIG_SHA256"), sha256(cfg_path)))
+cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+print("top-level keys:", list(cfg))
+version = int(re.search(r"its `version` is (\d+)", MSG).group(1))
+oks.append(show("version", version, cfg.get("version")))
+src = cfg["sources"]
+for key, label in (("spec", "SPEC_SHA256"), ("audit", "AUDIT_SHA256"), ("m2_note", "KIT_NOTE_SHA256"),
+                   ("m2_check", "KIT_CHECK_SHA256")):
+    oks.append(show(f"sources.{key}.sha256 ({label})", ev(label), src[key]["sha256"]))
+
+g1, g2, q1, q2 = map(int, re.search(r"`gap_decisions` maps G(\d+) to G(\d+) to P4Q(\d+) to P4Q(\d+), in order",
+                                    MSG).groups())
+exp_g = {f"G{g}": f"P4Q{q}" for g, q in zip(range(g1, g2 + 1), range(q1, q2 + 1))}
+oks.append(show("gap_decisions spans equal length", g2 - g1, q2 - q1))
+oks.append(show("gap_decisions keys in order", list(exp_g), list(cfg["gap_decisions"])))
+oks.append(show("gap_decisions values in order", list(exp_g.values()), list(cfg["gap_decisions"].values())))
+
+# The audit: step c's source (/tmp first, else KEEP4), verified by AUDIT_SHA256 before it is read.
+audit = Path("/tmp/p4_1_audit.md") if Path("/tmp/p4_1_audit.md").exists() else KEEP4 / "p4_1_audit.md"
+print("audit source:", audit)
+a_ok = sha256(audit) == ev("AUDIT_SHA256")
+oks.append(show("audit sha256 (AUDIT_SHA256)", ev("AUDIT_SHA256"), sha256(audit)))
+if a_ok:
+    lines = audit.read_text(encoding="utf-8").split("\n")
+    i = next(k for k, ln in enumerate(lines) if ln.startswith("| ID | Output or rule |"))
+    ids = []
+    for ln in lines[i + 2:]:
+        if not ln.startswith("|"):
+            break
+        ids.append(ln.strip()[1:-1].split(" | ")[0].strip())
+    oks.append(show("audit table rows (AUDIT_ROWS)", int(ev("AUDIT_ROWS")), len(ids)))
+    oks.append(show("rows keys, in order, = the audit table's IDs", ids, list(cfg["rows"])))
+note = (KIT / "p4_2_P4_M2_note.md").read_text(encoding="utf-8")
+n = note.count(ev("KIT_CHECK_SHA256"))
+print("occurrences of KIT_CHECK_SHA256 in the kit's note:", n)
+oks.append(show("the note contains KIT_CHECK_SHA256", True, n >= 1))
+print("checks:", len(oks), "passed:", sum(oks))
+print("B CHECK:", all(oks))
+
+=== script /tmp/p4_2_c.py (in full) ===
+# P4-2 c: copy the P4-0b and P4-1 records into reports/P4_reports with cp -p. Source: /tmp/<name> if it exists, else
+# KEEP4/<name>. The source's SHA-256 and line checks are verified before the copy; the destination's SHA-256 after.
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KEEP4, REPO, ev, record_rows, sha256, show  # noqa: E402
+
+PAT = (r"line 1 is ([A-Z0-9_]+); line 2 and the last non-empty line are ([A-Z0-9_]+); the last-but-one non-empty line "
+       r"is ([A-Z0-9_]+); the line formed by ([A-Z0-9_]+), two spaces and `([^`]+)` is line 3 and occurs exactly "
+       r"([A-Z0-9_]+) times")
+oks = []
+for name, dest, label, checks in record_rows():
+    tmp = Path("/tmp") / name
+    src = tmp if tmp.exists() else KEEP4 / name
+    print(f"--- {name}: source {src} ({'/tmp' if src == tmp else 'KEEP4'}); destination {dest}")
+    ok_sha = show("  source sha256 (" + label + ")", ev(label), sha256(src))
+    oks.append(ok_sha)
+    m = re.fullmatch(PAT, checks)
+    if m:
+        l1, head, last, msg_sha, msg_path, count = m.groups()
+        lines = src.read_bytes().decode("utf-8").split("\n")
+        if lines and lines[-1] == "":
+            lines.pop()
+        ne = [x for x in lines if x != ""]
+        msg_line = f"{ev(msg_sha)}  {msg_path}"
+        oks.append(show(f"  line 1 ({l1})", ev(l1), lines[0]))
+        oks.append(show(f"  line 2 ({head})", ev(head), lines[1]))
+        oks.append(show(f"  last non-empty line ({head})", ev(head), ne[-1]))
+        oks.append(show(f"  last-but-one non-empty line ({last})", ev(last), ne[-2]))
+        oks.append(show(f"  line 3 = {msg_sha} + two spaces + {msg_path}", msg_line, lines[2]))
+        oks.append(show(f"  occurrences of that line ({count})", int(ev(count)), lines.count(msg_line)))
+    else:
+        oks.append(show("  line checks", "none (not a report)", checks))
+    d = REPO / dest
+    if not all(oks) or os.path.lexists(d):
+        print(f"  not copied (checks failed so far, or destination exists: {os.path.lexists(d)})")
+        oks.append(False)
+        continue
+    cmd = ["cp", "-p", str(src), str(d)]
+    print("  run:", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+    oks.append(show("  destination sha256 (" + label + ")", ev(label), sha256(d)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("C CHECK:", all(oks))
+
+=== script /tmp/p4_2_edits.py (in full) ===
+# P4-2 d.2 and e.1 helper: read the kit's edits file by the rules in its header, and apply a list of its edits to a
+# text. Reads the hashed kit file only (its SHA-256 is checked first); writes nothing.
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KIT, ev, sha256  # noqa: E402
+
+EDITS_FILE = KIT / "p4_2_STATUS_EDITS.txt"
+MARK = re.compile(r"^@@@ (EDIT \d\d|FINAL) (OLD|NEW|END)$")
+
+
+def read_edits():
+    """(placeholder, {name: (old, new)}) in file order; the file's SHA-256 must be KIT_EDITS_SHA256."""
+    assert sha256(EDITS_FILE) == ev("KIT_EDITS_SHA256"), "edits file SHA-256"
+    lines = EDITS_FILE.read_bytes().decode("utf-8").split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    header = []
+    k = 0
+    while k < len(lines) and not MARK.match(lines[k]):
+        header.append(lines[k])
+        k += 1
+    ph = re.findall(r"each occurrence of the placeholder (@@[A-Z]+@@) is replaced", " ".join(header))
+    assert len(ph) == 1, ph
+    edits = {}
+    while k < len(lines):
+        m = MARK.match(lines[k])
+        assert m and m.group(2) == "OLD", (k, lines[k])
+        name = m.group(1)
+        assert name not in edits, name
+        j = k + 1
+        while not MARK.match(lines[j]):
+            j += 1
+        assert MARK.match(lines[j]).groups() == (name, "NEW"), (j, lines[j])
+        e = j + 1
+        while not MARK.match(lines[e]):
+            e += 1
+        assert MARK.match(lines[e]).groups() == (name, "END"), (e, lines[e])
+        edits[name] = ("\n".join(lines[k + 1:j]), "\n".join(lines[j + 1:e]))
+        k = e + 1
+    return ph[0], edits
+
+
+def apply(text, names, date):
+    """Apply the named edits in order; each OLD must occur exactly once when applied. Returns (text, log lines)."""
+    ph, edits = read_edits()
+    log = []
+    for name in names:
+        old, new = edits[name]
+        new = new.replace(ph, date)
+        n = text.count(old)
+        log.append(f"{name}: OLD occurs {n} time(s); OLD {old.count(chr(10)) + 1} line(s) -> NEW {new.count(chr(10)) + 1} line(s)")
+        if n != 1:
+            return None, log
+        text = text.replace(old, new, 1)
+    return text, log
+
+=== script /tmp/p4_2_d.py (in full) ===
+# P4-2 d: d.1 the four kit files copied with cp -p; d.2 stage 1 of the records (EDIT 01 to EDIT 09) through a temporary
+# file, which replaces PASS4_STATUS.md only if its SHA-256, line count and nine headings are as expected; d.3 the status.
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import KIT, MSG, PROMPT, REPO, ev, git, kit_rows, record_rows, sha256, show  # noqa: E402
+from p4_2_edits import apply, read_edits  # noqa: E402
+
+oks = []
+date = Path("/tmp/p4_2_a1.out").read_text().strip()
+assert date in (ev("DATE_A"), ev("DATE_B"))
+print("the date of step a.1:", date)
+
+# d.1
+print("--- d.1")
+for name, label, dest in kit_rows():
+    if dest is None:
+        print(f"{name}: no destination (read by d.2, not committed)")
+        continue
+    d = REPO / dest
+    if os.path.lexists(d):
+        print(f"{dest} exists; not copied")
+        oks.append(False)
+        continue
+    cmd = ["cp", "-p", str(KIT / name), str(d)]
+    print("run:", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+    oks.append(show(f"  {dest} sha256 = kit file's ({label})", sha256(KIT / name), sha256(d)))
+    oks.append(show(f"  {dest} sha256 = {label}", ev(label), sha256(d)))
+
+# d.2
+print("--- d.2")
+lo, hi = map(int, re.search(r"applies EDIT (\d\d) to EDIT (\d\d) in order", MSG).groups())
+names = [f"EDIT {k:02d}" for k in range(lo, hi + 1)]
+_, edits = read_edits()
+print("edits in the kit file:", list(edits))
+oks.append(show("stage 1 edits are in the file", True, all(n in edits for n in names)))
+status = REPO / "PASS4_STATUS.md"
+before = status.read_bytes()
+oks.append(show("PASS4_STATUS.md before (STATUS_BEFORE_SHA256)", ev("STATUS_BEFORE_SHA256"), sha256(status)))
+text, log = apply(before.decode("utf-8"), names, date)
+for ln in log:
+    print(" ", ln)
+oks.append(show("every OLD occurred exactly once", True, text is not None))
+label = "STATUS_S1_DATE_A" if date == ev("DATE_A") else "STATUS_S1_DATE_B"
+tmp = Path("/tmp/p4_2_status_s1.md")
+if text is not None:
+    tmp.write_bytes(text.encode("utf-8"))
+    data = tmp.read_bytes()
+    ok_sha = show(f"stage 1 result sha256 ({label})", ev(label), sha256(tmp))
+    ok_lines = show("stage 1 result lines (STATUS_LINES)", int(ev("STATUS_LINES")), data.count(b"\n"))
+    sec = re.search(r"\*\*PASS4_STATUS\.md\*\* has these sections: (.+?)\. After", PROMPT.read_text(encoding="utf-8"))
+    heads = ["## " + s.strip() for s in sec.group(1).split(",")]
+    ok_heads = show("the nine headings, in order", heads,
+                    [ln for ln in data.decode("utf-8").split("\n") if ln.startswith("## ")])
+    oks += [ok_sha, ok_lines, ok_heads]
+    if ok_sha and ok_lines and ok_heads and all(oks):
+        shutil.copyfile(tmp, status)
+        oks.append(show("PASS4_STATUS.md replaced; its sha256", ev(label), sha256(status)))
+    else:
+        print("PASS4_STATUS.md NOT replaced")
+        oks.append(show("PASS4_STATUS.md unchanged", ev("STATUS_BEFORE_SHA256"), sha256(status)))
+
+# d.3
+print("--- d.3")
+st = git("status", "--porcelain", "--untracked-files=all").stdout.splitlines()
+for ln in st:
+    print("  " + ln)
+exp = sorted([" M PASS4_STATUS.md"] + ["?? " + d for _, _, d in kit_rows() if d]
+             + ["?? " + r[1] for r in record_rows()])
+oks.append(show("status lines", exp, sorted(st)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("D CHECK:", all(oks))
+
+=== script /tmp/p4_2_e1.py (in full) ===
+# P4-2 e.1: stage 2 of the records, the edit FINAL, through a temporary file that replaces PASS4_STATUS.md only if its
+# SHA-256 is STATUS_S2_DATE_A or _B for the date of step a.1; the status list of d.3 is otherwise unchanged.
+import shutil
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import REPO, ev, git, kit_rows, record_rows, sha256, show  # noqa: E402
+from p4_2_edits import apply  # noqa: E402
+
+oks = []
+date = Path("/tmp/p4_2_a1.out").read_text().strip()
+s1 = "STATUS_S1_DATE_A" if date == ev("DATE_A") else "STATUS_S1_DATE_B"
+s2 = "STATUS_S2_DATE_A" if date == ev("DATE_A") else "STATUS_S2_DATE_B"
+status = REPO / "PASS4_STATUS.md"
+oks.append(show(f"PASS4_STATUS.md before stage 2 ({s1})", ev(s1), sha256(status)))
+text, log = apply(status.read_bytes().decode("utf-8"), ["FINAL"], date)
+for ln in log:
+    print(" ", ln)
+oks.append(show("FINAL's OLD occurred exactly once", True, text is not None))
+if text is not None and all(oks):
+    tmp = Path("/tmp/p4_2_status_s2.md")
+    tmp.write_bytes(text.encode("utf-8"))
+    ok = show(f"stage 2 result sha256 ({s2})", ev(s2), sha256(tmp))
+    oks.append(ok)
+    if ok:
+        shutil.copyfile(tmp, status)
+        oks.append(show("PASS4_STATUS.md replaced; its sha256", ev(s2), sha256(status)))
+    else:
+        print("PASS4_STATUS.md NOT replaced")
+st = git("status", "--porcelain", "--untracked-files=all").stdout.splitlines()
+exp = sorted([" M PASS4_STATUS.md"] + ["?? " + d for _, _, d in kit_rows() if d] + ["?? " + r[1] for r in record_rows()])
+oks.append(show("status list as at d.3", exp, sorted(st)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("E1 CHECK:", all(oks))
+
+=== script /tmp/p4_2_e3.py (in full) ===
+# P4-2 e.3: after the commit, read-only.
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_2_common import REPO, blind_state, ev, git, kit_rows, record_rows, sha256_bytes, show  # noqa: E402
+
+oks = []
+out = Path("/tmp/p4_2_e2.out").read_text(encoding="utf-8").split("\n")
+oks.append(show("checkpoint exit", ["checkpoint exit: 0"], [ln for ln in out if ln.startswith("checkpoint exit:")]))
+oks.append(show(f"lines starting '{ev('SUITE_RAN')} '", 1, sum(ln.startswith(ev("SUITE_RAN") + " ") for ln in out)))
+oks.append(show(f"lines equal to '{ev('SUITE_OK')}'", 1, out.count(ev("SUITE_OK"))))
+oks.append(show("'TESTS FAILED' absent", False, any("TESTS FAILED" in ln for ln in out)))
+commits = [ln.split()[1] for ln in out if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+oks.append(show("commit lines printed by checkpoint.sh", 1, len(commits)))
+head = git("rev-parse", "HEAD").stdout.strip()
+print("new HEAD:", head)
+oks.append(show("HEAD = the commit checkpoint.sh printed", commits, [head]))
+oks.append(show("HEAD's parents", [ev("HEAD_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+msg = git("log", "-1", "--format=%B", "HEAD").stdout.rstrip("\n").split("\n")
+print("commit message:")
+for ln in msg:
+    print("  " + ln)
+oks.append(show("subject", "checkpoint: " + ev("COMMIT_ITEM"), msg[0]))
+prev = git("log", "-1", "--format=%B", ev("HEAD_BEFORE")).stdout.split("\n")
+trailer_prev = [ln for ln in prev if ln.startswith("Co-Authored-By:")]
+trailer = [ln for ln in msg if ln.startswith("Co-Authored-By:")]
+oks.append(show("the trailer, in P4-0b's form (P4-0b's commit's trailer line)", trailer_prev, trailer))
+files = sorted(x for x in git("show", "--name-only", "--format=", "HEAD").stdout.split("\n") if x)
+exp = sorted(["PASS4_STATUS.md"] + [d for _, _, d in kit_rows() if d] + [r[1] for r in record_rows()])
+oks.append(show("files in the commit", exp, files))
+oks.append(show("number of files (COMMIT_FILE_COUNT)", int(ev("COMMIT_FILE_COUNT")), len(files)))
+oks.append(show("git status --porcelain --untracked-files=all", "",
+                git("status", "--porcelain", "--untracked-files=all").stdout))
+
+
+def at_head(path):
+    return sha256_bytes(subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{path}"],
+                                       capture_output=True, check=True).stdout)
+
+
+date = Path("/tmp/p4_2_a1.out").read_text().strip()
+s2 = "STATUS_S2_DATE_A" if date == ev("DATE_A") else "STATUS_S2_DATE_B"
+oks.append(show(f"PASS4_STATUS.md at HEAD ({s2})", ev(s2), at_head("PASS4_STATUS.md")))
+for _, label, dest in kit_rows():
+    if dest:
+        oks.append(show(f"{dest} at HEAD ({label})", ev(label), at_head(dest)))
+for _, dest, label, _ in record_rows():
+    oks.append(show(f"{dest} at HEAD ({label})", ev(label), at_head(dest)))
+blind_state(oks)
+print("NEW COMMIT:", head)
+print("checks:", len(oks), "passed:", sum(oks))
+print("E CHECK:", all(oks))
+
+=== output /tmp/p4_2_a2_env.out ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A2_ENV CHECK: True
+
+=== output /tmp/p4_2_a2.out ===
+a.1 date is DATE_A or DATE_B: expected=True actual=True ok=True
+a.1 date (the date of the acceptance of P4-1 and of P4Q9 to P4Q31): 2026-10-09
+HEAD: expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+HEAD's parents: expected=['96963b31d620ab98ff529458fcd095f412c443bd'] actual=['96963b31d620ab98ff529458fcd095f412c443bd'] ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+tag commit is an ancestor of HEAD: expected=0 actual=0 ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+spec sha256: expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+standing prompt sha256: expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+PASS4_STATUS.md sha256: expected='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' actual='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' ok=True
+reports/P4_reports/ entries: expected=['p4_0a.txt', 'p4_boot.txt'] actual=['p4_0a.txt', 'p4_boot.txt'] ok=True
+the seven destinations of steps b and c: ['docs/P4_CONFIRM_CONFIG.json', 'docs/P4_M2_note.md', 'docs/P4_M2_check.py', 'docs/P4_M2_prompt.md', 'reports/P4_reports/p4_0b.txt', 'reports/P4_reports/p4_1.txt', 'reports/P4_reports/p4_1_audit.md']
+number of destinations (COMMIT_FILE_COUNT - 1, PASS4_STATUS.md being the other): expected=7 actual=7 ok=True
+exists docs/P4_CONFIRM_CONFIG.json: expected=False actual=False ok=True
+exists docs/P4_M2_note.md: expected=False actual=False ok=True
+exists docs/P4_M2_check.py: expected=False actual=False ok=True
+exists docs/P4_M2_prompt.md: expected=False actual=False ok=True
+exists reports/P4_reports/p4_0b.txt: expected=False actual=False ok=True
+exists reports/P4_reports/p4_1.txt: expected=False actual=False ok=True
+exists reports/P4_reports/p4_1_audit.md: expected=False actual=False ok=True
+checks: 25 passed: 25
+A2 CHECK: True
+
+=== output /tmp/p4_2_b1.out ===
+KIT: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit | exists: True
+entries (all, hidden included): ['p4_2_P4_CONFIRM_CONFIG.json', 'p4_2_P4_M2_check.py', 'p4_2_P4_M2_note.md', 'p4_2_P4_M2_prompt.md', 'p4_2_STATUS_EDITS.txt']
+KIT entries: expected=['p4_2_P4_CONFIRM_CONFIG.json', 'p4_2_P4_M2_check.py', 'p4_2_P4_M2_note.md', 'p4_2_P4_M2_prompt.md', 'p4_2_STATUS_EDITS.txt'] actual=['p4_2_P4_CONFIRM_CONFIG.json', 'p4_2_P4_M2_check.py', 'p4_2_P4_M2_note.md', 'p4_2_P4_M2_prompt.md', 'p4_2_STATUS_EDITS.txt'] ok=True
+sha256 p4_2_P4_CONFIRM_CONFIG.json (KIT_CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+sha256 p4_2_P4_M2_note.md (KIT_NOTE_SHA256): expected='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' actual='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' ok=True
+sha256 p4_2_P4_M2_check.py (KIT_CHECK_SHA256): expected='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' actual='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' ok=True
+sha256 p4_2_P4_M2_prompt.md (KIT_PROMPT_SHA256): expected='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' actual='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' ok=True
+sha256 p4_2_STATUS_EDITS.txt (KIT_EDITS_SHA256): expected='f2abda6aa648d484f7c5340196760c4373dd2160fe596c9ada8411af8c2ff1ec' actual='f2abda6aa648d484f7c5340196760c4373dd2160fe596c9ada8411af8c2ff1ec' ok=True
+checks: 6 passed: 6
+B1 CHECK: True
+
+=== output /tmp/p4_2_b2.out ===
+config sha256 (KIT_CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+top-level keys: ['config', 'version', 'status', 'sources', 'gap_decisions', 'frame', 'constants', 'f', 'robustness', 'forecast', 'economic_evaluation', 'claims', 'dry_run', 'not_examined_on_dev', 'forward_holdout', 'contingencies', 'rows']
+version: expected=1 actual=1 ok=True
+sources.spec.sha256 (SPEC_SHA256): expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+sources.audit.sha256 (AUDIT_SHA256): expected='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' actual='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' ok=True
+sources.m2_note.sha256 (KIT_NOTE_SHA256): expected='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' actual='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' ok=True
+sources.m2_check.sha256 (KIT_CHECK_SHA256): expected='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' actual='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' ok=True
+gap_decisions spans equal length: expected=21 actual=21 ok=True
+gap_decisions keys in order: expected=['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16', 'G17', 'G18', 'G19', 'G20', 'G21', 'G22'] actual=['G1', 'G2', 'G3', 'G4', 'G5', 'G6', 'G7', 'G8', 'G9', 'G10', 'G11', 'G12', 'G13', 'G14', 'G15', 'G16', 'G17', 'G18', 'G19', 'G20', 'G21', 'G22'] ok=True
+gap_decisions values in order: expected=['P4Q9', 'P4Q10', 'P4Q11', 'P4Q12', 'P4Q13', 'P4Q14', 'P4Q15', 'P4Q16', 'P4Q17', 'P4Q18', 'P4Q19', 'P4Q20', 'P4Q21', 'P4Q22', 'P4Q23', 'P4Q24', 'P4Q25', 'P4Q26', 'P4Q27', 'P4Q28', 'P4Q29', 'P4Q30'] actual=['P4Q9', 'P4Q10', 'P4Q11', 'P4Q12', 'P4Q13', 'P4Q14', 'P4Q15', 'P4Q16', 'P4Q17', 'P4Q18', 'P4Q19', 'P4Q20', 'P4Q21', 'P4Q22', 'P4Q23', 'P4Q24', 'P4Q25', 'P4Q26', 'P4Q27', 'P4Q28', 'P4Q29', 'P4Q30'] ok=True
+audit source: /tmp/p4_1_audit.md
+audit sha256 (AUDIT_SHA256): expected='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' actual='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' ok=True
+audit table rows (AUDIT_ROWS): expected=71 actual=71 ok=True
+rows keys, in order, = the audit table's IDs: expected=['O1', 'R1', 'R2', 'R3', 'R4', 'R5', 'O2', 'O3', 'O4', 'O5', 'O6', 'R6', 'O7', 'O8', 'O9', 'O10', 'O11', 'O12', 'O13', 'O14', 'O15', 'O16', 'O17', 'O18', 'O19', 'O20', 'O21', 'O22', 'O23', 'O24', 'O25', 'O26', 'O27', 'O28', 'R7', 'R8', 'O29', 'O30', 'O31', 'O32', 'O33', 'O34', 'O35', 'R9', 'O36', 'O37', 'O38', 'O39', 'O40', 'O41', 'O42', 'O43', 'O44', 'O45', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'R16', 'R17', 'R18', 'R19', 'R20', 'R21', 'R22', 'R23', 'R24', 'R25', 'R26'] actual=['O1', 'R1', 'R2', 'R3', 'R4', 'R5', 'O2', 'O3', 'O4', 'O5', 'O6', 'R6', 'O7', 'O8', 'O9', 'O10', 'O11', 'O12', 'O13', 'O14', 'O15', 'O16', 'O17', 'O18', 'O19', 'O20', 'O21', 'O22', 'O23', 'O24', 'O25', 'O26', 'O27', 'O28', 'R7', 'R8', 'O29', 'O30', 'O31', 'O32', 'O33', 'O34', 'O35', 'R9', 'O36', 'O37', 'O38', 'O39', 'O40', 'O41', 'O42', 'O43', 'O44', 'O45', 'R10', 'R11', 'R12', 'R13', 'R14', 'R15', 'R16', 'R17', 'R18', 'R19', 'R20', 'R21', 'R22', 'R23', 'R24', 'R25', 'R26'] ok=True
+occurrences of KIT_CHECK_SHA256 in the kit's note: 1
+the note contains KIT_CHECK_SHA256: expected=True actual=True ok=True
+checks: 13 passed: 13
+B CHECK: True
+
+=== output /tmp/p4_2_c.out ===
+--- p4_0b.txt: source /tmp/p4_0b.txt (/tmp); destination reports/P4_reports/p4_0b.txt
+  source sha256 (P4_0B_SHA256): expected='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' actual='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' ok=True
+  line 1 (P4_0B_LINE1): expected='2026-10-08T18:12:14Z' actual='2026-10-08T18:12:14Z' ok=True
+  line 2 (HEAD_BEFORE): expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+  last non-empty line (HEAD_BEFORE): expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+  last-but-one non-empty line (P4_0B_LAST): expected='2026-10-08T18:12:16Z' actual='2026-10-08T18:12:16Z' ok=True
+  line 3 = P4_0B_MSG_SHA256 + two spaces + /tmp/p4_0b_msg.txt: expected='e44628a17d86020377441ab48a2a6aac110d7cc9dbcdcb1695c7cf06711268ea  /tmp/p4_0b_msg.txt' actual='e44628a17d86020377441ab48a2a6aac110d7cc9dbcdcb1695c7cf06711268ea  /tmp/p4_0b_msg.txt' ok=True
+  occurrences of that line (P4_0B_MSG_COUNT): expected=2 actual=2 ok=True
+  run: cp -p /tmp/p4_0b.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_0b.txt
+  destination sha256 (P4_0B_SHA256): expected='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' actual='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' ok=True
+--- p4_1.txt: source /tmp/p4_1.txt (/tmp); destination reports/P4_reports/p4_1.txt
+  source sha256 (P4_1_SHA256): expected='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' actual='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' ok=True
+  line 1 (P4_1_LINE1): expected='2026-10-08T20:23:23Z' actual='2026-10-08T20:23:23Z' ok=True
+  line 2 (HEAD_BEFORE): expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+  last non-empty line (HEAD_BEFORE): expected='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' actual='795385fa709f4cf6c8e7f441d879cc1c1b89e46b' ok=True
+  last-but-one non-empty line (P4_1_LAST): expected='2026-10-08T20:44:31Z' actual='2026-10-08T20:44:31Z' ok=True
+  line 3 = P4_1_MSG_SHA256 + two spaces + /tmp/p4_1_msg.txt: expected='5598626f99741a692b4d919691cba68d2e7ddae6f1ea45b63915a82ffe2f9d95  /tmp/p4_1_msg.txt' actual='5598626f99741a692b4d919691cba68d2e7ddae6f1ea45b63915a82ffe2f9d95  /tmp/p4_1_msg.txt' ok=True
+  occurrences of that line (P4_1_MSG_COUNT): expected=3 actual=3 ok=True
+  run: cp -p /tmp/p4_1.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_1.txt
+  destination sha256 (P4_1_SHA256): expected='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' actual='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' ok=True
+--- p4_1_audit.md: source /tmp/p4_1_audit.md (/tmp); destination reports/P4_reports/p4_1_audit.md
+  source sha256 (AUDIT_SHA256): expected='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' actual='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' ok=True
+  line checks: expected='none (not a report)' actual='none (not a report)' ok=True
+  run: cp -p /tmp/p4_1_audit.md /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_1_audit.md
+  destination sha256 (AUDIT_SHA256): expected='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' actual='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' ok=True
+checks: 19 passed: 19
+C CHECK: True
+
+=== output /tmp/p4_2_d.out ===
+the date of step a.1: 2026-10-09
+--- d.1
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit/p4_2_P4_CONFIRM_CONFIG.json /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_CONFIRM_CONFIG.json
+  docs/P4_CONFIRM_CONFIG.json sha256 = kit file's (KIT_CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+  docs/P4_CONFIRM_CONFIG.json sha256 = KIT_CONFIG_SHA256: expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit/p4_2_P4_M2_note.md /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_M2_note.md
+  docs/P4_M2_note.md sha256 = kit file's (KIT_NOTE_SHA256): expected='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' actual='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' ok=True
+  docs/P4_M2_note.md sha256 = KIT_NOTE_SHA256: expected='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' actual='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' ok=True
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit/p4_2_P4_M2_check.py /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_M2_check.py
+  docs/P4_M2_check.py sha256 = kit file's (KIT_CHECK_SHA256): expected='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' actual='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' ok=True
+  docs/P4_M2_check.py sha256 = KIT_CHECK_SHA256: expected='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' actual='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' ok=True
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_2_kit/p4_2_P4_M2_prompt.md /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_M2_prompt.md
+  docs/P4_M2_prompt.md sha256 = kit file's (KIT_PROMPT_SHA256): expected='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' actual='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' ok=True
+  docs/P4_M2_prompt.md sha256 = KIT_PROMPT_SHA256: expected='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' actual='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' ok=True
+p4_2_STATUS_EDITS.txt: no destination (read by d.2, not committed)
+--- d.2
+edits in the kit file: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'EDIT 09', 'FINAL']
+stage 1 edits are in the file: expected=True actual=True ok=True
+PASS4_STATUS.md before (STATUS_BEFORE_SHA256): expected='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' actual='1369313721241594efa681fef0c88a1348d5d353735c353151ce6f2186a7c3c9' ok=True
+  EDIT 01: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 3 line(s)
+  EDIT 02: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 1 line(s)
+  EDIT 03: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 38 line(s)
+  EDIT 04: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 2 line(s)
+  EDIT 05: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 3 line(s)
+  EDIT 06: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 3 line(s)
+  EDIT 07: OLD occurs 1 time(s); OLD 3 line(s) -> NEW 5 line(s)
+  EDIT 08: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 3 line(s)
+  EDIT 09: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 1 line(s)
+every OLD occurred exactly once: expected=True actual=True ok=True
+stage 1 result sha256 (STATUS_S1_DATE_B): expected='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' actual='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' ok=True
+stage 1 result lines (STATUS_LINES): expected=142 actual=142 ok=True
+the nine headings, in order: expected=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] actual=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] ok=True
+PASS4_STATUS.md replaced; its sha256: expected='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' actual='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' ok=True
+--- d.3
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_CONFIG.json
+  ?? docs/P4_M2_check.py
+  ?? docs/P4_M2_note.md
+  ?? docs/P4_M2_prompt.md
+  ?? reports/P4_reports/p4_0b.txt
+  ?? reports/P4_reports/p4_1.txt
+  ?? reports/P4_reports/p4_1_audit.md
+status lines: expected=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_CONFIG.json', '?? docs/P4_M2_check.py', '?? docs/P4_M2_note.md', '?? docs/P4_M2_prompt.md', '?? reports/P4_reports/p4_0b.txt', '?? reports/P4_reports/p4_1.txt', '?? reports/P4_reports/p4_1_audit.md'] actual=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_CONFIG.json', '?? docs/P4_M2_check.py', '?? docs/P4_M2_note.md', '?? docs/P4_M2_prompt.md', '?? reports/P4_reports/p4_0b.txt', '?? reports/P4_reports/p4_1.txt', '?? reports/P4_reports/p4_1_audit.md'] ok=True
+checks: 16 passed: 16
+D CHECK: True
+
+=== output /tmp/p4_2_e1.out ===
+PASS4_STATUS.md before stage 2 (STATUS_S1_DATE_B): expected='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' actual='d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960' ok=True
+  FINAL: OLD occurs 1 time(s); OLD 1 line(s) -> NEW 1 line(s)
+FINAL's OLD occurred exactly once: expected=True actual=True ok=True
+stage 2 result sha256 (STATUS_S2_DATE_B): expected='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' actual='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' ok=True
+PASS4_STATUS.md replaced; its sha256: expected='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' actual='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' ok=True
+status list as at d.3: expected=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_CONFIG.json', '?? docs/P4_M2_check.py', '?? docs/P4_M2_note.md', '?? docs/P4_M2_prompt.md', '?? reports/P4_reports/p4_0b.txt', '?? reports/P4_reports/p4_1.txt', '?? reports/P4_reports/p4_1_audit.md'] actual=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_CONFIG.json', '?? docs/P4_M2_check.py', '?? docs/P4_M2_note.md', '?? docs/P4_M2_prompt.md', '?? reports/P4_reports/p4_0b.txt', '?? reports/P4_reports/p4_1.txt', '?? reports/P4_reports/p4_1_audit.md'] ok=True
+checks: 5 passed: 5
+E1 CHECK: True
+
+=== output /tmp/p4_2_e2.out ===
+2026-10-09T14:42:18Z
+COMMIT_ITEM lines in /tmp/p4_2_msg.txt: 1; item: [P4-2 (P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note)]
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 ad1feed5254aee46a973419ab76762a56e3f6c45982bfad2c6c9ae174a597bb9
+before suite: git status --porcelain
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_CONFIG.json
+?? docs/P4_M2_check.py
+?? docs/P4_M2_note.md
+?? docs/P4_M2_prompt.md
+?? reports/P4_reports/p4_0b.txt
+?? reports/P4_reports/p4_1.txt
+?? reports/P4_reports/p4_1_audit.md
+----------------------------------------------------------------------
+Ran 285 tests in 301.101s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_CONFIG.json
+?? docs/P4_M2_check.py
+?? docs/P4_M2_note.md
+?? docs/P4_M2_prompt.md
+?? reports/P4_reports/p4_0b.txt
+?? reports/P4_reports/p4_1.txt
+?? reports/P4_reports/p4_1_audit.md
+commit 7828e79207acbaa9b8919077b50da1449d6783c9
+checkpoint exit: 0
+2026-10-09T14:47:22Z
+suite log (newest ckpt_tests.* under $TMPDIR): /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.thimDT
+
+=== output /tmp/p4_2_e3.out ===
+checkpoint exit: expected=['checkpoint exit: 0'] actual=['checkpoint exit: 0'] ok=True
+lines starting 'Ran 285 tests ': expected=1 actual=1 ok=True
+lines equal to 'OK (skipped=6)': expected=1 actual=1 ok=True
+'TESTS FAILED' absent: expected=False actual=False ok=True
+commit lines printed by checkpoint.sh: expected=1 actual=1 ok=True
+new HEAD: 7828e79207acbaa9b8919077b50da1449d6783c9
+HEAD = the commit checkpoint.sh printed: expected=['7828e79207acbaa9b8919077b50da1449d6783c9'] actual=['7828e79207acbaa9b8919077b50da1449d6783c9'] ok=True
+HEAD's parents: expected=['795385fa709f4cf6c8e7f441d879cc1c1b89e46b'] actual=['795385fa709f4cf6c8e7f441d879cc1c1b89e46b'] ok=True
+commit message:
+  checkpoint: P4-2 (P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note)
+  
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+subject: expected='checkpoint: P4-2 (P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note)' actual='checkpoint: P4-2 (P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note)' ok=True
+the trailer, in P4-0b's form (P4-0b's commit's trailer line): expected=['Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'] actual=['Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'] ok=True
+files in the commit: expected=['PASS4_STATUS.md', 'docs/P4_CONFIRM_CONFIG.json', 'docs/P4_M2_check.py', 'docs/P4_M2_note.md', 'docs/P4_M2_prompt.md', 'reports/P4_reports/p4_0b.txt', 'reports/P4_reports/p4_1.txt', 'reports/P4_reports/p4_1_audit.md'] actual=['PASS4_STATUS.md', 'docs/P4_CONFIRM_CONFIG.json', 'docs/P4_M2_check.py', 'docs/P4_M2_note.md', 'docs/P4_M2_prompt.md', 'reports/P4_reports/p4_0b.txt', 'reports/P4_reports/p4_1.txt', 'reports/P4_reports/p4_1_audit.md'] ok=True
+number of files (COMMIT_FILE_COUNT): expected=8 actual=8 ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+PASS4_STATUS.md at HEAD (STATUS_S2_DATE_B): expected='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' actual='d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf' ok=True
+docs/P4_CONFIRM_CONFIG.json at HEAD (KIT_CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+docs/P4_M2_note.md at HEAD (KIT_NOTE_SHA256): expected='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' actual='a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22' ok=True
+docs/P4_M2_check.py at HEAD (KIT_CHECK_SHA256): expected='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' actual='faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4' ok=True
+docs/P4_M2_prompt.md at HEAD (KIT_PROMPT_SHA256): expected='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' actual='594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1' ok=True
+reports/P4_reports/p4_0b.txt at HEAD (P4_0B_SHA256): expected='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' actual='78abe63a23ceb6c83d85b5a7694c75efe23e681638fe953436c0023e2df9054a' ok=True
+reports/P4_reports/p4_1.txt at HEAD (P4_1_SHA256): expected='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' actual='9c05c836ca78ffa8278f042a0b071e75708e100f2fe8650cc853d5dd9be28174' ok=True
+reports/P4_reports/p4_1_audit.md at HEAD (AUDIT_SHA256): expected='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' actual='fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+tag commit is an ancestor of HEAD: expected=0 actual=0 ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+spec sha256: expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+PASS3_STATUS.md sha256: expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+NEW COMMIT: 7828e79207acbaa9b8919077b50da1449d6783c9
+checks: 30 passed: 30
+E CHECK: True
+
+=== step c's sources ===
+--- p4_0b.txt: source /tmp/p4_0b.txt (/tmp); destination reports/P4_reports/p4_0b.txt
+--- p4_1.txt: source /tmp/p4_1.txt (/tmp); destination reports/P4_reports/p4_1.txt
+--- p4_1_audit.md: source /tmp/p4_1_audit.md (/tmp); destination reports/P4_reports/p4_1_audit.md
+
+=== the new commit: git show --stat HEAD ===
+commit 7828e79207acbaa9b8919077b50da1449d6783c9
+Author: ofilt-pass1 <pass1@localhost>
+Date:   Fri Oct 9 10:47:22 2026 -0400
+
+    checkpoint: P4-2 (P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note)
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md                  |   62 ++-
+ docs/P4_CONFIRM_CONFIG.json      |  599 ++++++++++++++++++++
+ docs/P4_M2_check.py              |  378 +++++++++++++
+ docs/P4_M2_note.md               |  756 +++++++++++++++++++++++++
+ docs/P4_M2_prompt.md             |  107 ++++
+ reports/P4_reports/p4_0b.txt     | 1003 +++++++++++++++++++++++++++++++++
+ reports/P4_reports/p4_1.txt      | 1139 ++++++++++++++++++++++++++++++++++++++
+ reports/P4_reports/p4_1_audit.md |  391 +++++++++++++
+ 8 files changed, 4428 insertions(+), 7 deletions(-)
+
+=== verdict lines ===
+run2_prep.out: RUN2_PREP CHECK: True
+a2_env.out: A2_ENV CHECK: True
+a2.out: A2 CHECK: True
+b1.out: B1 CHECK: True
+b2.out: B CHECK: True
+c.out: C CHECK: True
+d.out: D CHECK: True
+e1.out: E1 CHECK: True
+e3.out: E CHECK: True
+
+=== deviations and notes ===
+1. Deviation (run 2, step 1): besides /tmp/p4_2_msg.txt and /tmp/p4_2_run2_msg.txt, step 1 did not move run 2's own files, whose names start /tmp/p4_2_run2: the step-0 date capture, written before step 1, and the step-1 script and its output. Moving them into /tmp/p4_2_run1/ would have filed run 2's records under run 1. Step 1's output lists them as 'not moved'.
+2. Note on the run-2 message's account of run 1: it says KIT held a sixth file. Run 1's B1 output (above) found KIT empty ('entries (all, hidden included): []'), and its listing of files/pass4 showed the five kit files and P4_2_MSG_2026-10-08.txt in files/pass4 itself. The rerun is unaffected; the records of P4-3 may want run 1's own output.
+3. Note on EDIT 07, applied unchanged as the run-2 message directs: it says of P4-0b's a.2 rerun 'The cause was the message, not the code.' P4-0b's report described it as a bug in the builder's own helper (it required exactly one match of a sentence that the message, legitimately, states twice). For the supervisor; the kit's edits file is not changed.
+4. Note: before writing b.2's script, one read-only inline command printed the kit configuration's top-level keys and the shape of sources, gap_decisions and rows, under env -u OFILT_RUN_SEALED in the venv (python -B -c ... json.load of the kit file; nothing written). Its command was:
+   cd "$HOME/Desktop/FX_Project/files/pass4/p4_2_kit" && env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && python -B -c "
+   import json
+   c = json.load(open(\"p4_2_P4_CONFIRM_CONFIG.json\"))
+   print(list(c))
+   print(json.dumps(c[\"sources\"], indent=1)[:1500])
+   g = c[\"gap_decisions\"]; print(type(g).__name__, list(g)[:3], json.dumps(g[list(g)[0]])[:300])
+   r = c[\"rows\"]; print(type(r).__name__, len(r), list(r)[:4], json.dumps(r[list(r)[0]])[:300])
+   "'
+5. Note: every check script of run 2 ran once; scripts were written or edited with the file-editing tool only. Run 1's four scripts were reused byte for byte (SHA-256 above).
+6. The suite's log under $TMPDIR: see the last line of e2.out above.
+
+=== files under /tmp written by P4-2 (runs 1 and 2; all /tmp/p4_2*, the report itself excluded), with SHA-256 ===
+a344f917b2f67111c69de1f03526712334088632b708b9fa08bc448230283d0b  /tmp/p4_2_a1.out
+9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_2_a2_env.out
+b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_a2_env.sh
+3f3d157ce4949b17704d4ecfa8a3aa201e9ca6973435cf32d3e28f5c8ce1ec79  /tmp/p4_2_a2.out
+0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_a2.py
+5309028d5a4a91f0dddb02ed616904b8acc8430f762d2f1d5d9e211d00bb29b6  /tmp/p4_2_b1.out
+2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_b1.py
+add2a706da3b716ea2a35298f41c2a91376ee611f2628f8d84217202e7bdb010  /tmp/p4_2_b2.out
+6814cde79997f6ad9d5772963fa2b24d764aa47bb9afb92ce326ff30051b135c  /tmp/p4_2_b2.py
+16b5cbfe9c3f144e5076d720e58112cb6d4ed8a34fc32d9888de27346415d26d  /tmp/p4_2_c.out
+fe2425cebc22a053d800bd5deee8832f2999a879bc03ad53b968c6edbcda3403  /tmp/p4_2_c.py
+e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_common.py
+582145637be3f5a938e93519be62e46c6983f618a5c0ac3b18fb47fa73430fce  /tmp/p4_2_d.out
+451d5681b7a82bc20734f0dbdfa493b7410af5e71b0495babdbe87e8c8510681  /tmp/p4_2_d.py
+abe1b868e494a8578e6da641ad3dfc9c7f3b4372d8c4226c1bb133f08b2d8af8  /tmp/p4_2_e1.out
+c9fdf600b9ce73b2dd61e8bd5ecd801e630ca86a12fafc808639c44686418f41  /tmp/p4_2_e1.py
+68813642288449cdbb9aa5deb18a7cabce502c23141ab63816b1245268132ed1  /tmp/p4_2_e2.out
+ac503a554f472ca73d14c2dbeba336eaa7eee68ecd6c1ef668ba2fae4dbf2002  /tmp/p4_2_e3.out
+3606ed421b488de62db773540d5149fa46ea7391a8a360224769a3e12cc08906  /tmp/p4_2_e3.py
+79b403afeb6704078b9f23a49d17b4b83327a6e882592463c817914a48f0c292  /tmp/p4_2_edits.py
+e551051328f35381cdcc4a8ebb4a5dc7c53b1dba20e9589465f052bff39bee5d  /tmp/p4_2_head.out
+ab6568b680703225222cdfb088e0ee87484645a61a07112f7257e5ebeeb6b800  /tmp/p4_2_msg.txt
+e12951e03d75c609f3b965c4e99bcda35cf2b6334c2f4cc1918ce88e8d83e70c  /tmp/p4_2_reuse.out
+a344f917b2f67111c69de1f03526712334088632b708b9fa08bc448230283d0b  /tmp/p4_2_run1/p4_2_a1.out
+9982ca1947bfda915eca9a6ba816441743b9ef1ad277d7e652c676b6804c79f0  /tmp/p4_2_run1/p4_2_a2_env.out
+b4cb9cbdcabd88537b45089e13966e8d179785b676c2411d5827320d824ebc2a  /tmp/p4_2_run1/p4_2_a2_env.sh
+3f3d157ce4949b17704d4ecfa8a3aa201e9ca6973435cf32d3e28f5c8ce1ec79  /tmp/p4_2_run1/p4_2_a2.out
+0e64b804fe8e01a1e11b5b5c7beaec9c88bc59308b6619a87b9c28563b0ef27f  /tmp/p4_2_run1/p4_2_a2.py
+d7f9189d9d1da80e26520ada7f8fa1722d42f0887fd11df1e4493a3f9f725285  /tmp/p4_2_run1/p4_2_b1_pass4_listing.out
+7a0fbf18092ef8d1a81e7d9451b9f0590bdc1b1350282ab128f802466cbf1522  /tmp/p4_2_run1/p4_2_b1.out
+2bc7f1d01a752eabc869ce38a54aa09f097ddf23722aae5f577d56632b796290  /tmp/p4_2_run1/p4_2_b1.py
+e9e295693fa5670973014ed729dd011e1199a0e968ad1a213678c20fbd0a4620  /tmp/p4_2_run1/p4_2_common.py
+286fbe43662ec97e3840ac926305bf2ccdfa81dcf7236d2eb4fded82af4cd44f  /tmp/p4_2_run1/p4_2_head.out
+f7cfc90089c97d1be8fc9f8ce3d37ce8d1091c128e20fe5624c13a7df238b310  /tmp/p4_2_run1/p4_2_report.sh
+4547aeb96078b152b930cf5bab15009159ad98bb12bff45076ffa93604d34dda  /tmp/p4_2_run1/p4_2.txt
+a344f917b2f67111c69de1f03526712334088632b708b9fa08bc448230283d0b  /tmp/p4_2_run2_date.out
+3fac2abeeb07a021e0675bd2b1030e679ebafbb6147691e117bf8727ec8b941f  /tmp/p4_2_run2_msg.txt
+a938f1758c3ee44c8e53ea59650d9b7410d74629a53194d2ddc240967b71a537  /tmp/p4_2_run2_prep.out
+72fbcb5c12758de4ee4aace6611a888689e036bc4bfc92276d5aeb7693717b71  /tmp/p4_2_run2_prep.py
+d720194e458965da6c9e30d0fc4aa2085f535024a1a3353436df603d993030df  /tmp/p4_2_run2_report.sh
+d28da2bf5f4ac0641707ffa7b558c1115c1e6ef1ff844d761aaf96a3ea8a0960  /tmp/p4_2_status_s1.md
+d7d668ca2b69789f378d7612468ae0c907cf54ac50bd4e0f431b718d89b61baf  /tmp/p4_2_status_s2.md
+/tmp/__pycache__ exists: False
+
+=== script /tmp/p4_2_run2_report.sh (this assembly, in full) ===
+#!/bin/bash
+# P4-2 run 2, step 3: append the report body and its last lines to /tmp/p4_2.txt, whose first four lines (UTC time,
+# HEAD, the SHA-256 lines of /tmp/p4_2_msg.txt and /tmp/p4_2_run2_msg.txt) were written before P4-2's a.2.
+# Command output only; no Python.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='env -u OFILT_RUN_SEALED bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_2_<script>.py'\'' 2>&1 | tee /tmp/p4_2_<script>.out'
+{
+echo "=== P4-2 report (run 2) ==="
+echo "(lines 1-4 written after run 2's step 1 and P4-2's a.1, before a.2: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_2_msg.txt; shasum -a 256 /tmp/p4_2_run2_msg.txt; } > /tmp/p4_2_head.out, then cp to /tmp/p4_2.txt)"
+cat /tmp/p4_2_head.out
+echo
+echo "=== the run-2 message (cat /tmp/p4_2_run2_msg.txt) ==="
+cat /tmp/p4_2_run2_msg.txt
+echo
+echo "=== run 2, step 0: date +%F, its first command, captured by tee to /tmp/p4_2_run2_date.out ==="
+cat /tmp/p4_2_run2_date.out
+echo
+echo "=== run 2, step 1: script /tmp/p4_2_run2_prep.py (in full), run as: ${PY//<script>/run2_prep} ==="
+cat /tmp/p4_2_run2_prep.py
+echo
+echo "=== run 2, step 1: output /tmp/p4_2_run2_prep.out ==="
+cat /tmp/p4_2_run2_prep.out
+echo
+echo "=== P4-2 run 1 (STOP at b.1) ==="
+cat /tmp/p4_2_run1/p4_2.txt
+echo
+echo "=== P4-2 run 2: a.1, date +%F, P4-2's first command, captured by tee to /tmp/p4_2_a1.out ==="
+cat /tmp/p4_2_a1.out
+echo
+echo "=== how each step ran ==="
+echo "a.2 (env part), no Python, so not under env -u: bash /tmp/p4_2_a2_env.sh 2>&1 | tee /tmp/p4_2_a2_env.out"
+echo "every Python step, as: $PY  (a2, b1, b2, c, d, e1, e3)"
+echo "e.2, in REPO: { date -u +%FT%TZ; COMMIT_ITEM read from /tmp/p4_2_msg.txt by grep and sed; source the venv && env -u OFILT_RUN_SEALED OFILT_DATA_DIR=\"\$HOME/Desktop/FX_Project/data\" bash tools/checkpoint.sh \"\$ITEM\" \"Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\"; echo \"checkpoint exit: \$?\"; date -u +%FT%TZ; the newest ckpt_tests.* under \$TMPDIR; } 2>&1 | tee /tmp/p4_2_e2.out"
+echo "(python -B, so importing the /tmp helper modules writes no /tmp/__pycache__; no script imports a module of ofilt; docs/P4_M2_check.py was not run)"
+echo
+echo "=== run 1's four scripts reused unchanged (cp -p from /tmp/p4_2_run1/), by SHA-256 ==="
+cat /tmp/p4_2_reuse.out
+for f in common.py a2_env.sh a2.py b1.py b2.py c.py edits.py d.py e1.py e3.py; do
+  echo
+  echo "=== script /tmp/p4_2_$f (in full) ==="
+  cat "/tmp/p4_2_$f"
+done
+for s in a2_env a2 b1 b2 c d e1 e2 e3; do
+  echo
+  echo "=== output /tmp/p4_2_$s.out ==="
+  cat "/tmp/p4_2_$s.out"
+done
+echo
+echo "=== step c's sources ==="
+grep -h '^--- ' /tmp/p4_2_c.out
+echo
+echo "=== the new commit: git show --stat HEAD ==="
+git -C "$REPO" show --stat HEAD
+echo
+echo "=== verdict lines ==="
+for s in run2_prep a2_env a2 b1 b2 c d e1 e3; do
+  printf '%s: ' "$s.out"; grep -h ' CHECK: ' "/tmp/p4_2_$s.out" || echo "(no verdict line)"
+done
+echo
+echo "=== deviations and notes ==="
+echo "1. Deviation (run 2, step 1): besides /tmp/p4_2_msg.txt and /tmp/p4_2_run2_msg.txt, step 1 did not move run 2's own files, whose names start /tmp/p4_2_run2: the step-0 date capture, written before step 1, and the step-1 script and its output. Moving them into /tmp/p4_2_run1/ would have filed run 2's records under run 1. Step 1's output lists them as 'not moved'."
+echo "2. Note on the run-2 message's account of run 1: it says KIT held a sixth file. Run 1's B1 output (above) found KIT empty ('entries (all, hidden included): []'), and its listing of files/pass4 showed the five kit files and P4_2_MSG_2026-10-08.txt in files/pass4 itself. The rerun is unaffected; the records of P4-3 may want run 1's own output."
+echo "3. Note on EDIT 07, applied unchanged as the run-2 message directs: it says of P4-0b's a.2 rerun 'The cause was the message, not the code.' P4-0b's report described it as a bug in the builder's own helper (it required exactly one match of a sentence that the message, legitimately, states twice). For the supervisor; the kit's edits file is not changed."
+echo "4. Note: before writing b.2's script, one read-only inline command printed the kit configuration's top-level keys and the shape of sources, gap_decisions and rows, under env -u OFILT_RUN_SEALED in the venv (python -B -c ... json.load of the kit file; nothing written). Its command was:"
+cat <<'EOF'
+   cd "$HOME/Desktop/FX_Project/files/pass4/p4_2_kit" && env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && python -B -c "
+   import json
+   c = json.load(open(\"p4_2_P4_CONFIRM_CONFIG.json\"))
+   print(list(c))
+   print(json.dumps(c[\"sources\"], indent=1)[:1500])
+   g = c[\"gap_decisions\"]; print(type(g).__name__, list(g)[:3], json.dumps(g[list(g)[0]])[:300])
+   r = c[\"rows\"]; print(type(r).__name__, len(r), list(r)[:4], json.dumps(r[list(r)[0]])[:300])
+   "'
+EOF
+echo "5. Note: every check script of run 2 ran once; scripts were written or edited with the file-editing tool only. Run 1's four scripts were reused byte for byte (SHA-256 above)."
+echo "6. The suite's log under \$TMPDIR: see the last line of e2.out above."
+echo
+echo "=== files under /tmp written by P4-2 (runs 1 and 2; all /tmp/p4_2*, the report itself excluded), with SHA-256 ==="
+find /tmp/p4_2* -type f ! -path /tmp/p4_2.txt | sort | xargs shasum -a 256
+echo "/tmp/__pycache__ exists: $( [ -e /tmp/__pycache__ ] && echo True || echo False )"
+echo
+echo "=== script /tmp/p4_2_run2_report.sh (this assembly, in full) ==="
+cat /tmp/p4_2_run2_report.sh
+echo
+echo "=== STOP (planned): Isaiah pushes, and uploads /tmp/p4_2.txt to the supervisor chat. The supervisor reviews it, then gives P4-3. ==="
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} >> /tmp/p4_2.txt
+
+=== STOP (planned): Isaiah pushes, and uploads /tmp/p4_2.txt to the supervisor chat. The supervisor reviews it, then gives P4-3. ===
+
+2026-10-09T14:48:45Z
+7828e79207acbaa9b8919077b50da1449d6783c9

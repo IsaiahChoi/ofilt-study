@@ -11,11 +11,12 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
 | P4-boot a new builder session; the standing prompt found by its hash | done; accepted by Isaiah 2026-10-08 | Read-only; no commit. Report `reports/P4_reports/p4_boot.txt`. |
 | P4-0b Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied | done; accepted by Isaiah 2026-10-08 | `checkpoint: P4-0b`. Report `reports/P4_reports/p4_0b.txt`. |
 | P4-1 the read-only audit of every pre-registered output and rule (P4Q4) | done; accepted by Isaiah 2026-10-09 | Read-only; no commit. Report `reports/P4_reports/p4_1.txt`; the audit `reports/P4_reports/p4_1_audit.md`. |
-| P4-2 P4-0b and P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note | done | `checkpoint: P4-2`. Report `/tmp/p4_2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-3. |
+| P4-2 P4-0b and P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-2`, made by its second run; the first stopped at b.1 (Decision log). Report `reports/P4_reports/p4_2.txt`. |
+| P4-3 P4-2 accepted; P4Q32 and P4Q33; the full-schema simulator and its tests (T3) | done | `checkpoint: P4-3`. Report `/tmp/p4_3.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4. |
 
 ## Next action
 
-The supervisor reviews P4-2. Then P4-3, the full-schema simulator and its tests (T3).
+The supervisor reviews P4-3. Then P4-4, the confirmation module and script, synthetic only, and their tests (T1, T2).
 
 ## Decision log
 
@@ -96,21 +97,38 @@ The supervisor reviews P4-2. Then P4-3, the full-schema simulator and its tests 
 >     - A ratio with a zero or non-finite denominator is undefined, and a criterion that needs it fails.
 >     - In a Holm family, a member that is not estimable enters with p = 1, so the family size is unchanged.
 >     - A claim whose inputs include a not-estimable result is not made.
+> - P4-2 accepted (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-3 paste): checkpoint `7828e79207acbaa9b8919077b50da1449d6783c9`, made by P4-2's second run.
+>   - The first run (2026-10-09) stopped correctly at b.1 (`B1 CHECK: False`): the kit folder `files/pass4/p4_2_kit` was empty, and the five kit files and the message file were in `files/pass4` itself (the run's own listing). It changed nothing in REPO.
+>   - The rerun message (SHA-256 `3fac2abeeb07a021e0675bd2b1030e679ebafbb6147691e117bf8727ec8b941f`) recorded Isaiah's decision, on the supervisor's recommendation, to rerun P4-2 in full. Its account of the first run, that the kit folder held a sixth file (the message), was the supervisor's misreading; the first run's own output is the record. At the rerun the kit folder held exactly the five kit files, each with its SHA-256 (the rerun's b.1).
+>   - Report `reports/P4_reports/p4_2.txt`: the rerun message, the first run's report in full, and the rerun's steps.
+> - P4Q32 (Isaiah, 2026-10-11, on the supervisor's recommendation): the full-schema simulator (T3), as `docs/P4_SIM_SPEC.md` specifies it.
+>   - A new module, `ofilt/drift/sim_full.py`, generates the panel directly: a dev-like and a confirmation-like frame, each with exactly the 60 schema columns in the dev panel's order and shaped as `io.load_dev` returns a panel, with provenance `synthetic` and the truth in `attrs`; and an events table shaped as `io.load_events_firm` returns one. It reads and writes no file. `sim.py` is unchanged.
+>   - The truth is structural. The hedge and the abnormal parts are generated separately, and `y_oc` is β_i times `y_1306_oc` plus the abnormal part. By default the hedge's open-to-close return is independent of the design and of the abnormal part, and the hedge gap loads on no FX regressor, so the AM-03 target that `targets.add_targets` builds recovers b, b_post and a₂, and `cc_abn` recovers δ_cc, up to estimation noise. A knob gives the hedge an FX loading; the truth then gives only the structural slopes.
+>   - Calendars: the confirmation dates are `calendar.confirmation_calendar()`; the dev history is the weekdays from 2015-01-06 to 2021-12-30 less a stated rule-based holiday set (1,714 dates), replaceable by an argument. The synthetic events give T_conf = 1013 by construction. The break at 2024-11-05 applies to b (b_post = b + Δ) and to the TSE close (15:00 to 15:30 JST), which sets the window and session columns.
+>   - A default scenario with small, stated missingness, and a not-estimable preset that triggers the paths of P4Q14 and P4Q31.
+>   - Tests: the new file `tests/test_p4_sim_full.py`, with exactly the 20 tests the specification lists. Their seeds are the spec seed plus 8,000,000 plus k, k below 1,000, disjoint from every earlier block.
+>   - Not chosen: raw files pushed through the frozen build (the route of `tests/p2_synth.py`); a target built from the true β instead of by `targets.add_targets`; the real dev dates read from the panel.
+>   - The specification is version 2 (Isaiah, 2026-10-11, on the supervisor's recommendation, option B). Version 1 (SHA-256 `6b500f4b30aece4be6d375ada094fc5cfde0f43260f32aba7a086f3db38a8e81`) was never committed: P4-3's step c.1, in its third run, found `n225_bars` of kind f in the dev panel that `io.load_dev` returns, where version 1's Table D gave i, and P4-3 stopped before any code was written. Version 2 records kind f; adds the knob `n225_missing`, default (3, 3): nights with no Japan 225 window record, on which the build leaves the four Nikkei columns empty, so that AM-05's rule making such a night ineligible for the Nikkei-proxy row is exercised on synthetic data; and writes in two readings the builder recorded (test 7's tolerance; `boj_day` in 2026). Its §10 lists the changes. Not chosen: the kind alone (option A). The runs of P4-3 are recorded at P4-4.
+> - P4Q33 (Isaiah, 2026-10-11, on the supervisor's recommendation): one structural contact with the dev panel (P4Q1).
+>   - One read-only script of P4-3 (step c.1) and one test (`test_dev_panel_kinds_and_guard` in `tests/test_p4_sim_full.py`) read the dev panel through `io.load_dev` and the firm events through `io.load_events_firm`, each verified by its hash, for their column names, the columns' order and each column's dtype kind only.
+>   - The test also lets `io.load_dev` register the real targets in the guard's fingerprint registry, as the existing tests that call it do, so that `blind.require_unblinded` then checks the simulator's frames against them.
+>   - No value is printed, compared or computed beyond these. Both are listed in the Disclosure list.
 
 ## Test results
 
 - P4-0b: the suite ran inside this item's checkpoint (`checkpoint: P4-0b`): `Ran 285 tests in 337.073s`, `OK (skipped=6)`. Report `reports/P4_reports/p4_0b.txt`.
-- P4-2: the suite runs inside this item's checkpoint (`checkpoint: P4-2`). Its result is in the report `/tmp/p4_2.txt`, copied at the next checkpoint. Expected: `Ran 285 tests`, `OK (skipped=6)`.
+- P4-2: the suite ran inside this item's checkpoint (`checkpoint: P4-2`): `Ran 285 tests in 301.101s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. Report `reports/P4_reports/p4_2.txt`.
+- P4-3: before this record was written, the new file `tests/test_p4_sim_full.py` passed on its own (`Ran 20 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-3`); its result is in the report `/tmp/p4_3.txt`, copied at the next checkpoint. Expected: `Ran 305 tests`, `OK (skipped=6)`.
 
 ## Test changes
 
-None in Pass 4 so far.
+- P4-3: one new test file, `tests/test_p4_sim_full.py`, with 20 tests (P4Q32, P4Q33). No existing test changed. The suite grows from 285 to 305 tests.
 
 ## Flags
 
 Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (closed). Pass 4's:
 - F4-1 (carried from P3-8c): `test_docs_d3` and `test_docs_d3b` assert Pass 3's end state (`BLIND_FIT_LOG` 7 lines; `RUN_REGISTRY.jsonl` empty). The dev run's commit changes them by decision (P4Q6).
-- F4-2 (carried from P3-8c and the handoffs): DATA_PROVENANCE §4.5 needs the entries of the fifth supervisor chat, of the two supervisor chats that began on 2026-10-08 (with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md` and with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`) and of the M2 derivation chat (its attestation is §10 of `docs/P4_M2_note.md`), and PROJECT_SETUP's chat-uploads line needs updating. Both go in through the documentation kit (P4-7), with their pins moved.
+- F4-2 (carried from P3-8c and the handoffs): DATA_PROVENANCE §4.5 needs the entries of the fifth supervisor chat, of the two supervisor chats that began on 2026-10-08 (with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md` and with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`), of the M2 derivation chat (its attestation is §10 of `docs/P4_M2_note.md`), of the supervisor chat that began on 2026-10-09 (with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`) and of the supervisor chat that began on 2026-10-11 (with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`), and PROJECT_SETUP's chat-uploads line needs updating. Both go in through the documentation kit (P4-7), with their pins moved.
 - F4-3 (from `docs/P4_M2_note.md`, Proposition 4): b is only approximately the yen-specific pass-through. Holding `eurusd_ret` fixed does not hold the dollar fixed, so any underpriced dollar-wide channel that the controls do not span loads on `usdjpy_ret`; a channel whose fair value falls when the dollar strengthens, such as the metals cascade, pushes b down. So "b < 0 means overreaction" and "b = 0 means fully priced" need a qualifier, and f inherits the term. A positive b̂ is conservative with respect to the cascade, not with respect to yen-correlated news. H1 as a test is unchanged. For the pre-registration (Pass 5).
 - F4-4 (from `docs/P4_M2_note.md`, Proposition 6, and P4Q17 to P4Q19): the documentation kit (P4-7) corrects PLAN §1.4 (the tier-(i) wording, the tier-(iii) row, and the null and equivalence wording) and PLAN §7 (M2 derived; A′(i) and (vi) qualified). P15's "common weight" reading of a₂ = 0, which does not hold as stated, is qualified by a decision in `docs/DECISIONS_P82_onward.md`, and DATA_DICTIONARY's line on `eurusd_ret` ("makes b the yen-specific pass-through") is qualified as approximate.
 
@@ -121,12 +139,17 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-0b: no script of this item opens a data file or computes on the dev panel; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-1: read-only; REPO's files read as text; no module of `ofilt` imported; no data file opened; no suite run.
 - P4-2: no script of this item opens a data file or computes on the dev panel; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests; the configuration and the M2 files hold no real-data result (the note's numbers come from its synthetic check, which this item does not run); `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-3: under P4Q33, one read-only script (step c.1, run in P4-3's third run, which stopped on its result, and again in its fourth) and one test (`test_dev_panel_kinds_and_guard`) read the dev panel through `io.load_dev` and the firm events through `io.load_events_firm`, each verified by its hash, for their column names, order and dtype kinds only; the test also lets `io.load_dev` register the real targets in the guard's fingerprint registry. No value printed, compared or computed beyond these. No other script of this item opens a data file. The simulator draws every value from seeded generators and reads no file. The checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and that test. `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 
 ## Deviations
 
 - P4-0b (recorded at P4-2, from its report's "Deviations and notes", items 1 and 2):
   - A deviation from the standing prompt's Environment rule: one text edit of `/tmp/p4_0b_b2.py` ran as `python3 -` from a heredoc, without the venv activated in that command and without `env -u OFILT_RUN_SEALED`. It replaced two strings in that script before b.2's only run; it read no data and wrote nothing else; `OFILT_RUN_SEALED` was absent from the session. Every later item tells the builder to edit scripts with its file-editing tool.
-  - Under the rerun-once rule: a.2's first run stopped in its own helper's exactly-one lookup, because the message restated the tag sentence in step d.3. The fix scoped the lookups to step a, and the second run passed; both runs are in the report. The cause was the message, not the code.
+  - Under the rerun-once rule: a.2's first run stopped in the builder's own helper, whose exactly-one lookup was stricter than the message, which legitimately states the tag sentence twice (steps a.2 and d.3). The fix scoped the lookups to step a, and the second run passed; both runs are in the report. (Corrected at P4-3, Isaiah, 2026-10-11: this line had ended "The cause was the message, not the code", which contradicted P4-0b's report, item 2.)
+- P4-2 (recorded at P4-3, from its report's "deviations and notes"):
+  - The first run's STOP at b.1 and the rerun under Isaiah's decision: see the Decision log, P4-2 accepted.
+  - A deviation in the rerun's step 1: besides the two message files that step names, it did not move the rerun's own files (`/tmp/p4_2_run2*`: the step-0 date capture, written before step 1, and step 1's script and output), which would otherwise have been filed under the first run. The rerun message's list of exceptions was incomplete; the builder's reading kept the two runs' records apart and is accepted.
+  - A note: before writing b.2's script, one read-only inline command printed the kit configuration's top-level keys and the shape of three of its sections (Python's json module, under `env -u OFILT_RUN_SEALED` in the venv). It wrote nothing, and it is printed in the report.
 
 ## Disclosure list
 
@@ -138,5 +161,6 @@ For the pre-registration (Pass 5; P4Q8):
 - The confirmation configuration `docs/P4_CONFIRM_CONFIG.json`, version 1 (P4-2), SHA-256 `5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd`.
 - The M2 derivation, written blind before the dev run (P4Q17; F4-3, F4-4): `docs/P4_M2_note.md` (SHA-256 `a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22`), its check `docs/P4_M2_check.py` (SHA-256 `faa4f6c15699658b191618598b9ce2bd18eaa4d6cd6304ba5b1a920bf7dd27a4`) and its prompt `docs/P4_M2_prompt.md` (SHA-256 `594a1a39358e970f9439a98a14430ae36a7244cb037d89f9d61e432649d614a1`).
 - P32's tier (iii) is not used (P4Q17).
-- Pass 4's computations on the dev panel: none so far.
+- Pass 4's computations on the dev panel: P4-3's structural reading under P4Q33 (step c.1's script `/tmp/p4_3_c1.py`, printed in P4-3's report, and the test `test_dev_panel_kinds_and_guard`): the column names, their order and each column's dtype kind, of the dev panel and of the firm events; no value. The kind of `n225_bars` (f, where version 1 of the specification gave i) implies at least one empty value in the dev panel, as the build writes that column; the specification's version 2 follows it.
+- The full-schema simulator's specification `docs/P4_SIM_SPEC.md` (P4Q32), version 2, SHA-256 `972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4`; its version 1, SHA-256 `6b500f4b30aece4be6d375ada094fc5cfde0f43260f32aba7a086f3db38a8e81`, was never committed.
 - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.
