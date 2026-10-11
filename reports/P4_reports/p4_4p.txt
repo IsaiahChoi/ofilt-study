@@ -1,0 +1,2336 @@
+2026-10-11T20:33:37Z
+b0e7327dd3685b376215866375a6e213080426bf
+16f2522e0e8890c0d4591f8a221e631b8afbf14e4dca10804f4f3ce851b9038b  /tmp/p4_4p_msg.txt
+
+=== P4-4p report ===
+(lines 1-3 written after a.1's date step and NODATA's creation, before a.2, by: mkdir /tmp/p4_4p_nodata && { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_4p_msg.txt; } > /tmp/p4_4p_head.out && cp /tmp/p4_4p_head.out /tmp/p4_4p.txt)
+2026-10-11T20:33:37Z
+b0e7327dd3685b376215866375a6e213080426bf
+16f2522e0e8890c0d4591f8a221e631b8afbf14e4dca10804f4f3ce851b9038b  /tmp/p4_4p_msg.txt
+
+=== the message (cat /tmp/p4_4p_msg.txt; saved verbatim from the transcript with the file-editing tool) ===
+# Pass 4, item P4-4p: P4-3 accepted; P4Q34 (P4-4 split into P4-4a, P4-4b and P4-4c); a read-only synthetic probe of the inference calls P4-4a will make (supervisor message)
+
+This item follows the standing Pass 4 prompt (`files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md`; its SHA-256 is PROMPT_SHA256 below). It has no date gate (Isaiah, 2026-10-11). Pasting it records the two decisions below, dated by the date step a.1 prints; P4-4a's records item writes them into `PASS4_STATUS.md`. The item itself is read-only: it changes nothing in REPO and makes no commit. Its report is copied into `reports/P4_reports/` at P4-4a's checkpoint.
+
+**The decisions this paste records.**
+- P4-3 accepted (Isaiah, on the supervisor's recommendation): checkpoint HEAD_BEFORE, made by P4-3's fourth run. Accepted with it: the builder's reading of test 11 (it replays the module's row-level generator, whose draw order the module states, to check `range_lag1` exactly, and verifies the replay against `gap_resid`), and test 12's check of §8.3's formulas on S1 with Sc1, stronger than §9.3's default S0 with `Scenario()`, under which b and Δ are 0. The stops of the first three runs (at a.1, b.1 and c.1) and the reruns are recorded at P4-4a, with their causes from the reports.
+- P4Q34 (Isaiah, on the supervisor's recommendation): P4-4 is split into three items, each with its own specification kit, checked by the supervisor before handover, and its own checkpoint.
+  - P4-4a: the inference rows (O1 to O28, R1 to R8) and the shared pieces: loading the confirmation configuration and pinning it by a test; the joined dev and confirmation frame; P4Q31's contingency rule, with "no rows" detected before `subset_design`; AM-05's Nikkei-proxy filter, a night with no Japan 225 record being ineligible; and the output document's schema for all 71 audit IDs.
+  - P4-4b: forecasting and the economic evaluation (O29 to O45, R9).
+  - P4-4c: the run script and the claims (R10 to R26): the end-to-end script, the claim tiers and wording rules, the two-run byte-identity rule, the registry routing, the `io.load_confirm` refusal tests and the static test of the inference-only allowlist.
+  - Not chosen: P4-4 as one item.
+
+Save this message verbatim as `/tmp/p4_4p_msg.txt` from this session's transcript. Every expected value is read by script from the list "Expected values", never typed. Each label begins exactly one line of that list, in the form `- NAME = value`; the steps refer to values by NAME only.
+
+**Rules of this item.**
+- No data file is opened. Every Python command runs with the venv activated, `python -B`, and `env -u OFILT_RUN_SEALED OFILT_DATA_DIR=NODATA`, where NODATA is an empty folder that step a.1 creates. No function of `ofilt.drift.io` is called, and the probe does not import `io`, `forecast`, `fctests`, `registry`, `models` or any script of `tools/`.
+- Every frame is synthetic: `sim_full.simulate` with seed `Spec.load().seed` + SEED_OFFSET + k, k from 0 to 99 (a block disjoint from every earlier one; P4-3's tests use + 8,000,000 + k, k below 1,000).
+- Nothing is written in REPO; `git status --porcelain --untracked-files=all` stays empty. Outside REPO, only paths starting `/tmp/p4_4p` are written. No run of `tools/p3_sealed_run.py`, no tag created, moved or deleted, no commit, no push.
+- Write and edit every file with your file-editing tool, never through an interpreter.
+
+**STOP** means: write the report so far, print its path, change nothing more, and wait.
+
+**Report header.** Write the report's first lines (UTC time, HEAD, the SHA-256 line of `/tmp/p4_4p_msg.txt`) at the start of the item, before step a.2, and its last lines at the end.
+
+## Expected values
+- HEAD_BEFORE = b0e7327dd3685b376215866375a6e213080426bf
+- PARENT_BEFORE = 7828e79207acbaa9b8919077b50da1449d6783c9
+- TAG_LIST = pass1-final spec-dev-v1
+- TAG_OBJECT = cee3b49e81d16f1f32e546cac9524b209ac1e493
+- TAG_COMMIT = f5271c03481b7514a1ec4b7e739fb85fbce8a774
+- BLIND_FIT_LOG_SHA256 = 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383
+- BLIND_FIT_LOG_LINES = 7
+- RUN_REGISTRY_BYTES = 0
+- PROMPT_SHA256 = 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+- SPEC_SHA256 = feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+- PASS3_STATUS_SHA256 = b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+- STATUS_SHA256 = aa09d31ed24849f5d1db30809f328431bb25532c146ca954ad61928ddba5584f
+- SIM_MODULE_SHA256 = ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+- SIM_TESTS_SHA256 = 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+- SIM_SPEC_SHA256 = 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+- CONFIG_SHA256 = 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+- P4_3_MSG_SHA256 = db97a0ac994940d91c287997c82fba7dec875be61b89995eac02f8f8b23b537b
+- P4_3_RUN4_MSG_SHA256 = 3142b58bfedcabcd32ef223f549da962cb55ddb0ad60fbff74f4cce55f942928
+- SEED_OFFSET = 8500000
+- NODATA = /tmp/p4_4p_nodata
+
+## a. Date and state
+1. `date +%F` runs first, captured by tee to `/tmp/p4_4p_date.out`; it is the date of the two decisions. Then create NODATA, empty.
+2. Read-only, by script (verdict line `A CHECK`):
+   - HEAD is HEAD_BEFORE, its only parent is PARENT_BEFORE, and `git status --porcelain --untracked-files=all` is empty;
+   - `git tag -l` prints exactly the names of TAG_LIST; `refs/tags/spec-dev-v1` is TAG_OBJECT and its commit is TAG_COMMIT;
+   - `BLIND_FIT_LOG` has BLIND_FIT_LOG_SHA256 and BLIND_FIT_LOG_LINES lines; `RUN_REGISTRY.jsonl` has RUN_REGISTRY_BYTES bytes; no name starting ACCESS_LOG exists in REPO outside `.git`; `OFILT_RUN_SEALED` is absent from the environment;
+   - SHA-256: the standing prompt PROMPT_SHA256; the spec SPEC_SHA256; `PASS3_STATUS.md` PASS3_STATUS_SHA256; `PASS4_STATUS.md` STATUS_SHA256; `ofilt/drift/sim_full.py` SIM_MODULE_SHA256; `tests/test_p4_sim_full.py` SIM_TESTS_SHA256; `docs/P4_SIM_SPEC.md` SIM_SPEC_SHA256; `docs/P4_CONFIRM_CONFIG.json` CONFIG_SHA256;
+   - NODATA exists and is empty.
+
+   Any difference: STOP.
+
+## b. P4-3's report, read-only (verdict line `B CHECK`)
+- The source is `/tmp/p4_3.txt` if it exists, else `$HOME/Desktop/FX_Project/files/pass4_tmp_keep/p4_3_final/p4_3.txt`; record which. If both exist, print whether they are byte-identical.
+- Check: line 2 is PARENT_BEFORE; the last non-empty line is HEAD_BEFORE; line 3 is the line formed by P4_3_MSG_SHA256, two spaces and `/tmp/p4_3_msg.txt`; line 4 is the line formed by P4_3_RUN4_MSG_SHA256, two spaces and `/tmp/p4_3_run4_msg.txt`.
+- Print: its SHA-256, its bytes and lines, lines 1 to 4, the last two non-empty lines, and how many times each of the line-3 and line-4 lines occurs. These are the values P4-4a's copy check will state.
+
+Any difference in a check: STOP.
+
+## c. The probe (verdict line `C CHECK`)
+Read first, as text: `ofilt/drift/inference.py`, `targets.py` (`add_targets`, `add_masks`, `past_beta`), `calib.py` (`winsorise_fx`), `sim_full.py`, and the configuration's sections `frame`, `constants`, `f`, `robustness` and `contingencies`. Then write `/tmp/p4_4p_probe.py` and run it once, from `/tmp`, under the rules above. Where this list leaves an argument open, pass the signature's default and say what was passed.
+
+For every call below it prints: the call, its wall time in seconds, and its outcome. The outcome is either the result's type with its fields or keys, each with type and shape, plus, for a `Result` or a dict of estimates, the H1 parameter's estimate, SE and p; or the exception's type and message. An exception is an outcome to report, not a failure of the probe.
+
+1. Frames. A = `simulate(seed k=0, Scenario(b=1.0, delta_post=-1.0, a2=0.6, delta_cc=1.5))` and N = `simulate(seed k=1, Scenario.not_estimable())`. For each, the joined frame as P4-3's tests build it (`pd.concat([dev, confirm], ignore_index=True)`, attrs provenance synthetic).
+2. Targets, for A and N: `add_targets(joined)`; `add_targets(joined, method="rolling", window=250)` and `window=500`; `add_masks(targets, events)`. Print the columns each adds, with dtypes, and the number of finite values of each β column per part (dev, confirmation).
+3. Call list L, run on A's targets restricted to the confirmation dates (attrs kept), then on the dev dates (skipping there the two calls on the 2022 dates):
+   - `build_design` (primary); the `Design` fields and their shapes; whether `Design.index` is unique and contained in the frame's index;
+   - `subset_design` keeping the dates from 2024-11-05, and keeping no row;
+   - `fit_dk`; `Result.param` of the H1 parameter; `Result.contrast` of the H1 parameter with weight 1;
+   - `build_design` with `secondary` = each of `fx_x_longwindow`, `fx_x_jumpshare`, `fx_x_highrv`, `fx_asymmetry`, then `fit_dk`; then `secondary_family_tests` (print the whole frame) and `holm` on its four p-values;
+   - `fit_joint` on the 2022 dates, its `JointResult` fields, `pair` of the H1 parameter, and `fraction_unpriced`;
+   - `fit_market` and `decomposition`;
+   - `tost_result` on the primary fit, at the default SESOI and at each SESOI of the configuration's `constants`;
+   - `fit_huber`; `calib.winsorise_fx`, then `build_design` and `fit_dk` on its output;
+   - `influence_curve` with the default `k_max` (print the whole frame);
+   - `build_design` with `exclude` set to each of `audit_flag`, `boj_day` and `sq_major`, as its signature takes it;
+   - `build_design` with `target="raw_oc"`, and with `target="cc_abn"` on the 2022 dates.
+4. The list L again, on N's targets restricted to the confirmation dates and then to the 2022 dates: the outcome of each call.
+5. After the calls: `git status --porcelain --untracked-files=all` is empty, `BLIND_FIT_LOG` and `RUN_REGISTRY.jsonl` are as in a.2, no name starting ACCESS_LOG exists, and NODATA is still empty.
+
+`C CHECK` is True if every listed call was attempted and its outcome printed, and step 5's checks hold. Under the rerun-once rule, a probe that fails through its own bug may be fixed and rerun once; both runs go in the report.
+
+## d. Report and STOP
+Write `/tmp/p4_4p.txt` from command output only. It starts with the UTC time and HEAD, then the SHA-256 line of `/tmp/p4_4p_msg.txt`. It holds every script in full with its output and verdict line, the paths and SHA-256 of the files written under `/tmp`, and a section "deviations and notes". Its last lines repeat the time and HEAD, then `git status --porcelain`, which must be empty. Print the path.
+
+STOP (planned): nothing to push for this item. Isaiah uploads `/tmp/p4_4p.txt` to the supervisor chat, which drafts P4-4a's kit from it.
+
+=== how each step ran ===
+a.1: date +%F | tee /tmp/p4_4p_date.out; then mkdir /tmp/p4_4p_nodata (the NODATA of the message), with the header command above
+a.2 (environment part), no Python, so not under env -u: bash /tmp/p4_4p_env.sh 2>&1 | tee /tmp/p4_4p_env.out
+a.2, as: ND=$(grep '^- NODATA = ' /tmp/p4_4p_msg.txt | sed 's/^- NODATA = //'); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4p_a2.py' 2>&1 | tee /tmp/p4_4p_a2.out
+b, as: ND=$(grep '^- NODATA = ' /tmp/p4_4p_msg.txt | sed 's/^- NODATA = //'); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4p_b.py' 2>&1 | tee /tmp/p4_4p_b.out
+c (the probe's only run), as: ND=$(grep '^- NODATA = ' /tmp/p4_4p_msg.txt | sed 's/^- NODATA = //'); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4p_probe.py' > /tmp/p4_4p_probe.out 2>&1; exit status 0
+d: bash /tmp/p4_4p_report.sh (this script), which appends to /tmp/p4_4p.txt
+
+=== a.1: output /tmp/p4_4p_date.out ===
+2026-10-11
+
+=== script /tmp/p4_4p_common.py (in full) ===
+# P4-4p shared helpers. Every expected value is read from /tmp/p4_4p_msg.txt's list "Expected values" by its label.
+# Reads files as text or bytes; imports no module of ofilt.
+import hashlib
+import os
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_4p_msg.txt").read_text(encoding="utf-8")
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+PROMPT = FXP / "files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md"
+_SEC = MSG.split("\n## Expected values\n")[1].split("\n## ")[0].split("\n")
+
+
+def ev(name):
+    hits = [ln for ln in _SEC if ln.startswith(f"- {name} = ")]
+    assert len(hits) == 1, name
+    return hits[0][len(f"- {name} = "):]
+
+
+def sha256_bytes(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha256(p):
+    return sha256_bytes(Path(p).read_bytes())
+
+
+def git(*args, check=True):
+    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, check=check)
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def tripwires(oks):
+    """BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG, the tree and NODATA (step a.2; again at c.5)."""
+    oks.append(show("git status --porcelain --untracked-files=all", "",
+                    git("status", "--porcelain", "--untracked-files=all").stdout))
+    bfl = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", ev("BLIND_FIT_LOG_SHA256"), sha256_bytes(bfl)))
+    oks.append(show("BLIND_FIT_LOG lines", int(ev("BLIND_FIT_LOG_LINES")), bfl.count(b"\n")))
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(ev("RUN_REGISTRY_BYTES")), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG in REPO outside .git", [], found))
+    nd = Path(ev("NODATA"))
+    oks.append(show("NODATA exists and is empty", (True, []), (nd.is_dir(), sorted(os.listdir(nd)) if nd.is_dir() else None)))
+
+=== script /tmp/p4_4p_env.sh (in full) ===
+#!/bin/bash
+# P4-4p a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A_ENV CHECK: $ok"
+
+=== script /tmp/p4_4p_a2.py (in full) ===
+# P4-4p a.2: REPO state, read-only.
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_4p_common import PROMPT, REPO, ev, git, sha256, show, tripwires  # noqa: E402
+
+oks = []
+print("date of the two decisions (a.1):", open("/tmp/p4_4p_date.out").read().strip())
+oks.append(show("HEAD", ev("HEAD_BEFORE"), git("rev-parse", "HEAD").stdout.strip()))
+oks.append(show("HEAD's parents", [ev("PARENT_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+oks.append(show("git tag -l", ev("TAG_LIST").split(), git("tag", "-l").stdout.split()))
+oks.append(show("refs/tags/spec-dev-v1", ev("TAG_OBJECT"), git("rev-parse", "refs/tags/spec-dev-v1").stdout.strip()))
+oks.append(show("spec-dev-v1^{commit}", ev("TAG_COMMIT"), git("rev-parse", "refs/tags/spec-dev-v1^{commit}").stdout.strip()))
+tripwires(oks)
+for label, path in (("PROMPT_SHA256", PROMPT), ("SPEC_SHA256", REPO / "spec/analysis_spec_dev_v1.yaml"),
+                    ("PASS3_STATUS_SHA256", REPO / "PASS3_STATUS.md"), ("STATUS_SHA256", REPO / "PASS4_STATUS.md"),
+                    ("SIM_MODULE_SHA256", REPO / "ofilt/drift/sim_full.py"),
+                    ("SIM_TESTS_SHA256", REPO / "tests/test_p4_sim_full.py"),
+                    ("SIM_SPEC_SHA256", REPO / "docs/P4_SIM_SPEC.md"),
+                    ("CONFIG_SHA256", REPO / "docs/P4_CONFIRM_CONFIG.json")):
+    oks.append(show(f"sha256 {path.name} ({label})", ev(label), sha256(path)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("A CHECK:", all(oks))
+
+=== script /tmp/p4_4p_b.py (in full) ===
+# P4-4p b: P4-3's report, read-only. Source /tmp/p4_3.txt if it exists, else the kept copy; both compared if both exist.
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4p_common import FXP, ev, sha256, show  # noqa: E402
+
+oks = []
+tmp = Path("/tmp/p4_3.txt")
+kept = FXP / "files/pass4_tmp_keep/p4_3_final/p4_3.txt"
+print(f"/tmp/p4_3.txt exists: {tmp.exists()} | kept copy {kept} exists: {kept.exists()}")
+src = tmp if tmp.exists() else kept
+print("source:", src)
+if tmp.exists() and kept.exists():
+    print("both exist; byte-identical:", tmp.read_bytes() == kept.read_bytes())
+data = src.read_bytes()
+lines = data.decode("utf-8").split("\n")
+if lines and lines[-1] == "":
+    lines.pop()
+ne = [x for x in lines if x != ""]
+l3 = f"{ev('P4_3_MSG_SHA256')}  /tmp/p4_3_msg.txt"
+l4 = f"{ev('P4_3_RUN4_MSG_SHA256')}  /tmp/p4_3_run4_msg.txt"
+oks.append(show("line 2 (PARENT_BEFORE)", ev("PARENT_BEFORE"), lines[1]))
+oks.append(show("last non-empty line (HEAD_BEFORE)", ev("HEAD_BEFORE"), ne[-1]))
+oks.append(show("line 3", l3, lines[2]))
+oks.append(show("line 4", l4, lines[3]))
+print("--- the values for P4-4a's copy check")
+print(f"sha256: {sha256(src)}")
+print(f"bytes: {len(data)} | lines (newlines): {data.count(b'\n')}")
+for i in range(4):
+    print(f"line {i + 1}: {lines[i]}")
+print(f"last-but-one non-empty line: {ne[-2]}")
+print(f"last non-empty line: {ne[-1]}")
+print(f"occurrences of line 3: {lines.count(l3)} | occurrences of line 4: {lines.count(l4)}")
+print("checks:", len(oks), "passed:", sum(oks))
+print("B CHECK:", all(oks))
+
+=== script /tmp/p4_4p_probe.py (in full) ===
+# P4-4p c: a read-only synthetic probe of the inference calls P4-4a will make. Every frame comes from
+# sim_full.simulate with seed Spec.load().seed + SEED_OFFSET + k (k = 0 for A, 1 for N). Reads no data file; imports
+# no io, forecast, fctests, registry, models or tools module (checked below). Prints, per call, the call, its wall time
+# and its outcome (the result's structure, with the H1 parameter's estimate, SE and p where there is one; or the
+# exception's type and message). An exception is an outcome, not a failure of the probe.
+import dataclasses
+import json
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4p_common import REPO, ev, show, tripwires  # noqa: E402
+
+sys.path.insert(0, str(REPO))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import calib  # noqa: E402
+from ofilt.drift import inference as I  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift import targets as TG  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+FORBIDDEN = ("ofilt.drift.io", "ofilt.drift.forecast", "ofilt.drift.fctests", "ofilt.drift.registry", "ofilt.drift.models")
+SPEC = Spec.load()
+H1 = SPEC.h1_parameter
+CONFIG = json.loads((REPO / "docs/P4_CONFIRM_CONFIG.json").read_text(encoding="utf-8"))
+SESOI = CONFIG["constants"]["sesoi"]
+BRK = pd.Timestamp(CONFIG["constants"]["post_break_date"])
+Y2022 = (pd.Timestamp(CONFIG["f"]["confirmatory"]["from"]), pd.Timestamp(CONFIG["f"]["confirmatory"]["to"]))
+CONF_FROM = pd.Timestamp("2022-01-01")
+OUTCOMES = []   # (run label, call label)
+
+
+def shape_of(v):
+    if isinstance(v, np.ndarray):
+        return f"ndarray{v.shape} {v.dtype}"
+    if isinstance(v, (pd.DataFrame, pd.Series)):
+        return f"{type(v).__name__}{v.shape}"
+    if isinstance(v, (list, tuple)):
+        return f"{type(v).__name__}[{len(v)}]"
+    if isinstance(v, dict):
+        return f"dict[{len(v)}]"
+    return f"{type(v).__name__} = {v!r}" if isinstance(v, (int, float, str, bool, type(None), np.floating,
+                                                            np.integer)) else type(v).__name__
+
+
+def describe(x):
+    lines = [f"type {type(x).__module__}.{type(x).__name__}"]
+    if dataclasses.is_dataclass(x) and not isinstance(x, type):
+        for f in dataclasses.fields(x):
+            lines.append(f"  .{f.name}: {shape_of(getattr(x, f.name))}")
+        if isinstance(x, I.Result) and H1 in x.names:
+            p = x.param(H1)
+            lines.append(f"  H1 ({H1}): estimate {p['estimate']:.6g}, se {p['se']:.6g}, p {p['p']:.6g}")
+        if isinstance(x, I.JointResult) and H1 in x.names:
+            b, d, _ = x.pair(H1)
+            lines.append(f"  H1 ({H1}): b {b:.6g}, delta_cc {d:.6g}")
+    elif isinstance(x, dict):
+        for k, v in x.items():
+            lines.append(f"  [{k!r}]: {shape_of(v)}")
+        est = {k: x[k] for k in ("estimate", "se", "p") if k in x}
+        if est:
+            lines.append("  H1 (this dict): " + ", ".join(f"{k} {v:.6g}" for k, v in est.items()))
+    elif isinstance(x, pd.DataFrame):
+        lines.append(f"  shape {x.shape}; columns: " + ", ".join(f"{c} ({x[c].dtype})" for c in x.columns))
+    elif isinstance(x, (np.ndarray, tuple, list)):
+        lines.append(f"  {shape_of(x)}")
+    else:
+        lines.append(f"  {x!r}")
+    return "\n".join(lines)
+
+
+def call(run, label, fn, full=False):
+    OUTCOMES.append((run, label))
+    t0 = time.perf_counter()
+    try:
+        res = fn()
+        dt = time.perf_counter() - t0
+        print(f"CALL {label} | wall {dt:.3f} s\n{describe(res)}")
+        if full and isinstance(res, pd.DataFrame):
+            with pd.option_context("display.max_rows", 100, "display.max_columns", 20, "display.width", 200):
+                print(res.to_string())
+        return res
+    except Exception as e:   # an outcome, reported
+        dt = time.perf_counter() - t0
+        print(f"CALL {label} | wall {dt:.3f} s\nEXCEPTION {type(e).__name__}: {e}")
+        return None
+
+
+def restrict(T, lo=None, hi=None):
+    m = pd.Series(True, index=T.index)
+    if lo is not None:
+        m &= T["date"] >= lo
+    if hi is not None:
+        m &= T["date"] <= hi
+    R = T.loc[m]
+    R.attrs = dict(T.attrs)
+    return R
+
+
+def run_L(T, run, with_2022=True):
+    """The call list L of step c.3 on the frame T (targets, restricted)."""
+    print(f"\n######## run {run}: rows {len(T)}, dates {T['date'].nunique()}, {T['date'].min().date()} .. "
+          f"{T['date'].max().date()}, attrs {dict(T.attrs)}")
+    D = call(run, "build_design(T, SPEC) [primary; defaults: target='abn_oc', secondary=None, exclude=None, "
+                  "rv_threshold=None, provenance=None]", lambda: I.build_design(T, SPEC))
+    if D is not None:
+        print(f"  Design.index unique: {pd.Index(D.index).is_unique}; contained in T.index: "
+              f"{bool(pd.Index(D.index).isin(T.index).all())}; rows {len(D.y)}, T {D.T}, names {list(D.names)}")
+    call(run, "subset_design(D, D.dates >= 2024-11-05)", lambda: I.subset_design(D, D.dates >= np.datetime64(BRK)))
+    call(run, "subset_design(D, no row)", lambda: I.subset_design(D, np.zeros(len(D.y), dtype=bool)))
+    r = call(run, "fit_dk(D, SPEC) [lag=None]", lambda: I.fit_dk(D, SPEC))
+    call(run, f"Result.param({H1!r})", lambda: r.param(H1))
+    call(run, f"Result.contrast({{{H1!r}: 1.0}})", lambda: r.contrast({H1: 1.0}))
+    for sec in I.SECONDARY_TERMS:
+        Ds = call(run, f"build_design(T, SPEC, secondary={sec!r})", lambda sec=sec: I.build_design(T, SPEC, secondary=sec))
+        call(run, f"fit_dk(design secondary={sec!r})", lambda Ds=Ds: I.fit_dk(Ds, SPEC))
+    fam = call(run, "secondary_family_tests(T, SPEC) [exclude=None, provenance=None]",
+               lambda: I.secondary_family_tests(T, SPEC), full=True)
+    h = call(run, "holm(the four p-values)", lambda: I.holm(fam["p"].to_numpy()))
+    if h is not None:
+        print(f"  holm: {list(h)}")
+    if with_2022:
+        T22 = restrict(T, *Y2022)
+        J = call(run, "fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, "
+                      "provenance=None, lag=None]", lambda: I.fit_joint(T22, SPEC))
+        call(run, f"JointResult.pair({H1!r})", lambda: J.pair(H1))
+        fr = call(run, "fraction_unpriced(J) [param=None]", lambda: I.fraction_unpriced(J))
+        if fr is not None:
+            print(f"  f {fr['f']:.6g}; ci_delta {fr['ci_delta']}; fieller {fr['fieller']}")
+    call(run, "fit_market(T, SPEC) [exclude=None, provenance=None, lag=None]", lambda: I.fit_market(T, SPEC))
+    dec = call(run, "decomposition(T, SPEC) [exclude=None, provenance=None]", lambda: I.decomposition(T, SPEC))
+    if dec is not None:
+        print("  " + ", ".join(f"{k} {v:.6g}" for k, v in dec.items()))
+    call(run, "tost_result(r, H1, SPEC) [sesoi=None: the spec's]", lambda: I.tost_result(r, H1, SPEC))
+    for name, s in SESOI.items():
+        call(run, f"tost_result(r, H1, SPEC, sesoi={s}) [config constants.sesoi.{name}]",
+             lambda s=s: I.tost_result(r, H1, SPEC, sesoi=s))
+    call(run, "fit_huber(D, SPEC) [c=None, lag=None]", lambda: I.fit_huber(D, SPEC))
+    W = call(run, "calib.winsorise_fx(T, SPEC)", lambda: calib.winsorise_fx(T, SPEC))
+    Dw = call(run, "build_design(winsorised T, SPEC)", lambda: I.build_design(W, SPEC))
+    call(run, "fit_dk(winsorised design, SPEC)", lambda: I.fit_dk(Dw, SPEC))
+    call(run, "influence_curve(D, SPEC) [param=None, k_max=None: the spec's]", lambda: I.influence_curve(D, SPEC),
+         full=True)
+    for col in ("audit_flag", "boj_day", "sq_major"):
+        Dx = call(run, f"build_design(T, SPEC, exclude=[{col!r}])", lambda col=col: I.build_design(T, SPEC, exclude=[col]))
+        if Dx is not None:
+            print(f"  rows {len(Dx.y)} (primary {len(D.y) if D is not None else None}); "
+                  f"exclude replaces the spec's flags {list(SPEC.inference_exclusion_flags)}")
+    for col in ("audit_flag", "boj_day", "sq_major"):   # extra, not in the list: the spec's flags plus the column
+        flags = list(SPEC.inference_exclusion_flags) + [col]
+        Dx = call(run, f"(extra) build_design(T, SPEC, exclude={flags})",
+                  lambda flags=flags: I.build_design(T, SPEC, exclude=flags))
+        if Dx is not None:
+            print(f"  rows {len(Dx.y)} (primary {len(D.y) if D is not None else None})")
+    call(run, "build_design(T, SPEC, target='raw_oc')", lambda: I.build_design(T, SPEC, target="raw_oc"))
+    if with_2022:
+        call(run, "build_design(T on 2022, SPEC, target='cc_abn')",
+             lambda: I.build_design(restrict(T, *Y2022), SPEC, target="cc_abn"))
+
+
+print("python", sys.version.split()[0], "| numpy", np.__version__, "| pandas", pd.__version__)
+print("forbidden modules imported after the imports:", [m for m in FORBIDDEN if m in sys.modules])
+offset = int(ev("SEED_OFFSET"))
+print(f"seeds: spec seed {SPEC.seed} + SEED_OFFSET {offset} + k")
+
+# c.1: the frames
+SC_A = SF.Scenario(b=1.0, delta_post=-1.0, a2=0.6, delta_cc=1.5)
+outs = {}
+for name, k, sc in (("A", 0, SC_A), ("N", 1, SF.Scenario.not_estimable())):
+    t0 = time.perf_counter()
+    o = SF.simulate(SPEC.seed + offset + k, sc)
+    print(f"\nsimulate(seed + {offset} + {k}, {name}) | wall {time.perf_counter() - t0:.3f} s | dev {o.dev.shape}, "
+          f"confirm {o.confirm.shape}, events {o.events.shape}")
+    j = pd.concat([o.dev, o.confirm], ignore_index=True)
+    j.attrs = {"provenance": B.SYNTHETIC}
+    outs[name] = (o, j)
+
+# c.2: the targets
+targets = {}
+for name, (o, j) in outs.items():
+    print(f"\n######## targets for {name}")
+    base = set(j.columns)
+    part = np.where(j["date"] < CONF_FROM, "dev", "confirmation")
+    T = call(f"targets {name}", "add_targets(joined, SPEC) [method=None, window=None, estimate_on=None: the spec's]",
+             lambda j=j: TG.add_targets(j, SPEC))
+    targets[name] = T
+    for label, kw in (("rolling 250", dict(method="rolling", window=250)), ("rolling 500", dict(method="rolling", window=500))):
+        Tr = call(f"targets {name}", f"add_targets(joined, SPEC, method='rolling', window={kw['window']})",
+                  lambda j=j, kw=kw: TG.add_targets(j, SPEC, **kw))
+        for lab, F in (("expanding", T), (label, Tr)):
+            if F is not None:
+                fin = np.isfinite(F["beta"].to_numpy())
+                print(f"  beta ({lab}) finite: dev {int(fin[part == 'dev'].sum())} of {int((part == 'dev').sum())}, "
+                      f"confirmation {int(fin[part == 'confirmation'].sum())} of {int((part == 'confirmation').sum())}")
+    added = [c for c in T.columns if c not in base]
+    print("  add_targets adds: " + ", ".join(f"{c} ({T[c].dtype})" for c in added))
+    M = call(f"targets {name}", "add_masks(T, events, SPEC)", lambda T=T, o=o: TG.add_masks(T, o.events, SPEC))
+    if M is not None:
+        print("  add_masks adds: " + ", ".join(f"{c} ({M[c].dtype})" for c in M.columns if c not in set(T.columns)))
+
+# c.3: L on A, confirmation dates, then dev dates (no 2022 calls there)
+run_L(restrict(targets["A"], lo=CONF_FROM), "A confirmation")
+run_L(restrict(targets["A"], hi=CONF_FROM - pd.Timedelta(days=1)), "A dev", with_2022=False)
+# c.4: L on N, confirmation dates, then 2022 dates
+run_L(restrict(targets["N"], lo=CONF_FROM), "N confirmation")
+run_L(restrict(targets["N"], *Y2022), "N 2022")
+
+# the attempted calls, per run
+print("\n######## calls attempted per run (each printed with its outcome above)")
+runs = {}
+for run, label in OUTCOMES:
+    runs.setdefault(run, []).append(label)
+for run, labels in runs.items():
+    print(f"  {run}: {len(labels)}")
+oks = []
+n_full = len(runs["A confirmation"])
+oks.append(show("A dev attempted the full list less the three 2022 calls and the cc_abn call",
+                n_full - 4, len(runs["A dev"])))
+oks.append(show("N confirmation attempted the full list", n_full, len(runs["N confirmation"])))
+oks.append(show("N 2022 attempted the full list", n_full, len(runs["N 2022"])))
+print("forbidden modules imported at the end:", [m for m in FORBIDDEN if m in sys.modules])
+oks.append(show("no forbidden module imported", [], [m for m in FORBIDDEN if m in sys.modules]))
+# c.5
+tripwires(oks)
+print("checks:", len(oks), "passed:", sum(oks))
+print("C CHECK:", all(oks))
+
+=== script /tmp/p4_4p_report.sh (in full) ===
+#!/bin/bash
+# P4-4p d: append the report body and its last lines to /tmp/p4_4p.txt, whose first three lines (UTC time, HEAD, the
+# SHA-256 line of /tmp/p4_4p_msg.txt) were written after a.1 and before a.2. Command output only.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='ND=$(grep '\''^- NODATA = '\'' /tmp/p4_4p_msg.txt | sed '\''s/^- NODATA = //'\''); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4p_<script>.py'\'''
+{
+echo
+echo "=== P4-4p report ==="
+echo "(lines 1-3 written after a.1's date step and NODATA's creation, before a.2, by: mkdir /tmp/p4_4p_nodata && { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_4p_msg.txt; } > /tmp/p4_4p_head.out && cp /tmp/p4_4p_head.out /tmp/p4_4p.txt)"
+cat /tmp/p4_4p_head.out
+echo
+echo "=== the message (cat /tmp/p4_4p_msg.txt; saved verbatim from the transcript with the file-editing tool) ==="
+cat /tmp/p4_4p_msg.txt
+echo
+echo "=== how each step ran ==="
+echo "a.1: date +%F | tee /tmp/p4_4p_date.out; then mkdir /tmp/p4_4p_nodata (the NODATA of the message), with the header command above"
+echo "a.2 (environment part), no Python, so not under env -u: bash /tmp/p4_4p_env.sh 2>&1 | tee /tmp/p4_4p_env.out"
+echo "a.2, as: ${PY//<script>/a2} 2>&1 | tee /tmp/p4_4p_a2.out"
+echo "b, as: ${PY//<script>/b} 2>&1 | tee /tmp/p4_4p_b.out"
+echo "c (the probe's only run), as: ${PY//<script>/probe} > /tmp/p4_4p_probe.out 2>&1; exit status 0"
+echo "d: bash /tmp/p4_4p_report.sh (this script), which appends to /tmp/p4_4p.txt"
+echo
+echo "=== a.1: output /tmp/p4_4p_date.out ==="
+cat /tmp/p4_4p_date.out
+for f in common.py env.sh a2.py b.py probe.py report.sh; do
+  echo
+  echo "=== script /tmp/p4_4p_$f (in full) ==="
+  cat "/tmp/p4_4p_$f"
+done
+for s in env a2 b probe; do
+  echo
+  echo "=== output /tmp/p4_4p_$s.out ==="
+  cat "/tmp/p4_4p_$s.out"
+done
+echo
+echo "=== verdict lines ==="
+for s in env a2 b probe; do
+  printf '%s: ' "$s.out"; grep -h ' CHECK: ' "/tmp/p4_4p_$s.out" || echo "(no verdict line)"
+done
+echo
+echo "=== the probe's exceptions, each with its call and run (grep of /tmp/p4_4p_probe.out) ==="
+awk '/^######## run /{run=$0; sub(/, attrs .*/, "", run)} /^CALL /{c=$0} /^EXCEPTION /{print NR ": " run " | " c " | " $0}' /tmp/p4_4p_probe.out
+printf 'CALL lines: '; grep -c '^CALL ' /tmp/p4_4p_probe.out
+printf 'EXCEPTION lines: '; grep -c '^EXCEPTION ' /tmp/p4_4p_probe.out
+printf 'lines of the probe output: '; wc -l < /tmp/p4_4p_probe.out | tr -d ' '
+echo
+echo "=== build_design's exclusion columns (grep -n 'excl_cols =' ofilt/drift/inference.py) ==="
+grep -n 'excl_cols =' "$REPO/ofilt/drift/inference.py"
+echo
+echo "=== the rows of the exclude calls (grep of /tmp/p4_4p_probe.out) ==="
+grep -n '^######## run\|^CALL .*exclude=\[\|^  rows ' /tmp/p4_4p_probe.out | sed 's/, attrs {.*}$//'
+echo
+echo "=== the source files the probe calls: last commits touching them (git log -n 3 -- inference.py targets.py calib.py) ==="
+git -C "$REPO" log --format='%h %ad %s' --date=short -n 3 -- ofilt/drift/inference.py ofilt/drift/targets.py ofilt/drift/calib.py
+echo
+echo "=== files written under /tmp by this item (all start /tmp/p4_4p; the report itself excluded) ==="
+for f in /tmp/p4_4p*; do
+  if [ "$f" = /tmp/p4_4p.txt ]; then continue; fi
+  if [ -d "$f" ]; then echo "directory $f: entries $(ls -A "$f" | wc -l | tr -d ' ')"; else shasum -a 256 "$f"; fi
+done
+echo
+echo "=== deviations and notes ==="
+echo "Deviations:"
+echo "1. Step c, 'Read first, as text': in this item the builder read the configuration with the file-editing tool's reader (all its sections, including frame, constants, f, robustness and contingencies) and ofilt/drift/__init__.py by cat, before writing the probe. inference.py, targets.py and calib.py were not read again in this item: the builder had read them with the same reader earlier in this session, before this item, and they are unchanged since (last changed at P3-2b, per the git log above; the tree is clean, and inference.py is C7-pinned). sim_full.py was written by the builder in this session at P4-3 and is pinned by SIM_MODULE_SHA256 in a.2. During step d, after the probe's run, the signatures of the called functions and build_design's exclusion line were read again by grep."
+echo "No other deviation. No rerun: the probe ran once."
+echo
+echo "Notes:"
+echo "1. Extra calls, labelled '(extra)' in the output, not in the list: three per run, build_design(T, SPEC, exclude=<the spec's flags earn_flag and news_flag> + [col]) for col in audit_flag, boj_day and sq_major. Reason: build_design's exclude replaces the spec's default flags rather than adding to them (inference.py, the excl_cols line above), so the listed calls exclude=[col] drop earn_flag and news_flag; their row counts are above the primary's in every run (rows table above), and the extra calls' are below it. The sentence 'exclude replaces the spec's flags' that the probe prints after each listed call is a fixed string, supported by that line and those counts, not computed by the probe."
+echo "2. The probe was edited once with the file-editing tool after it was written and before its only run: a leftover no-op branch in call()'s print was removed. This is not a rerun."
+echo "3. NODATA is read from the message by grep and sed in each Python command, and OFILT_DATA_DIR is set to it. It was still empty after the probe (C CHECK's tripwires) and is listed above with 0 entries."
+echo "4. 'Skipping there the two calls on the 2022 dates' (A's dev run) is implemented as skipping fit_joint on the 2022 dates, with the two calls that take its result (JointResult.pair and fraction_unpriced), and build_design with target='cc_abn' on the 2022 dates: 4 labelled calls, so A dev attempted 34 of the 38. The JointResult's fields are printed as fit_joint's outcome."
+echo "5. Defaults: where the list leaves an argument open, the probe passes nothing, so the signature's default applies; each CALL label states the defaults in brackets. SPEC = Spec.load() is passed as the spec argument everywhere (each signature's default None loads the same Spec). fit_huber's tol (1e-11) and max_iter (1000) are left at their defaults; the label does not show them. tost_result's sesoi default None is the spec's; the three other tost_result calls pass the configuration's constants.sesoi values (primary, low, high), read from docs/P4_CONFIRM_CONFIG.json. The 2022 window is the configuration's f.confirmatory from and to; the break date for subset_design is its constants.post_break_date."
+echo "6. Frames: the targets are computed once on each joined frame and then restricted to the run's dates (attrs copied, including the 'targets' entry add_targets sets). The confirmation part starts at 2022-01-01, typed in the probe as CONF_FROM; it equals the configuration's f.confirmatory.from, and the confirmation runs have 3057 rows, the rows of the simulator's confirm frame."
+echo "7. Of the 22 exceptions, 8 are calls whose input was None because the call before raised (fit_dk of the fx_x_highrv design, holm, JointResult.pair and fraction_unpriced, each in N confirmation and N 2022); the probe still attempted them, as listed. The other 14: subset_design keeping no row (4 runs) and keeping the dates from 2024-11-05 where there are none (A dev, N 2022), ValueError 'zero-size array to reduction operation maximum which has no identity'; on N, build_design with secondary fx_x_highrv and secondary_family_tests, DesignError 'rv_per_bar undefined (usdjpy_bars <= 0) on some rows' (2 runs each); on N, fit_joint and build_design target='cc_abn' on 2022, DesignError 'no rows left after exclusions and non-missing requirements' (2 runs each)."
+echo "8. Reading for P4-4a's kit: subset_design does not handle an empty keep mask; it raises a ValueError from numpy, not a DesignError. So P4Q31's 'no rows' has to be detected before subset_design, as P4Q34's list for P4-4a says."
+echo "9. This report script was edited once with the file-editing tool before its only run: an unused pipeline in the exceptions section was removed, and the trimming of the run line's attrs was moved into awk."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} >> /tmp/p4_4p.txt
+
+=== output /tmp/p4_4p_env.out ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A_ENV CHECK: True
+
+=== output /tmp/p4_4p_a2.out ===
+date of the two decisions (a.1): 2026-10-11
+HEAD: expected='b0e7327dd3685b376215866375a6e213080426bf' actual='b0e7327dd3685b376215866375a6e213080426bf' ok=True
+HEAD's parents: expected=['7828e79207acbaa9b8919077b50da1449d6783c9'] actual=['7828e79207acbaa9b8919077b50da1449d6783c9'] ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+NODATA exists and is empty: expected=(True, []) actual=(True, []) ok=True
+sha256 PASS4_BUILDER_PROMPT_2026-10-08.md (PROMPT_SHA256): expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+sha256 analysis_spec_dev_v1.yaml (SPEC_SHA256): expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+sha256 PASS3_STATUS.md (PASS3_STATUS_SHA256): expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+sha256 PASS4_STATUS.md (STATUS_SHA256): expected='aa09d31ed24849f5d1db30809f328431bb25532c146ca954ad61928ddba5584f' actual='aa09d31ed24849f5d1db30809f328431bb25532c146ca954ad61928ddba5584f' ok=True
+sha256 sim_full.py (SIM_MODULE_SHA256): expected='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' actual='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' ok=True
+sha256 test_p4_sim_full.py (SIM_TESTS_SHA256): expected='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' actual='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' ok=True
+sha256 P4_SIM_SPEC.md (SIM_SPEC_SHA256): expected='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' actual='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' ok=True
+sha256 P4_CONFIRM_CONFIG.json (CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+checks: 19 passed: 19
+A CHECK: True
+
+=== output /tmp/p4_4p_b.out ===
+/tmp/p4_3.txt exists: True | kept copy /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep/p4_3_final/p4_3.txt exists: True
+source: /tmp/p4_3.txt
+both exist; byte-identical: True
+line 2 (PARENT_BEFORE): expected='7828e79207acbaa9b8919077b50da1449d6783c9' actual='7828e79207acbaa9b8919077b50da1449d6783c9' ok=True
+last non-empty line (HEAD_BEFORE): expected='b0e7327dd3685b376215866375a6e213080426bf' actual='b0e7327dd3685b376215866375a6e213080426bf' ok=True
+line 3: expected='db97a0ac994940d91c287997c82fba7dec875be61b89995eac02f8f8b23b537b  /tmp/p4_3_msg.txt' actual='db97a0ac994940d91c287997c82fba7dec875be61b89995eac02f8f8b23b537b  /tmp/p4_3_msg.txt' ok=True
+line 4: expected='3142b58bfedcabcd32ef223f549da962cb55ddb0ad60fbff74f4cce55f942928  /tmp/p4_3_run4_msg.txt' actual='3142b58bfedcabcd32ef223f549da962cb55ddb0ad60fbff74f4cce55f942928  /tmp/p4_3_run4_msg.txt' ok=True
+--- the values for P4-4a's copy check
+sha256: 1c9e8b827a3a782eb08968938f8817764b71138886f3c7feba14d38c01bd3239
+bytes: 237824 | lines (newlines): 3846
+line 1: 2026-10-11T19:58:47Z
+line 2: 7828e79207acbaa9b8919077b50da1449d6783c9
+line 3: db97a0ac994940d91c287997c82fba7dec875be61b89995eac02f8f8b23b537b  /tmp/p4_3_msg.txt
+line 4: 3142b58bfedcabcd32ef223f549da962cb55ddb0ad60fbff74f4cce55f942928  /tmp/p4_3_run4_msg.txt
+last-but-one non-empty line: 2026-10-11T20:19:47Z
+last non-empty line: b0e7327dd3685b376215866375a6e213080426bf
+occurrences of line 3: 3 | occurrences of line 4: 3
+checks: 4 passed: 4
+B CHECK: True
+
+=== output /tmp/p4_4p_probe.out ===
+python 3.12.4 | numpy 2.4.4 | pandas 3.0.2
+forbidden modules imported after the imports: []
+seeds: spec seed 20261001 + SEED_OFFSET 8500000 + k
+
+simulate(seed + 8500000 + 0, A) | wall 0.300 s | dev (5142, 60), confirm (3057, 60), events (277, 6)
+
+simulate(seed + 8500000 + 1, N) | wall 0.277 s | dev (5142, 60), confirm (3057, 60), events (277, 6)
+
+######## targets for A
+CALL add_targets(joined, SPEC) [method=None, window=None, estimate_on=None: the spec's] | wall 0.011 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL add_targets(joined, SPEC, method='rolling', window=250) | wall 0.008 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+  beta (expanding) finite: dev 4356 of 5142, confirmation 3057 of 3057
+  beta (rolling 250) finite: dev 4356 of 5142, confirmation 3057 of 3057
+CALL add_targets(joined, SPEC, method='rolling', window=500) | wall 0.008 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+  beta (expanding) finite: dev 4356 of 5142, confirmation 3057 of 3057
+  beta (rolling 500) finite: dev 3564 of 5142, confirmation 3057 of 3057
+  add_targets adds: excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL add_masks(T, events, SPEC) | wall 0.018 s
+type pandas.DataFrame
+  shape (8199, 69); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64), excl_d2 (bool), excl_forecast_eval (bool)
+  add_masks adds: excl_d2 (bool), excl_forecast_eval (bool)
+
+######## targets for N
+CALL add_targets(joined, SPEC) [method=None, window=None, estimate_on=None: the spec's] | wall 0.008 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL add_targets(joined, SPEC, method='rolling', window=250) | wall 0.008 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+  beta (expanding) finite: dev 4356 of 5142, confirmation 3057 of 3057
+  beta (rolling 250) finite: dev 4356 of 5142, confirmation 3057 of 3057
+CALL add_targets(joined, SPEC, method='rolling', window=500) | wall 0.007 s
+type pandas.DataFrame
+  shape (8199, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+  beta (expanding) finite: dev 4356 of 5142, confirmation 3057 of 3057
+  beta (rolling 500) finite: dev 3564 of 5142, confirmation 3057 of 3057
+  add_targets adds: excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL add_masks(T, events, SPEC) | wall 0.019 s
+type pandas.DataFrame
+  shape (8199, 69); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64), excl_d2 (bool), excl_forecast_eval (bool)
+  add_masks adds: excl_d2 (bool), excl_forecast_eval (bool)
+
+######## run A confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05, attrs {'provenance': 'synthetic', 'targets': {'method': 'expanding', 'window': None, 'estimate_on': 'non_excluded_rows', 'hedge': 'y_1306_oc', 'lag_days': 1, 'min_periods': 250}}
+CALL build_design(T, SPEC) [primary; defaults: target='abn_oc', secondary=None, exclude=None, rv_threshold=None, provenance=None] | wall 0.111 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  Design.index unique: True; contained in T.index: True; rows 2888, T 1013, names ['fe[5706]', 'fe[5711]', 'fe[5713]', 'usdjpy_ret', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']
+CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s
+type ofilt.drift.inference.Design
+  .y: ndarray(917,) float64
+  .X: ndarray(917, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(917,) datetime64[ns]
+  .tickers: ndarray(917,) object
+  .index: ndarray(917,) int64
+  .date_codes: ndarray(917,) int64
+  .T: int = 322
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL subset_design(D, no row) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL fit_dk(D, SPEC) [lag=None] | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.843239, se 0.0919702, p 4.79139e-20
+CALL Result.param('usdjpy_ret') | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = 0.8432388854909584
+  ['se']: float = 0.09197015749008533
+  ['z']: float = 9.168614129880796
+  ['p']: float = 4.7913905301647776e-20
+  ['ci']: tuple[2]
+  H1 (this dict): estimate 0.843239, se 0.0919702, p 4.79139e-20
+CALL Result.contrast({'usdjpy_ret': 1.0}) | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = 0.8432388854909584
+  ['se']: float = 0.09197015749008533
+  ['z']: float = 9.168614129880796
+  ['p']: float = 4.7913905301647776e-20
+  ['ci']: tuple[2]
+  H1 (this dict): estimate 0.843239, se 0.0919702, p 4.79139e-20
+CALL build_design(T, SPEC, secondary='fx_x_longwindow') | wall 0.094 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_longwindow'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_longwindow') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.870517, se 0.099685, p 2.48723e-18
+CALL build_design(T, SPEC, secondary='fx_x_jumpshare') | wall 0.093 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_jumpshare'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_jumpshare') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.926375, se 0.125205, p 1.37357e-13
+CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.091 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_highrv'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_highrv') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.826134, se 0.121109, p 9.01592e-12
+CALL build_design(T, SPEC, secondary='fx_asymmetry') | wall 0.113 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 12) float64
+  .names: tuple[12]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_asymmetry'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_asymmetry') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[12]
+  .coef: ndarray(12,) float64
+  .cov: ndarray(12, 12) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.411 s
+type pandas.DataFrame
+  shape (4, 6); columns: member (str), estimate (float64), se (float64), z (float64), p (float64), p_holm (float64)
+            member  estimate        se         z         p  p_holm
+0  fx_x_longwindow -0.110651  0.153255 -0.722010  0.470288     1.0
+1   fx_x_jumpshare -0.650587  0.655238 -0.992901  0.320758     1.0
+2      fx_x_highrv  0.032065  0.133270  0.240602  0.809864     1.0
+3     fx_asymmetry  0.135635  0.213411  0.635556  0.525066     1.0
+CALL holm(the four p-values) | wall 0.000 s
+type numpy.ndarray
+  ndarray(4,) float64
+  holm: [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0)]
+CALL fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, provenance=None, lag=None] | wall 0.105 s
+type ofilt.drift.inference.JointResult
+  .names: tuple[11]
+  .targets: tuple[2]
+  .coef: ndarray(22,) float64
+  .cov: ndarray(22, 22) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  H1 (usdjpy_ret): b 1.13459, delta_cc 1.76968
+CALL JointResult.pair('usdjpy_ret') | wall 0.000 s
+type builtins.tuple
+  tuple[3]
+CALL fraction_unpriced(J) [param=None] | wall 0.006 s
+type builtins.dict
+  ['f']: float = 0.6411308217692756
+  ['se_delta']: float = 0.0357067335640738
+  ['ci_delta']: tuple[2]
+  ['fieller']: dict[2]
+  ['t_denominator']: float = 10.736847680717982
+  ['b']: float = 1.13459397545004
+  ['delta_cc']: float = 1.7696762297575948
+  ['alpha']: float = 0.05
+  f 0.641131; ci_delta (0.5711469099781235, 0.7111147335604278); fieller {'kind': 'bounded', 'ci': (np.float64(0.5647983327933169), np.float64(0.7075059796510111))}
+CALL fit_market(T, SPEC) [exclude=None, provenance=None, lag=None] | wall 0.113 s
+type ofilt.drift.inference.Result
+  .names: tuple[5]
+  .coef: ndarray(5,) float64
+  .cov: ndarray(5, 5) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 1013
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.00584004, se 0.0591253, p 0.921318
+CALL decomposition(T, SPEC) [exclude=None, provenance=None] | wall 0.304 s
+type builtins.dict
+  ['b_raw']: float = 0.8405403571571173
+  ['b_abn']: float = 0.8432388854909584
+  ['b_mkt']: float = 0.005840037039992829
+  ['mean_beta']: float = 1.1150228704892775
+  ['approx']: float = 0.8497506603550549
+  ['gap']: float = -0.009210303197937586
+  ['se_raw']: float = 0.11638019457116183
+  ['se_abn']: float = 0.09197015749008533
+  ['se_mkt']: float = 0.0591253349991519
+  b_raw 0.84054, b_abn 0.843239, b_mkt 0.00584004, mean_beta 1.11502, approx 0.849751, gap -0.0092103, se_raw 0.11638, se_abn 0.0919702, se_mkt 0.0591253
+CALL tost_result(r, H1, SPEC) [sesoi=None: the spec's] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.40563606482033415
+  ['p_lower']: float = 2.512370567223879e-77
+  ['p_upper']: float = 0.40563606482033415
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.405636
+CALL tost_result(r, H1, SPEC, sesoi=0.8652) [config constants.sesoi.primary] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.40563606482033415
+  ['p_lower']: float = 2.512370567223879e-77
+  ['p_upper']: float = 0.40563606482033415
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.405636
+CALL tost_result(r, H1, SPEC, sesoi=0.07152) [config constants.sesoi.low] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.0
+  ['p_lower']: float = 1.3092264805673184e-23
+  ['p_upper']: float = 1.0
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.07152
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1
+CALL tost_result(r, H1, SPEC, sesoi=2.719) [config constants.sesoi.high] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 9.19968613679261e-93
+  ['p_lower']: float = 0.0
+  ['p_upper']: float = 9.19968613679261e-93
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 2.719
+  ['alpha']: float = 0.05
+  H1 (this dict): p 9.19969e-93
+CALL fit_huber(D, SPEC) [c=None, lag=None] | wall 0.007 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: dict[5]
+  H1 (usdjpy_ret): estimate 0.853413, se 0.0932824, p 5.76202e-20
+CALL calib.winsorise_fx(T, SPEC) | wall 0.095 s
+type pandas.DataFrame
+  shape (3057, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL build_design(winsorised T, SPEC) | wall 0.094 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL fit_dk(winsorised design, SPEC) | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.846553, se 0.0921868, p 4.19146e-20
+CALL influence_curve(D, SPEC) [param=None, k_max=None: the spec's] | wall 0.054 s
+type pandas.DataFrame
+  shape (21, 8); columns: k (int64), date_removed (datetime64[ns]), b (float64), se (float64), z (float64), p (float64), n_dates (int64), lag (int64)
+     k date_removed         b        se          z             p  n_dates  lag
+0    0          NaT  0.843239  0.091970   9.168614  4.791391e-20     1013    6
+1    1   2023-07-31  0.829684  0.091348   9.082686  1.059282e-19     1012    6
+2    2   2023-02-24  0.816664  0.090826   8.991493  2.438954e-19     1011    6
+3    3   2025-05-02  0.828554  0.088477   9.364611  7.633063e-21     1010    6
+4    4   2024-11-08  0.840119  0.088565   9.485890  2.403225e-21     1009    6
+5    5   2022-06-13  0.829182  0.088221   9.398882  5.514566e-21     1008    6
+6    6   2023-07-18  0.839601  0.088834   9.451315  3.345992e-21     1007    6
+7    7   2025-11-27  0.849767  0.088663   9.584191  9.318512e-22     1006    6
+8    8   2022-08-31  0.840110  0.087978   9.549068  1.308679e-21     1005    6
+9    9   2025-06-20  0.849535  0.087383   9.721922  2.431485e-22     1004    6
+10  10   2023-09-22  0.839751  0.086371   9.722570  2.416061e-22     1003    6
+11  11   2023-05-18  0.830314  0.086927   9.551885  1.273580e-21     1002    6
+12  12   2024-12-12  0.839481  0.086487   9.706405  2.831492e-22     1001    6
+13  13   2026-03-03  0.848404  0.086258   9.835645  7.905932e-23     1000    6
+14  14   2026-02-20  0.839787  0.086487   9.709970  2.734164e-22      999    6
+15  15   2024-09-25  0.830891  0.085970   9.664938  4.248790e-22      998    6
+16  16   2024-10-01  0.821884  0.085701   9.590167  8.794283e-22      997    6
+17  17   2023-01-30  0.830829  0.085911   9.670864  4.009768e-22      996    6
+18  18   2023-09-29  0.821821  0.084885   9.681624  3.609362e-22      995    6
+19  19   2025-02-18  0.830716  0.083983   9.891462  4.533565e-23      994    6
+20  20   2024-04-02  0.839617  0.083906  10.006593  1.425788e-23      993    6
+CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.097 s
+type ofilt.drift.inference.Design
+  .y: ndarray(3033,) float64
+  .X: ndarray(3033, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(3033,) datetime64[ns]
+  .tickers: ndarray(3033,) object
+  .index: ndarray(3033,) int64
+  .date_codes: ndarray(3033,) int64
+  .T: int = 1019
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 3033 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.110 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2958,) float64
+  .X: ndarray(2958, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2958,) datetime64[ns]
+  .tickers: ndarray(2958,) object
+  .index: ndarray(2958,) int64
+  .date_codes: ndarray(2958,) int64
+  .T: int = 986
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2958 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.100 s
+type ofilt.drift.inference.Design
+  .y: ndarray(3009,) float64
+  .X: ndarray(3009, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(3009,) datetime64[ns]
+  .tickers: ndarray(3009,) object
+  .index: ndarray(3009,) int64
+  .date_codes: ndarray(3009,) int64
+  .T: int = 1003
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 3009 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.094 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2865,) float64
+  .X: ndarray(2865, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2865,) datetime64[ns]
+  .tickers: ndarray(2865,) object
+  .index: ndarray(2865,) int64
+  .date_codes: ndarray(2865,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2865 (primary 2888)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.108 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2797,) float64
+  .X: ndarray(2797, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2797,) datetime64[ns]
+  .tickers: ndarray(2797,) object
+  .index: ndarray(2797,) int64
+  .date_codes: ndarray(2797,) int64
+  .T: int = 980
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2797 (primary 2888)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.095 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2842,) float64
+  .X: ndarray(2842, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2842,) datetime64[ns]
+  .tickers: ndarray(2842,) object
+  .index: ndarray(2842,) int64
+  .date_codes: ndarray(2842,) int64
+  .T: int = 997
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2842 (primary 2888)
+CALL build_design(T, SPEC, target='raw_oc') | wall 0.093 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'raw_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL build_design(T on 2022, SPEC, target='cc_abn') | wall 0.033 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'cc_abn'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+
+######## run A dev: rows 5142, dates 1714, 2015-01-06 .. 2021-12-30, attrs {'provenance': 'synthetic', 'targets': {'method': 'expanding', 'window': None, 'estimate_on': 'non_excluded_rows', 'hedge': 'y_1306_oc', 'lag_days': 1, 'min_periods': 250}}
+CALL build_design(T, SPEC) [primary; defaults: target='abn_oc', secondary=None, exclude=None, rv_threshold=None, provenance=None] | wall 0.161 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  Design.index unique: True; contained in T.index: True; rows 4140, T 1452, names ['fe[5706]', 'fe[5711]', 'fe[5713]', 'usdjpy_ret', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']
+CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL subset_design(D, no row) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL fit_dk(D, SPEC) [lag=None] | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.975684, se 0.061569, p 1.47431e-56
+CALL Result.param('usdjpy_ret') | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = 0.9756839832710105
+  ['se']: float = 0.06156896425271739
+  ['z']: float = 15.84700985493593
+  ['p']: float = 1.4743086981296545e-56
+  ['ci']: tuple[2]
+  H1 (this dict): estimate 0.975684, se 0.061569, p 1.47431e-56
+CALL Result.contrast({'usdjpy_ret': 1.0}) | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = 0.9756839832710105
+  ['se']: float = 0.06156896425271739
+  ['z']: float = 15.84700985493593
+  ['p']: float = 1.4743086981296545e-56
+  ['ci']: tuple[2]
+  H1 (this dict): estimate 0.975684, se 0.061569, p 1.47431e-56
+CALL build_design(T, SPEC, secondary='fx_x_longwindow') | wall 0.149 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_longwindow'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_longwindow') | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.964656, se 0.0685675, p 5.91467e-45
+CALL build_design(T, SPEC, secondary='fx_x_jumpshare') | wall 0.149 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_jumpshare'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_jumpshare') | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.923365, se 0.0974789, p 2.73331e-21
+CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.165 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_highrv'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_highrv') | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.967271, se 0.0805164, p 3.02365e-33
+CALL build_design(T, SPEC, secondary='fx_asymmetry') | wall 0.146 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 12) float64
+  .names: tuple[12]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_asymmetry'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_asymmetry') | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[12]
+  .coef: ndarray(12,) float64
+  .cov: ndarray(12, 12) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.609 s
+type pandas.DataFrame
+  shape (4, 6); columns: member (str), estimate (float64), se (float64), z (float64), p (float64), p_holm (float64)
+            member  estimate        se         z         p  p_holm
+0  fx_x_longwindow  0.036034  0.115164  0.312894  0.754361     1.0
+1   fx_x_jumpshare  0.404252  0.598226  0.675751  0.499199     1.0
+2      fx_x_highrv  0.001022  0.104718  0.009757  0.992215     1.0
+3     fx_asymmetry  0.047486  0.182665  0.259960  0.794895     1.0
+CALL holm(the four p-values) | wall 0.000 s
+type numpy.ndarray
+  ndarray(4,) float64
+  holm: [np.float64(1.0), np.float64(1.0), np.float64(1.0), np.float64(1.0)]
+CALL fit_market(T, SPEC) [exclude=None, provenance=None, lag=None] | wall 0.152 s
+type ofilt.drift.inference.Result
+  .names: tuple[5]
+  .coef: ndarray(5,) float64
+  .cov: ndarray(5, 5) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 1452
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.0561351, se 0.0485642, p 0.247724
+CALL decomposition(T, SPEC) [exclude=None, provenance=None] | wall 0.458 s
+type builtins.dict
+  ['b_raw']: float = 1.0438500250534153
+  ['b_abn']: float = 0.9756839832710105
+  ['b_mkt']: float = 0.0561351234301954
+  ['mean_beta']: float = 1.1035797577569941
+  ['approx']: float = 1.0376335691877645
+  ['gap']: float = 0.006216455865650783
+  ['se_raw']: float = 0.07965287989574948
+  ['se_abn']: float = 0.06156896425271739
+  ['se_mkt']: float = 0.04856424096186287
+  b_raw 1.04385, b_abn 0.975684, b_mkt 0.0561351, mean_beta 1.10358, approx 1.03763, gap 0.00621646, se_raw 0.0796529, se_abn 0.061569, se_mkt 0.0485642
+CALL tost_result(r, H1, SPEC) [sesoi=None: the spec's] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.9636313281950968
+  ['p_lower']: float = 9.974052535379676e-197
+  ['p_upper']: float = 0.9636313281950968
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.963631
+CALL tost_result(r, H1, SPEC, sesoi=0.8652) [config constants.sesoi.primary] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.9636313281950968
+  ['p_lower']: float = 9.974052535379676e-197
+  ['p_upper']: float = 0.9636313281950968
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.963631
+CALL tost_result(r, H1, SPEC, sesoi=0.07152) [config constants.sesoi.low] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.0
+  ['p_lower']: float = 3.5435447299710403e-65
+  ['p_upper']: float = 1.0
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.07152
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1
+CALL tost_result(r, H1, SPEC, sesoi=2.719) [config constants.sesoi.high] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.1343153606735626e-176
+  ['p_lower']: float = 0.0
+  ['p_upper']: float = 1.1343153606735626e-176
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 2.719
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1.13432e-176
+CALL fit_huber(D, SPEC) [c=None, lag=None] | wall 0.010 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: dict[5]
+  H1 (usdjpy_ret): estimate 0.967815, se 0.0645572, p 8.33441e-51
+CALL calib.winsorise_fx(T, SPEC) | wall 0.145 s
+type pandas.DataFrame
+  shape (5142, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL build_design(winsorised T, SPEC) | wall 0.166 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL fit_dk(winsorised design, SPEC) | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 7
+  .T: int = 1452
+  .n: int = 4140
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.986377, se 0.0614624, p 5.86162e-58
+CALL influence_curve(D, SPEC) [param=None, k_max=None: the spec's] | wall 0.077 s
+type pandas.DataFrame
+  shape (21, 8); columns: k (int64), date_removed (datetime64[ns]), b (float64), se (float64), z (float64), p (float64), n_dates (int64), lag (int64)
+     k date_removed         b        se          z             p  n_dates  lag
+0    0          NaT  0.975684  0.061569  15.847010  1.474309e-56     1452    7
+1    1   2020-01-14  0.986266  0.061257  16.100434  2.533208e-58     1451    7
+2    2   2018-05-07  0.996367  0.061588  16.177994  7.210515e-59     1450    7
+3    3   2017-11-01  1.006403  0.060595  16.608689  6.029614e-62     1449    7
+4    4   2019-01-04  1.016376  0.061690  16.475655  5.489069e-61     1448    7
+5    5   2019-02-07  1.024416  0.060662  16.887186  5.590644e-64     1447    7
+6    6   2021-08-17  1.032438  0.060055  17.191510  3.074198e-66     1446    7
+7    7   2019-11-05  1.040258  0.059827  17.387645  1.023545e-67     1445    7
+8    8   2017-01-10  1.048206  0.059613  17.583475  3.297362e-69     1444    7
+9    9   2018-05-01  1.040907  0.059452  17.508365  1.236958e-68     1443    7
+10  10   2019-01-08  1.034014  0.058769  17.594635  2.707946e-69     1442    7
+11  11   2021-02-24  1.027459  0.059382  17.302514  4.503011e-67     1441    7
+12  12   2019-04-04  1.021069  0.059471  17.169089  4.524685e-66     1440    7
+13  13   2017-11-20  1.014374  0.059820  16.957224  1.701969e-64     1439    7
+14  14   2021-11-08  1.021158  0.059305  17.218681  1.923228e-66     1438    7
+15  15   2017-01-19  1.014701  0.058808  17.254511  1.034949e-66     1437    7
+16  16   2018-02-13  1.008531  0.058430  17.260510  9.328297e-67     1436    7
+17  17   2018-11-12  1.002507  0.058717  17.073645  2.331782e-65     1435    7
+18  18   2016-06-28  0.996421  0.058014  17.175494  4.051910e-66     1434    7
+19  19   2016-12-07  1.002484  0.058194  17.226583  1.677745e-66     1433    7
+20  20   2021-09-08  1.008707  0.058028  17.383153  1.106961e-67     1432    7
+CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.147 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4320,) float64
+  .X: ndarray(4320, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4320,) datetime64[ns]
+  .tickers: ndarray(4320,) object
+  .index: ndarray(4320,) int64
+  .date_codes: ndarray(4320,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4320 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.156 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4215,) float64
+  .X: ndarray(4215, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4215,) datetime64[ns]
+  .tickers: ndarray(4215,) object
+  .index: ndarray(4215,) int64
+  .date_codes: ndarray(4215,) int64
+  .T: int = 1405
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4215 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.165 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4284,) float64
+  .X: ndarray(4284, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4284,) datetime64[ns]
+  .tickers: ndarray(4284,) object
+  .index: ndarray(4284,) int64
+  .date_codes: ndarray(4284,) int64
+  .T: int = 1428
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4284 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.192 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4104,) float64
+  .X: ndarray(4104, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4104,) datetime64[ns]
+  .tickers: ndarray(4104,) object
+  .index: ndarray(4104,) int64
+  .date_codes: ndarray(4104,) int64
+  .T: int = 1452
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4104 (primary 4140)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.159 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4011,) float64
+  .X: ndarray(4011, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4011,) datetime64[ns]
+  .tickers: ndarray(4011,) object
+  .index: ndarray(4011,) int64
+  .date_codes: ndarray(4011,) int64
+  .T: int = 1405
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4011 (primary 4140)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.151 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4071,) float64
+  .X: ndarray(4071, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4071,) datetime64[ns]
+  .tickers: ndarray(4071,) object
+  .index: ndarray(4071,) int64
+  .date_codes: ndarray(4071,) int64
+  .T: int = 1428
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 4071 (primary 4140)
+CALL build_design(T, SPEC, target='raw_oc') | wall 0.164 s
+type ofilt.drift.inference.Design
+  .y: ndarray(4140,) float64
+  .X: ndarray(4140, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(4140,) datetime64[ns]
+  .tickers: ndarray(4140,) object
+  .index: ndarray(4140,) int64
+  .date_codes: ndarray(4140,) int64
+  .T: int = 1452
+  .target: str = 'raw_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+
+######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05, attrs {'provenance': 'synthetic', 'targets': {'method': 'expanding', 'window': None, 'estimate_on': 'non_excluded_rows', 'hedge': 'y_1306_oc', 'lag_days': 1, 'min_periods': 250}}
+CALL build_design(T, SPEC) [primary; defaults: target='abn_oc', secondary=None, exclude=None, rv_threshold=None, provenance=None] | wall 0.096 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  Design.index unique: True; contained in T.index: True; rows 2888, T 1013, names ['fe[5706]', 'fe[5711]', 'fe[5713]', 'usdjpy_ret', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']
+CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s
+type ofilt.drift.inference.Design
+  .y: ndarray(917,) float64
+  .X: ndarray(917, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(917,) datetime64[ns]
+  .tickers: ndarray(917,) object
+  .index: ndarray(917,) int64
+  .date_codes: ndarray(917,) int64
+  .T: int = 322
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL subset_design(D, no row) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL fit_dk(D, SPEC) [lag=None] | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.0356925, se 0.0660146, p 0.58873
+CALL Result.param('usdjpy_ret') | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = -0.03569254557338591
+  ['se']: float = 0.06601458967525815
+  ['z']: float = -0.5406766254091139
+  ['p']: float = 0.5887304924612564
+  ['ci']: tuple[2]
+  H1 (this dict): estimate -0.0356925, se 0.0660146, p 0.58873
+CALL Result.contrast({'usdjpy_ret': 1.0}) | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = -0.03569254557338591
+  ['se']: float = 0.06601458967525815
+  ['z']: float = -0.5406766254091139
+  ['p']: float = 0.5887304924612564
+  ['ci']: tuple[2]
+  H1 (this dict): estimate -0.0356925, se 0.0660146, p 0.58873
+CALL build_design(T, SPEC, secondary='fx_x_longwindow') | wall 0.094 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_longwindow'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_longwindow') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.00334105, se 0.0777827, p 0.965738
+CALL build_design(T, SPEC, secondary='fx_x_jumpshare') | wall 0.111 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_jumpshare'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_jumpshare') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate 0.0247603, se 0.0926627, p 0.789308
+CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.133 s
+EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+CALL fit_dk(design secondary='fx_x_highrv') | wall 0.000 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'provenance'
+CALL build_design(T, SPEC, secondary='fx_asymmetry') | wall 0.093 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 12) float64
+  .names: tuple[12]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_asymmetry'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_asymmetry') | wall 0.002 s
+type ofilt.drift.inference.Result
+  .names: tuple[12]
+  .coef: ndarray(12,) float64
+  .cov: ndarray(12, 12) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.327 s
+EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+CALL holm(the four p-values) | wall 0.000 s
+EXCEPTION TypeError: 'NoneType' object is not subscriptable
+CALL fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, provenance=None, lag=None] | wall 0.038 s
+EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+CALL JointResult.pair('usdjpy_ret') | wall 0.000 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+CALL fraction_unpriced(J) [param=None] | wall 0.006 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+CALL fit_market(T, SPEC) [exclude=None, provenance=None, lag=None] | wall 0.112 s
+type ofilt.drift.inference.Result
+  .names: tuple[5]
+  .coef: ndarray(5,) float64
+  .cov: ndarray(5, 5) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 1013
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.087071, se 0.0564221, p 0.122781
+CALL decomposition(T, SPEC) [exclude=None, provenance=None] | wall 0.283 s
+type builtins.dict
+  ['b_raw']: float = -0.13353129153196255
+  ['b_abn']: float = -0.03569254557338591
+  ['b_mkt']: float = -0.0870710232762773
+  ['mean_beta']: float = 1.1093118941457725
+  ['approx']: float = -0.13228146732920373
+  ['gap']: float = -0.0012498242027588202
+  ['se_raw']: float = 0.09584306131695523
+  ['se_abn']: float = 0.06601458967525815
+  ['se_mkt']: float = 0.056422127920511135
+  b_raw -0.133531, b_abn -0.0356925, b_mkt -0.087071, mean_beta 1.10931, approx -0.132281, gap -0.00124982, se_raw 0.0958431, se_abn 0.0660146, se_mkt 0.0564221
+CALL tost_result(r, H1, SPEC) [sesoi=None: the spec's] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.6336594045825233e-36
+  ['p_lower']: float = 1.6336594045825233e-36
+  ['p_upper']: float = 1.0536822286815642e-42
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1.63366e-36
+CALL tost_result(r, H1, SPEC, sesoi=0.8652) [config constants.sesoi.primary] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.6336594045825233e-36
+  ['p_lower']: float = 1.6336594045825233e-36
+  ['p_upper']: float = 1.0536822286815642e-42
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1.63366e-36
+CALL tost_result(r, H1, SPEC, sesoi=0.07152) [config constants.sesoi.low] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.29366121575762405
+  ['p_lower']: float = 0.29366121575762405
+  ['p_upper']: float = 0.052180061661781615
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.07152
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.293661
+CALL tost_result(r, H1, SPEC, sesoi=2.719) [config constants.sesoi.high] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.0
+  ['p_lower']: float = 0.0
+  ['p_upper']: float = 0.0
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 2.719
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0
+CALL fit_huber(D, SPEC) [c=None, lag=None] | wall 0.007 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: dict[5]
+  H1 (usdjpy_ret): estimate -0.0236631, se 0.068032, p 0.727973
+CALL calib.winsorise_fx(T, SPEC) | wall 0.105 s
+type pandas.DataFrame
+  shape (3057, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL build_design(winsorised T, SPEC) | wall 0.091 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL fit_dk(winsorised design, SPEC) | wall 0.001 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 6
+  .T: int = 1013
+  .n: int = 2888
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.0353654, se 0.0669645, p 0.597415
+CALL influence_curve(D, SPEC) [param=None, k_max=None: the spec's] | wall 0.065 s
+type pandas.DataFrame
+  shape (21, 8); columns: k (int64), date_removed (datetime64[ns]), b (float64), se (float64), z (float64), p (float64), n_dates (int64), lag (int64)
+     k date_removed         b        se         z         p  n_dates  lag
+0    0          NaT -0.035693  0.066015 -0.540677  0.588730     1013    6
+1    1   2022-02-07 -0.024205  0.064886 -0.373035  0.709122     1012    6
+2    2   2025-06-06 -0.035106  0.065207 -0.538372  0.590320     1011    6
+3    3   2022-05-16 -0.025070  0.066707 -0.375820  0.707051     1010    6
+4    4   2026-01-21 -0.034569  0.065779 -0.525534  0.599212     1009    6
+5    5   2023-05-29 -0.043850  0.065707 -0.667366  0.504538     1008    6
+6    6   2022-01-18 -0.034399  0.064645 -0.532122  0.594641     1007    6
+7    7   2022-05-13 -0.043607  0.063580 -0.685857  0.492803     1006    6
+8    8   2025-02-27 -0.035037  0.063422 -0.552445  0.580644     1005    6
+9    9   2025-10-03 -0.026219  0.062376 -0.420329  0.674245     1004    6
+10  10   2022-06-03 -0.034625  0.062601 -0.553102  0.580194     1003    6
+11  11   2022-12-27 -0.043013  0.062328 -0.690107  0.490127     1002    6
+12  12   2024-05-31 -0.034651  0.063198 -0.548294  0.583490     1001    6
+13  13   2024-06-05 -0.043103  0.062220 -0.692757  0.488462     1000    6
+14  14   2022-10-11 -0.034744  0.063486 -0.547268  0.584194      999    6
+15  15   2025-04-11 -0.043107  0.062631 -0.688262  0.491288      998    6
+16  16   2023-08-02 -0.034925  0.062498 -0.558810  0.576292      997    6
+17  17   2022-03-31 -0.042887  0.062612 -0.684968  0.493364      996    6
+18  18   2023-06-19 -0.034917  0.063114 -0.553234  0.580103      995    6
+19  19   2024-01-04 -0.042765  0.062578 -0.683382  0.494365      994    6
+20  20   2024-04-12 -0.035126  0.062358 -0.563288  0.573239      993    6
+CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.096 s
+type ofilt.drift.inference.Design
+  .y: ndarray(3033,) float64
+  .X: ndarray(3033, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(3033,) datetime64[ns]
+  .tickers: ndarray(3033,) object
+  .index: ndarray(3033,) int64
+  .date_codes: ndarray(3033,) int64
+  .T: int = 1019
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 3033 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.114 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2958,) float64
+  .X: ndarray(2958, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2958,) datetime64[ns]
+  .tickers: ndarray(2958,) object
+  .index: ndarray(2958,) int64
+  .date_codes: ndarray(2958,) int64
+  .T: int = 986
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2958 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.097 s
+type ofilt.drift.inference.Design
+  .y: ndarray(3009,) float64
+  .X: ndarray(3009, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(3009,) datetime64[ns]
+  .tickers: ndarray(3009,) object
+  .index: ndarray(3009,) int64
+  .date_codes: ndarray(3009,) int64
+  .T: int = 1003
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 3009 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.097 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2865,) float64
+  .X: ndarray(2865, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2865,) datetime64[ns]
+  .tickers: ndarray(2865,) object
+  .index: ndarray(2865,) int64
+  .date_codes: ndarray(2865,) int64
+  .T: int = 1013
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2865 (primary 2888)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.095 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2797,) float64
+  .X: ndarray(2797, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2797,) datetime64[ns]
+  .tickers: ndarray(2797,) object
+  .index: ndarray(2797,) int64
+  .date_codes: ndarray(2797,) int64
+  .T: int = 980
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2797 (primary 2888)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.103 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2842,) float64
+  .X: ndarray(2842, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2842,) datetime64[ns]
+  .tickers: ndarray(2842,) object
+  .index: ndarray(2842,) int64
+  .date_codes: ndarray(2842,) int64
+  .T: int = 997
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 2842 (primary 2888)
+CALL build_design(T, SPEC, target='raw_oc') | wall 0.090 s
+type ofilt.drift.inference.Design
+  .y: ndarray(2888,) float64
+  .X: ndarray(2888, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(2888,) datetime64[ns]
+  .tickers: ndarray(2888,) object
+  .index: ndarray(2888,) int64
+  .date_codes: ndarray(2888,) int64
+  .T: int = 1013
+  .target: str = 'raw_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL build_design(T on 2022, SPEC, target='cc_abn') | wall 0.030 s
+EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+
+######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30, attrs {'provenance': 'synthetic', 'targets': {'method': 'expanding', 'window': None, 'estimate_on': 'non_excluded_rows', 'hedge': 'y_1306_oc', 'lag_days': 1, 'min_periods': 250}}
+CALL build_design(T, SPEC) [primary; defaults: target='abn_oc', secondary=None, exclude=None, rv_threshold=None, provenance=None] | wall 0.030 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  Design.index unique: True; contained in T.index: True; rows 690, T 242, names ['fe[5706]', 'fe[5711]', 'fe[5713]', 'usdjpy_ret', 'eurusd_ret', 'spy_oc:5706', 'spy_oc:5711', 'spy_oc:5713', 'copx_oc:5706', 'copx_oc:5711', 'copx_oc:5713']
+CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL subset_design(D, no row) | wall 0.000 s
+EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+CALL fit_dk(D, SPEC) [lag=None] | wall 0.000 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.156296, se 0.119045, p 0.189214
+CALL Result.param('usdjpy_ret') | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = -0.15629557168352418
+  ['se']: float = 0.1190452885221839
+  ['z']: float = -1.3129085041815725
+  ['p']: float = 0.18921378092480168
+  ['ci']: tuple[2]
+  H1 (this dict): estimate -0.156296, se 0.119045, p 0.189214
+CALL Result.contrast({'usdjpy_ret': 1.0}) | wall 0.000 s
+type builtins.dict
+  ['estimate']: float = -0.15629557168352418
+  ['se']: float = 0.1190452885221839
+  ['z']: float = -1.3129085041815725
+  ['p']: float = 0.18921378092480168
+  ['ci']: tuple[2]
+  H1 (this dict): estimate -0.156296, se 0.119045, p 0.189214
+CALL build_design(T, SPEC, secondary='fx_x_longwindow') | wall 0.034 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_longwindow'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_longwindow') | wall 0.001 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.0436555, se 0.152447, p 0.774598
+CALL build_design(T, SPEC, secondary='fx_x_jumpshare') | wall 0.050 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 13) float64
+  .names: tuple[13]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_x_jumpshare'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_x_jumpshare') | wall 0.001 s
+type ofilt.drift.inference.Result
+  .names: tuple[13]
+  .coef: ndarray(13,) float64
+  .cov: ndarray(13, 13) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.0172977, se 0.18326, p 0.924801
+CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.035 s
+EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+CALL fit_dk(design secondary='fx_x_highrv') | wall 0.000 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'provenance'
+CALL build_design(T, SPEC, secondary='fx_asymmetry') | wall 0.034 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 12) float64
+  .names: tuple[12]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: str = 'fx_asymmetry'
+  .provenance: str = 'synthetic'
+CALL fit_dk(design secondary='fx_asymmetry') | wall 0.001 s
+type ofilt.drift.inference.Result
+  .names: tuple[12]
+  .coef: ndarray(12,) float64
+  .cov: ndarray(12, 12) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: NoneType = None
+CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.101 s
+EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+CALL holm(the four p-values) | wall 0.000 s
+EXCEPTION TypeError: 'NoneType' object is not subscriptable
+CALL fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, provenance=None, lag=None] | wall 0.039 s
+EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+CALL JointResult.pair('usdjpy_ret') | wall 0.000 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+CALL fraction_unpriced(J) [param=None] | wall 0.006 s
+EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+CALL fit_market(T, SPEC) [exclude=None, provenance=None, lag=None] | wall 0.035 s
+type ofilt.drift.inference.Result
+  .names: tuple[5]
+  .coef: ndarray(5,) float64
+  .cov: ndarray(5, 5) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 242
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.339041, se 0.111939, p 0.00245518
+CALL decomposition(T, SPEC) [exclude=None, provenance=None] | wall 0.119 s
+type builtins.dict
+  ['b_raw']: float = -0.5228760308949066
+  ['b_abn']: float = -0.15629557168352418
+  ['b_mkt']: float = -0.33904099558238027
+  ['mean_beta']: float = 1.1106644807613095
+  ['approx']: float = -0.532856362998826
+  ['gap']: float = 0.009980332103919354
+  ['se_raw']: float = 0.18934657080478653
+  ['se_abn']: float = 0.1190452885221839
+  ['se_mkt']: float = 0.1119386354469408
+  b_raw -0.522876, b_abn -0.156296, b_mkt -0.339041, mean_beta 1.11066, approx -0.532856, gap 0.00998033, se_raw 0.189347, se_abn 0.119045, se_mkt 0.111939
+CALL tost_result(r, H1, SPEC) [sesoi=None: the spec's] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.3010449258592343e-09
+  ['p_lower']: float = 1.3010449258592343e-09
+  ['p_upper']: float = 4.713614351232738e-18
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1.30104e-09
+CALL tost_result(r, H1, SPEC, sesoi=0.8652) [config constants.sesoi.primary] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 1.3010449258592343e-09
+  ['p_lower']: float = 1.3010449258592343e-09
+  ['p_upper']: float = 4.713614351232738e-18
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.8652
+  ['alpha']: float = 0.05
+  H1 (this dict): p 1.30104e-09
+CALL tost_result(r, H1, SPEC, sesoi=0.07152) [config constants.sesoi.low] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 0.7618074715516862
+  ['p_lower']: float = 0.7618074715516862
+  ['p_upper']: float = 0.02782999966977464
+  ['equivalent']: bool = False
+  ['ci']: tuple[2]
+  ['sesoi']: float = 0.07152
+  ['alpha']: float = 0.05
+  H1 (this dict): p 0.761807
+CALL tost_result(r, H1, SPEC, sesoi=2.719) [config constants.sesoi.high] | wall 0.000 s
+type builtins.dict
+  ['p']: float = 4.336279216937916e-103
+  ['p_lower']: float = 4.336279216937916e-103
+  ['p_upper']: float = 3.4756862971720827e-129
+  ['equivalent']: bool = True
+  ['ci']: tuple[2]
+  ['sesoi']: float = 2.719
+  ['alpha']: float = 0.05
+  H1 (this dict): p 4.33628e-103
+CALL fit_huber(D, SPEC) [c=None, lag=None] | wall 0.003 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: dict[5]
+  H1 (usdjpy_ret): estimate -0.173969, se 0.126174, p 0.167956
+CALL calib.winsorise_fx(T, SPEC) | wall 0.033 s
+type pandas.DataFrame
+  shape (732, 67); columns: date (datetime64[us]), ticker (str), usdjpy_ret (float64), usdjpy_rv (float64), usdjpy_bv (float64), eurusd_ret (float64), eurusd_rv (float64), spy_oc (float64), ewj_oc (float64), fcx_oc (float64), copx_oc (float64), us_n_sessions (float64), window_hours (float64), gap_adj_lag1 (float64), oc_lag1 (float64), range_lag1 (float64), topix_oc_lag1 (float64), earn_flag (int64), news_flag (int64), mech_flag (int64), audit_flag (int64), boj_day (float64), sq_day (float64), sq_major (float64), exdiv_day (int64), div_exdate (float64), ao_gap_adj (float64), ao_gap_raw (float64), ao_topix_gap (float64), y_oc (float64), y_topix_oc (float64), open (float64), close (float64), prev_close (float64), window_start_utc (str), window_end_utc (str), usdjpy_bars (float64), usdjpy_stale_start_min (float64), usdjpy_stale_end_min (float64), eurusd_bars (float64), eurusd_stale_end_min (float64), y_1306_oc (float64), ao_1306_gap_raw (float64), ao_1306_gap_adj (float64), ao_topix_gap_tradj (float64), xau_ret (float64), xau_rv (float64), xau_bv (float64), n225_ret (float64), usdjpy_us_ret (float64), ewj_oc_jpy (float64), gotobi_day (int64), c_usdjpy_sess_ret (float64), c_eurusd_sess_ret (float64), xau_bars (float64), xau_stale_start_min (float64), xau_stale_end_min (float64), n225_bars (float64), n225_stale_start_min (float64), n225_stale_end_min (float64), excl_inference (bool), beta (float64), raw_oc (float64), abn_oc (float64), gap_abn (float64), cc_abn (float64), cc_raw (float64)
+CALL build_design(winsorised T, SPEC) | wall 0.033 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL fit_dk(winsorised design, SPEC) | wall 0.000 s
+type ofilt.drift.inference.Result
+  .names: tuple[11]
+  .coef: ndarray(11,) float64
+  .cov: ndarray(11, 11) float64
+  .lag: int = 4
+  .T: int = 242
+  .n: int = 690
+  .alpha: float = 0.05
+  .info: NoneType = None
+  H1 (usdjpy_ret): estimate -0.14921, se 0.12344, p 0.226753
+CALL influence_curve(D, SPEC) [param=None, k_max=None: the spec's] | wall 0.040 s
+type pandas.DataFrame
+  shape (21, 8); columns: k (int64), date_removed (datetime64[ns]), b (float64), se (float64), z (float64), p (float64), n_dates (int64), lag (int64)
+     k date_removed         b        se         z         p  n_dates  lag
+0    0          NaT -0.156296  0.119045 -1.312909  0.189214      242    4
+1    1   2022-02-07 -0.117773  0.113163 -1.040736  0.297998      241    4
+2    2   2022-06-03 -0.152681  0.112736 -1.354322  0.175634      240    4
+3    3   2022-05-16 -0.116704  0.124263 -0.939175  0.347641      239    4
+4    4   2022-05-13 -0.150996  0.116570 -1.295327  0.195208      238    4
+5    5   2022-12-27 -0.184811  0.115907 -1.594475  0.110830      237    4
+6    6   2022-01-18 -0.148498  0.108371 -1.370275  0.170601      236    4
+7    7   2022-03-31 -0.181539  0.106866 -1.698755  0.089365      235    4
+8    8   2022-09-27 -0.207096  0.106966 -1.936097  0.052856      234    4
+9    9   2022-02-01 -0.231640  0.106896 -2.166976  0.030237      233    4
+10  10   2022-07-19 -0.256105  0.107710 -2.377730  0.017420      232    4
+11  11   2022-10-11 -0.233256  0.116136 -2.008479  0.044592      231    4
+12  12   2022-02-04 -0.208738  0.116752 -1.787883  0.073795      230    4
+13  13   2022-05-19 -0.233570  0.112003 -2.085395  0.037033      229    4
+14  14   2022-07-11 -0.216396  0.109476 -1.976664  0.048080      228    4
+15  15   2022-08-05 -0.237373  0.108209 -2.193651  0.028261      227    4
+16  16   2022-04-12 -0.218558  0.108989 -2.005329  0.044928      226    4
+17  17   2022-03-16 -0.196385  0.107689 -1.823637  0.068207      225    4
+18  18   2022-08-02 -0.215971  0.106822 -2.021785  0.043199      224    4
+19  19   2022-01-04 -0.200436  0.107350 -1.867123  0.061884      223    4
+20  20   2022-11-29 -0.179100  0.107526 -1.665642  0.095785      222    4
+CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.045 s
+type ofilt.drift.inference.Design
+  .y: ndarray(726,) float64
+  .X: ndarray(726, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(726,) datetime64[ns]
+  .tickers: ndarray(726,) object
+  .index: ndarray(726,) int64
+  .date_codes: ndarray(726,) int64
+  .T: int = 244
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 726 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.036 s
+type ofilt.drift.inference.Design
+  .y: ndarray(708,) float64
+  .X: ndarray(708, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(708,) datetime64[ns]
+  .tickers: ndarray(708,) object
+  .index: ndarray(708,) int64
+  .date_codes: ndarray(708,) int64
+  .T: int = 236
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 708 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.033 s
+type ofilt.drift.inference.Design
+  .y: ndarray(720,) float64
+  .X: ndarray(720, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(720,) datetime64[ns]
+  .tickers: ndarray(720,) object
+  .index: ndarray(720,) int64
+  .date_codes: ndarray(720,) int64
+  .T: int = 240
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 720 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.035 s
+type ofilt.drift.inference.Design
+  .y: ndarray(684,) float64
+  .X: ndarray(684, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(684,) datetime64[ns]
+  .tickers: ndarray(684,) object
+  .index: ndarray(684,) int64
+  .date_codes: ndarray(684,) int64
+  .T: int = 242
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 684 (primary 690)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.047 s
+type ofilt.drift.inference.Design
+  .y: ndarray(668,) float64
+  .X: ndarray(668, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(668,) datetime64[ns]
+  .tickers: ndarray(668,) object
+  .index: ndarray(668,) int64
+  .date_codes: ndarray(668,) int64
+  .T: int = 234
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 668 (primary 690)
+CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.032 s
+type ofilt.drift.inference.Design
+  .y: ndarray(679,) float64
+  .X: ndarray(679, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(679,) datetime64[ns]
+  .tickers: ndarray(679,) object
+  .index: ndarray(679,) int64
+  .date_codes: ndarray(679,) int64
+  .T: int = 238
+  .target: str = 'abn_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+  rows 679 (primary 690)
+CALL build_design(T, SPEC, target='raw_oc') | wall 0.032 s
+type ofilt.drift.inference.Design
+  .y: ndarray(690,) float64
+  .X: ndarray(690, 11) float64
+  .names: tuple[11]
+  .dates: ndarray(690,) datetime64[ns]
+  .tickers: ndarray(690,) object
+  .index: ndarray(690,) int64
+  .date_codes: ndarray(690,) int64
+  .T: int = 242
+  .target: str = 'raw_oc'
+  .secondary: NoneType = None
+  .provenance: str = 'synthetic'
+CALL build_design(T on 2022, SPEC, target='cc_abn') | wall 0.032 s
+EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+
+######## calls attempted per run (each printed with its outcome above)
+  targets A: 4
+  targets N: 4
+  A confirmation: 38
+  A dev: 34
+  N confirmation: 38
+  N 2022: 38
+A dev attempted the full list less the three 2022 calls and the cc_abn call: expected=34 actual=34 ok=True
+N confirmation attempted the full list: expected=38 actual=38 ok=True
+N 2022 attempted the full list: expected=38 actual=38 ok=True
+forbidden modules imported at the end: []
+no forbidden module imported: expected=[] actual=[] ok=True
+git status --porcelain --untracked-files=all: expected='' actual='' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+NODATA exists and is empty: expected=(True, []) actual=(True, []) ok=True
+checks: 10 passed: 10
+C CHECK: True
+
+=== verdict lines ===
+env.out: A_ENV CHECK: True
+a2.out: A CHECK: True
+b.out: B CHECK: True
+probe.out: C CHECK: True
+
+=== the probe's exceptions, each with its call and run (grep of /tmp/p4_4p_probe.out) ===
+78: ######## run A confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL subset_design(D, no row) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+491: ######## run A dev: rows 5142, dates 1714, 2015-01-06 .. 2021-12-30 | CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+493: ######## run A dev: rows 5142, dates 1714, 2015-01-06 .. 2021-12-30 | CALL subset_design(D, no row) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+881: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL subset_design(D, no row) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+958: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.133 s | EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+960: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL fit_dk(design secondary='fx_x_highrv') | wall 0.000 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'provenance'
+985: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.327 s | EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+987: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL holm(the four p-values) | wall 0.000 s | EXCEPTION TypeError: 'NoneType' object is not subscriptable
+989: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, provenance=None, lag=None] | wall 0.038 s | EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+991: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL JointResult.pair('usdjpy_ret') | wall 0.000 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+993: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL fraction_unpriced(J) [param=None] | wall 0.006 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+1218: ######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05 | CALL build_design(T on 2022, SPEC, target='cc_abn') | wall 0.030 s | EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+1236: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL subset_design(D, D.dates >= 2024-11-05) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+1238: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL subset_design(D, no row) | wall 0.000 s | EXCEPTION ValueError: zero-size array to reduction operation maximum which has no identity
+1315: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL build_design(T, SPEC, secondary='fx_x_highrv') | wall 0.035 s | EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+1317: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL fit_dk(design secondary='fx_x_highrv') | wall 0.000 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'provenance'
+1342: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL secondary_family_tests(T, SPEC) [exclude=None, provenance=None] | wall 0.101 s | EXCEPTION DesignError: rv_per_bar undefined (usdjpy_bars <= 0) on some rows
+1344: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL holm(the four p-values) | wall 0.000 s | EXCEPTION TypeError: 'NoneType' object is not subscriptable
+1346: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL fit_joint(T on 2022, SPEC) [targets=('abn_oc', 'cc_abn'), secondary=None, exclude=None, provenance=None, lag=None] | wall 0.039 s | EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+1348: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL JointResult.pair('usdjpy_ret') | wall 0.000 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+1350: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL fraction_unpriced(J) [param=None] | wall 0.006 s | EXCEPTION AttributeError: 'NoneType' object has no attribute 'pair'
+1575: ######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30 | CALL build_design(T on 2022, SPEC, target='cc_abn') | wall 0.032 s | EXCEPTION DesignError: no rows left after exclusions and non-missing requirements
+CALL lines: 156
+EXCEPTION lines: 22
+lines of the probe output: 1596
+
+=== build_design's exclusion columns (grep -n 'excl_cols =' ofilt/drift/inference.py) ===
+92:    excl_cols = list(spec.inference_exclusion_flags) if exclude is None else list(exclude)
+
+=== the rows of the exclude calls (grep of /tmp/p4_4p_probe.out) ===
+49:######## run A confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05
+364:CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.097 s
+377:  rows 3033 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+378:CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.110 s
+391:  rows 2958 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+392:CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.100 s
+405:  rows 3009 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+406:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.094 s
+419:  rows 2865 (primary 2888)
+420:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.108 s
+433:  rows 2797 (primary 2888)
+434:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.095 s
+447:  rows 2842 (primary 2888)
+475:######## run A dev: rows 5142, dates 1714, 2015-01-06 .. 2021-12-30
+754:CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.147 s
+767:  rows 4320 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+768:CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.156 s
+781:  rows 4215 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+782:CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.165 s
+795:  rows 4284 (primary 4140); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+796:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.192 s
+809:  rows 4104 (primary 4140)
+810:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.159 s
+823:  rows 4011 (primary 4140)
+824:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.151 s
+837:  rows 4071 (primary 4140)
+852:######## run N confirmation: rows 3057, dates 1019, 2022-01-04 .. 2026-03-05
+1120:CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.096 s
+1133:  rows 3033 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1134:CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.114 s
+1147:  rows 2958 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1148:CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.097 s
+1161:  rows 3009 (primary 2888); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1162:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.097 s
+1175:  rows 2865 (primary 2888)
+1176:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.095 s
+1189:  rows 2797 (primary 2888)
+1190:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.103 s
+1203:  rows 2842 (primary 2888)
+1220:######## run N 2022: rows 732, dates 244, 2022-01-04 .. 2022-12-30
+1477:CALL build_design(T, SPEC, exclude=['audit_flag']) | wall 0.045 s
+1490:  rows 726 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1491:CALL build_design(T, SPEC, exclude=['boj_day']) | wall 0.036 s
+1504:  rows 708 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1505:CALL build_design(T, SPEC, exclude=['sq_major']) | wall 0.033 s
+1518:  rows 720 (primary 690); exclude replaces the spec's flags ['earn_flag', 'news_flag']
+1519:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'audit_flag']) | wall 0.035 s
+1532:  rows 684 (primary 690)
+1533:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'boj_day']) | wall 0.047 s
+1546:  rows 668 (primary 690)
+1547:CALL (extra) build_design(T, SPEC, exclude=['earn_flag', 'news_flag', 'sq_major']) | wall 0.032 s
+1560:  rows 679 (primary 690)
+
+=== the source files the probe calls: last commits touching them (git log -n 3 -- inference.py targets.py calib.py) ===
+befb7da 2026-10-06 checkpoint: P3-2b (sealed-run tool, configuration, smoke run)
+8bced4b 2026-10-06 checkpoint: P3-2a (DQ3, DQ4, DQ7; calibration module; warp-speed check)
+b9bf6f3 2026-10-05 checkpoint: P2-3b switch (AM-03, AM-04, AM-05; C7 rerun on the Mac)
+
+=== files written under /tmp by this item (all start /tmp/p4_4p; the report itself excluded) ===
+a8259f4302b806bd1b52f616d572fee62940f1c72eb865181a91ee537c6e06f3  /tmp/p4_4p_a2.out
+4957602515ab51a1ad6737b5322cb6292ad4f0026244ff287b886955c0699502  /tmp/p4_4p_a2.py
+a9df7a369318a7388fa331d521d87bf416d8b8851bd5eec6fefd2e22581eda90  /tmp/p4_4p_b.out
+e795cfb606d3e455ce454b593a6c168fddcd6ac990aa6182df6ae4c6ba9660b3  /tmp/p4_4p_b.py
+32a2d8d6883c57fa5c310cc6b5492bbe1e30cd91a74de19af9307f11968083c4  /tmp/p4_4p_common.py
+4e28bb068dec06f80575ad6124dfd5a7e43f29cf2d81835506c608732638fb32  /tmp/p4_4p_date.out
+4a065848743ec76955bc966f67df8ced58afd08c0f2494f3e6baefa4b3e4455f  /tmp/p4_4p_env.out
+aa4f8bc3fa4664722b59021343362e9db268a40a56b6c2e915ed00767c1c74a1  /tmp/p4_4p_env.sh
+4c52dd610cee8384b21f2c55c5014ef7cbdf42532b017e7155509a96635a4824  /tmp/p4_4p_head.out
+16f2522e0e8890c0d4591f8a221e631b8afbf14e4dca10804f4f3ce851b9038b  /tmp/p4_4p_msg.txt
+directory /tmp/p4_4p_nodata: entries 0
+a908bbac188f36bbd9d2a7a3975566f0735b8e739d76d44165d09a4c9f41988a  /tmp/p4_4p_probe.out
+f090b6cd94e6e8030e78a1b5dfd90ba71cad6f84e4892eda6f0e81f1c4419d95  /tmp/p4_4p_probe.py
+3f940242c34725aeceb8b7a4e163f244f9a7491eb28415fff291837d51fb91c3  /tmp/p4_4p_report.sh
+
+=== deviations and notes ===
+Deviations:
+1. Step c, 'Read first, as text': in this item the builder read the configuration with the file-editing tool's reader (all its sections, including frame, constants, f, robustness and contingencies) and ofilt/drift/__init__.py by cat, before writing the probe. inference.py, targets.py and calib.py were not read again in this item: the builder had read them with the same reader earlier in this session, before this item, and they are unchanged since (last changed at P3-2b, per the git log above; the tree is clean, and inference.py is C7-pinned). sim_full.py was written by the builder in this session at P4-3 and is pinned by SIM_MODULE_SHA256 in a.2. During step d, after the probe's run, the signatures of the called functions and build_design's exclusion line were read again by grep.
+No other deviation. No rerun: the probe ran once.
+
+Notes:
+1. Extra calls, labelled '(extra)' in the output, not in the list: three per run, build_design(T, SPEC, exclude=<the spec's flags earn_flag and news_flag> + [col]) for col in audit_flag, boj_day and sq_major. Reason: build_design's exclude replaces the spec's default flags rather than adding to them (inference.py, the excl_cols line above), so the listed calls exclude=[col] drop earn_flag and news_flag; their row counts are above the primary's in every run (rows table above), and the extra calls' are below it. The sentence 'exclude replaces the spec's flags' that the probe prints after each listed call is a fixed string, supported by that line and those counts, not computed by the probe.
+2. The probe was edited once with the file-editing tool after it was written and before its only run: a leftover no-op branch in call()'s print was removed. This is not a rerun.
+3. NODATA is read from the message by grep and sed in each Python command, and OFILT_DATA_DIR is set to it. It was still empty after the probe (C CHECK's tripwires) and is listed above with 0 entries.
+4. 'Skipping there the two calls on the 2022 dates' (A's dev run) is implemented as skipping fit_joint on the 2022 dates, with the two calls that take its result (JointResult.pair and fraction_unpriced), and build_design with target='cc_abn' on the 2022 dates: 4 labelled calls, so A dev attempted 34 of the 38. The JointResult's fields are printed as fit_joint's outcome.
+5. Defaults: where the list leaves an argument open, the probe passes nothing, so the signature's default applies; each CALL label states the defaults in brackets. SPEC = Spec.load() is passed as the spec argument everywhere (each signature's default None loads the same Spec). fit_huber's tol (1e-11) and max_iter (1000) are left at their defaults; the label does not show them. tost_result's sesoi default None is the spec's; the three other tost_result calls pass the configuration's constants.sesoi values (primary, low, high), read from docs/P4_CONFIRM_CONFIG.json. The 2022 window is the configuration's f.confirmatory from and to; the break date for subset_design is its constants.post_break_date.
+6. Frames: the targets are computed once on each joined frame and then restricted to the run's dates (attrs copied, including the 'targets' entry add_targets sets). The confirmation part starts at 2022-01-01, typed in the probe as CONF_FROM; it equals the configuration's f.confirmatory.from, and the confirmation runs have 3057 rows, the rows of the simulator's confirm frame.
+7. Of the 22 exceptions, 8 are calls whose input was None because the call before raised (fit_dk of the fx_x_highrv design, holm, JointResult.pair and fraction_unpriced, each in N confirmation and N 2022); the probe still attempted them, as listed. The other 14: subset_design keeping no row (4 runs) and keeping the dates from 2024-11-05 where there are none (A dev, N 2022), ValueError 'zero-size array to reduction operation maximum which has no identity'; on N, build_design with secondary fx_x_highrv and secondary_family_tests, DesignError 'rv_per_bar undefined (usdjpy_bars <= 0) on some rows' (2 runs each); on N, fit_joint and build_design target='cc_abn' on 2022, DesignError 'no rows left after exclusions and non-missing requirements' (2 runs each).
+8. Reading for P4-4a's kit: subset_design does not handle an empty keep mask; it raises a ValueError from numpy, not a DesignError. So P4Q31's 'no rows' has to be detected before subset_design, as P4Q34's list for P4-4a says.
+9. This report script was edited once with the file-editing tool before its only run: an unused pipeline in the exceptions section was removed, and the trimming of the run line's attrs was moved into awk.
+
+2026-10-11T20:40:19Z
+b0e7327dd3685b376215866375a6e213080426bf

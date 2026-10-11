@@ -12,11 +12,13 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
 | P4-0b Pass 4 opened; P3-8c, P3-9, P4-0a and P4-boot accepted; reports copied | done; accepted by Isaiah 2026-10-08 | `checkpoint: P4-0b`. Report `reports/P4_reports/p4_0b.txt`. |
 | P4-1 the read-only audit of every pre-registered output and rule (P4Q4) | done; accepted by Isaiah 2026-10-09 | Read-only; no commit. Report `reports/P4_reports/p4_1.txt`; the audit `reports/P4_reports/p4_1_audit.md`. |
 | P4-2 P4-0b and P4-1 accepted; P4Q9 to P4Q31; the confirmation configuration; the M2 note | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-2`, made by its second run; the first stopped at b.1 (Decision log). Report `reports/P4_reports/p4_2.txt`. |
-| P4-3 P4-2 accepted; P4Q32 and P4Q33; the full-schema simulator and its tests (T3) | done | `checkpoint: P4-3`. Report `/tmp/p4_3.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4. |
+| P4-3 P4-2 accepted; P4Q32 and P4Q33; the full-schema simulator and its tests (T3) | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-3`, made by its fourth run; the first three stopped at a.1, b.1 and c.1 (Deviations). Report `reports/P4_reports/p4_3.txt`. |
+| P4-4p P4-3 accepted; P4Q34 (P4-4 split); a read-only synthetic probe of the inference calls | done; accepted by Isaiah 2026-10-11 | Read-only; no commit. Report `reports/P4_reports/p4_4p.txt`. |
+| P4-4a P4-4p accepted; P4Q35; the confirmation module's inference rows and their tests | done | `checkpoint: P4-4a`. Report `/tmp/p4_4a.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4b. |
 
 ## Next action
 
-The supervisor reviews P4-3. Then P4-4, the confirmation module and script, synthetic only, and their tests (T1, T2).
+The supervisor reviews P4-4a. Then P4-4b, forecasting and the economic evaluation (O29 to O45, R9), synthetic only, and its tests.
 
 ## Decision log
 
@@ -113,16 +115,36 @@ The supervisor reviews P4-3. Then P4-4, the confirmation module and script, synt
 >   - One read-only script of P4-3 (step c.1) and one test (`test_dev_panel_kinds_and_guard` in `tests/test_p4_sim_full.py`) read the dev panel through `io.load_dev` and the firm events through `io.load_events_firm`, each verified by its hash, for their column names, the columns' order and each column's dtype kind only.
 >   - The test also lets `io.load_dev` register the real targets in the guard's fingerprint registry, as the existing tests that call it do, so that `blind.require_unblinded` then checks the simulator's frames against them.
 >   - No value is printed, compared or computed beyond these. Both are listed in the Disclosure list.
+> - No date gates (Isaiah, 2026-10-11): from P4-3's message version 2 on, a block records the date its first command prints and uses it as the decision date. A records edit is checked before the commit by a date-independent template hash (its result with the placeholder kept), and the supervisor checks the dated result after the commit.
+> - P4-3 accepted (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-4p paste): checkpoint `b0e7327dd3685b376215866375a6e213080426bf`, made by P4-3's fourth run.
+>   - Accepted with it: the builder's reading of test 11 (it replays the module's row-level generator, whose draw order the module states, to check `range_lag1` exactly, and verifies the replay against `gap_resid`), and test 12's check of §8.3's formulas on S1 with Sc1, stronger than §9.3's default S0 with `Scenario()`, under which b and Δ are 0.
+>   - The first three runs and their causes are in Deviations, P4-3. Report `reports/P4_reports/p4_3.txt`: the fourth run's steps, with the third run's report in full, which holds the first two.
+> - P4Q34 (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-4p paste): P4-4 is split into three items, each with its own specification kit, checked by the supervisor before handover, and its own checkpoint.
+>   - P4-4a: the inference rows (O1 to O28, R1 to R8) and the shared pieces: loading the confirmation configuration and pinning it by a test; the joined dev and confirmation frame; P4Q31's contingency rule, with "no rows" detected before `subset_design`; AM-05's Nikkei-proxy filter, a night with no Japan 225 record being ineligible; and the output document's schema for all 71 audit IDs.
+>   - P4-4b: forecasting and the economic evaluation (O29 to O45, R9).
+>   - P4-4c: the run script and the claims (R10 to R26): the end-to-end script, the claim tiers and wording rules, the two-run byte-identity rule, the registry routing, the `io.load_confirm` refusal tests and the static test of the inference-only allowlist.
+>   - Not chosen: P4-4 as one item.
+> - P4-4p accepted (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-4a paste): read-only, no commit. It ran every library call P4-4a makes on two simulator frames (a recovery scenario and `Scenario.not_estimable()`), with `OFILT_DATA_DIR` set to an empty folder and no module of `io` imported. It found three facts that P4Q35 follows: `build_design`'s `exclude` replaces the spec's exclusion flags rather than adding to them; `secondary_family_tests` raises as a whole when one member is not estimable; and `subset_design` with no row raises numpy's `ValueError`, not `DesignError`. Its deviation is in Deviations. Report `reports/P4_reports/p4_4p.txt`.
+> - P4Q35 (Isaiah, 2026-10-11, on the supervisor's recommendation): the confirmation module's inference rows, as `docs/P4_CONFIRM_INF_SPEC.md` specifies them.
+>   - A new module, `ofilt/drift/confirm_inference.py`, computes the 36 inference rows (O1 to O28, R1 to R8) on a dev frame, or on the joined dev and confirmation frames with inference on the confirmation dates, and returns one document with an entry for each of the 71 audit IDs, P4-4b's and P4-4c's left pending. It reads only the configuration, pinned by its SHA-256, and writes no file. No C7-hashed file changes.
+>   - P4Q31's rules are applied by one helper: "no rows" is checked before any subset; design errors, rank deficiency and non-finite results make a row not estimable, with its reason; a not-estimable Holm member enters with p = 1; an undefined ratio fails. The exclusion rows pass the spec's flags with their own column. The four secondary members are fitted one by one. The rows that add regressors report b with and without on the same rows (R8), their columns appended to `build_design`'s output by row. Infinite Fieller endpoints are written as null, so that the document serialises without NaN or infinity.
+>   - Tests: the new file `tests/test_p4_confirm_inference.py`, with exactly the 23 tests the specification lists, on simulator frames only, never labelled real. Their seeds are the spec seed plus 8,100,000 plus k, k below 1,000, disjoint from every earlier block.
+>   - Not chosen: calling `secondary_family_tests` for the family (it cannot apply P4Q31's Holm rule); changing `inference.py` (C7-hashed).
+>   - The specification is version 2. Version 1 (SHA-256 `0605d405be56e901abe1ea4d35102851dfd260bc28c10307629764ef4b76097d`) was never committed: P4-4a's first run stopped at b.2, before any code, because it asked for `usdjpy_ret`'s summary in O6's design, where `fx_asymmetry` replaces `usdjpy_ret` by `e_pos` and `e_neg`. Version 2 gives O6 those two summaries and writes in the builder's eight other readings of that run; its §10 lists the changes.
+> - Resolve and record, for P4-4a (Isaiah, 2026-10-11, on the supervisor's recommendation): where the specification is unclear or cannot be met as written, the builder resolves the point by the reading closest to its purpose and records it in the report, and stops only if the resolution would change what a test asserts, a quantity a row computes, or a rule of the item's message. Whether it becomes standing is decided at P4-4b.
 
 ## Test results
 
 - P4-0b: the suite ran inside this item's checkpoint (`checkpoint: P4-0b`): `Ran 285 tests in 337.073s`, `OK (skipped=6)`. Report `reports/P4_reports/p4_0b.txt`.
 - P4-2: the suite ran inside this item's checkpoint (`checkpoint: P4-2`): `Ran 285 tests in 301.101s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. Report `reports/P4_reports/p4_2.txt`.
-- P4-3: before this record was written, the new file `tests/test_p4_sim_full.py` passed on its own (`Ran 20 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-3`); its result is in the report `/tmp/p4_3.txt`, copied at the next checkpoint. Expected: `Ran 305 tests`, `OK (skipped=6)`.
+- P4-3: the suite ran inside this item's checkpoint (`checkpoint: P4-3`): `Ran 305 tests in 348.129s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. Report `reports/P4_reports/p4_3.txt`.
+- P4-4p: read-only; no suite run.
+- P4-4a: before this record was written, the new file `tests/test_p4_confirm_inference.py` passed on its own (`Ran 23 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4a`); its result is in the report `/tmp/p4_4a.txt`, copied at the next checkpoint. Expected: `Ran 328 tests`, `OK (skipped=6)`.
 
 ## Test changes
 
 - P4-3: one new test file, `tests/test_p4_sim_full.py`, with 20 tests (P4Q32, P4Q33). No existing test changed. The suite grows from 285 to 305 tests.
+- P4-4a: one new test file, `tests/test_p4_confirm_inference.py`, with 23 tests (P4Q35). No existing test changed. The suite grows from 305 to 328 tests.
 
 ## Flags
 
@@ -140,6 +162,8 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-1: read-only; REPO's files read as text; no module of `ofilt` imported; no data file opened; no suite run.
 - P4-2: no script of this item opens a data file or computes on the dev panel; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests; the configuration and the M2 files hold no real-data result (the note's numbers come from its synthetic check, which this item does not run); `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-3: under P4Q33, one read-only script (step c.1, run in P4-3's third run, which stopped on its result, and again in its fourth) and one test (`test_dev_panel_kinds_and_guard`) read the dev panel through `io.load_dev` and the firm events through `io.load_events_firm`, each verified by its hash, for their column names, order and dtype kinds only; the test also lets `io.load_dev` register the real targets in the guard's fingerprint registry. No value printed, compared or computed beyond these. No other script of this item opens a data file. The simulator draws every value from seeded generators and reads no file. The checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and that test. `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-4p: read-only; every Python command ran with `OFILT_DATA_DIR` set to an empty folder, which was still empty at the end; no module of `io` imported and no data file opened; every frame came from the simulator; nothing written in REPO; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-4a: no script of this item opens a data file or computes on the dev panel; the new module reads only the configuration and writes no file; the new test file runs on simulator frames only, never labelled real, with `OFILT_DATA_DIR` set to an empty folder when run on its own; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 
 ## Deviations
 
@@ -150,6 +174,16 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
   - The first run's STOP at b.1 and the rerun under Isaiah's decision: see the Decision log, P4-2 accepted.
   - A deviation in the rerun's step 1: besides the two message files that step names, it did not move the rerun's own files (`/tmp/p4_2_run2*`: the step-0 date capture, written before step 1, and step 1's script and output), which would otherwise have been filed under the first run. The rerun message's list of exceptions was incomplete; the builder's reading kept the two runs' records apart and is accepted.
   - A note: before writing b.2's script, one read-only inline command printed the kit configuration's top-level keys and the shape of three of its sections (Python's json module, under `env -u OFILT_RUN_SEALED` in the venv). It wrote nothing, and it is printed in the report.
+- P4-3 (recorded at P4-4a, from its reports):
+  - Run 1 (message `0568bbec88c8cb8f8eaba9b6d34b11fcb31e5ebadbe8dff8d13842c46159c1bc`) stopped at a.1, its date gate: the message accepted 2026-10-09 and 2026-10-10, and the paste fell on 2026-10-11. The cause was the supervisor's message; it led to the decision on date gates (Decision log).
+  - Run 2 (message `9a79fa80bcbf8edccd18d9c497e9165e017a2968e5422afdbc70d4b6ba5e3d0a`, its dates corrected) stopped at b.1 (`B CHECK: False`): the kit folder `files/pass4/p4_3_kit` did not exist, the two kit files being in `files/pass4` itself. The cause was the supervisor's setup commands, which had not created it.
+  - Run 3 (rerun message `88e046ce5ab29d1e727818fc925d51a5bd9f35a0391b098eb072cdc81bc90e3d`) stopped at c.1 (`C1 CHECK: False`): the dev panel's `n225_bars` has kind f, where the specification's Table D, taken from the chat interface's column types, gave i. Corrected by the specification's version 2 (Decision log, P4Q32).
+  - Run 4 (rerun message `3142b58bfedcabcd32ef223f549da962cb55ddb0ad60fbff74f4cce55f942928`, under P4-3's message version 2, `db97a0ac994940d91c287997c82fba7dec875be61b89995eac02f8f8b23b537b`) made the checkpoint, with no deviation; its notes are accepted with P4-3 (Decision log).
+  - No run changed anything in REPO before it stopped. The builder's handling of the earlier runs' `/tmp` files (step 1 of each rerun, and run 2's own reading where its message was silent) kept each run's records apart and is accepted.
+- P4-4p (recorded at P4-4a, from its report's "deviations and notes"):
+  - A deviation in step c: the builder did not re-read `inference.py`, `targets.py` and `calib.py` within the item, having read them earlier in the same session; they were unchanged since P3-2b (`inference.py` is C7-hashed) and the tree was clean. Accepted.
+  - A note: three extra calls, labelled as such, showed that `exclude` replaces the spec's exclusion flags (Decision log, P4-4p accepted).
+- P4-4a, its first run (message `9de0de9c289504666be3bfaa9a827888e1b4bd34eb12669738aafa947b42f24d`): stopped at b.2 before writing any code, on the specification's version 1 (Decision log, P4Q35). The cause was the supervisor's specification. The run changed nothing in REPO; its report is in the second run's.
 
 ## Disclosure list
 
@@ -163,4 +197,6 @@ For the pre-registration (Pass 5; P4Q8):
 - P32's tier (iii) is not used (P4Q17).
 - Pass 4's computations on the dev panel: P4-3's structural reading under P4Q33 (step c.1's script `/tmp/p4_3_c1.py`, printed in P4-3's report, and the test `test_dev_panel_kinds_and_guard`): the column names, their order and each column's dtype kind, of the dev panel and of the firm events; no value. The kind of `n225_bars` (f, where version 1 of the specification gave i) implies at least one empty value in the dev panel, as the build writes that column; the specification's version 2 follows it.
 - The full-schema simulator's specification `docs/P4_SIM_SPEC.md` (P4Q32), version 2, SHA-256 `972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4`; its version 1, SHA-256 `6b500f4b30aece4be6d375ada094fc5cfde0f43260f32aba7a086f3db38a8e81`, was never committed.
+- The confirmation module's inference specification `docs/P4_CONFIRM_INF_SPEC.md` (P4Q35), version 2, SHA-256 `a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65`; its version 1, SHA-256 `0605d405be56e901abe1ea4d35102851dfd260bc28c10307629764ef4b76097d`, was never committed.
+- P4-4p's probe of the inference calls (report `reports/P4_reports/p4_4p.txt`): simulator frames only; no data file opened.
 - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.
