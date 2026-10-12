@@ -18,11 +18,12 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
 | P4-4b1 P4-4a accepted; P4Q36; the confirmation module's forecasting rows and their tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4b1`, made by its first run. Report `reports/P4_reports/p4_4b1.txt`. |
 | P4-4b2 P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4b2`, made by its first run. Report `reports/P4_reports/p4_4b2.txt`. |
 | P4-boot2 a new builder session; the standing prompt found by its hash; read-only orientation after P4-4b2 | done; accepted by Isaiah 2026-10-11 | Read-only; no commit. Report `reports/P4_reports/p4_boot2.txt`. |
-| P4-4c1 P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests | done | `checkpoint: P4-4c1`. Report `/tmp/p4_4c1.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4c2. |
+| P4-4c1 P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4c1`, made by its first run. Report `reports/P4_reports/p4_4c1.txt`. |
+| P4-4c2 P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests | done | `checkpoint: P4-4c2`. Report `/tmp/p4_4c2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-5. |
 
 ## Next action
 
-The supervisor reviews P4-4c1. Then P4-4c2, the run script (the whole document, the two-run identity rule, the registry routing and the `io.load_confirm` refusal tests), synthetic only, and its tests.
+The supervisor reviews P4-4c2. Then P4-5, the synthetic dry run against criteria stated in its message (P4Q28, P4Q29), with the script and the configuration frozen by hash.
 
 ## Decision log
 
@@ -166,6 +167,13 @@ The supervisor reviews P4-4c1. Then P4-4c2, the run script (the whole document, 
 >   - A new module, `ofilt/drift/confirm_claims.py`, writes the rule rows from the document: the claims of tiers (i) and (ii) (P4Q16, P4Q18) and the equivalence wording (P4Q19) are computed from the rows already filled and made only when licensed, that is on the confirmation panel itself; on dev and synthetic documents their arithmetic is reported and never claimed; tier (iii) is not claimed (P4Q17) and reports its inputs, with the a2 gap between the raw and the abnormal target on O17's rows; the rules fixed before Pass 4 (D2.6, D3.2 to D3.5, D4.3, D4.3b, the seeds, P13) are recorded with their outcome and source.
 >   - Tests: the new file `tests/test_p4_confirm_claims.py`, with exactly the 15 tests the specification lists, on one synthetic document and copies of it with hand-set values; seeds the spec seed plus 8,400,000 plus k, k below 1,000.
 >   - Not chosen: P4-4c as one item; the allowlist inside `schema.py` (an existing file, whose `PRE_OPEN_ROBUSTNESS` is a different set: P4-boot2's note N4).
+> - P4-4c1 accepted (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-4c2 paste): checkpoint `b4f3066e9c80745c26cdecce1cf3b5800d0398e9`, made by its first run (message `5a3c6d1f4e09783e8b2c891382a020d9041500354b37f10033bcd187ddddd211`), every verdict True, suite `Ran 374 tests`, `OK (skipped=6)`, no deviation.
+>   - Accepted with it: its twelve readings, among them `rows_from`'s optional spec keyword, R12's gap made not estimable within the row on a non-finite value (R12 stays fixed), the strict mode check of `claim_rows`, and the assertions beyond the letter of the specification's tests, each within its test's purpose.
+> - P4Q39 (Isaiah, 2026-10-11, on the supervisor's recommendation): the run script and the whole document, as `docs/P4_CONFIRM_RUN_SPEC.md` specifies them.
+>   - A new module, `ofilt/drift/confirm_run.py`, assembles the document from the four confirmation modules, in one order, and refuses a document that is incomplete; it writes three files: `document.json` (the document), `manifest.json` (deterministic: the specifications, configuration, cost inputs and analysis spec by SHA-256, the mode and provenance, and the meaning of the document's `spec_version`, P4-boot2's note N8) and `runtime.json` (the times and the registry's run ids). Two runs on the same inputs give byte-identical `document.json` and `manifest.json` (P4Q5).
+>   - A new script, `tools/p4_confirm_run.py`, runs it on synthetic frames (`--source synthetic`), on the dev panel (`--source dev`, which refuses unless `OFILT_P4_DEV_RUN=P4-6` is set: the dev run's sanction, used only at P4-6), and refuses `--source confirm` outright, calling nothing (P4Q3, P13(c)). The forecasting calls route their registry lines by provenance (P4Q6).
+>   - Tests: the new file `tests/test_p4_confirm_run.py`, with exactly the 12 tests the specification lists, among them the refusal of `io.load_confirm` with ACCESS_LOG and the data folder patched to temporary paths (P4Q3), on simulator frames only; seeds the spec seed plus 8,600,000 plus k, k below 1,000.
+>   - Not chosen: a run id or time inside `document.json`; a factories argument on the script (the tests replace M7 through the registry of models instead).
 
 ## Test results
 
@@ -177,7 +185,8 @@ The supervisor reviews P4-4c1. Then P4-4c2, the run script (the whole document, 
 - P4-4b1: the suite ran inside this item's checkpoint (`checkpoint: P4-4b1`): `Ran 345 tests in 1291.179s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 372.8 s. Report `reports/P4_reports/p4_4b1.txt`.
 - P4-4b2: the suite ran inside this item's checkpoint (`checkpoint: P4-4b2`): `Ran 359 tests in 1212.043s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 12.3 s. Report `reports/P4_reports/p4_4b2.txt`.
 - P4-boot2: read-only; no suite run.
-- P4-4c1: before this record was written, the new file `tests/test_p4_confirm_claims.py` passed on its own (`Ran 15 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4c1`); its result is in the report `/tmp/p4_4c1.txt`, copied at the next checkpoint. Expected: `Ran 374 tests`, `OK (skipped=6)`.
+- P4-4c1: the suite ran inside this item's checkpoint (`checkpoint: P4-4c1`): `Ran 374 tests in 1242.123s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 8.3 s. Report `reports/P4_reports/p4_4c1.txt`.
+- P4-4c2: before this record was written, the new file `tests/test_p4_confirm_run.py` passed on its own (`Ran 12 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4c2`); its result is in the report `/tmp/p4_4c2.txt`, copied at the next checkpoint. Expected: `Ran 386 tests`, `OK (skipped=6)`.
 
 ## Test changes
 
@@ -186,6 +195,7 @@ The supervisor reviews P4-4c1. Then P4-4c2, the run script (the whole document, 
 - P4-4b1: one new test file, `tests/test_p4_confirm_forecast.py`, with 17 tests (P4Q36). No existing test changed. The suite grows from 328 to 345 tests.
 - P4-4b2: one new test file, `tests/test_p4_confirm_economic.py`, with 14 tests (P4Q37). No existing test changed. The suite grows from 345 to 359 tests.
 - P4-4c1: one new test file, `tests/test_p4_confirm_claims.py`, with 15 tests (P4Q38). No existing test changed. The suite grows from 359 to 374 tests.
+- P4-4c2: one new test file, `tests/test_p4_confirm_run.py`, with 12 tests (P4Q39). No existing test changed. The suite grows from 374 to 386 tests.
 
 ## Flags
 
@@ -209,6 +219,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-4b2: no script of this item opens a data file or computes on the dev panel; the new module reads only the configuration and the cost inputs, each pinned by its SHA-256, and writes no file; its tests run on simulator frames only, never labelled real, with the run registry patched to a temporary folder and `OFILT_DATA_DIR` set to an empty folder when run on their own; `RUN_REGISTRY.jsonl` unchanged; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-boot2: read-only; no module of `ofilt` imported, no test run, no data file opened, listed or hashed; files read as text and through `git`; only paths starting `/tmp/p4_boot2` written; `OFILT_RUN_SEALED` unset in every Python command.
 - P4-4c1: no script of this item opens a data file or computes on the dev panel; the new modules read only the configuration, through `confirm_inference.load_config`, and write no file; the tests run on simulator frames only, never labelled real, with the run registry patched to a temporary folder and `OFILT_DATA_DIR` set to an empty folder when run on their own; `RUN_REGISTRY.jsonl` unchanged; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-4c2: no script of this item opens a data file or computes on the dev panel; the script's dev branch is written and tested only for its refusal, never run; `io.load_confirm` is called only in its refusal test, with ACCESS_LOG and the data folder patched to temporary paths, and refuses; every other test runs on simulator frames only, never labelled real, with the run registry patched to a temporary folder; `RUN_REGISTRY.jsonl` unchanged and no ACCESS_LOG in REPO; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 
 ## Deviations
 
@@ -257,4 +268,5 @@ For the pre-registration (Pass 5; P4Q8):
 - The confirmation module's forecasting specification `docs/P4_CONFIRM_FC_SPEC.md` (P4Q36), version 1, SHA-256 `a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6`.
 - The confirmation module's economic-evaluation specification `docs/P4_CONFIRM_ECON_SPEC.md` (P4Q37), version 1, SHA-256 `42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785`.
 - The claim and rule rows' specification `docs/P4_CONFIRM_CLAIMS_SPEC.md` (P4Q38), version 1, SHA-256 `b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2`.
+- The run script's specification `docs/P4_CONFIRM_RUN_SPEC.md` (P4Q39), version 1, SHA-256 `4fe3712f0f3ffdcc6b87b6443e383c1d840c3d5d7fdcce210c5bf6322d916ab3`.
 - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.

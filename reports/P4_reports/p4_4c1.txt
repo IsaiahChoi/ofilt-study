@@ -1,0 +1,2812 @@
+2026-10-12T01:59:46Z
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+5a3c6d1f4e09783e8b2c891382a020d9041500354b37f10033bcd187ddddd211  /tmp/p4_4c1_msg.txt
+date +%F (a.1, captured by tee in /tmp/p4_4c1_date.out): 2026-10-11
+
+== a.2: the state check
+--- /tmp/p4_4c1_a2.py (sha256 e975ce616a7926cf8381d15bb922bb97f812bcce7f2baafe802c5ae59b82d901)
+"""P4-4c1 a.2: read-only state check (verdict line `A CHECK`).
+
+Imports no module of ofilt; reads files as bytes and calls git. Expected values are read from /tmp/p4_4c1_msg.txt,
+list "Expected values". Argument 1: the number of OFILT_RUN_SEALED= lines in the session's environment, counted by the
+calling shell before `env -u` (this process runs with the variable removed in any case).
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+PROMPT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+MSG = "/tmp/p4_4c1_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def expected_values():
+    lines = open(MSG, encoding="utf-8").read().split("\n")
+    start = lines.index("## Expected values")
+    vals, counts = {}, {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+            vals[m.group(1)] = m.group(2)
+    bad = [k for k, c in counts.items() if c != 1]
+    check(not bad, f"each label begins exactly one line ({len(vals)} labels; repeated: {bad})")
+    return vals
+
+
+def sha(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+E = expected_values()
+
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+check(head == E["HEAD_BEFORE"], "HEAD == HEAD_BEFORE")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+print(f"parents: {parents}")
+check(parents == [E["PARENT_BEFORE"]], "HEAD's only parent == PARENT_BEFORE")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+print(f"git status --porcelain --untracked-files=all: {status!r}")
+check(status == "", "working tree clean")
+
+tags = gtext("tag", "-l").split("\n")
+print(f"git tag -l: {tags}")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), "tags == TAG_LIST")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+print(f"BLIND_FIT_LOG: sha256 {hashlib.sha256(b).hexdigest()}; lines {len(b.decode('utf-8').splitlines())}")
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"], "BLIND_FIT_LOG sha256")
+check(len(b.decode("utf-8").splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+print(f"RUN_REGISTRY.jsonl: {rr} bytes")
+check(rr == int(E["RUN_REGISTRY_BYTES"]), "RUN_REGISTRY.jsonl bytes")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.relpath(os.path.join(root, n), REPO) for n in dirs + names if n.startswith("ACCESS_LOG")]
+print(f"names starting ACCESS_LOG outside .git: {access}")
+check(access == [], "no ACCESS_LOG name")
+session = sys.argv[1] if len(sys.argv) > 1 else None
+print(f"OFILT_RUN_SEALED= lines in the session's environment: {session}; in this process: "
+      f"{'OFILT_RUN_SEALED' in os.environ}")
+check(session == "0" and "OFILT_RUN_SEALED" not in os.environ, "OFILT_RUN_SEALED absent")
+
+print(f"standing prompt: {sha(PROMPT)}")
+check(sha(PROMPT) == E["PROMPT_SHA256"], "standing prompt sha256 == PROMPT_SHA256")
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"), ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("PASS4_STATUS.md", "STATUS_BEFORE_SHA256"), ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"),
+    ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"), ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"),
+    ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"), ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"),
+    ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"), ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"), ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"),
+    ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"), ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"),
+    ("ofilt/drift/confirm_economic.py", "ECON_MODULE_SHA256"), ("tests/test_p4_confirm_economic.py", "ECON_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"),
+]
+for path, name in pinned:
+    h = sha(os.path.join(REPO, path))
+    print(f"{path}: {h}")
+    check(h == E[name], f"{path} == {name}")
+
+on_disk = sorted(os.listdir(os.path.join(REPO, "reports", "P4_reports")))
+print(f"reports/P4_reports/: {on_disk}")
+check(on_disk == sorted(E["REPORTS_BEFORE"].split(" ")), "reports/P4_reports/ == REPORTS_BEFORE")
+present = [p for p in E["NEW_FILES"].split(" ") if os.path.lexists(os.path.join(REPO, p))]
+print(f"files of NEW_FILES present: {present}")
+check(present == [], "no file of NEW_FILES exists")
+for name in ("NODATA", "REGDIR"):
+    d = E[name]
+    ok = os.path.isdir(d) and os.listdir(d) == []
+    print(f"{name} {d}: exists and empty: {ok}")
+    check(ok, f"{name} exists and is empty")
+
+print(f"failed checks: {len(fails)}")
+print(f"A CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c1_a2.out (sha256 2f3939a9a54c19d77c59e4f96f8c4e55a8ab73ff4af42db4494533d5c555e51b)
+ok   each label begins exactly one line (55 labels; repeated: [])
+HEAD: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+ok   HEAD == HEAD_BEFORE
+parents: ['ff318775ef05b8266b6d286bd78c4ee0372d2ef0']
+ok   HEAD's only parent == PARENT_BEFORE
+git status --porcelain --untracked-files=all: ''
+ok   working tree clean
+git tag -l: ['pass1-final', 'spec-dev-v1']
+ok   tags == TAG_LIST
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256
+ok   BLIND_FIT_LOG lines
+RUN_REGISTRY.jsonl: 0 bytes
+ok   RUN_REGISTRY.jsonl bytes
+names starting ACCESS_LOG outside .git: []
+ok   no ACCESS_LOG name
+OFILT_RUN_SEALED= lines in the session's environment: 0; in this process: False
+ok   OFILT_RUN_SEALED absent
+standing prompt: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+ok   standing prompt sha256 == PROMPT_SHA256
+spec/analysis_spec_dev_v1.yaml: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+ok   spec/analysis_spec_dev_v1.yaml == SPEC_SHA256
+PASS3_STATUS.md: b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+ok   PASS3_STATUS.md == PASS3_STATUS_SHA256
+PASS4_STATUS.md: 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264
+ok   PASS4_STATUS.md == STATUS_BEFORE_SHA256
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+ok   docs/P4_CONFIRM_CONFIG.json == CONFIG_SHA256
+docs/P3_COST_INPUTS.json: a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6
+ok   docs/P3_COST_INPUTS.json == COST_INPUTS_SHA256
+ofilt/drift/sim_full.py: ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+ok   ofilt/drift/sim_full.py == SIM_MODULE_SHA256
+tests/test_p4_sim_full.py: 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+ok   tests/test_p4_sim_full.py == SIM_TESTS_SHA256
+docs/P4_SIM_SPEC.md: 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+ok   docs/P4_SIM_SPEC.md == SIM_SPEC_SHA256
+ofilt/drift/confirm_inference.py: 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1
+ok   ofilt/drift/confirm_inference.py == INF_MODULE_SHA256
+tests/test_p4_confirm_inference.py: bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026
+ok   tests/test_p4_confirm_inference.py == INF_TESTS_SHA256
+docs/P4_CONFIRM_INF_SPEC.md: a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65
+ok   docs/P4_CONFIRM_INF_SPEC.md == INF_SPEC_SHA256
+ofilt/drift/confirm_forecast.py: b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff
+ok   ofilt/drift/confirm_forecast.py == FC_MODULE_SHA256
+tests/test_p4_confirm_forecast.py: 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a
+ok   tests/test_p4_confirm_forecast.py == FC_TESTS_SHA256
+docs/P4_CONFIRM_FC_SPEC.md: a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6
+ok   docs/P4_CONFIRM_FC_SPEC.md == FC_SPEC_SHA256
+ofilt/drift/confirm_economic.py: caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73
+ok   ofilt/drift/confirm_economic.py == ECON_MODULE_SHA256
+tests/test_p4_confirm_economic.py: 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da
+ok   tests/test_p4_confirm_economic.py == ECON_TESTS_SHA256
+docs/P4_CONFIRM_ECON_SPEC.md: 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+ok   docs/P4_CONFIRM_ECON_SPEC.md == ECON_SPEC_SHA256
+reports/P4_reports/: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4p.txt', 'p4_boot.txt']
+ok   reports/P4_reports/ == REPORTS_BEFORE
+files of NEW_FILES present: []
+ok   no file of NEW_FILES exists
+NODATA /tmp/p4_4c1_nodata: exists and empty: True
+ok   NODATA exists and is empty
+REGDIR /tmp/p4_4c1_registry: exists and empty: True
+ok   REGDIR exists and is empty
+failed checks: 0
+A CHECK: True
+exit 0
+
+== b.1: the kit
+--- /tmp/p4_4c1_b1.py (sha256 2dc8f00725af3d3ede6dcf2c90b0a0b9dc0429e67929567332889260ab082133)
+"""P4-4c1 b.1: the kit (verdict line `B CHECK`). Reads files as bytes; imports no module of ofilt."""
+import hashlib
+import os
+import re
+import sys
+
+KIT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c1_kit")
+MSG = "/tmp/p4_4c1_msg.txt"
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+fails = []
+names = sorted(os.listdir(KIT))          # hidden files included
+print(f"KIT {KIT}: {names}")
+if names != sorted(E["KIT_FILES"].split(" ")):
+    fails.append("KIT holds exactly KIT_FILES")
+for name, key in (("p4_4c1_P4_CONFIRM_CLAIMS_SPEC.md", "KIT_SPEC_SHA256"), ("p4_4c1_STATUS_EDITS.txt", "KIT_EDITS_SHA256")):
+    p = os.path.join(KIT, name)
+    if not os.path.isfile(p):
+        fails.append(f"{name} missing")
+        continue
+    data = open(p, "rb").read()
+    h = hashlib.sha256(data).hexdigest()
+    print(f"{name}: sha256 {h}; bytes {len(data)}; lines {len(data.decode('utf-8').splitlines())}; == {key}: {h == E[key]}")
+    if h != E[key]:
+        fails.append(f"{name} sha256")
+print(f"failed checks: {len(fails)} {fails if fails else ''}".rstrip())
+print(f"B CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c1_b1.out (sha256 a43a03d98cb1e54740a619973ecf16934580c58f8f9c0ad40f8dc0b2c9b320ff)
+KIT /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4c1_kit: ['p4_4c1_P4_CONFIRM_CLAIMS_SPEC.md', 'p4_4c1_STATUS_EDITS.txt']
+p4_4c1_P4_CONFIRM_CLAIMS_SPEC.md: sha256 b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2; bytes 16972; lines 94; == KIT_SPEC_SHA256: True
+p4_4c1_STATUS_EDITS.txt: sha256 043250f65b9a800d87cca656abaf9c08243b3248dec672863fb91ebf7f97d44e; bytes 13419; lines 79; == KIT_EDITS_SHA256: True
+failed checks: 0
+B CHECK: True
+exit 0
+
+== c.2: the probe (synthetic; registry patched to REGDIR; OFILT_DATA_DIR = NODATA)
+--- /tmp/p4_4c1_probe.py (sha256 74a357f8899235f06300b1f3f83c8303c6c03b3d456c03f4e9a46f4ba7a4992d)
+"""P4-4c1 c.2: the probe (no verdict line; it asserts nothing). Synthetic data only; run under NODATA.
+
+Builds the document D1 as docs/P4_CONFIRM_CLAIMS_SPEC.md §5.1 says (seed + 8,400,001; SHORT dev calendar; 5706's
+open, close and prev_close scaled by 0.1; P4-4a's infer; run_calls with the zero-forecast M7 stand-in of P4-4b2's tests;
+P4-4b1's and P4-4b2's fill) and prints the entries, statuses, configuration sections and spec values that the claim
+rows read, with the wall time of each part. The run registry is patched to REGDIR before any walk_forward call.
+"""
+import json
+import os
+import sys
+import time
+from pathlib import Path
+from unittest import mock
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+REGDIR = Path("/tmp/p4_4c1_registry")
+sys.path.insert(0, str(REPO))
+import numpy as np  # noqa: E402
+
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import confirm_inference as CI  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+print(f"OFILT_DATA_DIR = {os.environ.get('OFILT_DATA_DIR')}; contents: {sorted(os.listdir(os.environ['OFILT_DATA_DIR']))}")
+patches = [mock.patch.object(RG, "SYNTHETIC_PATH", REGDIR / "synthetic.jsonl"),
+           mock.patch.object(RG, "REAL_PATH", REGDIR / "real.jsonl")]
+for p in patches:
+    p.start()
+print(f"registry patched: SYNTHETIC_PATH {RG.SYNTHETIC_PATH}; REAL_PATH {RG.REAL_PATH}")
+
+
+class ZeroM7(FC.ForecastModel):
+    """The M7 stand-in of P4-4b2's tests: no feature, a zero forecast, no noise column."""
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def scaled(df):
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def timed(label, fn):
+    t0 = time.perf_counter()
+    r = fn()
+    print(f"[time] {label}: {time.perf_counter() - t0:.2f} s")
+    return r
+
+
+SPEC = Spec.load()
+seed = SPEC.seed + 8_400_001
+print(f"seed: {seed}")
+sa = SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5)
+o = timed("simulate", lambda: SF.simulate(seed, sa, dev_dates=SF.dev_calendar()[-900:]))
+dev, events, conf = scaled(o.dev), o.events, scaled(o.confirm)
+doc = timed("infer", lambda: CI.infer(dev, events, conf))
+calls = timed("run_calls", lambda: CF.run_calls(dev, events, conf, spec=SPEC, factories={"M7": ZeroM7}))
+doc1 = timed("forecast_rows + fill", lambda: CF.fill(doc, CF.forecast_rows(calls)))
+D1 = timed("economic_row + fill", lambda: CE.fill(doc1, CE.economic_row(calls, dev, events, conf, spec=SPEC)))
+
+print(f"\nD1 top level: { {k: D1[k] for k in D1 if k != 'rows'} }")
+for rid in ("R4", "O1", "O2", "O10", "O11", "O17", "O18", "O20", "O21", "O36"):
+    e = D1["rows"][rid]
+    print(f"\n--- {rid}: keys {list(e)}")
+    print(json.dumps(e, indent=1, ensure_ascii=False))
+
+print("\n--- statuses of the 71 entries")
+for rid, e in D1["rows"].items():
+    print(f"{rid} {e['item']} {e['status']}" + (f" ({e['reason']})" if e["reason"] else ""))
+
+cfg = CI.load_config()
+for sec in ("claims", "constants", "not_examined_on_dev", "forward_holdout", "dry_run"):
+    print(f"\n--- configuration: {sec}")
+    print(json.dumps(cfg[sec], indent=1, ensure_ascii=False))
+print(f"\nspec inference.reference: {SPEC.value('inference.reference')!r}")
+print(f"spec equivalence.viability: {SPEC.value('equivalence.viability')!r}")
+print(f"spec alpha: {SPEC.alpha!r}; spec seed: {SPEC.seed!r}")
+
+for p in patches:
+    p.stop()
+syn = REGDIR / "synthetic.jsonl"
+print(f"\nregistry lines written under REGDIR: synthetic {sum(1 for _ in open(syn)) if syn.exists() else 0}; "
+      f"real file exists: {(REGDIR / 'real.jsonl').exists()}")
+print(f"NODATA contents at the end: {sorted(os.listdir(os.environ['OFILT_DATA_DIR']))}")
+--- /tmp/p4_4c1_probe.out (sha256 96aa680c92c1947612d81d5ecbcafbb56f7b131cd1dec4cb0da7e67a4848d492)
+OFILT_DATA_DIR = /tmp/p4_4c1_nodata; contents: []
+registry patched: SYNTHETIC_PATH /tmp/p4_4c1_registry/synthetic.jsonl; REAL_PATH /tmp/p4_4c1_registry/real.jsonl
+seed: 28661002
+[time] simulate: 0.22 s
+[time] infer: 2.35 s
+[time] run_calls: 3.39 s
+[time] forecast_rows + fill: 1.04 s
+[time] economic_row + fill: 0.26 s
+
+D1 top level: {'module': 'confirm_inference', 'spec_version': 1, 'config_sha256': '5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd', 'mode': 'confirmation', 'provenance': 'synthetic', 'dates': {'first': '2022-01-04', 'last': '2026-03-05', 'n': 1019}}
+
+--- R4: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "R4",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "alpha": 0.05,
+  "p": 5.660396080519193e-55,
+  "reject": true
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O1: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O1",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "param": "usdjpy_ret",
+  "fit": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  }
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O2: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O2",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "param": "eurusd_ret",
+  "fit": {
+   "estimate": 0.6900969583163177,
+   "se": 0.09500385138697345,
+   "z": 7.263884024084322,
+   "p": 3.7613053338301833e-13,
+   "ci": [
+    0.5038928312052541,
+    0.8763010854273813
+   ]
+  }
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O10: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O10",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "p": 0.9980710782599186,
+  "p_lower": 5.1709863732154875e-177,
+  "p_upper": 0.9980710782599186,
+  "equivalent": false,
+  "ci": [
+   0.9498201511674569,
+   1.1734681314312978
+  ],
+  "sesoi": 0.8652,
+  "alpha": 0.05
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O11: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O11",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "low": {
+   "p": 1.0,
+   "p_lower": 1.1186669121456663e-62,
+   "p_upper": 1.0,
+   "equivalent": false,
+   "ci": [
+    0.9498201511674569,
+    1.1734681314312978
+   ],
+   "sesoi": 0.07152,
+   "alpha": 0.05
+  },
+  "high": {
+   "p": 1.4437555329083975e-131,
+   "p_lower": 0.0,
+   "p_upper": 1.4437555329083975e-131,
+   "equivalent": true,
+   "ci": [
+    0.9498201511674569,
+    1.1734681314312978
+   ],
+   "sesoi": 2.719,
+   "alpha": 0.05
+  }
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O17: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O17",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "name": "raw_target",
+  "primary": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  },
+  "with": {
+   "estimate": 1.0166533082209814,
+   "se": 0.0895839229631463,
+   "z": 11.348613396169533,
+   "p": 7.534809803238223e-30,
+   "ci": [
+    0.841072045619404,
+    1.192234570822559
+   ]
+  },
+  "without": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  },
+  "dropped_rows": 0,
+  "dropped_dates": 0
+ },
+ "reason": null,
+ "n_rows": 2888,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- O18: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O18",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "name": "copx_to_fcx",
+  "primary": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  },
+  "with": {
+   "estimate": 1.0835088200414962,
+   "se": 0.07067871915914824,
+   "z": 15.330057376984218,
+   "p": 4.815610200509456e-53,
+   "ci": [
+    0.9449810760161446,
+    1.2220365640668478
+   ]
+  },
+  "without": {
+   "estimate": 1.060516637979272,
+   "se": 0.06888317662297909,
+   "z": 15.395872983382258,
+   "p": 1.7445408605426129e-53,
+   "ci": [
+    0.9255080926575217,
+    1.1955251833010225
+   ]
+  },
+  "dropped_rows": 12,
+  "dropped_dates": 4
+ },
+ "reason": null,
+ "n_rows": 2876,
+ "n_dates": 1009,
+ "lag": 6
+}
+
+--- O20: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O20",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "name": "xau_control",
+  "primary": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  },
+  "with": {
+   "estimate": 1.06287921263043,
+   "se": 0.06851269311176901,
+   "z": 15.51361016996499,
+   "p": 2.806457389724281e-54,
+   "ci": [
+    0.9285968016475173,
+    1.1971616236133427
+   ]
+  },
+  "without": {
+   "estimate": 1.060548162354375,
+   "se": 0.06835459408105861,
+   "z": 15.515389661984083,
+   "p": 2.729726112267082e-54,
+   "ci": [
+    0.9265756197776455,
+    1.1945207049311048
+   ]
+  },
+  "dropped_rows": 17,
+  "dropped_dates": 6
+ },
+ "reason": null,
+ "n_rows": 2871,
+ "n_dates": 1007,
+ "lag": 6
+}
+
+--- O21: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O21",
+ "item": "P4-4a",
+ "status": "estimated",
+ "values": {
+  "name": "nikkei_proxy_p42",
+  "primary": {
+   "estimate": 1.0616441412993773,
+   "se": 0.06798415877233532,
+   "z": 15.616051746033966,
+   "p": 5.660396080519193e-55,
+   "ci": [
+    0.9283976385863473,
+    1.1948906440124074
+   ]
+  },
+  "with": {
+   "estimate": 1.1194969246649675,
+   "se": 0.07685071260751111,
+   "z": 14.567163877613178,
+   "p": 4.5436617091677446e-48,
+   "ci": [
+    0.9688722957680075,
+    1.2701215535619275
+   ]
+  },
+  "without": {
+   "estimate": 1.0847680354262534,
+   "se": 0.06787708214270269,
+   "z": 15.981359262698867,
+   "p": 1.7234640472991952e-57,
+   "ci": [
+    0.9517313990508893,
+    1.2178046718016176
+   ]
+  },
+  "dropped_rows": 115,
+  "dropped_dates": 40,
+  "eligible_dates": 979
+ },
+ "reason": null,
+ "n_rows": 2773,
+ "n_dates": 973,
+ "lag": 6
+}
+
+--- O36: keys ['id', 'item', 'status', 'values', 'reason', 'n_rows', 'n_dates', 'lag']
+{
+ "id": "O36",
+ "item": "P4-4b",
+ "status": "estimated",
+ "values": {
+  "test": "clark_west",
+  "unrestricted": "M3",
+  "restricted": "M2",
+  "mean": 4.601208463517572e-05,
+  "se": 3.885248955508134e-06,
+  "stat": 11.842763529977711,
+  "lrv": 1.5291396519078643e-08,
+  "lag": 6,
+  "T": 1013,
+  "p": 1.172966708228815e-32,
+  "sided": "one",
+  "alpha": 0.05,
+  "reject": true,
+  "n_rows": 2913,
+  "mspe_restricted": 0.00020864391171493304,
+  "mspe_unrestricted": 0.00018504232024037996,
+  "adjustment": 2.2410493160622647e-05,
+  "c_cw_cal": 1.411608406163672,
+  "reject_calibrated": true,
+  "decision_reference": "calibrated",
+  "exploratory": false
+ },
+ "reason": null,
+ "n_rows": 2913,
+ "n_dates": 1013,
+ "lag": 6
+}
+
+--- statuses of the 71 entries
+O1 P4-4a estimated
+R1 P4-4a fixed
+R2 P4-4a estimated
+R3 P4-4a fixed
+R4 P4-4a estimated
+R5 P4-4a fixed
+O2 P4-4a estimated
+O3 P4-4a estimated
+O4 P4-4a estimated
+O5 P4-4a estimated
+O6 P4-4a estimated
+R6 P4-4a estimated
+O7 P4-4a estimated
+O8 P4-4a fixed
+O9 P4-4a estimated
+O10 P4-4a estimated
+O11 P4-4a estimated
+O12 P4-4a estimated
+O13 P4-4a estimated
+O14 P4-4a estimated
+O15 P4-4a estimated
+O16 P4-4a estimated
+O17 P4-4a estimated
+O18 P4-4a estimated
+O19 P4-4a estimated
+O20 P4-4a estimated
+O21 P4-4a estimated
+O22 P4-4a estimated
+O23 P4-4a estimated
+O24 P4-4a estimated
+O25 P4-4a estimated
+O26 P4-4a estimated
+O27 P4-4a estimated
+O28 P4-4a estimated
+R7 P4-4a estimated
+R8 P4-4a fixed
+O29 P4-4b estimated
+O30 P4-4b estimated
+O31 P4-4b estimated
+O32 P4-4b estimated
+O33 P4-4b estimated
+O34 P4-4b estimated
+O35 P4-4b estimated
+R9 P4-4b fixed
+O36 P4-4b estimated
+O37 P4-4b estimated
+O38 P4-4b estimated
+O39 P4-4b estimated
+O40 P4-4b estimated
+O41 P4-4b estimated
+O42 P4-4b estimated
+O43 P4-4b estimated
+O44 P4-4b estimated
+O45 P4-4b estimated
+R10 P4-4c pending
+R11 P4-4c pending
+R12 P4-4c pending
+R13 P4-4c pending
+R14 P4-4c pending
+R15 P4-4c pending
+R16 P4-4c pending
+R17 P4-4c pending
+R18 P4-4c pending
+R19 P4-4c pending
+R20 P4-4c pending
+R21 P4-4c pending
+R22 P4-4c pending
+R23 P4-4c pending
+R24 P4-4c pending
+R25 P4-4c pending
+R26 P4-4c pending
+
+--- configuration: claims
+{
+ "tier_i": {
+  "wording": "overnight USD/JPY predicts session drift",
+  "requires": "H1 rejected (R4)",
+  "decision": "P4Q18"
+ },
+ "tier_ii": {
+  "wording": "the exposure channel",
+  "requires": "AM-05's criterion on the eligible confirmation nights",
+  "condition_3": "signed: b_with / b_without >= 0.5 on point estimates; it fails if the two differ in sign, or if b_without is zero or not finite",
+  "decision": "P4Q16"
+ },
+ "tier_iii": {
+  "claimed": false,
+  "report_without_tier_reading": [
+   "H3: a2-hat, its DK SE and two-sided p",
+   "copx_to_fcx, with and without the swap on the same rows",
+   "xau_control, with and without XAU",
+   "raw_target, with the gap a2-hat(raw) minus a2-hat(abn)"
+  ],
+  "a2_reading": "a2 is the session drift on EUR/USD conditional on usdjpy_ret, SPY and COPX; its sign is not attributed to the metals channel (docs/P4_M2_note.md, Propositions 1, 2 and 5)",
+  "decision": "P4Q17"
+ },
+ "equivalence": {
+  "wording": "no drift exploitable net of costs",
+  "when": "TOST declares equivalence at the primary SESOI",
+  "beside": "whether TOST also declares it at the low and at the high SESOI",
+  "decision": "P4Q19"
+ },
+ "null_h1": {
+  "rule": "a null H1 is read against MDE80, never as no effect; the sentences of P23 and PLAN 1.4 on full pricing are not used",
+  "decision": "P4Q19"
+ },
+ "reading_of_b": "qualified in the pre-registration (flag F4-3; docs/P4_M2_note.md, Proposition 4)"
+}
+
+--- configuration: constants
+{
+ "spec_seed": 20261001,
+ "c_cw_cal": 1.411608406163672,
+ "c_cw_rule": "the primary forecast comparison (Clark-West, M3 against M2, one-sided) rejects if and only if its statistic is strictly greater than c_cw_cal (AM-09); a helper applies it to the statistic of fctests.clark_west",
+ "sesoi": {
+  "primary": 0.8652,
+  "low": 0.07152,
+  "high": 2.719
+ },
+ "mde80": 0.2471,
+ "post_break_date": "2024-11-05"
+}
+
+--- configuration: not_examined_on_dev
+{
+ "items": [
+  "the D4.3 window deviations"
+ ],
+ "decision": "P4Q26"
+}
+
+--- configuration: forward_holdout
+{
+ "rule": "what it evaluates is fixed in the pre-registration (Pass 5)",
+ "decision": "P4Q30"
+}
+
+--- configuration: dry_run
+{
+ "recovery": {
+  "rule": "P4Q5's criteria plus numeric tolerances for b-hat and b_post against the known values, stated in the dry-run item's message before the run",
+  "decision": "P4Q28"
+ },
+ "seeds": {
+  "rule": "the spec seed plus a new offset block, disjoint from the B7, B7b, C7 and sealed-run blocks (D4.5's pattern); the offset is set in the dry-run item",
+  "decision": "P4Q29"
+ }
+}
+
+spec inference.reference: 'normal'
+spec equivalence.viability: 'viable (D2.6, P3-5): under dk_normal, P(equivalence | b = 0) = 1.0000 at the primary SESOI, and the rate at b = +SESOI is 0.0592; low and high SESOI 0.07152 and 2.719 reported'
+spec alpha: 0.05; spec seed: 20261001
+
+registry lines written under REGDIR: synthetic 2; real file exists: False
+NODATA contents at the end: []
+exit 0
+
+== d.1: the specification copied
+--- /tmp/p4_4c1_d1.py (sha256 bebd350857f5bf2562e0f95026c87af12ee9740055131a163eac07cf07123dbd)
+"""P4-4c1 d.1: the specification copied to docs/ (verdict line `D1 CHECK`). Reads files as bytes."""
+import hashlib
+import os
+import re
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+KIT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c1_kit")
+MSG = "/tmp/p4_4c1_msg.txt"
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+src = os.path.join(KIT, "p4_4c1_P4_CONFIRM_CLAIMS_SPEC.md")
+dst = os.path.join(REPO, "docs", "P4_CONFIRM_CLAIMS_SPEC.md")
+hs = hashlib.sha256(open(src, "rb").read()).hexdigest()
+hd = hashlib.sha256(open(dst, "rb").read()).hexdigest()
+print(f"source {src}: {hs}")
+print(f"copy   {dst}: {hd}")
+ok = hs == hd == E["KIT_SPEC_SHA256"]
+print(f"copy == source == KIT_SPEC_SHA256: {ok}")
+print(f"D1 CHECK: {ok}")
+sys.exit(0 if ok else 1)
+--- /tmp/p4_4c1_d1.out (sha256 c43b651cc3fa9974c2e45f59cd004b36da558153dabccd7f164d48a644e34248)
+source /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4c1_kit/p4_4c1_P4_CONFIRM_CLAIMS_SPEC.md: b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2
+copy   /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_CONFIRM_CLAIMS_SPEC.md: b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2
+copy == source == KIT_SPEC_SHA256: True
+D1 CHECK: True
+exit 0
+
+== d.2: the two modules and the test file, as git show HEAD:<path> prints them
+--- HEAD:ofilt/drift/confirm_allowlist.py
+"""The inference-only allowlist (P4-4c1; P4Q2), as docs/P4_CONFIRM_CLAIMS_SPEC.md (version 1), section 2, specifies.
+
+Constants only. INFERENCE_ONLY_REGRESSORS are the panel columns that the robustness rows of P33 and AM-05 add as
+regressors and that the forecasting allowlist does not hold; INFERENCE_ONLY_FILTERS are the columns used only to
+select the rows of robustness rows; COST_INPUTS_ONLY are the columns used only by the economic evaluation's costs.
+FORECASTING_MODULES lists the forecasting code, which a static test shows never names a column of INFERENCE_ONLY.
+The derived terms of the robustness rows (post, its interaction, the gotobi interaction, the ticker-specific FX block)
+are design columns, not panel columns, and are not listed.
+"""
+from __future__ import annotations
+
+INFERENCE_ONLY_REGRESSORS = frozenset({"ewj_oc_jpy", "xau_ret", "n225_ret", "gotobi_day", "c_usdjpy_sess_ret",
+                                       "c_eurusd_sess_ret"})
+INFERENCE_ONLY_FILTERS = frozenset({"n225_stale_start_min", "n225_stale_end_min", "audit_flag", "excl_d2"})
+COST_INPUTS_ONLY = frozenset({"open", "close"})
+INFERENCE_ONLY = INFERENCE_ONLY_REGRESSORS | INFERENCE_ONLY_FILTERS | COST_INPUTS_ONLY
+FORECASTING_MODULES = ("ofilt/drift/forecast.py", "ofilt/drift/fctests.py", "ofilt/drift/models/__init__.py",
+                       "ofilt/drift/models/linear.py", "ofilt/drift/models/ridge.py", "ofilt/drift/models/gbm.py",
+                       "ofilt/drift/confirm_forecast.py")
+--- HEAD:ofilt/drift/confirm_claims.py
+"""The confirmation module, the claim and rule rows (P4-4c1; P4Q38), as docs/P4_CONFIRM_CLAIMS_SPEC.md (version 1)
+specifies.
+
+`claim_rows` computes the 17 rows that confirm_inference.ITEM_OF gives to P4-4c (R10 to R26) from a document whose
+P4-4a and P4-4b rows are filled, and `fill` writes them into it in place of its pending entries. Most rows record a
+rule fixed before Pass 4, with its outcome and source; R10, R11, R14 and R21 read their decisions off rows already
+computed; R12 adds the one quantity this module computes from the frames, the gap between the raw and the abnormal
+target's a2 on O17's rows (section 4). `rows_from` is the pure part, which reads only the document and that gap.
+`licensed` says when a claim is made: only on the confirmation panel (mode confirmation, provenance confirm_real); on
+dev and on synthetic documents a claim's arithmetic is reported, never claimed (D14 P36 step 5). A claim whose inputs
+include a not-estimable result is not made (P4Q31). The module reads the configuration through
+confirm_inference.load_config, writes no file and draws no random number.
+"""
+from __future__ import annotations
+
+import math
+from typing import Any, Callable
+
+import numpy as np
+import pandas as pd
+
+from . import blind, inference, targets
+from .confirm_forecast import _check_inputs
+from .confirm_inference import ITEM_OF, ROW_IDS, STATUSES, _plain, load_config
+from .spec import Spec
+
+ROWS = ("R10", "R11", "R12", "R13", "R14", "R15", "R16", "R17", "R18", "R19", "R20", "R21", "R22", "R23", "R24",
+        "R25", "R26")
+INTERIM_WORDING = "H1 and the CW forecast test may disagree; disagreement is not by itself evidence against H1"
+ONE_SHOT_RULE = ("the confirmation panel is opened once, by the pre-registered script; any later change is a dated, "
+                 "labelled deviation")
+REPORTING_RULES = ("report every pre-registered result, including nulls", "accuracy always next to its base rate",
+                   "nested comparisons by Clark-West", "importance permutation-based only")
+A2_GAP_ROWS = {"H3": "O2", "copx_to_fcx": "O18", "xau_control": "O20", "raw_target": "O17"}
+
+
+def licensed(doc: dict) -> bool:
+    """True exactly when the document is the confirmation run on the confirmation panel."""
+    return doc.get("mode") == "confirmation" and doc.get("provenance") == blind.CONFIRM_REAL
+
+
+# ------------------------------------------------------------------ entries and contingencies (section 4)
+class _NotEstimable(Exception):
+    def __init__(self, reason: str):
+        super().__init__(reason)
+        self.reason = reason
+
+
+def _all_finite(x: Any) -> bool:
+    if isinstance(x, float):
+        return math.isfinite(x)
+    if isinstance(x, dict):
+        return all(_all_finite(v) for v in x.values())
+    if isinstance(x, list):
+        return all(_all_finite(v) for v in x)
+    return True
+
+
+def _row(rid: str, compute: Callable[[], tuple]) -> dict:
+    """One entry: compute returns (status, values, reason); a not-estimable input or a non-finite float makes the
+    row not estimable. Counts are None in every row."""
+    try:
+        status, values, reason = compute()
+    except _NotEstimable as e:
+        status, values, reason = "not_estimable", None, e.reason
+    if status not in STATUSES or status == "pending":
+        raise ValueError(f"{rid}: status {status!r}")
+    values = _plain(values)
+    if not _all_finite(values):
+        status, values, reason = "not_estimable", None, "non-finite estimate"
+    return {"id": rid, "item": ITEM_OF[rid], "status": status, "values": values, "reason": reason,
+            "n_rows": None, "n_dates": None, "lag": None}
+
+
+def _input(doc: dict, rid: str) -> dict:
+    """The values of an input row, or the row is not estimable from it."""
+    e = doc["rows"][rid]
+    if e["status"] != "estimated":
+        raise _NotEstimable(f"input {rid} not estimable: {e['reason']}")
+    return e["values"]
+
+
+def _if_estimated(doc: dict, rid: str, key: str):
+    e = doc["rows"][rid]
+    return e["values"][key] if e["status"] == "estimated" else None
+
+
+def _summary(c: dict) -> dict:
+    """docs/P4_CONFIRM_INF_SPEC.md section 4.4's summary of a parameter."""
+    return {"estimate": float(c["estimate"]), "se": float(c["se"]), "z": float(c["z"]), "p": float(c["p"]),
+            "ci": [float(c["ci"][0]), float(c["ci"][1])]}
+
+
+# ------------------------------------------------------------------ R12's a2 gap: the frame C and the two fits
+def _frame_C(dev, events, confirm, spec: Spec) -> pd.DataFrame:
+    """The inference frame C exactly as confirm_inference.infer builds it (its specification, sections 3.3, 3.4)."""
+    if confirm is not None:
+        J = pd.concat([dev, confirm], ignore_index=True)
+        J.attrs = {"provenance": blind.provenance_of(confirm)}
+    else:
+        J = dev.copy()
+    T = targets.add_masks(targets.add_targets(J, spec), events, spec)
+    if confirm is None:
+        return T
+    C = T.loc[(T["date"] >= confirm["date"].min()).to_numpy()]
+    C.attrs = dict(T.attrs)
+    return C
+
+
+def _a2_gap(C: pd.DataFrame, spec: Spec) -> dict:
+    """G of section 4, R12: a2 of the raw and of the abnormal target on the rows of O17 (D0's rows that the raw
+    target's design also holds), and their difference; or {"status": "not_estimable", "reason"}."""
+    h3 = spec.h3_parameter
+    try:
+        D0 = inference.build_design(C, spec)
+        Dr = inference.build_design(C, spec, target="raw_oc")
+        keep = np.isin(D0.index, Dr.index)
+        if not keep.any():
+            return {"status": "not_estimable", "reason": "no rows"}
+        abn = inference.subset_design(D0, keep)
+        raw = inference.subset_design(Dr, np.isin(Dr.index, abn.index))
+        ra, rr = inference.fit_dk(abn, spec), inference.fit_dk(raw, spec)
+    except inference.DesignError as e:
+        return {"status": "not_estimable", "reason": str(e)}
+    a2_abn, a2_raw = _summary(ra.param(h3)), _summary(rr.param(h3))
+    G = {"a2_raw": a2_raw, "a2_abn": a2_abn, "difference": a2_raw["estimate"] - a2_abn["estimate"],
+         "n_rows": int(rr.n), "n_dates": int(rr.T)}
+    if not _all_finite(G):
+        return {"status": "not_estimable", "reason": "non-finite estimate"}
+    return G
+
+
+# ------------------------------------------------------------------ the rows (section 4)
+def _r10(doc, cfg, L):
+    h1 = _input(doc, "R4")["reject"]
+    c = cfg["claims"]["tier_i"]
+    return "estimated", {"wording": c["wording"], "requires": c["requires"], "h1_rejected": h1, "licensed": L,
+                         "claimed": bool(L and h1), "decision": "P4Q18"}, None
+
+
+def _r11(doc, cfg, spec, L):
+    h1 = _input(doc, "R4")["reject"]
+    b_primary = _input(doc, "O1")["fit"]["estimate"]
+    o21 = _input(doc, "O21")
+    b_with, b_without, p_with = o21["with"]["estimate"], o21["without"]["estimate"], o21["with"]["p"]
+    c1 = b_with != 0 and b_primary != 0 and (b_with > 0) == (b_primary > 0)
+    c2 = p_with < spec.alpha
+    ratio = b_with / b_without if (math.isfinite(b_without) and b_without != 0) else None
+    c3 = ratio is not None and ratio >= 0.5          # a negative ratio (signs differ) is below 0.5 (P4Q16)
+    return "estimated", {"wording": cfg["claims"]["tier_ii"]["wording"], "h1_rejected": h1, "b_primary": b_primary,
+                         "b_with": b_with, "b_without": b_without, "p_with": p_with, "ratio": ratio,
+                         "condition_1": bool(c1), "condition_2": bool(c2), "condition_3": bool(c3),
+                         "eligible_dates": o21["eligible_dates"], "licensed": L,
+                         "claimed": bool(L and h1 and c1 and c2 and c3), "decision": "P4Q16"}, None
+
+
+def _r12(cfg, a2_gap):
+    t = cfg["claims"]["tier_iii"]
+    return "fixed", {"claimed": False, "report_without_tier_reading": t["report_without_tier_reading"],
+                     "a2_reading": t["a2_reading"], "rows": dict(A2_GAP_ROWS), "a2_gap": a2_gap,
+                     "decision": "P4Q17"}, None
+
+
+def _r14(doc, cfg, viable, L):
+    o10, o11 = _input(doc, "O10"), _input(doc, "O11")
+    eq = cfg["claims"]["equivalence"]
+    primary = o10["equivalent"]
+    return "estimated", {"wording": eq["wording"], "viable": viable, "equivalent_primary": primary,
+                         "equivalent_low": o11["low"]["equivalent"], "equivalent_high": o11["high"]["equivalent"],
+                         "licensed": L, "claimed": bool(L and viable and primary), "beside": eq["beside"],
+                         "mde80": cfg["constants"]["mde80"], "decision": "P4Q19"}, None
+
+
+def _r20(doc):
+    h1, cw = _if_estimated(doc, "R4", "reject"), _if_estimated(doc, "O36", "reject_calibrated")
+    agree = (h1 == cw) if (h1 is not None and cw is not None) else None
+    return "fixed", {"wording": INTERIM_WORDING, "binding_description": "the T3 cross-tab", "h1_rejected": h1,
+                     "cw_reject_calibrated": cw, "agree": agree, "source": "PLAN 4.4; P79"}, None
+
+
+def _r21(doc, cfg):
+    h1 = _input(doc, "R4")["reject"]
+    return "estimated", {"h1_rejected": h1, "null": not h1, "rule": cfg["claims"]["null_h1"]["rule"],
+                         "mde80": cfg["constants"]["mde80"], "equivalence_row": "R14", "decision": "P4Q19"}, None
+
+
+def _r23(doc):
+    if doc.get("provenance") == blind.CONFIRM_REAL:
+        return "fixed", {"rule": ONE_SHOT_RULE, "source": "P13(c)"}, None
+    return "not_applicable", None, "the one-shot rule applies to the confirmation panel only"
+
+
+def _r26(doc):
+    others = [rid for rid in ROW_IDS if rid not in ROWS]
+    return "fixed", {"rules": list(REPORTING_RULES),
+                     "pending_rows": [rid for rid in others if doc["rows"][rid]["status"] == "pending"],
+                     "not_estimable_rows": [rid for rid in others if doc["rows"][rid]["status"] == "not_estimable"]}, \
+        None
+
+
+def rows_from(doc: dict, a2_gap: dict, *, spec: Spec | None = None) -> dict:
+    """Every row of section 4 read from the document, with R12's gap passed in; {id: entry} for exactly ROWS."""
+    spec = spec or Spec.load()
+    cfg = load_config()
+    L = licensed(doc)
+    viability = spec.value("equivalence.viability")
+    viable = isinstance(viability, str) and viability.startswith("viable")
+    compute = {
+        "R10": lambda: _r10(doc, cfg, L),
+        "R11": lambda: _r11(doc, cfg, spec, L),
+        "R12": lambda: _r12(cfg, a2_gap),
+        "R13": lambda: ("fixed", {"viability": viability, "viable": viable, "recomputed": False,
+                                  "source": "P3-5; AM-07"}, None),
+        "R14": lambda: _r14(doc, cfg, viable, L),
+        "R15": lambda: ("fixed", {"h1_method": "dk_normal", "cw_reference": "calibrated",
+                                  "c_cw_cal": cfg["constants"]["c_cw_cal"], "recomputed": False,
+                                  "source": "P3-5"}, None),
+        "R16": lambda: ("fixed", {"rule": "DK-normal, selected for H1, applies to every other pre-registered DK test",
+                                  "reference": spec.value("inference.reference"), "source": "D3.5"}, None),
+        "R17": lambda: ("fixed", {"selected_for_confirmation": False, "recomputed": False,
+                                  "source": "P73; P79"}, None),
+        "R18": lambda: ("fixed", {"recomputed": False, "not_examined_on_dev": cfg["not_examined_on_dev"]["items"],
+                                  "decision": "P4Q26", "source": "P75"}, None),
+        "R19": lambda: ("fixed", {"rows_flagged": [], "recomputed": False, "source": "P3-5"}, None),
+        "R20": lambda: _r20(doc),
+        "R21": lambda: _r21(doc, cfg),
+        "R22": lambda: ("fixed", {"spec_seed": spec.seed, "walk_forward_seed": "the spec seed (P4Q27)",
+                                  "fold_seed": "seed + 1000 * fold", "m7_noise": "default_rng([fold seed, stream])",
+                                  "importance": "default_rng([fold seed, 2, repeat])"}, None),
+        "R23": lambda: _r23(doc),
+        "R24": lambda: ("fixed", {"recovery": cfg["dry_run"]["recovery"]["rule"],
+                                  "seeds": cfg["dry_run"]["seeds"]["rule"], "item": "P4-5",
+                                  "decisions": ["P4Q28", "P4Q29"]}, None),
+        "R25": lambda: ("not_applicable", None, cfg["forward_holdout"]["rule"] + " (P4Q30); outside Pass 4"),
+        "R26": lambda: _r26(doc),
+    }
+    return {rid: _row(rid, compute[rid]) for rid in ROWS}
+
+
+def claim_rows(doc: dict, dev, events, confirm=None, *, spec: Spec | None = None) -> dict:
+    """{id: entry} for exactly ROWS, for a document computed on these frames (section 3)."""
+    _check_inputs(dev, confirm)
+    mode = "confirmation" if confirm is not None else "dev"
+    if doc.get("mode") != mode:
+        raise ValueError(f"the document's mode is {doc.get('mode')!r}; these frames give {mode!r}")
+    provenance = blind.provenance_of(confirm if confirm is not None else dev)
+    if doc.get("provenance") != provenance:
+        raise ValueError(f"the document's provenance is {doc.get('provenance')!r}; these frames give {provenance!r}")
+    spec = spec or Spec.load()
+    return rows_from(doc, _a2_gap(_frame_C(dev, events, confirm, spec), spec), spec=spec)
+
+
+# ------------------------------------------------------------------ fill
+def fill(doc: dict, rows: dict) -> dict:
+    """A copy of the document (made with _plain) with each entry of `rows` in place of the pending P4-4c entry."""
+    if set(rows) != set(ROWS) or len(rows) != len(ROWS):
+        raise ValueError("rows must hold exactly the IDs of ROWS")
+    out = _plain(doc)
+    for rid in ROWS:
+        old, new = out["rows"][rid], rows[rid]
+        if old.get("status") != "pending" or old.get("item") != "P4-4c":
+            raise ValueError(f"{rid}: the document's entry is not a pending P4-4c entry")
+        if new.get("id") != rid or new.get("item") != "P4-4c":
+            raise ValueError(f"{rid}: the new entry's id or item does not match")
+        out["rows"][rid] = _plain(new)
+    return out
+--- HEAD:tests/test_p4_confirm_claims.py
+"""P4-4c1 (P4Q38): ofilt/drift/confirm_claims.py and ofilt/drift/confirm_allowlist.py against
+docs/P4_CONFIRM_CLAIMS_SPEC.md (version 1). Exactly the 15 test methods of its §5.2. Seeds are the spec seed
++ 8,400,000 + k (§5.1), disjoint from every earlier block. Every frame is synthetic; frames labelled dev_real or
+confirm_real appear only in test 14's refused pairs. The document D1 is built once, as §5.1 says, with the run registry
+patched to a temporary folder for the whole module (setUpModule, tearDownModule). Hand-made documents are deep copies
+of D1 with named values set, evaluated by rows_from with D1's R12 gap, so that no frame is needed. R12's gap is
+recomputed here from the frame C, built as P4-4a's §3.3 says, never from the module's internals."""
+import ast
+import copy
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import confirm_allowlist as AL  # noqa: E402
+from ofilt.drift import confirm_claims as CC  # noqa: E402
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import confirm_inference as CI  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import inference as I  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import schema as SCH  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift import targets as TG  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+SPEC = Spec.load()
+CFG = json.loads((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_text(encoding="utf-8"))
+SA = SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5)
+SHORT = SF.dev_calendar()[-900:]
+ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+P4C = [f"R{i}" for i in range(10, 27)]
+ALLOWLIST = ROOT / "ofilt" / "drift" / "confirm_allowlist.py"
+CLAIMS = ROOT / "ofilt" / "drift" / "confirm_claims.py"
+REGRESSORS = {"ewj_oc_jpy", "xau_ret", "n225_ret", "gotobi_day", "c_usdjpy_sess_ret", "c_eurusd_sess_ret"}
+FILTERS = {"n225_stale_start_min", "n225_stale_end_min", "audit_flag", "excl_d2"}
+COSTS = {"open", "close"}
+FORECASTING = ("ofilt/drift/forecast.py", "ofilt/drift/fctests.py", "ofilt/drift/models/__init__.py",
+               "ofilt/drift/models/linear.py", "ofilt/drift/models/ridge.py", "ofilt/drift/models/gbm.py",
+               "ofilt/drift/confirm_forecast.py")
+BANNED_CALLS = ("open", "read_csv", "to_csv", "read_bytes", "read_text", "write_text", "write_bytes", "to_parquet",
+                "to_pickle", "to_excel")
+BANNED_STRINGS = ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY")
+_PATCHES: list = []
+_TMP = None
+_CACHE: dict = {}
+
+
+class ZeroM7(FC.ForecastModel):
+    """The M7 stand-in of P4-4b2's tests: no feature, a zero forecast, no noise column."""
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def setUpModule():
+    global _TMP
+    _TMP = tempfile.TemporaryDirectory()
+    folder = Path(_TMP.name)
+    for attr, name in (("SYNTHETIC_PATH", "synthetic.jsonl"), ("REAL_PATH", "real.jsonl")):
+        p = mock.patch.object(RG, attr, folder / name)
+        p.start()
+        _PATCHES.append(p)
+
+
+def tearDownModule():
+    for p in reversed(_PATCHES):
+        p.stop()
+    _TMP.cleanup()
+
+
+def seed(k):
+    return SPEC.seed + 8_400_000 + k
+
+
+def scaled(df):
+    """A copy with 5706's open, close and prev_close multiplied by 0.1, attrs kept (as P4-4b2's tests)."""
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def frames():
+    """D1's frames (dev, events, confirm), 5706's prices scaled."""
+    if "frames" not in _CACHE:
+        o = SF.simulate(seed(1), SA, dev_dates=SHORT)
+        _CACHE["frames"] = (scaled(o.dev), o.events, scaled(o.confirm))
+    return _CACHE["frames"]
+
+
+def d1():
+    """The full document D1 of §5.1: infer, then P4-4b1's and P4-4b2's rows filled."""
+    if "D1" not in _CACHE:
+        dev, events, conf = frames()
+        doc = CI.infer(dev, events, conf)
+        calls = CF.run_calls(dev, events, conf, spec=SPEC, factories={"M7": ZeroM7})
+        doc = CF.fill(doc, CF.forecast_rows(calls))
+        _CACHE["D1"] = CE.fill(doc, CE.economic_row(calls, dev, events, conf, spec=SPEC))
+    return _CACHE["D1"]
+
+
+def d1_rows():
+    """claim_rows on D1 and its own frames, computed once."""
+    if "rows" not in _CACHE:
+        dev, events, conf = frames()
+        _CACHE["rows"] = CC.claim_rows(d1(), dev, events, conf, spec=SPEC)
+    return _CACHE["rows"]
+
+
+def rows_of(doc):
+    """rows_from on a hand-made document, with D1's R12 gap (G1)."""
+    return CC.rows_from(doc, d1_rows()["R12"]["values"]["a2_gap"], spec=SPEC)
+
+
+def hand(licensed=None):
+    """A deep copy of D1; licensed True or False sets mode confirmation and provenance confirm_real or synthetic."""
+    doc = copy.deepcopy(d1())
+    if licensed is not None:
+        doc["mode"], doc["provenance"] = "confirmation", (B.CONFIRM_REAL if licensed else B.SYNTHETIC)
+    return doc
+
+
+def make_not_estimable(doc, rid):
+    doc["rows"][rid].update(status="not_estimable", values=None, reason="set by the test")
+
+
+def summary(c):
+    return {"estimate": float(c["estimate"]), "se": float(c["se"]), "z": float(c["z"]), "p": float(c["p"]),
+            "ci": [float(c["ci"][0]), float(c["ci"][1])]}
+
+
+def string_constants(path):
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+    return {n.value for n in ast.walk(tree) if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+
+
+def relabel(df, provenance):
+    r = df.copy()
+    attrs = {k: v for k, v in df.attrs.items() if k != "provenance"}
+    if provenance is not None:
+        attrs["provenance"] = provenance
+    r.attrs = attrs
+    return r
+
+
+class TestConfirmClaims(unittest.TestCase):
+    def assertNotEstimableFrom(self, e, rid):
+        self.assertEqual(e["status"], "not_estimable")
+        self.assertTrue(e["reason"].startswith(f"input {rid}"), e["reason"])
+        self.assertIsNone(e["values"])
+        self.assertEqual([e["n_rows"], e["n_dates"], e["lag"]], [None, None, None])
+
+    # 1
+    def test_allowlist_constants(self):
+        self.assertEqual(AL.INFERENCE_ONLY_REGRESSORS, frozenset(REGRESSORS))
+        self.assertEqual(AL.INFERENCE_ONLY_FILTERS, frozenset(FILTERS))
+        self.assertEqual(AL.COST_INPUTS_ONLY, frozenset(COSTS))
+        self.assertEqual(AL.INFERENCE_ONLY, frozenset(REGRESSORS | FILTERS | COSTS))
+        self.assertEqual(AL.FORECASTING_MODULES, FORECASTING)
+        for name in ("INFERENCE_ONLY_REGRESSORS", "INFERENCE_ONLY_FILTERS", "COST_INPUTS_ONLY", "INFERENCE_ONLY"):
+            s = getattr(AL, name)
+            self.assertIsInstance(s, frozenset, name)
+            self.assertTrue(s.isdisjoint(SCH.PRE_OPEN_FEATURES), name)
+            self.assertTrue(s.isdisjoint(SCH.ALLOWED_FEATURES), name)
+        self.assertLessEqual(AL.INFERENCE_ONLY_REGRESSORS, SCH.PRE_OPEN_ROBUSTNESS | SCH.CONTEMPORANEOUS)
+        self.assertLessEqual(AL.COST_INPUTS_ONLY, SCH.PROVENANCE)
+        self.assertLessEqual(AL.INFERENCE_ONLY_FILTERS, SCH.PROVENANCE | SCH.ROBUSTNESS_ONLY | TG.MASK_COLUMNS)
+        for rel in AL.FORECASTING_MODULES:
+            self.assertTrue((ROOT / rel).is_file(), rel)
+
+    # 2
+    def test_no_forecasting_code_uses_the_allowlist(self):
+        for rel in AL.FORECASTING_MODULES:
+            path = ROOT / rel
+            self.assertEqual(string_constants(path) & AL.INFERENCE_ONLY, set(), rel)
+            tree = ast.parse(path.read_text(encoding="utf-8"))
+            imported = [a.name for n in ast.walk(tree) if isinstance(n, (ast.Import, ast.ImportFrom)) for a in n.names]
+            imported += [n.module for n in ast.walk(tree) if isinstance(n, ast.ImportFrom) and n.module]
+            self.assertFalse([m for m in imported if "confirm_allowlist" in m], rel)
+
+    # 3
+    def test_the_robustness_rows_use_the_regressors(self):
+        inf = string_constants(ROOT / "ofilt" / "drift" / "confirm_inference.py")
+        self.assertLessEqual(AL.INFERENCE_ONLY_REGRESSORS | AL.INFERENCE_ONLY_FILTERS, inf)
+        econ = string_constants(ROOT / "ofilt" / "drift" / "confirm_economic.py")
+        self.assertLessEqual({"open", "close"}, econ)
+
+    # 4
+    def test_rows_and_schema(self):
+        self.assertEqual(list(CC.ROWS), [i for i in CFG["rows"] if CI.ITEM_OF[i] == "P4-4c"])
+        self.assertEqual(list(CC.ROWS), P4C)
+        rows = d1_rows()
+        self.assertEqual(list(rows), list(CC.ROWS))
+        for rid, e in rows.items():
+            self.assertEqual(list(e), ENTRY_KEYS, rid)
+            self.assertEqual((e["id"], e["item"]), (rid, "P4-4c"))
+            self.assertIn(e["status"], CI.STATUSES)
+            self.assertNotEqual(e["status"], "pending", rid)
+        filled = CC.fill(d1(), rows)
+        self.assertEqual([rid for rid, e in filled["rows"].items() if e["status"] == "pending"], [])
+        self.assertEqual({k: v for k, v in filled["rows"].items() if k not in CC.ROWS},
+                         {k: v for k, v in d1()["rows"].items() if k not in CC.ROWS})
+        text = CI.to_json(filled)
+        self.assertNotIn("NaN", text)
+        self.assertNotIn("Infinity", text)
+        self.assertEqual(json.loads(text), filled)
+        with self.assertRaises(ValueError):
+            CC.fill(filled, rows)                                     # R10 (and the rest) no longer pending
+        with self.assertRaises(ValueError):
+            CC.fill(d1(), {k: v for k, v in rows.items() if k != "R26"})
+
+    # 5
+    def test_tier_i(self):
+        for reject in (True, False):
+            for lic in (True, False):
+                doc = hand(lic)
+                doc["rows"]["R4"]["values"]["reject"] = reject
+                self.assertIs(CC.licensed(doc), lic)
+                e = rows_of(doc)["R10"]
+                v = e["values"]
+                self.assertEqual(e["status"], "estimated")
+                self.assertEqual((v["h1_rejected"], v["licensed"], v["claimed"]), (reject, lic, reject and lic))
+                self.assertEqual((v["wording"], v["requires"], v["decision"]),
+                                 (CFG["claims"]["tier_i"]["wording"], CFG["claims"]["tier_i"]["requires"], "P4Q18"))
+        doc = hand()
+        doc["provenance"] = B.CONFIRM_REAL
+        doc["mode"] = "dev"
+        self.assertIs(CC.licensed(doc), False)
+        self.assertIs(CC.licensed(d1()), False)                      # synthetic
+        doc = hand(True)
+        make_not_estimable(doc, "R4")
+        self.assertNotEstimableFrom(rows_of(doc)["R10"], "R4")
+
+    # 6
+    def test_tier_ii_conditions(self):
+        cases = {   # name: (b_primary, b_with, b_without, p_with, reject), (conditions), claimed
+            "all hold": ((1.0, 0.8, 1.0, 0.01, True), (True, True, True), True),
+            "condition 1 fails": ((1.0, -0.8, 1.0, 0.01, True), (False, True, False), False),
+            "condition 2 fails": ((1.0, 0.8, 1.0, 0.2, True), (True, False, True), False),
+            "condition 3 fails": ((1.0, 0.4, 1.0, 0.01, True), (True, True, False), False),
+            "b_without 0": ((1.0, 0.8, 0.0, 0.01, True), (True, True, False), False),
+            "b_without negative": ((1.0, 0.8, -1.0, 0.01, True), (True, True, False), False),
+            "H1 not rejected": ((1.0, 0.8, 1.0, 0.01, False), (True, True, True), False),
+        }
+        eligible = d1()["rows"]["O21"]["values"]["eligible_dates"]
+        for name, ((bp, bw, bwo, p, reject), conds, claimed) in cases.items():
+            doc = hand(True)
+            doc["rows"]["R4"]["values"]["reject"] = reject
+            doc["rows"]["O1"]["values"]["fit"]["estimate"] = bp
+            o21 = doc["rows"]["O21"]["values"]
+            o21["with"]["estimate"], o21["with"]["p"], o21["without"]["estimate"] = bw, p, bwo
+            e = rows_of(doc)["R11"]
+            v = e["values"]
+            self.assertEqual(e["status"], "estimated", name)
+            self.assertEqual((v["condition_1"], v["condition_2"], v["condition_3"]), conds, name)
+            self.assertIs(v["claimed"], claimed, name)
+            self.assertEqual(v["ratio"], None if bwo == 0 else bw / bwo, name)
+            self.assertEqual((v["b_primary"], v["b_with"], v["b_without"], v["p_with"], v["h1_rejected"]),
+                             (bp, bw, bwo, p, reject), name)
+            self.assertEqual((v["eligible_dates"], v["licensed"], v["decision"]), (eligible, True, "P4Q16"), name)
+            self.assertEqual(v["wording"], CFG["claims"]["tier_ii"]["wording"], name)
+
+    # 7
+    def test_tier_ii_inputs_not_estimable(self):
+        for rid in ("O21", "O1", "R4"):
+            doc = hand(True)
+            make_not_estimable(doc, rid)
+            self.assertNotEstimableFrom(rows_of(doc)["R11"], rid)
+        doc = hand(True)
+        make_not_estimable(doc, "O21")
+        make_not_estimable(doc, "R4")
+        self.assertNotEstimableFrom(rows_of(doc)["R11"], "R4")      # R4, O1, O21, in that order
+
+    # 8
+    def test_tier_iii_and_a2_gap(self):
+        e = d1_rows()["R12"]
+        v = e["values"]
+        t = CFG["claims"]["tier_iii"]
+        self.assertEqual(e["status"], "fixed")
+        self.assertIs(v["claimed"], False)
+        self.assertEqual((v["report_without_tier_reading"], v["a2_reading"], v["decision"]),
+                         (t["report_without_tier_reading"], t["a2_reading"], "P4Q17"))
+        self.assertEqual(v["rows"], {"H3": "O2", "copx_to_fcx": "O18", "xau_control": "O20", "raw_target": "O17"})
+        dev, events, conf = frames()
+        J = pd.concat([dev, conf], ignore_index=True)
+        J.attrs = {"provenance": B.SYNTHETIC}
+        T = TG.add_masks(TG.add_targets(J, SPEC), events, SPEC)
+        C = T.loc[(T["date"] >= conf["date"].min()).to_numpy()]
+        C.attrs = dict(T.attrs)
+        D0 = I.build_design(C, SPEC)
+        Dr = I.build_design(C, SPEC, target="raw_oc")
+        abn = I.subset_design(D0, np.isin(D0.index, Dr.index))
+        raw = I.subset_design(Dr, np.isin(Dr.index, abn.index))
+        ra, rr = I.fit_dk(abn, SPEC), I.fit_dk(raw, SPEC)
+        h3 = SPEC.h3_parameter
+        expected = {"a2_raw": summary(rr.param(h3)), "a2_abn": summary(ra.param(h3)),
+                    "difference": float(rr.param(h3)["estimate"]) - float(ra.param(h3)["estimate"]),
+                    "n_rows": int(rr.n), "n_dates": int(rr.T)}
+        G = v["a2_gap"]
+        self.assertEqual(G, expected)
+        self.assertEqual(G["difference"], G["a2_raw"]["estimate"] - G["a2_abn"]["estimate"])
+        self.assertEqual(G["n_rows"], d1()["rows"]["O17"]["n_rows"])
+
+    # 9
+    def test_equivalence_wording(self):
+        o11 = d1()["rows"]["O11"]["values"]
+        eq = CFG["claims"]["equivalence"]
+        for primary in (True, False):
+            for lic in (True, False):
+                doc = hand(lic)
+                doc["rows"]["O10"]["values"]["equivalent"] = primary
+                e = rows_of(doc)["R14"]
+                v = e["values"]
+                self.assertEqual(e["status"], "estimated")
+                self.assertIs(v["viable"], True)
+                self.assertEqual((v["equivalent_primary"], v["licensed"], v["claimed"]), (primary, lic, primary and lic))
+                self.assertEqual((v["equivalent_low"], v["equivalent_high"]),
+                                 (o11["low"]["equivalent"], o11["high"]["equivalent"]))
+                self.assertEqual((v["wording"], v["beside"], v["mde80"], v["decision"]),
+                                 (eq["wording"], eq["beside"], CFG["constants"]["mde80"], "P4Q19"))
+        for rid in ("O10", "O11"):
+            doc = hand(True)
+            make_not_estimable(doc, rid)
+            self.assertNotEstimableFrom(rows_of(doc)["R14"], rid)
+
+    # 10
+    def test_null_reading(self):
+        for reject in (True, False):
+            doc = hand()
+            doc["rows"]["R4"]["values"]["reject"] = reject
+            e = rows_of(doc)["R21"]
+            v = e["values"]
+            self.assertEqual(e["status"], "estimated")
+            self.assertEqual((v["h1_rejected"], v["null"]), (reject, not reject))
+            self.assertEqual(v["mde80"], 0.2471)
+            self.assertEqual(v["mde80"], CFG["constants"]["mde80"])
+            self.assertEqual((v["rule"], v["equivalence_row"], v["decision"]),
+                             (CFG["claims"]["null_h1"]["rule"], "R14", "P4Q19"))
+        doc = hand()
+        make_not_estimable(doc, "R4")
+        self.assertNotEstimableFrom(rows_of(doc)["R21"], "R4")
+
+    # 11
+    def test_fixed_rule_rows(self):
+        rows = d1_rows()
+        D1 = d1()
+        outside = [rid for rid in D1["rows"] if rid not in CC.ROWS]
+        expected = {
+            "R13": {"viability": SPEC.value("equivalence.viability"), "viable": True, "recomputed": False,
+                    "source": "P3-5; AM-07"},
+            "R15": {"h1_method": "dk_normal", "cw_reference": "calibrated", "c_cw_cal": CFG["constants"]["c_cw_cal"],
+                    "recomputed": False, "source": "P3-5"},
+            "R16": {"rule": "DK-normal, selected for H1, applies to every other pre-registered DK test",
+                    "reference": SPEC.value("inference.reference"), "source": "D3.5"},
+            "R17": {"selected_for_confirmation": False, "recomputed": False, "source": "P73; P79"},
+            "R18": {"recomputed": False, "not_examined_on_dev": CFG["not_examined_on_dev"]["items"],
+                    "decision": "P4Q26", "source": "P75"},
+            "R19": {"rows_flagged": [], "recomputed": False, "source": "P3-5"},
+            "R22": {"spec_seed": SPEC.seed, "walk_forward_seed": "the spec seed (P4Q27)",
+                    "fold_seed": "seed + 1000 * fold", "m7_noise": "default_rng([fold seed, stream])",
+                    "importance": "default_rng([fold seed, 2, repeat])"},
+            "R24": {"recovery": CFG["dry_run"]["recovery"]["rule"], "seeds": CFG["dry_run"]["seeds"]["rule"],
+                    "item": "P4-5", "decisions": ["P4Q28", "P4Q29"]},
+            "R26": {"rules": ["report every pre-registered result, including nulls",
+                              "accuracy always next to its base rate", "nested comparisons by Clark-West",
+                              "importance permutation-based only"],
+                    "pending_rows": [],
+                    "not_estimable_rows": [rid for rid in outside if D1["rows"][rid]["status"] == "not_estimable"]},
+        }
+        for rid, values in expected.items():
+            e = rows[rid]
+            self.assertEqual(e["status"], "fixed", rid)
+            self.assertEqual(e["values"], values, rid)
+            self.assertEqual([e["reason"], e["n_rows"], e["n_dates"], e["lag"]], [None] * 4, rid)
+        self.assertIs(rows["R13"]["values"]["viable"], True)
+        self.assertEqual(rows["R22"]["values"]["spec_seed"], SPEC.seed)
+        doc = hand()
+        make_not_estimable(doc, "O5")
+        doc["rows"]["O45"].update(status="pending", values=None, reason=None)
+        r26 = rows_of(doc)["R26"]["values"]
+        self.assertEqual((r26["pending_rows"], r26["not_estimable_rows"]), (["O45"], ["O5"]))
+
+    # 12
+    def test_interim_wording_agreement(self):
+        for h1, cw, agree in ((True, True, True), (True, False, False), (False, False, True)):
+            doc = hand()
+            doc["rows"]["R4"]["values"]["reject"] = h1
+            doc["rows"]["O36"]["values"]["reject_calibrated"] = cw
+            e = rows_of(doc)["R20"]
+            self.assertEqual(e["status"], "fixed")
+            self.assertEqual((e["values"]["h1_rejected"], e["values"]["cw_reject_calibrated"], e["values"]["agree"]),
+                             (h1, cw, agree))
+        doc = hand()
+        make_not_estimable(doc, "O36")
+        v = rows_of(doc)["R20"]["values"]
+        self.assertEqual((v["h1_rejected"], v["cw_reject_calibrated"], v["agree"]),
+                         (d1()["rows"]["R4"]["values"]["reject"], None, None))
+        self.assertEqual((v["wording"], v["binding_description"], v["source"]),
+                         ("H1 and the CW forecast test may disagree; disagreement is not by itself evidence against H1",
+                          "the T3 cross-tab", "PLAN 4.4; P79"))
+
+    # 13
+    def test_one_shot_and_holdout(self):
+        e = d1_rows()["R23"]
+        self.assertEqual((e["status"], e["values"], e["reason"]),
+                         ("not_applicable", None, "the one-shot rule applies to the confirmation panel only"))
+        e = rows_of(hand(True))["R23"]
+        self.assertEqual(e["status"], "fixed")
+        self.assertEqual(e["values"], {"rule": "the confirmation panel is opened once, by the pre-registered script; "
+                                               "any later change is a dated, labelled deviation",
+                                       "source": "P13(c)"})
+        e = d1_rows()["R25"]
+        self.assertEqual(e["status"], "not_applicable")
+        self.assertIn(CFG["forward_holdout"]["rule"], e["reason"])
+        self.assertEqual(e["reason"], CFG["forward_holdout"]["rule"] + " (P4Q30); outside Pass 4")
+        self.assertIsNone(e["values"])
+
+    # 14
+    def test_frames_must_match_the_document(self):
+        dev, events, conf = frames()
+        with self.assertRaises(ValueError):
+            CC.claim_rows(d1(), dev, events)                         # the dev mode with a confirmation document
+        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+        for d, c in cases:
+            before = B.registered_labels()
+            with self.assertRaises(ValueError):
+                CC.claim_rows(d1(), d, events, c, spec=SPEC)
+            self.assertEqual(B.registered_labels(), before)
+        with self.assertRaises(ValueError):
+            CC.claim_rows(hand(True), dev, events, conf, spec=SPEC)  # the document's provenance is not the frames'
+        self.assertEqual(list(d1_rows()), list(CC.ROWS))             # D1's own frames
+
+    # 15
+    def test_module_sources(self):
+        al_tree = ast.parse(ALLOWLIST.read_text(encoding="utf-8"))
+        for node in ast.walk(al_tree):
+            if isinstance(node, ast.Import):
+                self.fail(ast.dump(node))
+            if isinstance(node, ast.ImportFrom):
+                self.assertEqual((node.level, node.module), (0, "__future__"))
+        assigned = {t.id for n in al_tree.body if isinstance(n, ast.Assign) for t in n.targets
+                    if isinstance(t, ast.Name)}
+        self.assertEqual(assigned, {"INFERENCE_ONLY_REGRESSORS", "INFERENCE_ONLY_FILTERS", "COST_INPUTS_ONLY",
+                                    "INFERENCE_ONLY", "FORECASTING_MODULES"})
+        self.assertFalse([n for n in al_tree.body if isinstance(n, (ast.FunctionDef, ast.ClassDef, ast.AugAssign,
+                                                                    ast.AnnAssign))])
+        cl_tree = ast.parse(CLAIMS.read_text(encoding="utf-8"))
+        absolute = {"__future__", "copy", "math", "typing", "numpy", "pandas"}
+        relative = {None: {"blind", "inference", "targets"}, "spec": {"Spec"},
+                    "confirm_inference": {"ITEM_OF", "ROW_IDS", "STATUSES", "load_config", "_plain"},
+                    "confirm_forecast": {"_check_inputs"}}
+        for node in ast.walk(cl_tree):
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    self.assertIn(a.name, absolute)
+            elif isinstance(node, ast.ImportFrom):
+                names = {a.name for a in node.names}
+                if node.level == 0:
+                    self.assertIn(node.module, absolute)
+                else:
+                    self.assertEqual(node.level, 1)
+                    self.assertIn(node.module, relative)
+                    self.assertLessEqual(names, relative[node.module], node.module)
+        for path, tree in ((ALLOWLIST, al_tree), (CLAIMS, cl_tree)):
+            called = []
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Call):
+                    f = node.func
+                    called.append(f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None)
+            for bad in BANNED_CALLS:
+                self.assertNotIn(bad, called, path.name)
+            src = path.read_text(encoding="utf-8")
+            for s in BANNED_STRINGS:
+                self.assertNotIn(s, src, path.name)
+        functions = {n.name for n in cl_tree.body if isinstance(n, ast.FunctionDef)}
+        assigned = {t.id for n in cl_tree.body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
+        self.assertLessEqual({"claim_rows", "rows_from", "fill", "licensed"}, functions)
+        self.assertIn("ROWS", assigned)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+== d.3: the attempts of the new test file (scratch scripts: none)
+--- /tmp/p4_4c1_d3_run1.out (sha256 d0a401b2e44b7556b2d92531d9df85ace2a19a464afbf50b6640d4ac69115f7b)
+test_allowlist_constants (test_p4_confirm_claims.TestConfirmClaims.test_allowlist_constants) ... ok
+test_equivalence_wording (test_p4_confirm_claims.TestConfirmClaims.test_equivalence_wording) ... ok
+test_fixed_rule_rows (test_p4_confirm_claims.TestConfirmClaims.test_fixed_rule_rows) ... ok
+test_frames_must_match_the_document (test_p4_confirm_claims.TestConfirmClaims.test_frames_must_match_the_document) ... ok
+test_interim_wording_agreement (test_p4_confirm_claims.TestConfirmClaims.test_interim_wording_agreement) ... ok
+test_module_sources (test_p4_confirm_claims.TestConfirmClaims.test_module_sources) ... ok
+test_no_forecasting_code_uses_the_allowlist (test_p4_confirm_claims.TestConfirmClaims.test_no_forecasting_code_uses_the_allowlist) ... ok
+test_null_reading (test_p4_confirm_claims.TestConfirmClaims.test_null_reading) ... ok
+test_one_shot_and_holdout (test_p4_confirm_claims.TestConfirmClaims.test_one_shot_and_holdout) ... ok
+test_rows_and_schema (test_p4_confirm_claims.TestConfirmClaims.test_rows_and_schema) ... ok
+test_the_robustness_rows_use_the_regressors (test_p4_confirm_claims.TestConfirmClaims.test_the_robustness_rows_use_the_regressors) ... ok
+test_tier_i (test_p4_confirm_claims.TestConfirmClaims.test_tier_i) ... ok
+test_tier_ii_conditions (test_p4_confirm_claims.TestConfirmClaims.test_tier_ii_conditions) ... ok
+test_tier_ii_inputs_not_estimable (test_p4_confirm_claims.TestConfirmClaims.test_tier_ii_inputs_not_estimable) ... ok
+test_tier_iii_and_a2_gap (test_p4_confirm_claims.TestConfirmClaims.test_tier_iii_and_a2_gap) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 8.258s
+
+OK
+
+== d.3: the four static modules
+--- /tmp/p4_4c1_d3_static.out (sha256 702c78cb95ffc29ee437ae2ab669675e2e6b50b8d070f95a371a027679d3cb38)
+=== test_schema
+test_allowed (test_schema.TestAllowlist.test_allowed) ... ok
+test_derived_sources (test_schema.TestAllowlist.test_derived_sources) ... ok
+test_every_non_feature_group_member_refused (test_schema.TestAllowlist.test_every_non_feature_group_member_refused) ... ok
+test_unknown_refused (test_schema.TestAllowlist.test_unknown_refused) ... ok
+test_every_panel_column_in_exactly_one_group (test_schema.TestGroups.test_every_panel_column_in_exactly_one_group) ... ok
+test_pairwise_disjoint (test_schema.TestGroups.test_pairwise_disjoint) ... ok
+test_sizes (test_schema.TestGroups.test_sizes) ... ok
+test_unknown_columns_fail_closed (test_schema.TestGroups.test_unknown_columns_fail_closed) ... ok
+test_package_source (test_schema.TestNoPatternColumnSelection.test_package_source) ... ok
+test_pre_open_features_and_m7_unchanged (test_schema.TestP50FeaturePins.test_pre_open_features_and_m7_unchanged) ... ok
+test_derived_values (test_schema.TestSelectFeatures.test_derived_values) ... ok
+test_forbidden_in_production_path (test_schema.TestSelectFeatures.test_forbidden_in_production_path) ... ok
+test_synthetic_column_must_be_supplied (test_schema.TestSelectFeatures.test_synthetic_column_must_be_supplied) ... ok
+test_secondary_family_strings_match_implementation (test_schema.TestSpecConsistency.test_secondary_family_strings_match_implementation) ... ok
+test_spec_columns_are_in_the_right_groups (test_schema.TestSpecConsistency.test_spec_columns_are_in_the_right_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 1.015s
+
+OK
+=== test_sim_b5
+test_identity_map_returns_b_sim_exactly (test_sim_b5.TestDevCalibrated.test_identity_map_returns_b_sim_exactly) ... ok
+test_no_leak_and_recovery_under_bootstrap (test_sim_b5.TestDevCalibrated.test_no_leak_and_recovery_under_bootstrap) ... ok
+test_output_contract (test_sim_b5.TestDevCalibrated.test_output_contract) ... ok
+test_stationary_bootstrap (test_sim_b5.TestDevCalibrated.test_stationary_bootstrap) ... ok
+test_draw_passes_guard_and_contract (test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_keys_orthogonality_span_silence_and_log (test_sim_b5.TestSealedFitMechanics.test_keys_orthogonality_span_silence_and_log) ... ok
+test_real_fit_is_opt_in (test_sim_b5.TestSealedFitMechanics.test_real_fit_is_opt_in) ... ok
+test_refusals_and_guard_intact (test_sim_b5.TestSealedFitMechanics.test_refusals_and_guard_intact) ... ok
+test_design_core_called_from_exactly_two_places (test_sim_b5.TestStatic.test_design_core_called_from_exactly_two_places) ... ok
+test_scanner_catches_bypasses (test_sim_b5.TestStatic.test_scanner_catches_bypasses) ... ok
+test_sealed_fit_ast_containment (test_sim_b5.TestStatic.test_sealed_fit_ast_containment) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.817s
+
+OK (skipped=2)
+=== test_docs_d3b
+test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag) ... ok
+test_tag_semantics_as_implemented (test_docs_d3b.TestP36.test_tag_semantics_as_implemented) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.155s
+
+OK
+=== test_docs_d6
+test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_repo_claims (test_docs_d6.TestProjectSetup.test_repo_claims) ... ok
+test_restored_byte_for_byte (test_docs_d6.TestProjectSetup.test_restored_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.040s
+
+OK (skipped=1)
+
+== d.3: the check
+--- /tmp/p4_4c1_d3.py (sha256 09270869961d7b7db4d3c30c60d4947918394a4b926195fbe4cb3306ea3e349e)
+"""P4-4c1 d.3: the new test file's attempts, the static runs and the state (verdict line `D3 CHECK`).
+
+Imports no module of ofilt; reads files as text or bytes and calls git. Expected values are read from
+/tmp/p4_4c1_msg.txt. Argument 1: the number of OFILT_RUN_SEALED= lines in the session's environment (as in a.2).
+"""
+import ast
+import glob
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c1_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def gtext(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout.decode().rstrip("\n")
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+# --- the attempts
+runs = {}
+for p in glob.glob("/tmp/p4_4c1_d3_run*.out"):
+    m = re.fullmatch(r"/tmp/p4_4c1_d3_run(\d+)\.out", p)
+    if m:
+        runs[int(m.group(1))] = p
+ks = sorted(runs)
+print(f"attempts: {ks}")
+check(bool(ks) and ks == list(range(1, len(ks) + 1)), "attempts numbered 1, 2, ... without a gap")
+check(bool(ks) and max(ks) <= int(E["MAX_ATTEMPTS"]), "no attempt beyond MAX_ATTEMPTS")
+last = open(runs[max(ks)], encoding="utf-8").read().splitlines() if ks else []
+ran = [ln for ln in last if ln.startswith(E["NEW_RAN"])]
+print(f"last attempt ({max(ks) if ks else None}): {ran}; result lines equal to NEW_OK: "
+      f"{sum(1 for ln in last if ln == E['NEW_OK'])}")
+check(bool(ran), "the last attempt has a line starting with NEW_RAN")
+check(E["NEW_OK"] in last, "the last attempt has a line equal to NEW_OK")
+t = re.search(r" in ([0-9.]+)s$", ran[0]) if ran else None
+print(f"last attempt's run time: {t.group(1) if t else None} s")
+
+# --- the static runs
+static = open("/tmp/p4_4c1_d3_static.out", encoding="utf-8").read()
+sections = re.split(r"^=== (\S+)\n", static, flags=re.M)[1:]
+mods = dict(zip(sections[0::2], sections[1::2]))
+print(f"static modules: {list(mods)}")
+check(list(mods) == ["test_schema", "test_sim_b5", "test_docs_d3b", "test_docs_d6"], "the four static modules ran")
+for name, text in mods.items():
+    body = [ln for ln in text.splitlines() if ln.strip()]
+    print(f"  {name}: {body[-2] if len(body) > 1 else ''} | {body[-1] if body else ''}")
+    check(bool(body) and body[-1].startswith("OK"), f"{name} ends with a result line starting OK")
+    check("FAILED" not in text, f"{name} shows no FAILED")
+
+# --- the test methods, by ast, against the specification's §5.2
+spec_text = open(os.path.join(REPO, "docs", "P4_CONFIRM_CLAIMS_SPEC.md"), encoding="utf-8").read()
+sec = spec_text.split("### 5.2 The 15 tests", 1)[1].split("\n## ", 1)[0]
+listed = re.findall(r"^\d+\. `(test_\w+)`", sec, flags=re.M)
+tree = ast.parse(open(os.path.join(REPO, "tests", "test_p4_confirm_claims.py"), encoding="utf-8").read())
+methods = [f.name for c in tree.body if isinstance(c, ast.ClassDef) for f in c.body
+           if isinstance(f, ast.FunctionDef) and f.name.startswith("test")]
+module_tests = [f.name for f in tree.body if isinstance(f, ast.FunctionDef) and f.name.startswith("test")]
+print(f"§5.2 lists {len(listed)}: {listed}")
+print(f"test methods in the file ({len(methods)}): {methods}; module-level test functions: {module_tests}")
+check(len(listed) == 15 and sorted(methods) == sorted(listed) and len(methods) == len(set(methods)),
+      "the test methods are exactly the 15 names of §5.2")
+check(module_tests == [], "no module-level function named test*")
+
+# --- tripwires
+tags = gtext("tag", "-l").split("\n")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), f"tags == TAG_LIST ({tags})")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+check(gtext("rev-parse", "HEAD") == E["HEAD_BEFORE"], "HEAD == HEAD_BEFORE")
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"]
+      and len(b.decode().splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG sha256 and lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+check(rr == int(E["RUN_REGISTRY_BYTES"]), f"RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES ({rr})")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.join(root, n) for n in dirs + names if n.startswith("ACCESS_LOG")]
+check(access == [], f"no ACCESS_LOG name ({access})")
+check(len(sys.argv) > 1 and sys.argv[1] == "0" and "OFILT_RUN_SEALED" not in os.environ, "OFILT_RUN_SEALED absent")
+nodata = os.listdir(E["NODATA"])
+check(nodata == [], f"NODATA still empty ({nodata})")
+
+# --- git status
+status = gtext("status", "--porcelain", "--untracked-files=all").split("\n")
+print("git status --porcelain --untracked-files=all:")
+for ln in status:
+    print(f"  {ln}")
+check(sorted(status) == sorted(f"?? {p}" for p in E["NEW_CODE"].split(" ")), "status == NEW_CODE as ?? lines")
+
+# --- the reviewed versions
+for p in ("ofilt/drift/confirm_allowlist.py", "ofilt/drift/confirm_claims.py", "tests/test_p4_confirm_claims.py"):
+    data = open(os.path.join(REPO, p), "rb").read()
+    print(f"reviewed {p}: sha256 {hashlib.sha256(data).hexdigest()}; lines {len(data.decode().splitlines())}")
+
+print(f"failed checks: {len(fails)}")
+print(f"D3 CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c1_d3.out (sha256 d0df50e74a3c2e0648c95ecf3d4885420cec8ea5dac633335ea4d8556b8427f3)
+attempts: [1]
+ok   attempts numbered 1, 2, ... without a gap
+ok   no attempt beyond MAX_ATTEMPTS
+last attempt (1): ['Ran 15 tests in 8.258s']; result lines equal to NEW_OK: 1
+ok   the last attempt has a line starting with NEW_RAN
+ok   the last attempt has a line equal to NEW_OK
+last attempt's run time: 8.258 s
+static modules: ['test_schema', 'test_sim_b5', 'test_docs_d3b', 'test_docs_d6']
+ok   the four static modules ran
+  test_schema: Ran 15 tests in 1.015s | OK
+ok   test_schema ends with a result line starting OK
+ok   test_schema shows no FAILED
+  test_sim_b5: Ran 12 tests in 1.817s | OK (skipped=2)
+ok   test_sim_b5 ends with a result line starting OK
+ok   test_sim_b5 shows no FAILED
+  test_docs_d3b: Ran 2 tests in 0.155s | OK
+ok   test_docs_d3b ends with a result line starting OK
+ok   test_docs_d3b shows no FAILED
+  test_docs_d6: Ran 3 tests in 0.040s | OK (skipped=1)
+ok   test_docs_d6 ends with a result line starting OK
+ok   test_docs_d6 shows no FAILED
+§5.2 lists 15: ['test_allowlist_constants', 'test_no_forecasting_code_uses_the_allowlist', 'test_the_robustness_rows_use_the_regressors', 'test_rows_and_schema', 'test_tier_i', 'test_tier_ii_conditions', 'test_tier_ii_inputs_not_estimable', 'test_tier_iii_and_a2_gap', 'test_equivalence_wording', 'test_null_reading', 'test_fixed_rule_rows', 'test_interim_wording_agreement', 'test_one_shot_and_holdout', 'test_frames_must_match_the_document', 'test_module_sources']
+test methods in the file (15): ['test_allowlist_constants', 'test_no_forecasting_code_uses_the_allowlist', 'test_the_robustness_rows_use_the_regressors', 'test_rows_and_schema', 'test_tier_i', 'test_tier_ii_conditions', 'test_tier_ii_inputs_not_estimable', 'test_tier_iii_and_a2_gap', 'test_equivalence_wording', 'test_null_reading', 'test_fixed_rule_rows', 'test_interim_wording_agreement', 'test_one_shot_and_holdout', 'test_frames_must_match_the_document', 'test_module_sources']; module-level test functions: []
+ok   the test methods are exactly the 15 names of §5.2
+ok   no module-level function named test*
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+ok   HEAD == HEAD_BEFORE
+ok   BLIND_FIT_LOG sha256 and lines
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES (0)
+ok   no ACCESS_LOG name ([])
+ok   OFILT_RUN_SEALED absent
+ok   NODATA still empty ([])
+git status --porcelain --untracked-files=all:
+  ?? docs/P4_CONFIRM_CLAIMS_SPEC.md
+  ?? ofilt/drift/confirm_allowlist.py
+  ?? ofilt/drift/confirm_claims.py
+  ?? tests/test_p4_confirm_claims.py
+ok   status == NEW_CODE as ?? lines
+reviewed ofilt/drift/confirm_allowlist.py: sha256 2fd60f4e8f4e6bf9c21db3863854be89abf70f0d239abbd001f62a8468a154c1; lines 19
+reviewed ofilt/drift/confirm_claims.py: sha256 ac91c49f529d108f4ff62f40d8584cf329c10a0320862878b4bef66447d07ed8; lines 266
+reviewed tests/test_p4_confirm_claims.py: sha256 b6f53d16ced4ac6edfb123abd6ea7eac82351755eaa6a71145219da701a7a7d3; lines 499
+failed checks: 0
+D3 CHECK: True
+exit 0
+
+== d.4: the reports of P4-4b2 and P4-boot2 (sources checked first, then the copies)
+--- /tmp/p4_4c1_d4.py (sha256 2d8354d0274f200138c634f86a11e3a54688314ba523d19f532632eb853535ed)
+"""P4-4c1 d.4: the reports of P4-4b2 and P4-boot2 (verdict line `D4 CHECK`). Reads files as bytes and text.
+
+Run with `sources` before the copy (verdict line `D4 SOURCES`), and with `all` after it (the copies checked too).
+Expected values are read from /tmp/p4_4c1_msg.txt.
+"""
+import hashlib
+import os
+import re
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c1_msg.txt"
+mode = sys.argv[1]
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+for src, dst, P in (("/tmp/p4_4b2.txt", "reports/P4_reports/p4_4b2.txt", "P4_4B2"),
+                    ("/tmp/p4_boot2.txt", "reports/P4_reports/p4_boot2.txt", "BOOT2")):
+    print(f"--- {src}")
+    if not os.path.isfile(src):
+        check(False, f"{src} exists")
+        continue
+    data = open(src, "rb").read()
+    h = hashlib.sha256(data).hexdigest()
+    text = data.decode("utf-8")
+    ls = text.split("\n")
+    body = [ln for ln in ls if ln.strip()]
+    print(f"sha256 {h}; bytes {len(data)}; lines {len(text.splitlines())}")
+    print(f"line 1: {ls[0]}\nline 2: {ls[1]}\nline 3: {ls[2]}")
+    print(f"last-but-one non-empty: {body[-2]}\nlast non-empty: {body[-1]}")
+    check(ls[0] == E[f"{P}_LINE1"], f"line 1 == {P}_LINE1")
+    check(ls[1] == E[f"{P}_LINE2"], f"line 2 == {P}_LINE2")
+    check(ls[2] == E[f"{P}_LINE3"], f"line 3 == {P}_LINE3")
+    check(body[-1] == E["HEAD_BEFORE"], "last non-empty line == HEAD_BEFORE")
+    check(body[-2] == E[f"{P}_LAST"], f"last-but-one non-empty line == {P}_LAST")
+    for name in E[f"{P}_VERDICTS"].split(" "):
+        n = sum(1 for ln in ls if ln == f"{name} CHECK: True")
+        check(n >= 1, f"the whole line '{name} CHECK: True' occurs ({n} times)")
+    print(f"line 3 occurs {sum(1 for ln in ls if ln == ls[2])} times as a whole line; "
+          f"{text.count(ls[2])} times as a substring")
+    if mode == "all":
+        d = os.path.join(REPO, dst)
+        hd = hashlib.sha256(open(d, "rb").read()).hexdigest() if os.path.isfile(d) else None
+        print(f"copy {dst}: sha256 {hd}")
+        check(hd == h, f"{dst} has its source's SHA-256")
+
+print(f"failed checks: {len(fails)}")
+print(f"{'D4 SOURCES' if mode == 'sources' else 'D4 CHECK'}: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c1_d4_sources.out (sha256 1c17d9322755bd64cfc90a1fa86b771e7d6a9ed31f3046a1196d06bb27653647)
+--- /tmp/p4_4b2.txt
+sha256 5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9; bytes 139820; lines 2052
+line 1: 2026-10-12T01:05:52Z
+line 2: ff318775ef05b8266b6d286bd78c4ee0372d2ef0
+line 3: 5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c  /tmp/p4_4b2_msg.txt
+last-but-one non-empty: 2026-10-12T01:34:31Z
+last non-empty: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+ok   line 1 == P4_4B2_LINE1
+ok   line 2 == P4_4B2_LINE2
+ok   line 3 == P4_4B2_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_4B2_LAST
+ok   the whole line 'D3 CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 3 times as a whole line; 3 times as a substring
+--- /tmp/p4_boot2.txt
+sha256 a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0; bytes 59133; lines 964
+line 1: 2026-10-12T01:40:53Z
+line 2: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+line 3: 76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62  /tmp/p4_boot2_msg.txt
+last-but-one non-empty: 2026-10-12T01:48:45Z
+last non-empty: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+ok   line 1 == BOOT2_LINE1
+ok   line 2 == BOOT2_LINE2
+ok   line 3 == BOOT2_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == BOOT2_LAST
+ok   the whole line 'A_ENV CHECK: True' occurs (1 times)
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'C CHECK: True' occurs (1 times)
+line 3 occurs 3 times as a whole line; 3 times as a substring
+failed checks: 0
+D4 SOURCES: True
+exit 0
+--- /tmp/p4_4c1_d4.out (sha256 665e2586da4b4d6a200200ca05dd2d141afdff8119d879fdeb8f08e5ff6ddfad)
+--- /tmp/p4_4b2.txt
+sha256 5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9; bytes 139820; lines 2052
+line 1: 2026-10-12T01:05:52Z
+line 2: ff318775ef05b8266b6d286bd78c4ee0372d2ef0
+line 3: 5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c  /tmp/p4_4b2_msg.txt
+last-but-one non-empty: 2026-10-12T01:34:31Z
+last non-empty: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+ok   line 1 == P4_4B2_LINE1
+ok   line 2 == P4_4B2_LINE2
+ok   line 3 == P4_4B2_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_4B2_LAST
+ok   the whole line 'D3 CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 3 times as a whole line; 3 times as a substring
+copy reports/P4_reports/p4_4b2.txt: sha256 5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9
+ok   reports/P4_reports/p4_4b2.txt has its source's SHA-256
+--- /tmp/p4_boot2.txt
+sha256 a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0; bytes 59133; lines 964
+line 1: 2026-10-12T01:40:53Z
+line 2: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+line 3: 76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62  /tmp/p4_boot2_msg.txt
+last-but-one non-empty: 2026-10-12T01:48:45Z
+last non-empty: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+ok   line 1 == BOOT2_LINE1
+ok   line 2 == BOOT2_LINE2
+ok   line 3 == BOOT2_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == BOOT2_LAST
+ok   the whole line 'A_ENV CHECK: True' occurs (1 times)
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'C CHECK: True' occurs (1 times)
+line 3 occurs 3 times as a whole line; 3 times as a substring
+copy reports/P4_reports/p4_boot2.txt: sha256 a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0
+ok   reports/P4_reports/p4_boot2.txt has its source's SHA-256
+failed checks: 0
+D4 CHECK: True
+exit 0
+
+== d.5 and e.1: the records script, and stages 1 and 2
+--- /tmp/p4_4c1_records.py (sha256 e9697cfd610ce98d6149a144f99f0b4efaa1883ce31b77b3c3a75d8cdfdb2398)
+"""P4-4c1 d.5 and e.1: the records edits of the kit's p4_4c1_STATUS_EDITS.txt applied to PASS4_STATUS.md.
+
+Usage: `records.py stage1` (d.5; verdict line `D5 CHECK`) or `records.py stage2` (e.1; verdict line `E1 CHECK`).
+The edits file is read by the rules of its header, after its SHA-256 is checked. Stage 1 applies EDIT 01 to EDIT 10 in
+order, twice, each time from PASS4_STATUS.md as it is: once with each NEW span as written (the undated result) and
+once with the date of step a.1 in place of the placeholder (the dated result); each OLD span must occur exactly once
+when its edit is applied, in both passes. Stage 2 applies FINAL the same way, to stage 1's undated result and to
+PASS4_STATUS.md. Both results are written to temporary files first; PASS4_STATUS.md is replaced by the dated result
+only if every check holds (as steps d.5 and e.1 direct). Expected values come from /tmp/p4_4c1_msg.txt; the nine section
+headings from the standing prompt's records rule; the date from /tmp/p4_4c1_date.out.
+"""
+import hashlib
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+STATUS = os.path.join(REPO, "PASS4_STATUS.md")
+EDITS = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c1_kit/p4_4c1_STATUS_EDITS.txt")
+PROMPT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+MSG = "/tmp/p4_4c1_msg.txt"
+PLACEHOLDER = "@@DATE@@"
+S1_UNDATED, S1_DATED = "/tmp/p4_4c1_status_s1_undated.md", "/tmp/p4_4c1_status_s1_dated.md"
+S2_UNDATED, S2_DATED = "/tmp/p4_4c1_status_s2_undated.md", "/tmp/p4_4c1_status_s2_dated.md"
+stage = sys.argv[1]
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def sha(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+date = open("/tmp/p4_4c1_date.out", encoding="utf-8").read().strip()
+print(f"date (step a.1): {date}")
+check(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, "the date has the form YYYY-MM-DD")
+
+prompt = open(PROMPT, encoding="utf-8").read()
+check(sha(prompt.encode("utf-8")) == E["PROMPT_SHA256"], "standing prompt == PROMPT_SHA256")
+m = re.search(r"has these sections: (.*?)\. After it", prompt)
+HEADINGS = [f"## {s}" for s in m.group(1).split(", ")] if m else []
+print(f"headings (standing prompt): {HEADINGS}")
+check(len(HEADINGS) == 9, "nine headings read from the standing prompt")
+
+# ---- the edits file, by the rules of its header
+raw = open(EDITS, "rb").read()
+print(f"edits file sha256 {sha(raw)}")
+check(sha(raw) == E["KIT_EDITS_SHA256"], "edits file == KIT_EDITS_SHA256")
+check(b"\r" not in raw, "edits file has LF line endings only")
+el = raw.decode("utf-8").split("\n")
+if el and el[-1] == "":
+    el = el[:-1]
+marker = re.compile(r"^@@@ (EDIT \d\d|FINAL) (OLD|NEW|END)$")
+first = next(i for i, ln in enumerate(el) if marker.match(ln))
+print(f"header: lines 1 to {first}")
+edits, order, i = {}, [], first
+while i < len(el):
+    mo = marker.match(el[i])
+    if not mo or mo.group(2) != "OLD":
+        check(False, f"line {i + 1}: expected an OLD marker, got {el[i]!r}")
+        break
+    name = mo.group(1)
+    j = next(k for k in range(i + 1, len(el)) if marker.match(el[k]))
+    check(el[j] == f"@@@ {name} NEW", f"{name}: NEW marker after OLD")
+    k = next(q for q in range(j + 1, len(el)) if marker.match(el[q]))
+    check(el[k] == f"@@@ {name} END", f"{name}: END marker after NEW")
+    edits[name] = ("\n".join(el[i + 1:j]), "\n".join(el[j + 1:k]))
+    order.append(name)
+    i = k + 1
+want = [f"EDIT {n:02d}" for n in range(1, int(E["STAGE1_EDITS"]) + 1)] + ["FINAL"]
+print(f"edits found: {order}")
+check(order == want, "the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL")
+
+
+def apply(text: str, names, dated: bool) -> str:
+    for name in names:
+        old, new = edits[name]
+        n = text.count(old)
+        check(n == 1, f"{'dated' if dated else 'undated'} pass, {name}: OLD occurs exactly once ({n})")
+        if n != 1:
+            raise SystemExit(finish())
+        text = text.replace(old, new.replace(PLACEHOLDER, date) if dated else new, 1)
+    return text
+
+
+def results_ok(undated: str, dated: str, template_key: str) -> None:
+    hu = sha(undated.encode("utf-8"))
+    print(f"undated result sha256 {hu}")
+    check(hu == E[template_key], f"undated result == {template_key}")
+    check(undated.replace(PLACEHOLDER, date) == dated, "the undated result with the date in place of each "
+                                                       "placeholder == the dated result")
+    print(f"placeholders in the undated result: {undated.count(PLACEHOLDER)}; in the dated result: "
+          f"{dated.count(PLACEHOLDER)}")
+    check(PLACEHOLDER not in dated, "no placeholder left in the dated result")
+    n = len(dated.splitlines())
+    print(f"dated result: lines {n}; sha256 {sha(dated.encode('utf-8'))}")
+    check(n == int(E["STATUS_LINES"]), "dated result has STATUS_LINES lines")
+    heads = [ln for ln in dated.splitlines() if ln.startswith("## ")]
+    print(f"dated result's '## ' headings: {heads}")
+    check(heads == HEADINGS, "the nine headings, in order")
+
+
+def status_lines():
+    out = subprocess.run(["git", "-C", REPO, "status", "--porcelain", "--untracked-files=all"], check=True,
+                         capture_output=True, text=True).stdout.rstrip("\n").split("\n")
+    print("git status --porcelain --untracked-files=all:")
+    for ln in out:
+        print(f"  {ln}")
+    return out
+
+
+def finish():
+    print(f"failed checks: {len(fails)}")
+    print(f"{'D5' if stage == 'stage1' else 'E1'} CHECK: {not fails}")
+    return 1 if fails else 0
+
+
+expected_status = sorted([" M PASS4_STATUS.md"] + [f"?? {p}" for p in E["NEW_FILES"].split(" ")])
+if stage == "stage1":
+    base = open(STATUS, encoding="utf-8").read()
+    print(f"PASS4_STATUS.md before: sha256 {sha(base.encode('utf-8'))}; lines {len(base.splitlines())}")
+    check(sha(base.encode("utf-8")) == E["STATUS_BEFORE_SHA256"], "PASS4_STATUS.md before == STATUS_BEFORE_SHA256")
+    stage1 = want[:-1]
+    undated, dated = apply(base, stage1, False), apply(base, stage1, True)
+    out_u, out_d = S1_UNDATED, S1_DATED
+    template = "STATUS_S1_TEMPLATE"
+else:
+    base_u = open(S1_UNDATED, encoding="utf-8").read()
+    base_d = open(STATUS, encoding="utf-8").read()
+    print(f"stage 1 undated result: sha256 {sha(base_u.encode('utf-8'))}; PASS4_STATUS.md: "
+          f"sha256 {sha(base_d.encode('utf-8'))}")
+    check(sha(base_u.encode("utf-8")) == E["STATUS_S1_TEMPLATE"], "stage 1's undated result == STATUS_S1_TEMPLATE")
+    check(sha(base_d.encode("utf-8")) == sha(open(S1_DATED, "rb").read()), "PASS4_STATUS.md == stage 1's dated result")
+    undated, dated = apply(base_u, ["FINAL"], False), apply(base_d, ["FINAL"], True)
+    out_u, out_d = S2_UNDATED, S2_DATED
+    template = "STATUS_S2_TEMPLATE"
+
+with open(out_u, "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(undated)
+with open(out_d, "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(dated)
+print(f"written: {out_u}, {out_d}")
+results_ok(undated, dated, template)
+if fails:
+    print("PASS4_STATUS.md NOT replaced")
+    sys.exit(finish())
+shutil.copyfile(out_d, STATUS)
+now = open(STATUS, "rb").read()
+print(f"PASS4_STATUS.md replaced by the dated result: sha256 {sha(now)}")
+check(now == dated.encode("utf-8"), "PASS4_STATUS.md == the dated result")
+check(sorted(status_lines()) == expected_status, "status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines")
+sys.exit(finish())
+--- /tmp/p4_4c1_d5.out (sha256 9568a9fd04cf2fa1f630e7481d2754dbad283b1f53726edaf624638789658d75)
+date (step a.1): 2026-10-11
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+headings (standing prompt): ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   nine headings read from the standing prompt
+edits file sha256 043250f65b9a800d87cca656abaf9c08243b3248dec672863fb91ebf7f97d44e
+ok   edits file == KIT_EDITS_SHA256
+ok   edits file has LF line endings only
+header: lines 1 to 2
+ok   EDIT 01: NEW marker after OLD
+ok   EDIT 01: END marker after NEW
+ok   EDIT 02: NEW marker after OLD
+ok   EDIT 02: END marker after NEW
+ok   EDIT 03: NEW marker after OLD
+ok   EDIT 03: END marker after NEW
+ok   EDIT 04: NEW marker after OLD
+ok   EDIT 04: END marker after NEW
+ok   EDIT 05: NEW marker after OLD
+ok   EDIT 05: END marker after NEW
+ok   EDIT 06: NEW marker after OLD
+ok   EDIT 06: END marker after NEW
+ok   EDIT 07: NEW marker after OLD
+ok   EDIT 07: END marker after NEW
+ok   EDIT 08: NEW marker after OLD
+ok   EDIT 08: END marker after NEW
+ok   EDIT 09: NEW marker after OLD
+ok   EDIT 09: END marker after NEW
+ok   EDIT 10: NEW marker after OLD
+ok   EDIT 10: END marker after NEW
+ok   FINAL: NEW marker after OLD
+ok   FINAL: END marker after NEW
+edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'EDIT 09', 'EDIT 10', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+PASS4_STATUS.md before: sha256 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264; lines 238
+ok   PASS4_STATUS.md before == STATUS_BEFORE_SHA256
+ok   undated pass, EDIT 01: OLD occurs exactly once (1)
+ok   undated pass, EDIT 02: OLD occurs exactly once (1)
+ok   undated pass, EDIT 03: OLD occurs exactly once (1)
+ok   undated pass, EDIT 04: OLD occurs exactly once (1)
+ok   undated pass, EDIT 05: OLD occurs exactly once (1)
+ok   undated pass, EDIT 06: OLD occurs exactly once (1)
+ok   undated pass, EDIT 07: OLD occurs exactly once (1)
+ok   undated pass, EDIT 08: OLD occurs exactly once (1)
+ok   undated pass, EDIT 09: OLD occurs exactly once (1)
+ok   undated pass, EDIT 10: OLD occurs exactly once (1)
+ok   dated pass, EDIT 01: OLD occurs exactly once (1)
+ok   dated pass, EDIT 02: OLD occurs exactly once (1)
+ok   dated pass, EDIT 03: OLD occurs exactly once (1)
+ok   dated pass, EDIT 04: OLD occurs exactly once (1)
+ok   dated pass, EDIT 05: OLD occurs exactly once (1)
+ok   dated pass, EDIT 06: OLD occurs exactly once (1)
+ok   dated pass, EDIT 07: OLD occurs exactly once (1)
+ok   dated pass, EDIT 08: OLD occurs exactly once (1)
+ok   dated pass, EDIT 09: OLD occurs exactly once (1)
+ok   dated pass, EDIT 10: OLD occurs exactly once (1)
+written: /tmp/p4_4c1_status_s1_undated.md, /tmp/p4_4c1_status_s1_dated.md
+undated result sha256 7ae131e85a13b067dde163e3aa34d4cb1b474e276a0ba196e95a54599d0baa4b
+ok   undated result == STATUS_S1_TEMPLATE
+ok   the undated result with the date in place of each placeholder == the dated result
+placeholders in the undated result: 7; in the dated result: 0
+ok   no placeholder left in the dated result
+dated result: lines 260; sha256 bd0fe1893b9d3b8fda173cf4d278a873a7a04bf4ecd8f0c40aade131bae14747
+ok   dated result has STATUS_LINES lines
+dated result's '## ' headings: ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   the nine headings, in order
+PASS4_STATUS.md replaced by the dated result: sha256 bd0fe1893b9d3b8fda173cf4d278a873a7a04bf4ecd8f0c40aade131bae14747
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_CLAIMS_SPEC.md
+  ?? ofilt/drift/confirm_allowlist.py
+  ?? ofilt/drift/confirm_claims.py
+  ?? reports/P4_reports/p4_4b2.txt
+  ?? reports/P4_reports/p4_boot2.txt
+  ?? tests/test_p4_confirm_claims.py
+ok   status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines
+failed checks: 0
+D5 CHECK: True
+exit 0
+--- /tmp/p4_4c1_e1.out (sha256 d731fd9e3ecd54a2e09e635a1263dd3928d55392c16404bbcad3ae24a64e44ab)
+date (step a.1): 2026-10-11
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+headings (standing prompt): ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   nine headings read from the standing prompt
+edits file sha256 043250f65b9a800d87cca656abaf9c08243b3248dec672863fb91ebf7f97d44e
+ok   edits file == KIT_EDITS_SHA256
+ok   edits file has LF line endings only
+header: lines 1 to 2
+ok   EDIT 01: NEW marker after OLD
+ok   EDIT 01: END marker after NEW
+ok   EDIT 02: NEW marker after OLD
+ok   EDIT 02: END marker after NEW
+ok   EDIT 03: NEW marker after OLD
+ok   EDIT 03: END marker after NEW
+ok   EDIT 04: NEW marker after OLD
+ok   EDIT 04: END marker after NEW
+ok   EDIT 05: NEW marker after OLD
+ok   EDIT 05: END marker after NEW
+ok   EDIT 06: NEW marker after OLD
+ok   EDIT 06: END marker after NEW
+ok   EDIT 07: NEW marker after OLD
+ok   EDIT 07: END marker after NEW
+ok   EDIT 08: NEW marker after OLD
+ok   EDIT 08: END marker after NEW
+ok   EDIT 09: NEW marker after OLD
+ok   EDIT 09: END marker after NEW
+ok   EDIT 10: NEW marker after OLD
+ok   EDIT 10: END marker after NEW
+ok   FINAL: NEW marker after OLD
+ok   FINAL: END marker after NEW
+edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'EDIT 09', 'EDIT 10', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+stage 1 undated result: sha256 7ae131e85a13b067dde163e3aa34d4cb1b474e276a0ba196e95a54599d0baa4b; PASS4_STATUS.md: sha256 bd0fe1893b9d3b8fda173cf4d278a873a7a04bf4ecd8f0c40aade131bae14747
+ok   stage 1's undated result == STATUS_S1_TEMPLATE
+ok   PASS4_STATUS.md == stage 1's dated result
+ok   undated pass, FINAL: OLD occurs exactly once (1)
+ok   dated pass, FINAL: OLD occurs exactly once (1)
+written: /tmp/p4_4c1_status_s2_undated.md, /tmp/p4_4c1_status_s2_dated.md
+undated result sha256 7a06bd6031c25073d6a15ca6a3d999d2b63a4bc36ba5184376efad3c6b28c254
+ok   undated result == STATUS_S2_TEMPLATE
+ok   the undated result with the date in place of each placeholder == the dated result
+placeholders in the undated result: 7; in the dated result: 0
+ok   no placeholder left in the dated result
+dated result: lines 260; sha256 d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148
+ok   dated result has STATUS_LINES lines
+dated result's '## ' headings: ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   the nine headings, in order
+PASS4_STATUS.md replaced by the dated result: sha256 d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_CLAIMS_SPEC.md
+  ?? ofilt/drift/confirm_allowlist.py
+  ?? ofilt/drift/confirm_claims.py
+  ?? reports/P4_reports/p4_4b2.txt
+  ?? reports/P4_reports/p4_boot2.txt
+  ?? tests/test_p4_confirm_claims.py
+ok   status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines
+failed checks: 0
+E1 CHECK: True
+exit 0
+$ diff /tmp/p4_4c1_status_s1_undated.md /tmp/p4_4c1_status_s2_undated.md
+21c21
+< | P4-4c1 P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests | in progress | `checkpoint: P4-4c1`. Report `/tmp/p4_4c1.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4c2. |
+---
+> | P4-4c1 P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests | done | `checkpoint: P4-4c1`. Report `/tmp/p4_4c1.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4c2. |
+
+== e.2: the checkpoint
+--- /tmp/p4_4c1_e2.sh (sha256 78bbc8e173935d83979d54b58513cf190599e6a4f4d84c55ebb1a923eb0474bd)
+#!/bin/bash
+# P4-4c1 e.2: the checkpoint, as P4-4b2's e.2. COMMIT_ITEM is read from the saved message, not typed.
+set -u
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG=/tmp/p4_4c1_msg.txt
+item="$(sed -n 's/^- COMMIT_ITEM = //p' "$MSG")"
+trailer="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+cd "$REPO" || exit 2
+{
+    echo "start utc: $(date -u +%FT%TZ)"
+    echo "item: $item"
+    echo "trailer: $trailer"
+    source "$HOME/venvs/ofilt_p2/bin/activate"
+    env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "$item" "$trailer"
+    rc=$?
+    echo "checkpoint exit: $rc"
+    echo "end utc: $(date -u +%FT%TZ)"
+    echo "suite log: $(ls -t "${TMPDIR:-/tmp}"/ckpt_tests.* 2>/dev/null | head -n 1)"
+} 2>&1 | tee /tmp/p4_4c1_e2.out
+--- /tmp/p4_4c1_e2.out (sha256 33146b673ffbfb74f83297c669504e4c003effc67d6b2a6e474c5b6ccaf8b8a3)
+start utc: 2026-10-12T02:10:04Z
+item: P4-4c1 (P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests)
+trailer: Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 b2d0fbc0c77a996d53c1715a9a32590a3b4a13a689a38e45071aed3e77ca0fe7
+before suite: git status --porcelain
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_CLAIMS_SPEC.md
+?? ofilt/drift/confirm_allowlist.py
+?? ofilt/drift/confirm_claims.py
+?? reports/P4_reports/p4_4b2.txt
+?? reports/P4_reports/p4_boot2.txt
+?? tests/test_p4_confirm_claims.py
+----------------------------------------------------------------------
+Ran 374 tests in 1242.123s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_CLAIMS_SPEC.md
+?? ofilt/drift/confirm_allowlist.py
+?? ofilt/drift/confirm_claims.py
+?? reports/P4_reports/p4_4b2.txt
+?? reports/P4_reports/p4_boot2.txt
+?? tests/test_p4_confirm_claims.py
+commit b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+checkpoint exit: 0
+end utc: 2026-10-12T02:30:49Z
+suite log: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.PzfMkM
+
+== e.3: the commit
+--- /tmp/p4_4c1_e3.py (sha256 2203acf3e311639170b3f055ebb7646652ac2d3683b2996b731643480e147eb1)
+"""P4-4c1 e.3: the commit (verdict line `E CHECK`). Imports no module of ofilt; reads files and calls git.
+
+Expected values come from /tmp/p4_4c1_msg.txt; the values printed by earlier steps are read from their outputs:
+e.2's (/tmp/p4_4c1_e2.out: the commit, the trailer, the suite lines), e.1's (PASS4_STATUS.md's SHA-256), d.4's (the
+copies' SHA-256) and D3's (the reviewed modules' and test file's SHA-256).
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c1_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def head_sha(path):
+    return hashlib.sha256(git("show", f"HEAD:{path}")).hexdigest()
+
+
+def grab(path, pattern):
+    m = re.search(pattern, open(path, encoding="utf-8").read(), flags=re.M)
+    return m.group(1) if m else None
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+# --- the checkpoint's output
+e2 = open("/tmp/p4_4c1_e2.out", encoding="utf-8").read()
+e2l = e2.splitlines()
+print("checkpoint output, selected lines:")
+for ln in e2l:
+    if re.match(r"(start utc|end utc|checkpoint exit|commit |Ran |OK|FAILED|TESTS FAILED|suite log|restored|the suite)", ln):
+        print(f"  {ln}")
+check("checkpoint exit: 0" in e2l, "checkpoint exit 0")
+check(any(ln.startswith(E["SUITE_RAN"]) for ln in e2l), "a line starting with SUITE_RAN")
+check(E["SUITE_OK"] in e2l, "the line SUITE_OK")
+check("TESTS FAILED" not in e2, "no TESTS FAILED")
+commit = grab("/tmp/p4_4c1_e2.out", r"^commit ([0-9a-f]{40})$")
+trailer = grab("/tmp/p4_4c1_e2.out", r"^trailer: (.*)$")
+print(f"commit printed: {commit}; trailer: {trailer}")
+
+# --- HEAD and its commit
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+check(head == commit, "HEAD == the commit checkpoint.sh printed")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+check(parents == [E["HEAD_BEFORE"]], f"HEAD's only parent == HEAD_BEFORE ({parents})")
+subject = gtext("log", "-1", "--format=%s", "HEAD")
+print(f"subject: {subject}")
+check(subject == "checkpoint: " + E["COMMIT_ITEM"], "subject == 'checkpoint: ' + COMMIT_ITEM")
+body = gtext("log", "-1", "--format=%B", "HEAD").split("\n")
+check(trailer is not None and trailer.startswith("Co-Authored-By: ") and trailer in body, "the message holds the trailer")
+files = gtext("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")
+print(f"files of the commit ({len(files)}): {files}")
+want = sorted(["PASS4_STATUS.md"] + E["NEW_FILES"].split(" "))
+check(len(files) == int(E["COMMIT_FILE_COUNT"]) and sorted(files) == want,
+      "the commit holds exactly COMMIT_FILE_COUNT files: PASS4_STATUS.md and NEW_FILES")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+check(status == "", f"working tree clean ({status!r})")
+
+# --- the new files at HEAD
+s_e1 = grab("/tmp/p4_4c1_e1.out", r"^PASS4_STATUS\.md replaced by the dated result: sha256 ([0-9a-f]{64})$")
+h = head_sha("PASS4_STATUS.md")
+print(f"PASS4_STATUS.md at HEAD: {h}; e.1 printed {s_e1}")
+check(h == s_e1, "PASS4_STATUS.md == e.1's SHA-256")
+check(head_sha("docs/P4_CONFIRM_CLAIMS_SPEC.md") == E["KIT_SPEC_SHA256"], "the specification == KIT_SPEC_SHA256")
+for p in ("reports/P4_reports/p4_4b2.txt", "reports/P4_reports/p4_boot2.txt"):
+    s_d4 = grab("/tmp/p4_4c1_d4.out", rf"^copy {re.escape(p)}: sha256 ([0-9a-f]{{64}})$")
+    h = head_sha(p)
+    print(f"{p} at HEAD: {h}; d.4 printed {s_d4}")
+    check(h == s_d4, f"{p} == d.4's SHA-256")
+for p in ("ofilt/drift/confirm_allowlist.py", "ofilt/drift/confirm_claims.py", "tests/test_p4_confirm_claims.py"):
+    s_d3 = grab("/tmp/p4_4c1_d3.out", rf"^reviewed {re.escape(p)}: sha256 ([0-9a-f]{{64}});")
+    h = head_sha(p)
+    print(f"{p} at HEAD: {h}; D3 printed {s_d3}")
+    check(h == s_d3, f"{p} == D3's SHA-256")
+
+# --- everything else as in step a.2
+tags = gtext("tag", "-l").split("\n")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), f"tags == TAG_LIST ({tags})")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"]
+      and len(b.decode().splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG sha256 and lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+check(rr == int(E["RUN_REGISTRY_BYTES"]), f"RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES ({rr})")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.join(root, n) for n in dirs + names if n.startswith("ACCESS_LOG")]
+check(access == [], f"no ACCESS_LOG name ({access})")
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"), ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"), ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"),
+    ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"), ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"),
+    ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"), ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"),
+    ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"), ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"),
+    ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"), ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"), ("ofilt/drift/confirm_economic.py", "ECON_MODULE_SHA256"),
+    ("tests/test_p4_confirm_economic.py", "ECON_TESTS_SHA256"), ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"),
+]
+for path, name in pinned:
+    check(head_sha(path) == E[name], f"{path} at HEAD == {name}")
+
+print(f"failed checks: {len(fails)}")
+print(f"E CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c1_e3.out (sha256 f4d6e4e65197d145a2f7e5e8c82dc351e3a4c2dc295a01fd6ba0738dceed601a)
+checkpoint output, selected lines:
+  start utc: 2026-10-12T02:10:04Z
+  Ran 374 tests in 1242.123s
+  OK (skipped=6)
+  the suite rewrote reports/B6_coverage.json; its diff:
+  restored reports/B6_coverage.json
+  commit b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+  checkpoint exit: 0
+  end utc: 2026-10-12T02:30:49Z
+  suite log: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.PzfMkM
+ok   checkpoint exit 0
+ok   a line starting with SUITE_RAN
+ok   the line SUITE_OK
+ok   no TESTS FAILED
+commit printed: b4f3066e9c80745c26cdecce1cf3b5800d0398e9; trailer: Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+HEAD: b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+ok   HEAD == the commit checkpoint.sh printed
+ok   HEAD's only parent == HEAD_BEFORE (['d4253b87594c234ea6147e0fe0fa55c47b52eb6d'])
+subject: checkpoint: P4-4c1 (P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests)
+ok   subject == 'checkpoint: ' + COMMIT_ITEM
+ok   the message holds the trailer
+files of the commit (7): ['PASS4_STATUS.md', 'docs/P4_CONFIRM_CLAIMS_SPEC.md', 'ofilt/drift/confirm_allowlist.py', 'ofilt/drift/confirm_claims.py', 'reports/P4_reports/p4_4b2.txt', 'reports/P4_reports/p4_boot2.txt', 'tests/test_p4_confirm_claims.py']
+ok   the commit holds exactly COMMIT_FILE_COUNT files: PASS4_STATUS.md and NEW_FILES
+ok   working tree clean ('')
+PASS4_STATUS.md at HEAD: d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148; e.1 printed d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148
+ok   PASS4_STATUS.md == e.1's SHA-256
+ok   the specification == KIT_SPEC_SHA256
+reports/P4_reports/p4_4b2.txt at HEAD: 5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9; d.4 printed 5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9
+ok   reports/P4_reports/p4_4b2.txt == d.4's SHA-256
+reports/P4_reports/p4_boot2.txt at HEAD: a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0; d.4 printed a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0
+ok   reports/P4_reports/p4_boot2.txt == d.4's SHA-256
+ofilt/drift/confirm_allowlist.py at HEAD: 2fd60f4e8f4e6bf9c21db3863854be89abf70f0d239abbd001f62a8468a154c1; D3 printed 2fd60f4e8f4e6bf9c21db3863854be89abf70f0d239abbd001f62a8468a154c1
+ok   ofilt/drift/confirm_allowlist.py == D3's SHA-256
+ofilt/drift/confirm_claims.py at HEAD: ac91c49f529d108f4ff62f40d8584cf329c10a0320862878b4bef66447d07ed8; D3 printed ac91c49f529d108f4ff62f40d8584cf329c10a0320862878b4bef66447d07ed8
+ok   ofilt/drift/confirm_claims.py == D3's SHA-256
+tests/test_p4_confirm_claims.py at HEAD: b6f53d16ced4ac6edfb123abd6ea7eac82351755eaa6a71145219da701a7a7d3; D3 printed b6f53d16ced4ac6edfb123abd6ea7eac82351755eaa6a71145219da701a7a7d3
+ok   tests/test_p4_confirm_claims.py == D3's SHA-256
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+ok   BLIND_FIT_LOG sha256 and lines
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES (0)
+ok   no ACCESS_LOG name ([])
+ok   spec/analysis_spec_dev_v1.yaml at HEAD == SPEC_SHA256
+ok   PASS3_STATUS.md at HEAD == PASS3_STATUS_SHA256
+ok   docs/P4_CONFIRM_CONFIG.json at HEAD == CONFIG_SHA256
+ok   docs/P3_COST_INPUTS.json at HEAD == COST_INPUTS_SHA256
+ok   ofilt/drift/sim_full.py at HEAD == SIM_MODULE_SHA256
+ok   tests/test_p4_sim_full.py at HEAD == SIM_TESTS_SHA256
+ok   docs/P4_SIM_SPEC.md at HEAD == SIM_SPEC_SHA256
+ok   ofilt/drift/confirm_inference.py at HEAD == INF_MODULE_SHA256
+ok   tests/test_p4_confirm_inference.py at HEAD == INF_TESTS_SHA256
+ok   docs/P4_CONFIRM_INF_SPEC.md at HEAD == INF_SPEC_SHA256
+ok   ofilt/drift/confirm_forecast.py at HEAD == FC_MODULE_SHA256
+ok   tests/test_p4_confirm_forecast.py at HEAD == FC_TESTS_SHA256
+ok   docs/P4_CONFIRM_FC_SPEC.md at HEAD == FC_SPEC_SHA256
+ok   ofilt/drift/confirm_economic.py at HEAD == ECON_MODULE_SHA256
+ok   tests/test_p4_confirm_economic.py at HEAD == ECON_TESTS_SHA256
+ok   docs/P4_CONFIRM_ECON_SPEC.md at HEAD == ECON_SPEC_SHA256
+failed checks: 0
+E CHECK: True
+exit 0
+
+== git show --stat HEAD
+commit b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+Author: ofilt-pass1 <pass1@localhost>
+Date:   Sun Oct 11 22:30:49 2026 -0400
+
+    checkpoint: P4-4c1 (P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests)
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md                  |   32 +-
+ docs/P4_CONFIRM_CLAIMS_SPEC.md   |   94 ++
+ ofilt/drift/confirm_allowlist.py |   19 +
+ ofilt/drift/confirm_claims.py    |  266 +++++
+ reports/P4_reports/p4_4b2.txt    | 2052 ++++++++++++++++++++++++++++++++++++++
+ reports/P4_reports/p4_boot2.txt  |  964 ++++++++++++++++++
+ tests/test_p4_confirm_claims.py  |  499 +++++++++
+ 7 files changed, 3921 insertions(+), 5 deletions(-)
+
+== readings
+
+R1. c.1, what was read in this item.
+- Read in this item:
+  - the audit's gaps G8 to G11 (`reports/P4_reports/p4_1_audit.md` L176-221; P4-boot2 read only §2's headings);
+  - `ofilt/drift/schema.py` in full;
+  - `ofilt/drift/targets.py` L1-60 (`MASK_COLUMNS`, which test 1 uses).
+- Not read again, because they are unchanged since P4-boot2 read them (HEAD `d4253b8` and a clean tree at both):
+  - the configuration, read in full;
+  - the audit's rows R1 to R26;
+  - PLAN §1.4 and §10;
+  - PASS4_STATUS.md's Decision log entries;
+  - `confirm_inference.py`, `confirm_forecast.py` and `confirm_economic.py`, each read in full.
+- Read-only greps, before any code:
+  - the static scans of `test_schema` and `test_sim_b5`, which §1.2 requires the new modules to satisfy;
+  - the forecasting modules, for string constants holding the allowlist's names. There were none.
+
+R2. The probe (c.2), settled before the code:
+- In D1, every P4-4a and P4-4b entry is estimated or fixed, and the 17 P4-4c entries are pending.
+- D1 is synthetic in confirmation mode, so `licensed` is False and no claim is made on it.
+- R4 rejects. O36's `reject_calibrated` is True, so R20's `agree` is True on D1.
+- O10 is not equivalent at the primary SESOI. O11 is not equivalent at the low SESOI and is equivalent at the high one.
+- O21 has 979 eligible dates and a ratio near 1.03. O17 keeps all 2,888 of D0's rows.
+- The viability text starts with "viable", and `inference.reference` is "normal".
+- Nothing in the probe contradicts the specification.
+
+R3. `rows_from` takes an optional keyword, `spec=None` (default `Spec.load()`). This lets `claim_rows` pass its own spec to the rows (alpha, the viability text, the reference, the seed), as it does to G. The specification's positional form `rows_from(doc, a2_gap)` is unchanged, and the tests call it with the spec they load.
+
+R4. G, R12's a₂ gap.
+- G's `n_rows` and `n_dates` are those of the raw-target fit on O17's rows. That is the fit whose counts O17 reports; the abnormal fit uses the same rows.
+- If G holds a non-finite float, G becomes `{"status": "not_estimable", "reason": "non-finite estimate"}` and R12 stays fixed. This is what the specification says for a DesignError or no common row; the general non-finite rule would have made R12 itself not estimable. D1's G is finite, and no test of §5.2 depends on this case.
+- The parameter is `spec.h3_parameter` (`eurusd_ret`), as O2 reads it.
+
+R5. `claim_rows`'s mode check is strict: `doc["mode"]` must be "confirmation" when `confirm` is given and "dev" when it is not.
+
+R6. R13's `viable` holds when the viability text is a string starting with "viable". This `startswith` is on a plain variable; `test_schema`'s static patterns, which forbid selecting columns by prefix, do not match it (the static run passed).
+
+R7. Every `claimed` value is a bool. `_row` raises ValueError on a status outside STATUSES, or on pending. That is a guard against a bug and is never reached.
+
+R8. Some assertions go beyond the letter of §5.2, each within its test's stated purpose:
+- test 1: each path of FORECASTING_MODULES exists;
+- test 2: no forecasting module imports `confirm_allowlist` (P4Q2: "no forecasting code uses it");
+- test 5: `licensed` is False with provenance confirm_real but mode dev, and False on D1;
+- test 7: O1 is covered, and R4 comes before O21 in the reason order;
+- test 10: R4 not estimable;
+- test 11: a copy with O5 not estimable and O45 pending, which R26 lists;
+- test 14: a document whose provenance (confirm_real) is not the frames' (synthetic);
+- test 15: the allowlist module defines no function or class.
+
+R9. Before attempt 1, I replaced one clumsy line in the test file's helper `assertNotEstimableFrom` (it now uses `assertIsNone(e["values"])`). No attempt had run. Attempt 1 passed all 15 tests.
+
+R10. The records edits.
+- `/tmp/p4_4c1_records.py` writes the two temporary results and then replaces PASS4_STATUS.md with the dated one, as d.5 and e.1 direct.
+- I read the rule "write and edit every file with your file-editing tool" as governing the files I author (scripts, modules and tests). The script-applied records edits are the exception that d.5 and e.1 state.
+- The nine headings are read from the standing prompt's records rule.
+- The date is the one a.1 printed, 2026-10-11 (local); UTC was already 2026-10-12.
+
+R11. d.4 ran in two passes:
+- first, the sources only, before any copy (`D4 SOURCES`);
+- then everything after the copy (`D4 CHECK`).
+Nothing was copied before the sources had passed.
+
+R12. Other choices the message leaves open:
+- e.2's trailer is the form of P4-0b's commit message: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
+- checkpoint.sh prints the suite log's path only on failure, so e.2 prints the newest `ckpt_tests.*` under `$TMPDIR` after the run.
+- a.2 and D3 count `OFILT_RUN_SEALED=` lines in the session's environment in the calling shell, before `env -u`. Each Python process runs with the variable removed in any case.
+
+== deviations and notes
+
+Deviations: none that I know of. Every step ran in the message's order, a.1 to e.3, with d.1 (the copy of the specification) before d.2 (the modules and the tests). The readings above record the points the message left open.
+
+Notes:
+- The new test file passed on its first attempt: `Ran 15 tests in 8.258s`, `OK`.
+- The static modules ran with the data folder, as the message says:
+  - `test_schema`: 15 tests, OK;
+  - `test_sim_b5`: 12 tests, OK (skipped=2);
+  - `test_docs_d3b`: 2 tests, OK;
+  - `test_docs_d6`: 3 tests, OK (skipped=1).
+  - They ran as a zsh `for` over a literal list of the four names, teed to `/tmp/p4_4c1_d3_static.out`.
+- The checkpoint's suite: `Ran 374 tests in 1242.123s`, `OK (skipped=6)`. It rewrote `reports/B6_coverage.json` (float noise in mean_b, sd_b and se_over_sd); checkpoint.sh printed the diff and restored the file. Commit `b4f3066e9c80745c26cdecce1cf3b5800d0398e9`.
+- No scratch script was written or run (`/tmp/p4_4c1_scratch_*.py`: none).
+- The probe ran once, on synthetic frames, with the registry patched to REGDIR. Its two registry lines went to `/tmp/p4_4c1_registry/synthetic.jsonl`; no real-registry file was created.
+  - wall times: simulate 0.22 s, infer 2.35 s, run_calls 3.39 s, the forecasting rows and fill 1.04 s, the economic row and fill 0.26 s.
+- NODATA stayed empty throughout (the probe's end and D3).
+- `RUN_REGISTRY.jsonl` stayed at 0 bytes; `BLIND_FIT_LOG` at 7 lines. No ACCESS_LOG appeared, and no tag was created, moved or deleted.
+- For the supervisor's check after the commit:
+  - `/tmp/p4_4b2.txt`: 139,820 bytes, 2,052 lines, SHA-256 `5ab5af852ee0447089799b6d5d09b931f6c0158b63cdcc3902c551b577bc67c9`; its line 3 occurs 3 times as a whole line.
+  - `/tmp/p4_boot2.txt`: 59,133 bytes, 964 lines, SHA-256 `a0f79792edbd24103af70f65c649a1da31198561d0b7c42430f5610178747aa0`; its line 3 occurs 3 times as a whole line.
+- The date step a.1 printed, which dates every record edit, is the local date 2026-10-11. UTC was 2026-10-12 throughout the item.
+- `PASS4_STATUS.md`:
+  - after stage 1: SHA-256 `bd0fe1893b9d3b8fda173cf4d278a873a7a04bf4ecd8f0c40aade131bae14747`;
+  - after stage 2: `d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148`, the committed file;
+  - both 260 lines with the nine headings. Seven placeholders were replaced, all from EDIT 01 and EDIT 03.
+
+== the files written under /tmp (this report and its temporary file excluded)
+2f3939a9a54c19d77c59e4f96f8c4e55a8ab73ff4af42db4494533d5c555e51b  /tmp/p4_4c1_a2.out
+e975ce616a7926cf8381d15bb922bb97f812bcce7f2baafe802c5ae59b82d901  /tmp/p4_4c1_a2.py
+c76b475d77ab5b33c248d4af06409b3e0bf3e5ac27732bcd18f09428bed04d73  /tmp/p4_4c1_assemble.sh
+a43a03d98cb1e54740a619973ecf16934580c58f8f9c0ad40f8dc0b2c9b320ff  /tmp/p4_4c1_b1.out
+2dc8f00725af3d3ede6dcf2c90b0a0b9dc0429e67929567332889260ab082133  /tmp/p4_4c1_b1.py
+c43b651cc3fa9974c2e45f59cd004b36da558153dabccd7f164d48a644e34248  /tmp/p4_4c1_d1.out
+bebd350857f5bf2562e0f95026c87af12ee9740055131a163eac07cf07123dbd  /tmp/p4_4c1_d1.py
+d0a401b2e44b7556b2d92531d9df85ace2a19a464afbf50b6640d4ac69115f7b  /tmp/p4_4c1_d3_run1.out
+702c78cb95ffc29ee437ae2ab669675e2e6b50b8d070f95a371a027679d3cb38  /tmp/p4_4c1_d3_static.out
+d0df50e74a3c2e0648c95ecf3d4885420cec8ea5dac633335ea4d8556b8427f3  /tmp/p4_4c1_d3.out
+09270869961d7b7db4d3c30c60d4947918394a4b926195fbe4cb3306ea3e349e  /tmp/p4_4c1_d3.py
+1c17d9322755bd64cfc90a1fa86b771e7d6a9ed31f3046a1196d06bb27653647  /tmp/p4_4c1_d4_sources.out
+665e2586da4b4d6a200200ca05dd2d141afdff8119d879fdeb8f08e5ff6ddfad  /tmp/p4_4c1_d4.out
+2d8354d0274f200138c634f86a11e3a54688314ba523d19f532632eb853535ed  /tmp/p4_4c1_d4.py
+9568a9fd04cf2fa1f630e7481d2754dbad283b1f53726edaf624638789658d75  /tmp/p4_4c1_d5.out
+4e28bb068dec06f80575ad6124dfd5a7e43f29cf2d81835506c608732638fb32  /tmp/p4_4c1_date.out
+d731fd9e3ecd54a2e09e635a1263dd3928d55392c16404bbcad3ae24a64e44ab  /tmp/p4_4c1_e1.out
+33146b673ffbfb74f83297c669504e4c003effc67d6b2a6e474c5b6ccaf8b8a3  /tmp/p4_4c1_e2.out
+78bbc8e173935d83979d54b58513cf190599e6a4f4d84c55ebb1a923eb0474bd  /tmp/p4_4c1_e2.sh
+f4d6e4e65197d145a2f7e5e8c82dc351e3a4c2dc295a01fd6ba0738dceed601a  /tmp/p4_4c1_e3.out
+2203acf3e311639170b3f055ebb7646652ac2d3683b2996b731643480e147eb1  /tmp/p4_4c1_e3.py
+dd396f3b9b885fd5b50cbf63739c808e717435570d0ffeeeda11450802bec0de  /tmp/p4_4c1_first.txt
+5a3c6d1f4e09783e8b2c891382a020d9041500354b37f10033bcd187ddddd211  /tmp/p4_4c1_msg.txt
+e1d97f783b03e924989fee5ce8b3c453e27e1cde48b172d14f72c78f13ba87ec  /tmp/p4_4c1_notes.txt
+96aa680c92c1947612d81d5ecbcafbb56f7b131cd1dec4cb0da7e67a4848d492  /tmp/p4_4c1_probe.out
+74a357f8899235f06300b1f3f83c8303c6c03b3d456c03f4e9a46f4ba7a4992d  /tmp/p4_4c1_probe.py
+a978865b26ed77cfff953d9f19adbbbfa3c845748f68d2d812c1b36ddd7f47e7  /tmp/p4_4c1_readings.txt
+e9697cfd610ce98d6149a144f99f0b4efaa1883ce31b77b3c3a75d8cdfdb2398  /tmp/p4_4c1_records.py
+bd0fe1893b9d3b8fda173cf4d278a873a7a04bf4ecd8f0c40aade131bae14747  /tmp/p4_4c1_status_s1_dated.md
+7ae131e85a13b067dde163e3aa34d4cb1b474e276a0ba196e95a54599d0baa4b  /tmp/p4_4c1_status_s1_undated.md
+d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148  /tmp/p4_4c1_status_s2_dated.md
+7a06bd6031c25073d6a15ca6a3d999d2b63a4bc36ba5184376efad3c6b28c254  /tmp/p4_4c1_status_s2_undated.md
+0d81333fb41ec6e680b5c54165c0575e6bcf014d494f91efbceb7e2e867c3ec8  /tmp/p4_4c1_registry/synthetic.jsonl
+NODATA (/tmp/p4_4c1_nodata) entries: 0
+
+== end: the time and HEAD, then git status --porcelain (empty: nothing follows the HEAD line)
+2026-10-12T02:31:47Z
+b4f3066e9c80745c26cdecce1cf3b5800d0398e9
