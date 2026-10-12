@@ -1,15 +1,17 @@
-# Research Plan v2.5: Is overnight FX fully priced at the Tokyo open?
+# Research Plan v2.6: Is overnight FX fully priced at the Tokyo open?
 
 **Owner:** Isaiah Choi. **Executor:** Claude, with Isaiah as decision-maker.
 
-**Status:** 2026-10-07.
+**Status:** 2026-10-12.
 - Pass 1 (the analysis machine) is complete. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (2026-10-04/05). The rebuilt repository is the canonical study repository (P45).
 - Pass 2 inputs are pulled and verified. The pre-flight decisions of 2026-10-05 are recorded as P45–P57.
 - Pass 2 (data and rebuild) is complete: the 60-column panels were built on macOS arm64, the hedge is 1306 (AM-03), the switch commit applied AM-03 to AM-05, and the C7 rerun on the Mac reproduced every rejection decision (D16). Its decisions are P58–P70.
 - Pass 3 (calibration, dev still blinded) is complete. One sanctioned sealed fit (`BLIND_FIT_LOG` line 7) calibrated the inference on dev-calibrated simulations. DK with the normal reference is kept for H1 (5.82% at b = 0, inside AM-02's band); the primary Clark–West comparison uses its calibrated critical value (AM-09); TOST is viable at the primary SESOI (AM-07); and the switch froze the spec (AM-10). Its decisions are P71–P81.
-- Next: the `spec-dev-v1` tag.
+- `spec-dev-v1` was tagged on the final Pass 3 records commit.
+- Pass 4 (the dev first look and the P13(b) dry run) is complete. The confirmation script was built and validated on synthetic data only; a dry run at confirmation length met every pre-stated criterion; the dev run was made once, under its sanction, and is exploratory. The M2 derivation is adopted for the documents (P83–P85). Its decisions are P4Q1–P4Q42, recorded as P82–P87.
+- Next: Pass 5, the pre-registration (`prereg-v1`).
 
-**Supersedes:** v2.4 (2026-10-06), which superseded v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all five. If any wording differs, the decision log (P01–P81) and `spec/SPEC_AMENDMENTS.md` govern.
+**Supersedes:** v2.5 (2026-10-07), which superseded v2.4 (2026-10-06), v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all six. If any wording differs, the decision log (P01–P87), the Pass 4 decision log (`PASS4_STATUS.md`) and `spec/SPEC_AMENDMENTS.md` govern.
 
 **Companion files:**
 
@@ -24,6 +26,8 @@
 | `DECISIONS_P37_onward.md` | P37–P57 |
 | `DECISIONS_P58_onward.md` | P58–P70 |
 | `DECISIONS_P71_onward.md` | P71–P81 |
+| `DECISIONS_P82_onward.md` | P82–P87 (Pass 4) |
+| `P4_M2_note.md` | The M2 derivation (P83) |
 | `PASS2_HANDOFF.md` | How to run Pass 2 |
 | `PASS2_ADDENDUM.md` | Corrections to the handoff for the rebuilt repo; builder prompt A′; reference numbers B′ |
 | `PASS1_STATUS.md`, `REBUILD_VERIFICATION.md` | The Pass 1 build record, and the rebuilt repo checked against the adopted text |
@@ -83,13 +87,15 @@ $$r^{abn}_{i,t} = \alpha_i + b\,e_t + a_2\,\text{eur}_t + \theta_i^\top x_{i,t} 
 - $x_{i,t}$ is `spy_oc` and `copx_oc`, with **ticker-specific** slopes (P19).
 - $\alpha_i$ is a ticker fixed effect; there is no global intercept.
 
-**Reading b.** With EUR/USD in the design, Frisch–Waugh–Lovell makes **b the yen-specific pass-through**, with no generated regressor:
+**Reading b.** With EUR/USD in the design, Frisch–Waugh–Lovell makes **b approximately the yen-specific pass-through** (P85), with no generated regressor:
 
 | Value | Meaning |
 |---|---|
 | b = 0 | The auction fully priced FX |
 | b > 0 | Underreaction, the cascade prediction |
 | b < 0 | Overreaction |
+
+**Qualifier (P85).** These readings hold when the dollar-wide channels that the controls do not span are fully priced. Holding `eurusd_ret` fixed does not hold the dollar fixed, so an underpriced dollar-wide channel loads on `usdjpy_ret`; one whose fair value falls when the dollar strengthens, such as the metals cascade, pushes b down. So b < 0 can arise without overreaction, and b = 0 without full pricing. A positive b is conservative with respect to the cascade, not with respect to yen-correlated news. H1 as a test is unchanged (`P4_M2_note.md`, Proposition 4).
 
 **Relative to the market.** Because the target is abnormal, b measures underreaction *relative to the market*. The decomposition b_raw ≈ mean(β) · b_mkt + b_abn is reported, with its approximation gap (P18, B3).
 
@@ -103,7 +109,7 @@ $$r^{abn}_{i,t} = \alpha_i + b\,e_t + a_2\,\text{eur}_t + \theta_i^\top x_{i,t} 
 
 The `ao_` columns are used only in the decomposition and the hedge.
 
-**H3 (secondary, restated, P15).** a₂ = 0: dollar-wide and yen-specific moves are priced alike. Here b^$ = b·γ + a₂. The test is conditional on EUR/USD being the dollar proxy, and on COPX absorbing the US-session commodity response.
+**H3 (secondary, restated, P15).** a₂ = 0: dollar-wide and yen-specific moves are priced alike. Here b^$ = b·γ + a₂. The test is conditional on EUR/USD being the dollar proxy, and on COPX absorbing the US-session commodity response. Read with P84: the equal-drift reading holds exactly only when the euro-specific drift loading is zero, and a₂ = 0 then reads as the unspanned metals channel fully priced, not as a common-weight auction. a₂'s sign is not attributed to the metals channel (P4Q17).
 
 **H4 (descriptive).** Per-ticker slopes, Holm-corrected across the three stocks.
 
@@ -124,15 +130,17 @@ The `ao_` columns are used only in the decomposition and the hedge.
 
 H1 is tested once, under the frozen specification, with power reported, and the result is reported whatever its sign.
 
-A well-powered null is a finding: "the auction prices overnight FX for FX-exposed miners". It is made sharper by the equivalence test when that test is viable. A significant b that survives the controls motivates the intraday extension.
+A null H1 is read against MDE80 (0.2471, P79), never as no effect; v2.5's sentence on a well-powered null meaning that the auction prices overnight FX is withdrawn (P4Q19). When TOST declares equivalence at the primary SESOI (viable, D2.6), the claim is "no drift exploitable net of costs", reported beside whether TOST also declares it at the low and at the high SESOI (P4Q19). A significant b that survives the controls motivates the intraday extension.
 
-**Claim tiers (P32):**
+A claim is made only on the confirmation panel. On the dev panel every claim's arithmetic is computed and reported, never claimed (P36 step 5; R10 to R26 of the confirmation document).
+
+**Claim tiers (P32, as worded and conditioned by P4Q16 to P4Q18):**
 
 | Tier | Claim | What it needs |
 |---|---|---|
-| (i) | "overnight USD/JPY predicts the drift" | H1 alone |
-| (ii) | "the exposure channel" | H1 plus the Nikkei-proxy robustness check (§6), because USD/JPY partly carries overnight Japan-equity news. The pass criterion is fixed with D7, before `spec-dev-v1` (P56) |
-| (iii) | "the cascade" | (ii) plus H3 plus the metals controls |
+| (i) | "overnight USD/JPY predicts session drift" | H1 rejected (P4Q18) |
+| (ii) | "the exposure channel" | H1 rejected, and AM-05's criterion on the eligible confirmation nights: with `n225_ret` added, b keeps the sign of the primary b̂, rejects b = 0 at 5% two-sided, and is at least half of b without `n225_ret` on the same nights, on point estimates (P4Q16). USD/JPY partly carries overnight Japan-equity news |
+| (iii) | not claimed | H3 and the metals rows (`copx_to_fcx`, `xau_control`, `raw_target` with the gap â₂(raw) − â₂(abn)) are reported without a tier-(iii) reading (P4Q17; `P4_M2_note.md`, option (c)) |
 
 ---
 
@@ -360,9 +368,9 @@ Each result needs a statement, a proof, its assumptions, and a numerical check.
 - (v) The omitted-variable bias when the non-FX factor is only partly spanned by the controls. This is the formal reason for the Nikkei-proxy caveat.
 - (vi) The abnormal target measures relative underreaction: b = (1 − ρ)δ_i − β_i(1 − ρ^M)δ_M.
 
-Parts (i)–(iii) are verified numerically in B6; (iv) matches P24.
+Parts (i)–(iii) are verified numerically in B6; (iv) matches P24. Parts (i) and (vi) hold when the dollar-wide channels the controls do not span are fully priced, or when EUR/USD is an exact dollar proxy (P85; `P4_M2_note.md`, Proposition 4).
 
-**M2.** The sign prediction is derived for the *conditional* coefficient a₂ (EUR/USD, given COPX), including the condition on κ under which dollar-wide and yen-specific pass-through have opposite signs.
+**M2 (derived, `P4_M2_note.md`, 2026-10-08; P83).** In the primary design a₂ = θ_E + π·Γ, where Γ is the gap between the yen-specific and the unspanned dollar-wide drift per unit of USD/JPY, θ_E the drift loading on the euro-specific factor, and π > 0. Under the cascade the miners' contribution to a₂ has the sign opposite to κ: positive if metals fall when the dollar strengthens. That sign carries over to a₂ only under six assumptions (S1–S6), none checkable before the data are seen, and even then it is not specific to metals: any underpriced channel whose fair value falls when the dollar strengthens gives the same sign and the same metals-row patterns. Hence no tier-(iii) claim (P4Q17), P15's reading qualified (P84) and b's reading qualified (P85). Numerical check: the note's §7 (synthetic draws only).
 
 **M3 (rescoped).** The γ projection is gone, and β is now past-only expanding. M3 becomes: validity of confirmation inference when the target is built with a past-only estimated β (a generated target whose estimation error vanishes), plus a Murphy–Topel-type correction for when that fails.
 
@@ -504,6 +512,10 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 ---
 
 ## 13. Change log
+
+**v2.5 → v2.6 (2026-10-12)**
+- Pass 4 recorded as P82–P87: Pass 4's decisions P4Q1–P4Q42 (P82); the M2 derivation adopted for the documents (P83); P15's reading of a₂ = 0 qualified (P84); the reading of b qualified (P85); the registry's `git_dirty` (P86); this refresh (P87).
+- The status block, the companion files and §1.2, §1.3, §1.4 and §7 updated to match: the claim tiers and the null and equivalence wording as the configuration fixes them (P4Q16 to P4Q19); M2 as derived.
 
 **v2.4 → v2.5 (2026-10-07)**
 - Pass 3 recorded as P71–P81: the builder prompt and the one sealed fit (P71); the cost inputs and the SESOI (P72); inference and the joint rule (P73); the run's design and its tool (P74); T6's outputs (P75); the rehearsals (P76); DQ5, DQ6, salvage and the launcher (P77); the sanction and the seventh sealed fit (P78); the selection (P79); the switch (P80); this refresh (P81).

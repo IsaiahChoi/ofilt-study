@@ -34,7 +34,7 @@ Every column is in exactly one group, defined as explicit frozensets in `ofilt/d
 |---|---|
 | `usdjpy_ret` | log USD/JPY from the previous TSE close (15:00 JST to 2024-11-04, 15:30 JST from 2024-11-05) to 08:59:00 JST. Positive = yen weakens. **H1 regressor.** |
 | `usdjpy_rv`, `usdjpy_bv` | Realized variance and bipower variation of 1-minute returns over the same window. Dukascopy's flat rollover bars bias BV down. |
-| `eurusd_ret`, `eurusd_rv` | Same window for EUR/USD. Positive = dollar weakens. `eurusd_ret` is in the primary design, which makes b the yen-specific pass-through; its coefficient is H3 (P14, P15). |
+| `eurusd_ret`, `eurusd_rv` | Same window for EUR/USD. Positive = dollar weakens. `eurusd_ret` is in the primary design, which makes b approximately the yen-specific pass-through (P85); its coefficient is H3 (P14, P15; read with P84). |
 | `spy_oc`, `ewj_oc`, `fcx_oc`, `copx_oc` | Sum of US open→close log returns over the NY sessions inside the window (NY dates from t_prev to t−1). 0 if there was no US session; NaN on 3 nights where EWJ was stale. Primary controls: `spy_oc`, `copx_oc`. `ewj_oc` and `fcx_oc` are robustness only (P19). |
 | `us_n_sessions` | Number of US sessions in the window (0 on US holidays; up to 7 in Golden Week). Written as a float (e.g. `1.0`). |
 | `window_hours` | Window length (18 h on normal nights; 258 h max). |

@@ -23,7 +23,7 @@ def text():
 class TestDataDictionary(unittest.TestCase):
     def test_restored_byte_for_byte(self):
         data = DOC.read_bytes()
-        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("14f9e1ac8348e5a9"))   # P50: the 60-column DATA_DICTIONARY (row 13)
+        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("cf87dc7f1f1cff29"))   # P87 (P4-7b): was 14f9e1ac8348e5a9 (P50: the 60-column DATA_DICTIONARY, row 13)
         src = Path("/mnt/project/DATA_DICTIONARY.md")
         if src.exists():
             self.assertEqual(data, src.read_bytes())

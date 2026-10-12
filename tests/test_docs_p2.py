@@ -13,13 +13,14 @@ PINNED = {  # repo path -> SHA-256 of kit docs/<same file name>
     "docs/PASS2_ADDENDUM.md": "36a7dadc23a5c0fea41019ecafc5317a4ed5bae779428af3e5925b5d9d3e316c",
     "docs/PASS2_HANDOFF.md": "0f89948ecc827040bc27ca4fdae9178bd8b70327c9b884439bffe279872e3f8f",
     "docs/PASS2_INPUTS.json": "d697a93a337aa5dd5bbc04f8f67faa852aad3ddda3ad71b529575bdbc3761f56",  # P70 (row 22): was 5a5b353267260afdd95e4745b37cd76ece3f79a3d228cca8e9089153c27604a0
-    "docs/replacements/PLAN.md": "cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772",  # P81 (P3-7b): was 641fb05f4ec6958a4e55672af00453b73da8f1388fd539c22d9d67c0f272e6c5; P70 (row 22): was 8030770119338ad852cbd6b9b0d132ac6b815e7c16438a21dfd4485798473fcb
+    "docs/replacements/PLAN.md": "b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca",  # P87 (P4-7b): was cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772; P81 (P3-7b): was 641fb05f4ec6958a4e55672af00453b73da8f1388fd539c22d9d67c0f272e6c5; P70 (row 22): was 8030770119338ad852cbd6b9b0d132ac6b815e7c16438a21dfd4485798473fcb
     "docs/replacements/PROJECT_SETUP.md": "267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f",  # P81 (P3-7b): was 8b342d1ec69d6069476d4e8ec3478456298ca4d9c34a6b1f1f100143edc9d091; P70 (row 22): was c137831848fb39566eec6441979af9172b188c01e5e5499174896b8ea9881078
     "docs/replacements/README.md": "12d56d1270f41d385977bcb9d3622a5a3410eceab4483711298e469be8130cd0",  # P81 (P3-7b): was 4896b40905f4426c618085ea589a2dab9596f1f0187010aa879c653a08f6b48f; P70 (row 22): was 9596fe7d2de098c17b5be2b54ba249cafde9359b872e7e81ff29e9d95db4b9f6
 }
 NEW_PINNED = {  # P70 (row 22): docs added at P2-6
     "docs/DECISIONS_P58_onward.md": "e7874506706198850c9c680bf052859d6fcf453f511f6bc3ba5403dbef119131",
     "docs/DECISIONS_P71_onward.md": "c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83",  # P81 (P3-7b): the Pass 3 decision file
+    "docs/DECISIONS_P82_onward.md": "0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890",  # P87 (P4-7b): the Pass 4 decision file
 }
 
 
