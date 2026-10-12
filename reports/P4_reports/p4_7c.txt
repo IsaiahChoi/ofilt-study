@@ -1,0 +1,1372 @@
+2026-10-12T14:38:34Z
+df1c288578596afb747ed6cdbf1854ff9b1f5035
+007138ae9dfbb43231748b1c3faf45ecf7c3686ed49133ab95be4c151c402b14  /tmp/p4_7c_msg.txt
+date +%F (a.1, captured by tee in /tmp/p4_7c_date.out): 2026-10-12
+
+== the shared helper of the check scripts
+--- /tmp/p4_7c_common.py (sha256 eaa5ee9662020003781711166320d0b70e9ec939b06dd02e62fcc4750fb402d3)
+"""P4-7c: helpers shared by this item's check scripts. Imports no module of ofilt; reads files as bytes and calls git.
+
+The expected values are read from /tmp/p4_7c_msg.txt, list "Expected values" (each label must begin exactly one line).
+INSTALL maps each kit file to its destination in REPO and the names of its expected SHA-256 (kit; before).
+"""
+import hashlib
+import os
+import re
+import subprocess
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+KIT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_7c_kit")
+UPLOAD = os.path.expanduser("~/Desktop/FX_Project/files/pass4_upload")
+PROMPT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+MSG = "/tmp/p4_7c_msg.txt"
+
+INSTALL = [   # (kit file, destination, kit SHA-256 name, before SHA-256 name)
+    ("p4_7c_DATA_PROVENANCE.md", "docs/DATA_PROVENANCE.md", "KIT_DP_SHA256", "DP_BEFORE_SHA256"),
+    ("p4_7c_PROJECT_SETUP.md", "docs/replacements/PROJECT_SETUP.md", "KIT_PS_SHA256", "PS_BEFORE_SHA256"),
+    ("p4_7c_test_docs_d6.py", "tests/test_docs_d6.py", "KIT_D6_SHA256", "D6_BEFORE_SHA256"),
+    ("p4_7c_test_docs_p2.py", "tests/test_docs_p2.py", "KIT_P2_SHA256", "P2_BEFORE_SHA256"),
+]
+
+
+def expected_values(msg=MSG):
+    lines = open(msg, encoding="utf-8").read().split("\n")
+    vals, counts = {}, {}
+    for ln in lines[lines.index("## Expected values") + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+            vals[m.group(1)] = m.group(2)
+    return vals, [k for k, c in counts.items() if c != 1]
+
+
+class Checker:
+    def __init__(self, verdict):
+        self.verdict, self.fails = verdict, []
+
+    def __call__(self, ok, label):
+        print(("ok   " if ok else "FAIL ") + label)
+        if not ok:
+            self.fails.append(label)
+        return ok
+
+    def finish(self):
+        print(f"failed checks: {len(self.fails)}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+        return 1 if self.fails else 0
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def sha_bytes(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha_file(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+def head_sha(path):
+    return sha_bytes(git("show", f"HEAD:{path}"))
+
+
+def status_lines():
+    out = gtext("status", "--porcelain", "--untracked-files=all")
+    return out.split("\n") if out else []
+
+
+def tripwires(check, E, at_head=False):
+    """The tags, BLIND_FIT_LOG, RUN_REGISTRY.jsonl (SHA-256 and lines), the spec, the configuration, no ACCESS_LOG."""
+    tags = gtext("tag", "-l").split("\n")
+    check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), f"tags == TAG_LIST ({tags})")
+    check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+    check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+    for name, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+        b = git("show", f"HEAD:{name}") if at_head else open(os.path.join(REPO, name), "rb").read()
+        n = len(b.decode("utf-8").splitlines())
+        print(f"{name}{' at HEAD' if at_head else ''}: sha256 {sha_bytes(b)}; lines {n}")
+        check(sha_bytes(b) == E[f"{key}_SHA256"] and n == int(E[f"{key}_LINES"]), f"{name} sha256 and lines as expected")
+    for path, key in (("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"), ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256")):
+        h = head_sha(path) if at_head else sha_file(os.path.join(REPO, path))
+        check(h == E[key], f"{path}{' at HEAD' if at_head else ''} == {key}")
+    found = []
+    for root, dirs, names in os.walk(REPO):
+        dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+        found += [os.path.relpath(os.path.join(root, n), REPO) for n in dirs + names if n.startswith("ACCESS_LOG")]
+    check(found == [], f"no name starting ACCESS_LOG in REPO outside .git ({found})")
+
+== a.2: the state check
+--- /tmp/p4_7c_a2.py (sha256 3922ea1137b18e1d57c5d7a271b1919e0b034dcf21f9c3fbda5b6b71ad32decf)
+"""P4-7c a.2: read-only state check (verdict line `A CHECK`). Imports no module of ofilt.
+
+Argument 1: the number of lines OFILT_RUN_SEALED= or OFILT_P4_DEV_RUN= in the session's environment, counted by the
+calling shell before `env -u`.
+"""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import (INSTALL, PROMPT, REPO, UPLOAD, Checker, expected_values, gtext, sha_file,  # noqa: E402
+                          status_lines, tripwires)
+
+check = Checker("A")
+E, repeated = expected_values()
+check(not repeated, f"each label begins exactly one line ({len(E)} labels; repeated: {repeated})")
+head = gtext("rev-parse", "HEAD")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+print(f"HEAD: {head}; parents: {parents}")
+check(head == E["HEAD_BEFORE"], "HEAD == HEAD_BEFORE")
+check(parents == [E["PARENT_BEFORE"]], "HEAD's only parent == PARENT_BEFORE")
+st = status_lines()
+check(st == [], f"working tree clean ({st})")
+tripwires(check, E)
+n = sys.argv[1] if len(sys.argv) > 1 else None
+print(f"OFILT_RUN_SEALED= or OFILT_P4_DEV_RUN= lines in the session's environment: {n}")
+check(n == "0" and "OFILT_RUN_SEALED" not in os.environ and "OFILT_P4_DEV_RUN" not in os.environ,
+      "OFILT_RUN_SEALED and OFILT_P4_DEV_RUN absent")
+print(f"standing prompt: {sha_file(PROMPT)}")
+check(sha_file(PROMPT) == E["PROMPT_SHA256"], "standing prompt == PROMPT_SHA256")
+h = sha_file(os.path.join(REPO, "PASS4_STATUS.md"))
+print(f"PASS4_STATUS.md: {h}")
+check(h == E["STATUS_BEFORE_SHA256"], "PASS4_STATUS.md == STATUS_BEFORE_SHA256")
+for _, dest, _, before in INSTALL:
+    h = sha_file(os.path.join(REPO, dest))
+    print(f"{dest}: {h}")
+    check(h == E[before], f"{dest} == {before}")
+reports = sorted(os.listdir(os.path.join(REPO, "reports", "P4_reports")))
+print(f"reports/P4_reports/: {reports}")
+check(reports == sorted(E["REPORTS_BEFORE"].split(" ")), "reports/P4_reports/ == REPORTS_BEFORE")
+check(not os.path.lexists(UPLOAD), f"UPLOAD {UPLOAD} does not exist")
+sys.exit(check.finish())
+--- /tmp/p4_7c_a2.out (sha256 a734ed08444013ca20988461fd47b67c0e22100a00375dbf91fc0a25bfd425b9)
+ok   each label begins exactly one line (36 labels; repeated: [])
+HEAD: df1c288578596afb747ed6cdbf1854ff9b1f5035; parents: ['23e4c167a89b714cd051abeeead31ec8b4dcfefa']
+ok   HEAD == HEAD_BEFORE
+ok   HEAD's only parent == PARENT_BEFORE
+ok   working tree clean ([])
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256 and lines as expected
+RUN_REGISTRY.jsonl: sha256 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c; lines 2
+ok   RUN_REGISTRY.jsonl sha256 and lines as expected
+ok   spec/analysis_spec_dev_v1.yaml == SPEC_SHA256
+ok   docs/P4_CONFIRM_CONFIG.json == CONFIG_SHA256
+ok   no name starting ACCESS_LOG in REPO outside .git ([])
+OFILT_RUN_SEALED= or OFILT_P4_DEV_RUN= lines in the session's environment: 0
+ok   OFILT_RUN_SEALED and OFILT_P4_DEV_RUN absent
+standing prompt: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+ok   standing prompt == PROMPT_SHA256
+PASS4_STATUS.md: eba7b362c2a54785bfa1c514d5ce52c443ffb627a26d49558973f2753fc10d9a
+ok   PASS4_STATUS.md == STATUS_BEFORE_SHA256
+docs/DATA_PROVENANCE.md: 48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd
+ok   docs/DATA_PROVENANCE.md == DP_BEFORE_SHA256
+docs/replacements/PROJECT_SETUP.md: 267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f
+ok   docs/replacements/PROJECT_SETUP.md == PS_BEFORE_SHA256
+tests/test_docs_d6.py: d6267dfc43e070eaca0219f93b419f80ca0d8f9d5b3ef69a65315719091307c3
+ok   tests/test_docs_d6.py == D6_BEFORE_SHA256
+tests/test_docs_p2.py: ef10a01db26c2475b314cec22cdc31b88625162f34603b1e3983fd30bbe167bc
+ok   tests/test_docs_p2.py == P2_BEFORE_SHA256
+reports/P4_reports/: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4b2.txt', 'p4_4c1.txt', 'p4_4c2.txt', 'p4_4p.txt', 'p4_56.txt', 'p4_7a.txt', 'p4_boot.txt', 'p4_boot2.txt']
+ok   reports/P4_reports/ == REPORTS_BEFORE
+ok   UPLOAD /Users/isaiahchoi/Desktop/FX_Project/files/pass4_upload does not exist
+failed checks: 0
+A CHECK: True
+exit 0
+
+== b.1: the kit, and the diffs of the four replaced files against their kit versions
+--- /tmp/p4_7c_b1.py (sha256 eab1c6cccd6eb5e80a7acaa1daa57e075ff3c1b221a6af2901e8bcc22407cef9)
+"""P4-7c b.1: the kit (verdict line `B CHECK`), and `diff -u` of each of the four replaced files against its kit version.
+Reads files as bytes; imports no module of ofilt; calls `diff`."""
+import os
+import subprocess
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import INSTALL, KIT, REPO, Checker, expected_values, sha_file  # noqa: E402
+
+check = Checker("B")
+E, _ = expected_values()
+names = sorted(os.listdir(KIT))          # hidden files included
+print(f"KIT {KIT}: {names}")
+check(names == sorted(E["KIT_FILES"].split(" ")), "KIT holds exactly KIT_FILES")
+for kit, _, key, _ in INSTALL + [("p4_7c_STATUS_EDITS.txt", None, "KIT_EDITS_SHA256", None)]:
+    p = os.path.join(KIT, kit)
+    if not check(os.path.isfile(p), f"{kit} exists"):
+        continue
+    data = open(p, "rb").read()
+    print(f"{kit}: sha256 {sha_file(p)}; bytes {len(data)}; lines {len(data.decode('utf-8').splitlines())}")
+    check(sha_file(p) == E[key], f"{kit} == {key}")
+for kit, dest, _, _ in INSTALL:
+    print(f"\n===== diff -u {dest} (current) {kit} (kit)")
+    r = subprocess.run(["diff", "-u", os.path.join(REPO, dest), os.path.join(KIT, kit)], capture_output=True, text=True)
+    print(r.stdout, end="")
+    print(f"===== diff exit {r.returncode}")
+sys.exit(check.finish())
+--- /tmp/p4_7c_b1.out (sha256 88ff4c688d3ba9509527d89843399416f5e8fc962ffbd53f9f524eb64cd36023)
+KIT /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_7c_kit: ['p4_7c_DATA_PROVENANCE.md', 'p4_7c_PROJECT_SETUP.md', 'p4_7c_STATUS_EDITS.txt', 'p4_7c_test_docs_d6.py', 'p4_7c_test_docs_p2.py']
+ok   KIT holds exactly KIT_FILES
+ok   p4_7c_DATA_PROVENANCE.md exists
+p4_7c_DATA_PROVENANCE.md: sha256 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6; bytes 37133; lines 382
+ok   p4_7c_DATA_PROVENANCE.md == KIT_DP_SHA256
+ok   p4_7c_PROJECT_SETUP.md exists
+p4_7c_PROJECT_SETUP.md: sha256 f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f; bytes 8765; lines 103
+ok   p4_7c_PROJECT_SETUP.md == KIT_PS_SHA256
+ok   p4_7c_test_docs_d6.py exists
+p4_7c_test_docs_d6.py: sha256 23de0f01d2858ed60b11b464607f5374116589d1a3f74bdaf7ca66d9aff2e9be; bytes 4170; lines 65
+ok   p4_7c_test_docs_d6.py == KIT_D6_SHA256
+ok   p4_7c_test_docs_p2.py exists
+p4_7c_test_docs_p2.py: sha256 d0cb25b3577cd14e9850a2db2bb75b5c10669484955412f644b31ab9c3f79d88; bytes 3731; lines 45
+ok   p4_7c_test_docs_p2.py == KIT_P2_SHA256
+ok   p4_7c_STATUS_EDITS.txt exists
+p4_7c_STATUS_EDITS.txt: sha256 b7dd774195ba51162e2ee9f22d9ffd8b266bc9b9707a6568c51de3c6c035dad7; bytes 11656; lines 70
+ok   p4_7c_STATUS_EDITS.txt == KIT_EDITS_SHA256
+
+===== diff -u docs/DATA_PROVENANCE.md (current) p4_7c_DATA_PROVENANCE.md (kit)
+--- /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/DATA_PROVENANCE.md	2026-10-07 21:15:16
++++ /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_7c_kit/p4_7c_DATA_PROVENANCE.md	2026-10-12 10:37:20
+@@ -275,6 +275,23 @@
+ 
+ The builder's real-data contact in Pass 3 is listed in PASS3_STATUS, Blinding attestation, including the one sanctioned sealed fit (`BLIND_FIT_LOG` line 7).
+ 
++**Pass 4 supervisor chats, and the M2 derivation chat (2026-10-07 to 2026-10-12).** Each chat's own attestation is in the handoff it wrote; the last chat's is recorded here directly. The handoffs stay on the Mac, outside the repo and the Project.
++- **The fifth supervisor chat:** its attestation is in `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md`.
++- **The supervisor chat that began on 2026-10-08 with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md`:** its attestation is in `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`.
++- **The supervisor chat that began on 2026-10-08 with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`:** its attestation is in `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md` (H7, revised 2026-10-09).
++- **The M2 derivation chat (2026-10-08):** its attestation is §10 of `docs/P4_M2_note.md`. Symbolic work and synthetic draws only; no data file opened, read, hashed or listed; the column names and row counts the chat interface attached were ignored.
++- **The supervisor chat that began on 2026-10-09 with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`:** its attestation is §6 of `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md` (H8).
++- **The supervisor chat that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`:** its attestation is §6 of `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md` (H9).
++- **The supervisor chat that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md` (P4-4a to P4-7c),** recorded here:
++  - the chat interface attached the column names, inferred column types and row counts of the Project's `panel_dev.csv`, `events_firm.csv` and `events_boj.csv` (no values);
++  - read as text: the H9 repository snapshot and its manifest (code, documents, tests, the configuration and the cost inputs, the last two through Python's `json` module); the Project's documents; the builder reports of P4-4a to P4-7b; the kit files it wrote;
++  - **the dev first look, by design:** the whole dev document and its headline values, printed in P4-5/6's report (P4Q1, P4Q6; `PASS4_STATUS.md`, Disclosure list);
++  - computations in the supervisor's sandbox: dry runs of every records edit on the committed status file, lints, mock-folder tests of the setup scripts, and the repository's documentation tests (`test_docs_d4`, `test_docs_d5`, `test_docs_d6`, `test_docs_p2`) on a patched copy of the snapshot. Because the Project was mounted, `test_docs_d6`'s Project check ran, reading the Project dev panel's `date` column for its last date (asserted on or before 2021-12-31; no value printed). No other column of any data file was read; no web search.
++
++What each earlier chat saw is as its attestation records. In the last chat, the only figures relating a predictor to a target were the dev run's committed outputs, the one sanctioned dev computation of Pass 4; no raw, sealed or 2022+ real value was seen (the 2022+ dates it saw were the dry run's synthetic panels).
++
++The builder's real-data contact in Pass 4 is listed in PASS4_STATUS, Blinding attestation, including the one sanctioned dev run (P4-6).
++
+ ### 4.6 Calendar facts used by the Pass 2 build (2026-10-05)
+ 
+ **TSE sessions.**
+===== diff exit 1
+
+===== diff -u docs/replacements/PROJECT_SETUP.md (current) p4_7c_PROJECT_SETUP.md (kit)
+--- /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/replacements/PROJECT_SETUP.md	2026-10-07 21:15:16
++++ /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_7c_kit/p4_7c_PROJECT_SETUP.md	2026-10-12 10:37:21
+@@ -1,4 +1,4 @@
+-# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-07)
++# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-12)
+ 
+ This supersedes the earlier October 2026 versions: the pre-Pass-1 one, and the after-Pass-1 one of 2026-10-02.
+ 
+@@ -27,13 +27,14 @@
+ ## In the project
+ 
+ **Plan and status:**
+-- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.5);
++- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.6);
+ - `PASS2_HANDOFF.md`, `PASS2_ADDENDUM.md`;
+ - `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`), `REBUILD_VERIFICATION.md`;
+ - `PASS2_STATUS.md` and the Pass 2 reports;
+-- `PASS3_STATUS.md` and the Pass 3 reports.
++- `PASS3_STATUS.md` and the Pass 3 reports;
++- `PASS4_STATUS.md` and the Pass 4 documents and outputs listed under "After Pass 4".
+ 
+-**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81).
++**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81), `DECISIONS_P82_onward.md` (P82–P87).
+ 
+ **Data documentation:** `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`, `MANIFEST.json`, `PASS2_INPUTS.json`.
+ 
+@@ -59,6 +60,13 @@
+ 
+ The data, event and build files do not change in Pass 3.
+ 
++After Pass 4 (replaced at the Pass 4 upload, after P4-7c):
++- replaced: `PROJECT_SETUP.md`, `PLAN.md` (v2.6), `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`;
++- added: `DECISIONS_P82_onward.md`, `PASS4_STATUS.md`, `P4_M2_note.md`, `P4_CONFIRM_CONFIG.json`, `P4_DRYRUN_CRITERIA.md`, the audit `p4_1_audit.md`, and the dev run's document `reports/P4_runs/dev/document.json`, uploaded as `P4_dev_document.json`;
++- the dev document holds the dev first look (P4-6). It is dev, not sealed, and it is disclosed in the pre-registration; once uploaded, every later session sees it.
++
++The data, event and build files do not change in Pass 4. The confirmation code and its specifications stay in the repo.
++
+ ## Chat uploads
+ 
+ A file uploaded to a chat is not a Project file, but it stays in that chat.
+@@ -67,6 +75,7 @@
+ - There is no need to do this again: the Pass 2 build runs on the Mac and verifies every hash itself.
+ - The later supervisor chats (2026-10-05 and 2026-10-06) uploaded no raw file and worked on the Project copies only (DATA_PROVENANCE §4.5).
+ - The Pass 3 supervisor chats (2026-10-06 and 2026-10-07) uploaded no raw or data file: only supervisor handoffs, status files and builder reports (DATA_PROVENANCE §4.5). The Pass 3 handoffs stay on the Mac, outside the Project.
++- The Pass 4 supervisor chats (2026-10-08 to 2026-10-12) uploaded no raw or data file: only supervisor handoffs, repository snapshots (code, documents and committed reports; no panel), status files and builder reports, which include the dev run's committed outputs (DATA_PROVENANCE §4.5). The Pass 4 handoffs stay on the Mac, outside the Project.
+ - Never upload the sealed panel to any chat.
+ 
+ ## Removed from the project (superseded; they would mislead future sessions)
+===== diff exit 1
+
+===== diff -u tests/test_docs_d6.py (current) p4_7c_test_docs_d6.py (kit)
+--- /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tests/test_docs_d6.py	2026-10-07 21:15:16
++++ /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_7c_kit/p4_7c_test_docs_d6.py	2026-10-12 10:37:23
+@@ -22,14 +22,15 @@
+ class TestProjectSetup(unittest.TestCase):
+     def test_restored_byte_for_byte(self):
+         data = DOC.read_bytes()
+-        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("267c3aa8f22724cc"))  # P81 (P3-7b): was 8b342d1ec69d6069; P70: was c137831848fb3956; P57: was d2afcf2a1fe90074
++        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("f0991f0360787079"))  # P87 (P4-7c): was 267c3aa8f22724cc; P81 (P3-7b): was 8b342d1ec69d6069; P70: was c137831848fb3956; P57: was d2afcf2a1fe90074
+         if (PROJECT / "PROJECT_SETUP.md").exists():
+             self.assertEqual(data, (PROJECT / "PROJECT_SETUP.md").read_bytes())
+         # P57: was "# What goes in the Claude Project, and why (October 2026, after Pass 1)"
+         # P70: was "...; refreshed 2026-10-05)"
+         # P81 (P3-7b): was "...; refreshed 2026-10-06)"
++        # P87 (P4-7c): was "...; refreshed 2026-10-07)"
+         self.assertTrue(DOC.read_text(encoding="utf-8").startswith(
+-            "# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-07)"))
++            "# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-12)"))
+ 
+     def test_repo_claims(self):
+         for p in ("ofilt/drift", "spec", "tests", "tools", "docs", "reports", "BLIND_FIT_LOG",
+@@ -56,8 +57,8 @@
+         last = pd.read_csv(PROJECT / "panel_dev.csv", usecols=["date"]).date.max()
+         self.assertLessEqual(last, "2021-12-31")                                  # no 2022+ rows in the Project
+         # Differences recorded in REBUILD_VERIFICATION D6 (not asserted as agreement):
+-        self.assertIn("`PLAN.md` (v2.5)", DOC.read_text(encoding="utf-8"))                     # P81 (P3-7b): was (v2.4); P70: was (v2.3); P57: was (v2.1)
+-        self.assertTrue((PROJECT / "PLAN.md").read_text(encoding="utf-8").startswith("# Research Plan v2.5"))  # P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
++        self.assertIn("`PLAN.md` (v2.6)", DOC.read_text(encoding="utf-8"))                     # P87 (P4-7c): was (v2.5); P81 (P3-7b): was (v2.4); P70: was (v2.3); P57: was (v2.1)
++        self.assertTrue((PROJECT / "PLAN.md").read_text(encoding="utf-8").startswith("# Research Plan v2.6"))  # P87 (P4-7c): was v2.5; P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
+ 
+ 
+ if __name__ == "__main__":
+===== diff exit 1
+
+===== diff -u tests/test_docs_p2.py (current) p4_7c_test_docs_p2.py (kit)
+--- /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tests/test_docs_p2.py	2026-10-12 10:00:05
++++ /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_7c_kit/p4_7c_test_docs_p2.py	2026-10-12 10:37:24
+@@ -8,13 +8,13 @@
+ 
+ ROOT = Path(__file__).resolve().parents[1]
+ PINNED = {  # repo path -> SHA-256 of kit docs/<same file name>
+-    "docs/DATA_PROVENANCE.md": "48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd",  # P81 (P3-7b): was 0efa0121cbd4f2d074b18eab3f776c3e7f58381c3db9623aaf662ba6d5f36aed; P70 (row 22): was c9a6293bf7e965a0c0232e2c2317e3456b1014e87b406d321ce3040d2d081ae5
++    "docs/DATA_PROVENANCE.md": "6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6",  # P87 (P4-7c): was 48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd; P81 (P3-7b): was 0efa0121cbd4f2d074b18eab3f776c3e7f58381c3db9623aaf662ba6d5f36aed; P70 (row 22): was c9a6293bf7e965a0c0232e2c2317e3456b1014e87b406d321ce3040d2d081ae5
+     "docs/DECISIONS_P37_onward.md": "b22bdc15ba5cae086738d7639ca8b95069bbb668b8d386de1a5c3a9a7e0175f1",
+     "docs/PASS2_ADDENDUM.md": "36a7dadc23a5c0fea41019ecafc5317a4ed5bae779428af3e5925b5d9d3e316c",
+     "docs/PASS2_HANDOFF.md": "0f89948ecc827040bc27ca4fdae9178bd8b70327c9b884439bffe279872e3f8f",
+     "docs/PASS2_INPUTS.json": "d697a93a337aa5dd5bbc04f8f67faa852aad3ddda3ad71b529575bdbc3761f56",  # P70 (row 22): was 5a5b353267260afdd95e4745b37cd76ece3f79a3d228cca8e9089153c27604a0
+     "docs/replacements/PLAN.md": "b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca",  # P87 (P4-7b): was cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772; P81 (P3-7b): was 641fb05f4ec6958a4e55672af00453b73da8f1388fd539c22d9d67c0f272e6c5; P70 (row 22): was 8030770119338ad852cbd6b9b0d132ac6b815e7c16438a21dfd4485798473fcb
+-    "docs/replacements/PROJECT_SETUP.md": "267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f",  # P81 (P3-7b): was 8b342d1ec69d6069476d4e8ec3478456298ca4d9c34a6b1f1f100143edc9d091; P70 (row 22): was c137831848fb39566eec6441979af9172b188c01e5e5499174896b8ea9881078
++    "docs/replacements/PROJECT_SETUP.md": "f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f",  # P87 (P4-7c): was 267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f; P81 (P3-7b): was 8b342d1ec69d6069476d4e8ec3478456298ca4d9c34a6b1f1f100143edc9d091; P70 (row 22): was c137831848fb39566eec6441979af9172b188c01e5e5499174896b8ea9881078
+     "docs/replacements/README.md": "12d56d1270f41d385977bcb9d3622a5a3410eceab4483711298e469be8130cd0",  # P81 (P3-7b): was 4896b40905f4426c618085ea589a2dab9596f1f0187010aa879c653a08f6b48f; P70 (row 22): was 9596fe7d2de098c17b5be2b54ba249cafde9359b872e7e81ff29e9d95db4b9f6
+ }
+ NEW_PINNED = {  # P70 (row 22): docs added at P2-6
+===== diff exit 1
+failed checks: 0
+B CHECK: True
+exit 0
+
+== c.1: the install (cp -p, then the check)
+--- /tmp/p4_7c_c1_cp.out (sha256 e1797d87bfe51ca930aad36efddf1781d85927eb8460b06976bb40b22dfb8663)
+c.1 install with cp -p
+cp -p p4_7c_DATA_PROVENANCE.md -> docs/DATA_PROVENANCE.md: exit 0
+cp -p p4_7c_PROJECT_SETUP.md -> docs/replacements/PROJECT_SETUP.md: exit 0
+cp -p p4_7c_test_docs_d6.py -> tests/test_docs_d6.py: exit 0
+cp -p p4_7c_test_docs_p2.py -> tests/test_docs_p2.py: exit 0
+--- /tmp/p4_7c_i.py (sha256 b0d793d3a03a1121c2d4e6ea521ba0e1e210bd46aecf5986853b245710152931)
+"""P4-7c c.1: the install (verdict line `I CHECK`). Reads files as bytes; imports no module of ofilt."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import INSTALL, KIT, REPO, Checker, expected_values, sha_file, status_lines  # noqa: E402
+
+check = Checker("I")
+E, _ = expected_values()
+for kit, dest, key, _ in INSTALL:
+    hk, hd = sha_file(os.path.join(KIT, kit)), sha_file(os.path.join(REPO, dest))
+    print(f"{dest}: sha256 {hd}; kit {kit}: {hk}")
+    check(hd == hk == E[key], f"{dest} == its kit file == {key}")
+st = status_lines()
+print("git status --porcelain --untracked-files=all:")
+for ln in st:
+    print(f"  {ln}")
+want = [f" M {dest}" for _, dest, _, _ in INSTALL]
+check(sorted(st) == sorted(want), "status == exactly the four installed files as ' M' lines")
+sys.exit(check.finish())
+--- /tmp/p4_7c_i.out (sha256 96e79ddf25705d5a16a6f0c20911e392dcc581721645803575ff48d2981a9541)
+docs/DATA_PROVENANCE.md: sha256 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6; kit p4_7c_DATA_PROVENANCE.md: 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6
+ok   docs/DATA_PROVENANCE.md == its kit file == KIT_DP_SHA256
+docs/replacements/PROJECT_SETUP.md: sha256 f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f; kit p4_7c_PROJECT_SETUP.md: f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f
+ok   docs/replacements/PROJECT_SETUP.md == its kit file == KIT_PS_SHA256
+tests/test_docs_d6.py: sha256 23de0f01d2858ed60b11b464607f5374116589d1a3f74bdaf7ca66d9aff2e9be; kit p4_7c_test_docs_d6.py: 23de0f01d2858ed60b11b464607f5374116589d1a3f74bdaf7ca66d9aff2e9be
+ok   tests/test_docs_d6.py == its kit file == KIT_D6_SHA256
+tests/test_docs_p2.py: sha256 d0cb25b3577cd14e9850a2db2bb75b5c10669484955412f644b31ab9c3f79d88; kit p4_7c_test_docs_p2.py: d0cb25b3577cd14e9850a2db2bb75b5c10669484955412f644b31ab9c3f79d88
+ok   tests/test_docs_p2.py == its kit file == KIT_P2_SHA256
+git status --porcelain --untracked-files=all:
+   M docs/DATA_PROVENANCE.md
+   M docs/replacements/PROJECT_SETUP.md
+   M tests/test_docs_d6.py
+   M tests/test_docs_p2.py
+ok   status == exactly the four installed files as ' M' lines
+failed checks: 0
+I CHECK: True
+exit 0
+
+== c.2: the four test runs and their check
+--- /tmp/p4_7c_c2.out (sha256 93457aec00fd868127eda2fe51bb43d3cce1a3d5dfa25dd520d632286a4ddfee)
+=== test_docs_d4
+test_content_edits (test_docs_d4.TestPlan.test_content_edits) ... ok
+test_p36_milestone_order (test_docs_d4.TestPlan.test_p36_milestone_order) ... ok
+test_p14_p16_p20_edits (test_docs_d4.TestReadme.test_p14_p16_p20_edits) ... ok
+test_byte_for_byte (test_docs_d4.TestRestored.test_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.002s
+
+OK
+=== test_docs_d5
+test_groups_table_matches_schema (test_docs_d5.TestDataDictionary.test_groups_table_matches_schema) ... ok
+test_p20_wording (test_docs_d5.TestDataDictionary.test_p20_wording) ... ok
+test_restored_byte_for_byte (test_docs_d5.TestDataDictionary.test_restored_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.001s
+
+OK
+=== test_docs_d6
+test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_repo_claims (test_docs_d6.TestProjectSetup.test_repo_claims) ... ok
+test_restored_byte_for_byte (test_docs_d6.TestProjectSetup.test_restored_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.036s
+
+OK (skipped=1)
+=== test_docs_p2
+test_byte_for_byte (test_docs_p2.TestKitDocsPinned.test_byte_for_byte) ... ok
+test_p70_new_docs_pinned (test_docs_p2.TestKitDocsPinned.test_p70_new_docs_pinned) ... ok
+test_the_eight_kit_docs (test_docs_p2.TestKitDocsPinned.test_the_eight_kit_docs) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.003s
+
+OK
+--- /tmp/p4_7c_t.py (sha256 a754df07ce69207a12a080d503f347c49087ff821f0b9429304d8d4fd15facb4)
+"""P4-7c c.2: the four test runs (verdict line `T CHECK`). Reads /tmp/p4_7c_c2.out; imports no module of ofilt."""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import Checker  # noqa: E402
+
+check = Checker("T")
+text = open("/tmp/p4_7c_c2.out", encoding="utf-8").read()
+sections = re.split(r"^=== (\S+)\n", text, flags=re.M)[1:]
+mods = dict(zip(sections[0::2], sections[1::2]))
+print(f"modules: {list(mods)}")
+check(list(mods) == ["test_docs_d4", "test_docs_d5", "test_docs_d6", "test_docs_p2"], "the four modules ran")
+for name, body in mods.items():
+    lines = [ln for ln in body.splitlines() if ln.strip()]
+    ran = [ln for ln in lines if ln.startswith("Ran ")]
+    print(f"  {name}: {ran} | {lines[-1] if lines else ''}")
+    check(bool(lines) and lines[-1].startswith("OK"), f"{name} ends with a result line starting OK")
+    check("FAILED" not in body, f"{name} shows no FAILED")
+sys.exit(check.finish())
+--- /tmp/p4_7c_t.out (sha256 cf56c30cd069720963046717e92b0faff22b62c29674d3ed63277ae2b7ab18ad)
+modules: ['test_docs_d4', 'test_docs_d5', 'test_docs_d6', 'test_docs_p2']
+ok   the four modules ran
+  test_docs_d4: ['Ran 4 tests in 0.002s'] | OK
+ok   test_docs_d4 ends with a result line starting OK
+ok   test_docs_d4 shows no FAILED
+  test_docs_d5: ['Ran 3 tests in 0.001s'] | OK
+ok   test_docs_d5 ends with a result line starting OK
+ok   test_docs_d5 shows no FAILED
+  test_docs_d6: ['Ran 3 tests in 0.036s'] | OK (skipped=1)
+ok   test_docs_d6 ends with a result line starting OK
+ok   test_docs_d6 shows no FAILED
+  test_docs_p2: ['Ran 3 tests in 0.003s'] | OK
+ok   test_docs_p2 ends with a result line starting OK
+ok   test_docs_p2 shows no FAILED
+failed checks: 0
+T CHECK: True
+exit 0
+
+== c.3: P4-7b's report (the source checked first, then the copy, then the copy checked)
+--- /tmp/p4_7c_d4.py (sha256 ff92bafbc33fcef5cfd9469519f262e96033b6366ef647a21d33e1975d9f2525)
+"""P4-7c c.3: P4-7b's report (verdict line `D4 CHECK`). Reads files as bytes and text; imports no module of ofilt.
+
+Run with `sources` before the copy (verdict line `D4 SOURCES CHECK`) and with `all` after it (the copy checked too).
+"""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import REPO, Checker, expected_values, sha_bytes, sha_file  # noqa: E402
+
+mode = sys.argv[1]
+check = Checker("D4 SOURCES" if mode == "sources" else "D4")
+E, _ = expected_values()
+src, dst, P = "/tmp/p4_7b.txt", "reports/P4_reports/p4_7b.txt", "P4_7B"
+print(f"--- {src}")
+if check(os.path.isfile(src), f"{src} exists"):
+    data = open(src, "rb").read()
+    text = data.decode("utf-8")
+    ls = text.split("\n")
+    body = [ln for ln in ls if ln.strip()]
+    print(f"sha256 {sha_bytes(data)}; bytes {len(data)}; lines {len(text.splitlines())}")
+    print(f"line 1: {ls[0]}\nline 2: {ls[1]}\nline 3: {ls[2]}")
+    print(f"last-but-one non-empty: {body[-2]}\nlast non-empty: {body[-1]}")
+    check(ls[0] == E[f"{P}_LINE1"], f"line 1 == {P}_LINE1")
+    check(ls[1] == E[f"{P}_LINE2"], f"line 2 == {P}_LINE2")
+    check(ls[2] == E[f"{P}_LINE3"], f"line 3 == {P}_LINE3")
+    check(body[-1] == E["HEAD_BEFORE"], "last non-empty line == HEAD_BEFORE")
+    check(body[-2] == E[f"{P}_LAST"], f"last-but-one non-empty line == {P}_LAST")
+    for name in E[f"{P}_VERDICTS"].split(" "):
+        n = sum(1 for ln in ls if ln == f"{name} CHECK: True")
+        check(n >= 1, f"the whole line '{name} CHECK: True' occurs ({n} times)")
+    print(f"line 3 occurs {sum(1 for ln in ls if ln == ls[2])} times as a whole line; "
+          f"{text.count(ls[2])} times as a substring")
+    if mode == "all":
+        d = os.path.join(REPO, dst)
+        hd = sha_file(d) if os.path.isfile(d) else None
+        print(f"copy {dst}: sha256 {hd}")
+        check(hd == sha_bytes(data), f"{dst} has its source's SHA-256")
+sys.exit(check.finish())
+--- /tmp/p4_7c_d4_sources.out (sha256 ea3506ee38abc3c940fbbbb3de74d0d4bdc7beec6463b580017faa0bf62e7fba)
+--- /tmp/p4_7b.txt
+ok   /tmp/p4_7b.txt exists
+sha256 9c92b4471a1d5759f4877c833b28e7397e05242182979fcc90e345c9985a1f75; bytes 84876; lines 1239
+line 1: 2026-10-12T14:01:42Z
+line 2: 23e4c167a89b714cd051abeeead31ec8b4dcfefa
+line 3: 8f6a7ec3e193317dc49a872965d3ea66b0e1b2243822769777021d6e91010a34  /tmp/p4_7b_msg.txt
+last-but-one non-empty: 2026-10-12T14:29:52Z
+last non-empty: df1c288578596afb747ed6cdbf1854ff9b1f5035
+ok   line 1 == P4_7B_LINE1
+ok   line 2 == P4_7B_LINE2
+ok   line 3 == P4_7B_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_7B_LAST
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'I CHECK: True' occurs (1 times)
+ok   the whole line 'T CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'D5 CHECK: True' occurs (1 times)
+ok   the whole line 'E1 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 2 times as a whole line; 2 times as a substring
+failed checks: 0
+D4 SOURCES CHECK: True
+exit 0
+--- /tmp/p4_7c_c3_cp.out (sha256 ab3da85c13d077d91de08d476a9e38fe7e7ae42ece29c5232f0c2207660e7308)
+cp -p /tmp/p4_7b.txt -> reports/P4_reports/p4_7b.txt: exit 0
+--- /tmp/p4_7c_d4.out (sha256 5538b50343462d5cdc0c52b9a823f5d72442bd6bd25eccfeef07dbfe8868a9af)
+--- /tmp/p4_7b.txt
+ok   /tmp/p4_7b.txt exists
+sha256 9c92b4471a1d5759f4877c833b28e7397e05242182979fcc90e345c9985a1f75; bytes 84876; lines 1239
+line 1: 2026-10-12T14:01:42Z
+line 2: 23e4c167a89b714cd051abeeead31ec8b4dcfefa
+line 3: 8f6a7ec3e193317dc49a872965d3ea66b0e1b2243822769777021d6e91010a34  /tmp/p4_7b_msg.txt
+last-but-one non-empty: 2026-10-12T14:29:52Z
+last non-empty: df1c288578596afb747ed6cdbf1854ff9b1f5035
+ok   line 1 == P4_7B_LINE1
+ok   line 2 == P4_7B_LINE2
+ok   line 3 == P4_7B_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_7B_LAST
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'I CHECK: True' occurs (1 times)
+ok   the whole line 'T CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'D5 CHECK: True' occurs (1 times)
+ok   the whole line 'E1 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 2 times as a whole line; 2 times as a substring
+copy reports/P4_reports/p4_7b.txt: sha256 9c92b4471a1d5759f4877c833b28e7397e05242182979fcc90e345c9985a1f75
+ok   reports/P4_reports/p4_7b.txt has its source's SHA-256
+failed checks: 0
+D4 CHECK: True
+exit 0
+
+== c.4 and d.1: the records script, and its two stages
+--- /tmp/p4_7c_records.py (sha256 6e23aaf50721f84c403460f8216aadc4b94eead487d84017cc6685177468c3fd)
+"""P4-7c c.4 and d.1: the records edits of the kit's p4_7c_STATUS_EDITS.txt applied to PASS4_STATUS.md.
+
+Usage: `records.py 1` (c.4; verdict line `D5 CHECK`) or `records.py 2` (d.1; verdict line `E1 CHECK`). The edits file is
+read by the rules of its header after its SHA-256 is checked. Stage 1 applies EDIT 01 to EDIT 09 in order, stage 2
+FINAL; each OLD span must occur exactly once when its edit is applied, in both passes. The undated pass keeps each
+@@DATE@@; the dated pass replaces it by step a.1's date. Stage 1 starts both passes from PASS4_STATUS.md; stage 2 starts
+the undated pass from stage 1's kept undated result and the dated pass from PASS4_STATUS.md. Both results are written to
+temporary files first; PASS4_STATUS.md is replaced by the dated result only if every check holds, as the steps direct.
+"""
+import os
+import re
+import shutil
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import (INSTALL, KIT, PROMPT, REPO, Checker, expected_values, sha_bytes, sha_file,  # noqa: E402
+                          status_lines)
+
+stage = int(sys.argv[1])
+check = Checker("D5" if stage == 1 else "E1")
+E, _ = expected_values()
+STATUS = os.path.join(REPO, "PASS4_STATUS.md")
+EDITS = os.path.join(KIT, "p4_7c_STATUS_EDITS.txt")
+KEEP = {1: "/tmp/p4_7c_status_s1_undated.md", 2: "/tmp/p4_7c_status_s2_undated.md"}
+DATED = {1: "/tmp/p4_7c_status_s1_dated.md", 2: "/tmp/p4_7c_status_s2_dated.md"}
+TEMPLATE = {1: "STATUS_S1_TEMPLATE", 2: "STATUS_S2_TEMPLATE"}[stage]
+PH = "@@DATE@@"
+
+date = open("/tmp/p4_7c_date.out", encoding="utf-8").read().strip()
+print(f"date (step a.1): {date}")
+check(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, "the date has the form YYYY-MM-DD")
+prompt = open(PROMPT, encoding="utf-8").read()
+check(sha_bytes(prompt.encode("utf-8")) == E["PROMPT_SHA256"], "standing prompt == PROMPT_SHA256")
+mh = re.search(r"has these sections: (.*?)\. After it", prompt)
+HEADINGS = [f"## {s}" for s in mh.group(1).split(", ")] if mh else []
+check(len(HEADINGS) == 9, f"nine headings read from the standing prompt ({HEADINGS})")
+
+raw = open(EDITS, "rb").read()
+print(f"edits file: sha256 {sha_bytes(raw)}")
+check(sha_bytes(raw) == E["KIT_EDITS_SHA256"], "edits file == KIT_EDITS_SHA256")
+check(b"\r" not in raw, "LF line endings only")
+el = raw.decode("utf-8").split("\n")
+if el and el[-1] == "":
+    el = el[:-1]
+marker = re.compile(r"^@@@ (EDIT \d\d|FINAL) (OLD|NEW|END)$")
+first = next(i for i, ln in enumerate(el) if marker.match(ln))
+edits, order, i = {}, [], first
+while i < len(el):
+    mo = marker.match(el[i])
+    if not check(mo is not None and mo.group(2) == "OLD", f"line {i + 1}: an OLD marker"):
+        break
+    name = mo.group(1)
+    j = next(k for k in range(i + 1, len(el)) if marker.match(el[k]))
+    k = next(q for q in range(j + 1, len(el)) if marker.match(el[q]))
+    check(el[j] == f"@@@ {name} NEW" and el[k] == f"@@@ {name} END", f"{name}: NEW and END markers follow")
+    edits[name] = ("\n".join(el[i + 1:j]), "\n".join(el[j + 1:k]))
+    order.append(name)
+    i = k + 1
+want = [f"EDIT {n:02d}" for n in range(1, int(E["STAGE1_EDITS"]) + 1)] + ["FINAL"]
+print(f"header: lines 1 to {first}; edits found: {order}")
+check(order == want, "the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL")
+names = want[:-1] if stage == 1 else ["FINAL"]
+
+
+def apply(text, dated):
+    for name in names:
+        old, new = edits[name]
+        n = text.count(old)
+        if not check(n == 1, f"{'dated' if dated else 'undated'} pass, {name}: OLD occurs exactly once ({n})"):
+            sys.exit(check.finish())
+        text = text.replace(old, new.replace(PH, date) if dated else new, 1)
+    return text
+
+
+base_d = open(STATUS, encoding="utf-8").read()
+print(f"PASS4_STATUS.md before: sha256 {sha_bytes(base_d.encode('utf-8'))}; lines {len(base_d.splitlines())}")
+if stage == 1:
+    check(sha_bytes(base_d.encode("utf-8")) == E["STATUS_BEFORE_SHA256"], "PASS4_STATUS.md == STATUS_BEFORE_SHA256")
+    base_u = base_d
+else:
+    base_u = open(KEEP[1], encoding="utf-8").read()
+    print(f"undated base {KEEP[1]}: sha256 {sha_bytes(base_u.encode('utf-8'))}")
+    check(sha_bytes(base_u.encode("utf-8")) == E["STATUS_S1_TEMPLATE"], "the undated base == STATUS_S1_TEMPLATE")
+    check(sha_bytes(base_d.encode("utf-8")) == sha_file(DATED[1]), f"PASS4_STATUS.md == {DATED[1]}")
+undated, dated = apply(base_u, False), apply(base_d, True)
+with open(KEEP[stage], "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(undated)
+with open(DATED[stage], "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(dated)
+print(f"written: {KEEP[stage]}, {DATED[stage]}")
+hu = sha_bytes(undated.encode("utf-8"))
+print(f"undated result sha256 {hu}")
+check(hu == E[TEMPLATE], f"undated result == {TEMPLATE}")
+print(f"placeholder {PH}: {undated.count(PH)} in the undated result, {dated.count(PH)} in the dated result")
+check(undated.replace(PH, date) == dated, "the undated result with each placeholder replaced == the dated result")
+n = len(dated.splitlines())
+print(f"dated result: lines {n}; sha256 {sha_bytes(dated.encode('utf-8'))}")
+check(n == int(E["STATUS_LINES"]), "dated result has STATUS_LINES lines")
+heads = [ln for ln in dated.splitlines() if ln.startswith("## ")]
+check(heads == HEADINGS, f"the nine headings, in order ({heads})")
+if check.fails:
+    print("PASS4_STATUS.md NOT replaced")
+    sys.exit(check.finish())
+shutil.copyfile(DATED[stage], STATUS)
+print(f"PASS4_STATUS.md replaced by the dated result: sha256 {sha_file(STATUS)}")
+check(sha_file(STATUS) == sha_bytes(dated.encode("utf-8")), "PASS4_STATUS.md == the dated result")
+st = status_lines()
+print("git status --porcelain --untracked-files=all:")
+for ln in st:
+    print(f"  {ln}")
+want_st = [" M PASS4_STATUS.md"] + [f" M {dest}" for _, dest, _, _ in INSTALL] + ["?? reports/P4_reports/p4_7b.txt"]
+check(sorted(st) == sorted(want_st), f"the status list is exactly step c.4's ({len(st)} lines)")
+sys.exit(check.finish())
+--- /tmp/p4_7c_d5.out (sha256 8aa7cfe03c774172b270f2090ea6b4ec282272b35816a68d30c26d31c4937d08)
+date (step a.1): 2026-10-12
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+ok   nine headings read from the standing prompt (['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'])
+edits file: sha256 b7dd774195ba51162e2ee9f22d9ffd8b266bc9b9707a6568c51de3c6c035dad7
+ok   edits file == KIT_EDITS_SHA256
+ok   LF line endings only
+ok   line 3: an OLD marker
+ok   EDIT 01: NEW and END markers follow
+ok   line 9: an OLD marker
+ok   EDIT 02: NEW and END markers follow
+ok   line 14: an OLD marker
+ok   EDIT 03: NEW and END markers follow
+ok   line 26: an OLD marker
+ok   EDIT 04: NEW and END markers follow
+ok   line 32: an OLD marker
+ok   EDIT 05: NEW and END markers follow
+ok   line 43: an OLD marker
+ok   EDIT 06: NEW and END markers follow
+ok   line 48: an OLD marker
+ok   EDIT 07: NEW and END markers follow
+ok   line 54: an OLD marker
+ok   EDIT 08: NEW and END markers follow
+ok   line 60: an OLD marker
+ok   EDIT 09: NEW and END markers follow
+ok   line 66: an OLD marker
+ok   FINAL: NEW and END markers follow
+header: lines 1 to 2; edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'EDIT 09', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+PASS4_STATUS.md before: sha256 eba7b362c2a54785bfa1c514d5ce52c443ffb627a26d49558973f2753fc10d9a; lines 328
+ok   PASS4_STATUS.md == STATUS_BEFORE_SHA256
+ok   undated pass, EDIT 01: OLD occurs exactly once (1)
+ok   undated pass, EDIT 02: OLD occurs exactly once (1)
+ok   undated pass, EDIT 03: OLD occurs exactly once (1)
+ok   undated pass, EDIT 04: OLD occurs exactly once (1)
+ok   undated pass, EDIT 05: OLD occurs exactly once (1)
+ok   undated pass, EDIT 06: OLD occurs exactly once (1)
+ok   undated pass, EDIT 07: OLD occurs exactly once (1)
+ok   undated pass, EDIT 08: OLD occurs exactly once (1)
+ok   undated pass, EDIT 09: OLD occurs exactly once (1)
+ok   dated pass, EDIT 01: OLD occurs exactly once (1)
+ok   dated pass, EDIT 02: OLD occurs exactly once (1)
+ok   dated pass, EDIT 03: OLD occurs exactly once (1)
+ok   dated pass, EDIT 04: OLD occurs exactly once (1)
+ok   dated pass, EDIT 05: OLD occurs exactly once (1)
+ok   dated pass, EDIT 06: OLD occurs exactly once (1)
+ok   dated pass, EDIT 07: OLD occurs exactly once (1)
+ok   dated pass, EDIT 08: OLD occurs exactly once (1)
+ok   dated pass, EDIT 09: OLD occurs exactly once (1)
+written: /tmp/p4_7c_status_s1_undated.md, /tmp/p4_7c_status_s1_dated.md
+undated result sha256 b02dcdae2c33acce0be5962ff61a6d88bd2fd61f35355f0052df56d45f3c35cc
+ok   undated result == STATUS_S1_TEMPLATE
+placeholder @@DATE@@: 4 in the undated result, 0 in the dated result
+ok   the undated result with each placeholder replaced == the dated result
+dated result: lines 344; sha256 959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31
+ok   dated result has STATUS_LINES lines
+ok   the nine headings, in order (['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'])
+PASS4_STATUS.md replaced by the dated result: sha256 959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+   M docs/DATA_PROVENANCE.md
+   M docs/replacements/PROJECT_SETUP.md
+   M tests/test_docs_d6.py
+   M tests/test_docs_p2.py
+  ?? reports/P4_reports/p4_7b.txt
+ok   the status list is exactly step c.4's (6 lines)
+failed checks: 0
+D5 CHECK: True
+exit 0
+--- /tmp/p4_7c_e1.out (sha256 d8ece43e441046b7784ba8724bd1a36d7475b57db554c6149ccc927afb29877b)
+date (step a.1): 2026-10-12
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+ok   nine headings read from the standing prompt (['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'])
+edits file: sha256 b7dd774195ba51162e2ee9f22d9ffd8b266bc9b9707a6568c51de3c6c035dad7
+ok   edits file == KIT_EDITS_SHA256
+ok   LF line endings only
+ok   line 3: an OLD marker
+ok   EDIT 01: NEW and END markers follow
+ok   line 9: an OLD marker
+ok   EDIT 02: NEW and END markers follow
+ok   line 14: an OLD marker
+ok   EDIT 03: NEW and END markers follow
+ok   line 26: an OLD marker
+ok   EDIT 04: NEW and END markers follow
+ok   line 32: an OLD marker
+ok   EDIT 05: NEW and END markers follow
+ok   line 43: an OLD marker
+ok   EDIT 06: NEW and END markers follow
+ok   line 48: an OLD marker
+ok   EDIT 07: NEW and END markers follow
+ok   line 54: an OLD marker
+ok   EDIT 08: NEW and END markers follow
+ok   line 60: an OLD marker
+ok   EDIT 09: NEW and END markers follow
+ok   line 66: an OLD marker
+ok   FINAL: NEW and END markers follow
+header: lines 1 to 2; edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'EDIT 09', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+PASS4_STATUS.md before: sha256 959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31; lines 344
+undated base /tmp/p4_7c_status_s1_undated.md: sha256 b02dcdae2c33acce0be5962ff61a6d88bd2fd61f35355f0052df56d45f3c35cc
+ok   the undated base == STATUS_S1_TEMPLATE
+ok   PASS4_STATUS.md == /tmp/p4_7c_status_s1_dated.md
+ok   undated pass, FINAL: OLD occurs exactly once (1)
+ok   dated pass, FINAL: OLD occurs exactly once (1)
+written: /tmp/p4_7c_status_s2_undated.md, /tmp/p4_7c_status_s2_dated.md
+undated result sha256 bc80f48ce1d37da071de917d1f11d9c7a55fb1d27134461b08512f6fcde3ea80
+ok   undated result == STATUS_S2_TEMPLATE
+placeholder @@DATE@@: 4 in the undated result, 0 in the dated result
+ok   the undated result with each placeholder replaced == the dated result
+dated result: lines 344; sha256 c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f
+ok   dated result has STATUS_LINES lines
+ok   the nine headings, in order (['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'])
+PASS4_STATUS.md replaced by the dated result: sha256 c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+   M docs/DATA_PROVENANCE.md
+   M docs/replacements/PROJECT_SETUP.md
+   M tests/test_docs_d6.py
+   M tests/test_docs_p2.py
+  ?? reports/P4_reports/p4_7b.txt
+ok   the status list is exactly step c.4's (6 lines)
+failed checks: 0
+E1 CHECK: True
+exit 0
+
+== d.2: the commit (git commit; no checkpoint, P4Q43)
+--- /tmp/p4_7c_d2.sh (sha256 b97fa26d879579dc6380a5e034caa2ec7daea555341cfa8e6691b1f55cd69c65)
+#!/bin/bash
+# P4-7c d.2: the commit (no checkpoint, P4Q43). Adds the six files of step c.4's status list by their paths only;
+# COMMIT_SUBJECT is read from the saved message by sed, never typed. Run under env -u OFILT_RUN_SEALED -u OFILT_P4_DEV_RUN.
+set -u
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+SUBJECT="$(sed -n 's/^- COMMIT_SUBJECT = //p' /tmp/p4_7c_msg.txt)"
+echo "subject (sed): $SUBJECT"
+echo "subject lines read: $(sed -n 's/^- COMMIT_SUBJECT = //p' /tmp/p4_7c_msg.txt | wc -l | tr -d ' ')"
+git -C "$REPO" add -- PASS4_STATUS.md docs/DATA_PROVENANCE.md docs/replacements/PROJECT_SETUP.md \
+    tests/test_docs_d6.py tests/test_docs_p2.py reports/P4_reports/p4_7b.txt
+echo "git add: exit $?"
+git -C "$REPO" status --porcelain --untracked-files=all
+git -C "$REPO" commit -m "$SUBJECT" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+echo "git commit: exit $?"
+git -C "$REPO" rev-parse HEAD
+--- /tmp/p4_7c_d2.out (sha256 ef7b375e876d2e290f532ab95e05f44f47c96f449a9e1a7140343c472b339084)
+subject (sed): records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+subject lines read: 1
+git add: exit 0
+M  PASS4_STATUS.md
+M  docs/DATA_PROVENANCE.md
+M  docs/replacements/PROJECT_SETUP.md
+A  reports/P4_reports/p4_7b.txt
+M  tests/test_docs_d6.py
+M  tests/test_docs_p2.py
+[main 3c37f0a] records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+ 6 files changed, 1296 insertions(+), 14 deletions(-)
+ create mode 100644 reports/P4_reports/p4_7b.txt
+git commit: exit 0
+3c37f0aeb27665d7698e2d9a49d77157a811ec87
+
+== d.3: the commit checked
+--- /tmp/p4_7c_c.py (sha256 2178a58b0dd8275dba2863208fc8bea230418f71c5785cf2692c98a5a07eabf0)
+"""P4-7c d.3: the commit (verdict line `C CHECK`). Imports no module of ofilt; reads files and calls git.
+
+The trailer checked is the one d.2's script passed to `git commit` (read from /tmp/p4_7c_d2.sh); the printed commit is the
+last line of /tmp/p4_7c_d2.out.
+"""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import INSTALL, Checker, expected_values, gtext, head_sha, status_lines, tripwires  # noqa: E402
+
+check = Checker("C")
+E, _ = expected_values()
+ol = open("/tmp/p4_7c_d2.out", encoding="utf-8").read().splitlines()
+for ln in ol:
+    if re.match(r"(subject|git add|git commit|\[main |[0-9a-f]{40}$)", ln):
+        print(f"  {ln}")
+check("git add: exit 0" in ol and "git commit: exit 0" in ol, "git add and git commit exited 0")
+commit = ol[-1] if ol and re.fullmatch(r"[0-9a-f]{40}", ol[-1]) else None
+trailer = re.search(r'-m "(Co-Authored-By: [^"]*)"', open("/tmp/p4_7c_d2.sh", encoding="utf-8").read()).group(1)
+head = gtext("rev-parse", "HEAD")
+print(f"commit printed {commit}; HEAD {head}; trailer {trailer}")
+check(head == commit, "HEAD == the printed commit")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+check(parents == [E["HEAD_BEFORE"]], f"HEAD's only parent == HEAD_BEFORE ({parents})")
+subject = gtext("log", "-1", "--format=%s", "HEAD")
+print(f"subject: {subject}")
+check(subject == E["COMMIT_SUBJECT"], "subject == COMMIT_SUBJECT")
+body = gtext("log", "-1", "--format=%B", "HEAD").split("\n")
+print(f"message lines: {body}")
+check(trailer in body, "the message holds the trailer")
+files = gtext("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")
+print(f"files of the commit ({len(files)}): {files}")
+want = sorted(["PASS4_STATUS.md", "reports/P4_reports/p4_7b.txt"] + [dest for _, dest, _, _ in INSTALL])
+check(len(files) == int(E["COMMIT_FILE_COUNT"]) and sorted(files) == want,
+      "the commit holds exactly COMMIT_FILE_COUNT files, those of step c.4's status list")
+st = status_lines()
+check(st == [], f"the tree is clean ({st})")
+d1 = re.search(r"^PASS4_STATUS\.md replaced by the dated result: sha256 ([0-9a-f]{64})$",
+               open("/tmp/p4_7c_e1.out", encoding="utf-8").read(), flags=re.M).group(1)
+check(head_sha("PASS4_STATUS.md") == d1, f"PASS4_STATUS.md at HEAD == d.1's SHA-256 ({d1})")
+c3 = re.search(r"^copy reports/P4_reports/p4_7b\.txt: sha256 ([0-9a-f]{64})$",
+               open("/tmp/p4_7c_d4.out", encoding="utf-8").read(), flags=re.M).group(1)
+check(head_sha("reports/P4_reports/p4_7b.txt") == c3, f"reports/P4_reports/p4_7b.txt at HEAD == c.3's SHA-256 ({c3})")
+for _, dest, key, _ in INSTALL:
+    check(head_sha(dest) == E[key], f"{dest} at HEAD == {key}")
+tripwires(check, E, at_head=True)
+sys.exit(check.finish())
+--- /tmp/p4_7c_c.out (sha256 8ffe46fc97ad48df75ba3b2123ab7c9562a575fdcc82b8517cdf0f4a6415685c)
+  subject (sed): records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+  subject lines read: 1
+  git add: exit 0
+  [main 3c37f0a] records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+  git commit: exit 0
+  3c37f0aeb27665d7698e2d9a49d77157a811ec87
+ok   git add and git commit exited 0
+commit printed 3c37f0aeb27665d7698e2d9a49d77157a811ec87; HEAD 3c37f0aeb27665d7698e2d9a49d77157a811ec87; trailer Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+ok   HEAD == the printed commit
+ok   HEAD's only parent == HEAD_BEFORE (['df1c288578596afb747ed6cdbf1854ff9b1f5035'])
+subject: records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+ok   subject == COMMIT_SUBJECT
+message lines: ['records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)', '', 'Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>']
+ok   the message holds the trailer
+files of the commit (6): ['PASS4_STATUS.md', 'docs/DATA_PROVENANCE.md', 'docs/replacements/PROJECT_SETUP.md', 'reports/P4_reports/p4_7b.txt', 'tests/test_docs_d6.py', 'tests/test_docs_p2.py']
+ok   the commit holds exactly COMMIT_FILE_COUNT files, those of step c.4's status list
+ok   the tree is clean ([])
+ok   PASS4_STATUS.md at HEAD == d.1's SHA-256 (c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f)
+ok   reports/P4_reports/p4_7b.txt at HEAD == c.3's SHA-256 (9c92b4471a1d5759f4877c833b28e7397e05242182979fcc90e345c9985a1f75)
+ok   docs/DATA_PROVENANCE.md at HEAD == KIT_DP_SHA256
+ok   docs/replacements/PROJECT_SETUP.md at HEAD == KIT_PS_SHA256
+ok   tests/test_docs_d6.py at HEAD == KIT_D6_SHA256
+ok   tests/test_docs_p2.py at HEAD == KIT_P2_SHA256
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG at HEAD: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256 and lines as expected
+RUN_REGISTRY.jsonl at HEAD: sha256 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c; lines 2
+ok   RUN_REGISTRY.jsonl sha256 and lines as expected
+ok   spec/analysis_spec_dev_v1.yaml at HEAD == SPEC_SHA256
+ok   docs/P4_CONFIRM_CONFIG.json at HEAD == CONFIG_SHA256
+ok   no name starting ACCESS_LOG in REPO outside .git ([])
+failed checks: 0
+C CHECK: True
+exit 0
+
+$ git diff HEAD~1 -- PASS4_STATUS.md
+diff --git a/PASS4_STATUS.md b/PASS4_STATUS.md
+index a2dba11..ae264dd 100644
+--- a/PASS4_STATUS.md
++++ b/PASS4_STATUS.md
+@@ -23,11 +23,12 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
+ | P4-5 the synthetic dry run (P4Q5, P4Q28, P4Q29), in the combined item P4-5/6 | done; accepted by Isaiah 2026-10-12 | `checkpoint: P4-5/6 part 1` (`ef7f831e5f91e9432bde86106d0571e71b561994`). Criteria `docs/P4_DRYRUN_CRITERIA.md`; outputs `reports/P4_runs/dryrun/`. Report `reports/P4_reports/p4_56.txt` (with P4-6's). |
+ | P4-6 the dev run (P4Q6), under its sanction (P4Q1), in the combined item P4-5/6 | done; accepted by Isaiah 2026-10-12 | `checkpoint: P4-5/6 part 2` (`2971d8dbd75a92ffa97dcb4bfd6f24905f6af259`). Outputs `reports/P4_runs/dev/`; registry `RUN_REGISTRY.jsonl`. Report `reports/P4_reports/p4_56.txt`. |
+ | P4-7a P4-5/6 accepted; P4Q41; the records and the disclosure list of everything seen on dev (T6) | done; accepted by Isaiah 2026-10-12 | `checkpoint: P4-7a`, made by its first run. Report `reports/P4_reports/p4_7a.txt`. |
+-| P4-7b P4-7a accepted; P4Q42; the decision file P82 onward, PLAN v2.6 and DATA_DICTIONARY's qualifier, with their pins | done | `checkpoint: P4-7b`. Report `/tmp/p4_7b.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-7c. |
++| P4-7b P4-7a accepted; P4Q42; the decision file P82 onward, PLAN v2.6 and DATA_DICTIONARY's qualifier, with their pins | done; accepted by Isaiah 2026-10-12 | `checkpoint: P4-7b`, made by its first run. Report `reports/P4_reports/p4_7b.txt`. |
++| P4-7c P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed | done | `records: P4-7c`, committed after the documentation tests, without the full suite (P4Q43). Report `/tmp/p4_7c.txt`, copied at Pass 5's first item. |
+ 
+ ## Next action
+ 
+-The supervisor reviews P4-7b. Then P4-7c: DATA_PROVENANCE §4.5 (F4-2), PROJECT_SETUP and its pins, and the Pass 4 Project upload list, which closes Pass 4. Then Pass 5, the pre-registration.
++Pass 4 is complete (P4Q43). Next: Isaiah uploads the Pass 4 files to the Project as `docs/replacements/PROJECT_SETUP.md` lists them ("After Pass 4"), and the supervisor writes the Pass 5 builder prompt: the pre-registration and the tag `prereg-v1`. Pass 5's first item copies P4-7c's report, and its checkpoint runs the full suite on P4-7c's commit.
+ 
+ ## Decision log
+ 
+@@ -199,6 +200,13 @@ The supervisor reviews P4-7b. Then P4-7c: DATA_PROVENANCE §4.5 (F4-2), PROJECT_
+ >   - P4-7c: DATA_PROVENANCE §4.5 (F4-2), PROJECT_SETUP and its pins in `tests/test_docs_d6.py`, and the Pass 4 Project upload list.
+ >   - F4-3 (the pre-registration's wording of b's reading) stays open for Pass 5; F4-5 is recorded as P86, and Pass 6's run note repeats it.
+ >   - Not chosen: one kit for every document (smaller items, each checked whole).
++> - P4-7b accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P4-7c paste): checkpoint `df1c288578596afb747ed6cdbf1854ff9b1f5035`, made by its first run (message `8f6a7ec3e193317dc49a872965d3ea66b0e1b2243822769777021d6e91010a34`), every verdict True, suite `Ran 386 tests`, `OK (skipped=6)`, no deviation; its seven readings accepted.
++> - P4Q43 (Isaiah, 2026-10-12, on the supervisor's recommendation): the last Pass 4 item, and the close of Pass 4.
++>   - P4-7c: DATA_PROVENANCE §4.5 gains the Pass 4 supervisor chats and the M2 derivation chat, each by its attestation, with the last chat's recorded directly (this closes F4-2); PROJECT_SETUP is refreshed (PLAN v2.6, the Pass 4 decision file, the "After Pass 4" upload list and the Pass 4 chat-uploads line); their pins in `tests/test_docs_d6.py` and `tests/test_docs_p2.py` move under the test-change protocol (P87).
++>   - Its commit is made with `git commit` after the four documentation test modules (`test_docs_d4`, `test_docs_d5`, `test_docs_d6`, `test_docs_p2`) pass, without `tools/checkpoint.sh`'s full suite: the item changes documents and their pins only, which no other test reads. Pass 5's first checkpoint runs the full suite on this commit.
++>   - Pass 4 is done (PLAN §8): the confirmation script recovers a known b on simulated data (P4-5), runs end to end on dev (P4-6), implements the post-2024 row (O27), and its records and disclosure list are committed (P4-7a to P4-7c).
++>   - Carried to Pass 5: F4-3, the pre-registration's wording of b's reading; the disclosure list; P86's note on `git_dirty` for Pass 6's run note.
++>   - Not chosen: a full-suite checkpoint for a documents-only commit (about 25 minutes, with nothing it could detect that the four documentation modules do not).
+ 
+ ## Test results
+ 
+@@ -215,7 +223,8 @@ The supervisor reviews P4-7b. Then P4-7c: DATA_PROVENANCE §4.5 (F4-2), PROJECT_
+ - P4-5: the dry run ran outside the suite; the suite ran inside part 1's checkpoint (`checkpoint: P4-5/6 part 1`, `ef7f831e5f91e9432bde86106d0571e71b561994`): `Ran 386 tests`, `OK (skipped=6)`; its time is in the report.
+ - P4-6: the dev run ran outside the suite (121 s); the three changed modules passed on their own (`test_docs_d3b` 2 tests, `test_p4_confirm_run` 12, `test_p4_confirm_forecast` 17, each OK), and the suite ran inside part 2's checkpoint (`checkpoint: P4-5/6 part 2`): `Ran 386 tests in 1379.167s`, `OK (skipped=6)`; checkpoint 1's took 1383.061 s. Report `reports/P4_reports/p4_56.txt`.
+ - P4-7a: no code and no test changed; the suite ran inside this item's checkpoint (`checkpoint: P4-7a`): `Ran 386 tests in 1393.676s`, `OK (skipped=6)`. Report `reports/P4_reports/p4_7a.txt`.
+-- P4-7b: before this record was written, the three changed test modules `test_docs_d4`, `test_docs_d5` and `test_docs_p2` passed on their own; the suite runs inside this item's checkpoint (`checkpoint: P4-7b`). Expected: `Ran 386 tests`, `OK (skipped=6)`.
++- P4-7b: the three changed test modules passed on their own, and the suite ran inside this item's checkpoint (`checkpoint: P4-7b`): `Ran 386 tests in 1519.459s`, `OK (skipped=6)`. Report `reports/P4_reports/p4_7b.txt`.
++- P4-7c: no code changed; the four documentation test modules `test_docs_d4`, `test_docs_d5`, `test_docs_d6` and `test_docs_p2` pass before the commit; the full suite is not run (P4Q43) and runs at Pass 5's first checkpoint.
+ 
+ ## Test changes
+ 
+@@ -237,12 +246,16 @@ The supervisor reviews P4-7b. Then P4-7c: DATA_PROVENANCE §4.5 (F4-2), PROJECT_
+   - `tests/test_docs_d5.py`: DATA_DICTIONARY's pin prefix, was `14f9e1ac8348e5a9`, now `cf87dc7f1f1cff29`.
+   - `tests/test_docs_p2.py`: PLAN's pin, was `cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772`, now `b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca`; the new decision file `docs/DECISIONS_P82_onward.md` pinned, `0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890`.
+   - No test added or removed; the suite stays at 386 tests.
++- P4-7c (P4Q43, P87; the test-change protocol; each change carries a comment citing P87):
++  - `tests/test_docs_d6.py`: PROJECT_SETUP's pin prefix, was `267c3aa8f22724cc`, now `f0991f0360787079`; its first line, was "...; refreshed 2026-10-07)", now "...; refreshed 2026-10-12)"; the Project checks (run only where the Project is mounted), was `PLAN.md` (v2.5) and `# Research Plan v2.5`, now v2.6.
++  - `tests/test_docs_p2.py`: DATA_PROVENANCE's pin, was `48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd`, now `6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6`; PROJECT_SETUP's, was `267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f`, now `f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f`.
++  - No test added or removed; the suite stays at 386 tests.
+ 
+ ## Flags
+ 
+ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (closed). Pass 4's:
+ - F4-1 (closed at P4-6, 2026-10-12): the three tests that asserted an empty `RUN_REGISTRY.jsonl` now assert the dev run's two lines (Test changes, P4-6); `test_docs_d3` and `BLIND_FIT_LOG` unchanged. Was: F4-1 (carried from P3-8c): `test_docs_d3` and `test_docs_d3b` assert Pass 3's end state (`BLIND_FIT_LOG` 7 lines; `RUN_REGISTRY.jsonl` empty). The dev run's commit changes them by decision (P4Q6). `tests/test_p4_confirm_forecast.py`'s `test_registry_routing` also asserts a 0-byte `RUN_REGISTRY.jsonl` and is changed by the same decision (P4-boot2's note N3; recorded at P4-4c1).
+-- F4-2 (carried from P3-8c and the handoffs): DATA_PROVENANCE §4.5 needs the entries of the fifth supervisor chat, of the two supervisor chats that began on 2026-10-08 (with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md` and with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`), of the M2 derivation chat (its attestation is §10 of `docs/P4_M2_note.md`), of the supervisor chat that began on 2026-10-09 (with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`), of the supervisor chat that began on 2026-10-11 (with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`) and of the one that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md`, and PROJECT_SETUP's chat-uploads line needs updating. Both go in through the documentation kit (P4-7), with their pins moved.
++- F4-2 (closed at P4-7c, 2026-10-12): DATA_PROVENANCE §4.5 holds the entries of the Pass 4 supervisor chats and of the M2 derivation chat, and PROJECT_SETUP's chat-uploads line covers Pass 4 (P4Q43). Was: F4-2 (carried from P3-8c and the handoffs): DATA_PROVENANCE §4.5 needs the entries of the fifth supervisor chat, of the two supervisor chats that began on 2026-10-08 (with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md` and with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`), of the M2 derivation chat (its attestation is §10 of `docs/P4_M2_note.md`), of the supervisor chat that began on 2026-10-09 (with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`), of the supervisor chat that began on 2026-10-11 (with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`) and of the one that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md`, and PROJECT_SETUP's chat-uploads line needs updating. Both go in through the documentation kit (P4-7), with their pins moved.
+ - F4-3 (from `docs/P4_M2_note.md`, Proposition 4): b is only approximately the yen-specific pass-through. Holding `eurusd_ret` fixed does not hold the dollar fixed, so any underpriced dollar-wide channel that the controls do not span loads on `usdjpy_ret`; a channel whose fair value falls when the dollar strengthens, such as the metals cascade, pushes b down. So "b < 0 means overreaction" and "b = 0 means fully priced" need a qualifier, and f inherits the term. A positive b̂ is conservative with respect to the cascade, not with respect to yen-correlated news. H1 as a test is unchanged. For the pre-registration (Pass 5).
+ - F4-4 (closed at P4-7b, 2026-10-12): PLAN v2.6 corrects §1.4 and §7 and qualifies §1.2 and §1.3; P84 qualifies P15's reading of a2 = 0 in `docs/DECISIONS_P82_onward.md`; DATA_DICTIONARY's line on `eurusd_ret` is qualified as approximate (P85). Was: F4-4 (from `docs/P4_M2_note.md`, Proposition 6, and P4Q17 to P4Q19): the documentation kit (P4-7) corrects PLAN §1.4 (the tier-(i) wording, the tier-(iii) row, and the null and equivalence wording) and PLAN §7 (M2 derived; A′(i) and (vi) qualified). P15's "common weight" reading of a₂ = 0, which does not hold as stated, is qualified by a decision in `docs/DECISIONS_P82_onward.md`, and DATA_DICTIONARY's line on `eurusd_ret` ("makes b the yen-specific pass-through") is qualified as approximate.
+ - F4-5 (from P4-6, P4-5/6's reading R10): a run's registry lines record `git_dirty`, which reads the tracked files; `RUN_REGISTRY.jsonl` is itself tracked, so the second call of any run that appends to it records `git_dirty` True (at the dev run: the main call False, the M7 call True), with no code change. Read `git_dirty` with the registry file itself excluded; the documentation kit (P4-7b) states this, and Pass 6's run note repeats it.
+@@ -265,6 +278,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
+ - P4-6: the dev run, the one sanctioned computation of Pass 4 that relates predictors to targets on real data (P4Q1): the committed script, once, on the dev panel verified by its SHA-256; its outputs and the report hold the dev results, the dev first look; nothing else on real data (P4Q7); the confirmation panel not opened and its loader not called; `OFILT_RUN_SEALED` unset; no tag created, moved or deleted.
+ - P4-7a: no data file opened and nothing computed on real data; the committed dev outputs and P4-5/6's report read as text only; `RUN_REGISTRY.jsonl` unchanged (2 lines); `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+ - P4-7b: no data file opened and nothing computed on any panel; documents and tests only; `RUN_REGISTRY.jsonl` unchanged (2 lines); `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
++- P4-7c: no data file opened and nothing computed on any panel; documents and tests only (`test_docs_d6`'s Project check is skipped on the Mac); `RUN_REGISTRY.jsonl` unchanged (2 lines); `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+ - P4-5: the dry run's four runs and its check run on simulator frames only, with `OFILT_DATA_DIR` set to an empty folder; their forecasting calls append to the temporary synthetic registry; `RUN_REGISTRY.jsonl` unchanged; no data file opened; the dev panel's SHA-256 is computed once, as a hash, before part 2; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+ 
+ ## Deviations
+@@ -298,6 +312,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
+ - The records of P4-4b1 (recorded at P4-4c1): the supervisor's EDIT 09 of P4-4b1 dropped the separator before the last chat named in F4-2 (P4-boot2's note N10); corrected by this item.
+ - P4-4c2 (message `55396f2bdb0c37f67da0128ab6e69ad063a096f97bafc6695e64a0acc97ba333`; recorded at P4-5/6): no deviation by the builder. The supervisor's specification omitted `hashlib` from `confirm_run.py`'s import list; the builder reached the hash function through `confirm_inference.hashlib` rather than change what test 12 asserts (reading R1). Accepted; the code is left as committed.
+ - P4-5/6 (message `6cb8cc2fe5ddfaef3bb6c25af1ee36b766807f6a3cae17ab509dad559d9dba5d`; recorded at P4-7a, from its report): no deviation by the builder. Two command attempts did not run: one refused by the command tool itself while its safety check was unavailable, rerun unchanged (R13); one inline extraction with a syntax error, replaced by a script written with the editor (notes). The supervisor's criteria file miscounted C7's comparisons ("seven"; R3), information only.
++- P4-7c (by decision, P4Q43): its commit is made with `git commit` after the four documentation test modules pass, not by `tools/checkpoint.sh`; the full suite runs at Pass 5's first checkpoint.
+ 
+ ## Disclosure list
+ 
+@@ -325,4 +340,5 @@ For the pre-registration (Pass 5; P4Q8):
+   - seen by: the builder session, the supervisor chat that began on 2026-10-11 with handoff H9, and Isaiah;
+   - nothing else on dev: no exploratory extra (P4Q41), and nothing on the confirmation side.
+ - The Pass 4 decision file `docs/DECISIONS_P82_onward.md` (P82 to P87), SHA-256 `0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890`, and PLAN v2.6, SHA-256 `b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca`; the documents the pre-registration cites for P84 and P85.
++- The supervisor chats' real-data contact in Pass 4, in DATA_PROVENANCE §4.5 (SHA-256 `6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6`): among it, the last chat's dev first look (the dev document, by design) and its run of `test_docs_d6`'s Project check in its sandbox, which read the Project dev panel's `date` column for its last date (no value printed).
+ - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.
+
+$ git show --stat HEAD
+commit 3c37f0aeb27665d7698e2d9a49d77157a811ec87
+Author: ofilt-pass1 <pass1@localhost>
+Date:   Mon Oct 12 10:42:41 2026 -0400
+
+    records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md                    |   24 +-
+ docs/DATA_PROVENANCE.md            |   17 +
+ docs/replacements/PROJECT_SETUP.md |   17 +-
+ reports/P4_reports/p4_7b.txt       | 1239 ++++++++++++++++++++++++++++++++++++
+ tests/test_docs_d6.py              |    9 +-
+ tests/test_docs_p2.py              |    4 +-
+ 6 files changed, 1296 insertions(+), 14 deletions(-)
+
+== e.1: the Pass 4 upload folder
+--- /tmp/p4_7c_e1.sh (sha256 56851213dfd26e950c31c0177488afd05e297b6c92799c838dc3a0f5e096361f)
+#!/bin/bash
+# P4-7c e.1: create UPLOAD (mkdir without -p: it must not exist) and copy each name:path of UPLOAD_FILES with cp -p, from
+# REPO (the tree is clean, so each file is HEAD's). UPLOAD_FILES is read from the saved message by sed, never typed.
+set -u
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+UPLOAD="$HOME/Desktop/FX_Project/files/pass4_upload"
+LIST="$(sed -n 's/^- UPLOAD_FILES = //p' /tmp/p4_7c_msg.txt)"
+echo "UPLOAD_FILES (sed): $LIST"
+echo "git status --porcelain --untracked-files=all (must be empty):"
+git -C "$REPO" status --porcelain --untracked-files=all
+mkdir "$UPLOAD" || { echo "mkdir failed: exit $?"; exit 1; }
+echo "mkdir $UPLOAD: exit 0"
+n=0
+for pair in $LIST; do
+    name="${pair%%:*}"
+    path="${pair#*:}"
+    cp -p "$REPO/$path" "$UPLOAD/$name"
+    echo "cp -p $path -> $name: exit $?"
+    n=$((n + 1))
+done
+echo "pairs copied: $n"
+--- /tmp/p4_7c_e1_upload.out (sha256 8da5d435b016446cc061e727108c6409342da249f0ee0ab63ad2486bf8632206)
+UPLOAD_FILES (sed): PROJECT_SETUP.md:docs/replacements/PROJECT_SETUP.md PLAN.md:docs/replacements/PLAN.md DATA_PROVENANCE.md:docs/DATA_PROVENANCE.md DATA_DICTIONARY.md:docs/replacements/DATA_DICTIONARY.md DECISIONS_P82_onward.md:docs/DECISIONS_P82_onward.md PASS4_STATUS.md:PASS4_STATUS.md P4_M2_note.md:docs/P4_M2_note.md P4_CONFIRM_CONFIG.json:docs/P4_CONFIRM_CONFIG.json P4_DRYRUN_CRITERIA.md:docs/P4_DRYRUN_CRITERIA.md p4_1_audit.md:reports/P4_reports/p4_1_audit.md P4_dev_document.json:reports/P4_runs/dev/document.json
+git status --porcelain --untracked-files=all (must be empty):
+mkdir /Users/isaiahchoi/Desktop/FX_Project/files/pass4_upload: exit 0
+cp -p docs/replacements/PROJECT_SETUP.md -> PROJECT_SETUP.md: exit 0
+cp -p docs/replacements/PLAN.md -> PLAN.md: exit 0
+cp -p docs/DATA_PROVENANCE.md -> DATA_PROVENANCE.md: exit 0
+cp -p docs/replacements/DATA_DICTIONARY.md -> DATA_DICTIONARY.md: exit 0
+cp -p docs/DECISIONS_P82_onward.md -> DECISIONS_P82_onward.md: exit 0
+cp -p PASS4_STATUS.md -> PASS4_STATUS.md: exit 0
+cp -p docs/P4_M2_note.md -> P4_M2_note.md: exit 0
+cp -p docs/P4_CONFIRM_CONFIG.json -> P4_CONFIRM_CONFIG.json: exit 0
+cp -p docs/P4_DRYRUN_CRITERIA.md -> P4_DRYRUN_CRITERIA.md: exit 0
+cp -p reports/P4_reports/p4_1_audit.md -> p4_1_audit.md: exit 0
+cp -p reports/P4_runs/dev/document.json -> P4_dev_document.json: exit 0
+pairs copied: 11
+
+== e.2: the upload folder checked, with its table (name | SHA-256 | bytes)
+--- /tmp/p4_7c_u.py (sha256 c50c1171247bd0e6b160243b6822d4d654404b9b38a488b0a3b9b5f627880c47)
+"""P4-7c e.2: the Pass 4 upload folder (verdict line `U CHECK`). Reads files as bytes and calls git; imports no module of
+ofilt. Each file in UPLOAD is compared with its path at HEAD (`git show HEAD:<path>`); nothing in REPO changes."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_7c_common import UPLOAD, Checker, expected_values, git, gtext, head_sha, sha_file, status_lines  # noqa: E402
+
+check = Checker("U")
+E, _ = expected_values()
+head_before = gtext("rev-parse", "HEAD")
+pairs = [p.split(":", 1) for p in E["UPLOAD_FILES"].split(" ")]
+print(f"UPLOAD_FILES: {len(pairs)} pairs")
+names = sorted(os.listdir(UPLOAD))          # hidden files included
+print(f"UPLOAD {UPLOAD}: {names}")
+check(names == sorted(n for n, _ in pairs), "UPLOAD holds exactly the names of UPLOAD_FILES")
+check(len(names) == 11, f"eleven names ({len(names)})")
+rows = []
+for name, path in pairs:
+    p = os.path.join(UPLOAD, name)
+    if not check(os.path.isfile(p), f"{name} exists"):
+        continue
+    h, hh = sha_file(p), head_sha(path)
+    rows.append((name, h, os.path.getsize(p), len(git("show", f"HEAD:{path}"))))
+    check(h == hh, f"{name} == HEAD:{path}")
+print("\nname | SHA-256 | bytes")
+for name, h, b, _ in rows:
+    print(f"{name} | {h} | {b}")
+print()
+check(all(b == hb for _, _, b, hb in rows), "each file's bytes == its path's bytes at HEAD")
+check(gtext("rev-parse", "HEAD") == head_before, "HEAD unchanged")
+st = status_lines()
+check(st == [], f"nothing in REPO changed: the tree is clean ({st})")
+sys.exit(check.finish())
+--- /tmp/p4_7c_u.out (sha256 9b57ab7c8e4c92ca82c63f2a78a7b42c7607731e771135631c0605fdd78b8346)
+UPLOAD_FILES: 11 pairs
+UPLOAD /Users/isaiahchoi/Desktop/FX_Project/files/pass4_upload: ['DATA_DICTIONARY.md', 'DATA_PROVENANCE.md', 'DECISIONS_P82_onward.md', 'P4_CONFIRM_CONFIG.json', 'P4_DRYRUN_CRITERIA.md', 'P4_M2_note.md', 'P4_dev_document.json', 'PASS4_STATUS.md', 'PLAN.md', 'PROJECT_SETUP.md', 'p4_1_audit.md']
+ok   UPLOAD holds exactly the names of UPLOAD_FILES
+ok   eleven names (11)
+ok   PROJECT_SETUP.md exists
+ok   PROJECT_SETUP.md == HEAD:docs/replacements/PROJECT_SETUP.md
+ok   PLAN.md exists
+ok   PLAN.md == HEAD:docs/replacements/PLAN.md
+ok   DATA_PROVENANCE.md exists
+ok   DATA_PROVENANCE.md == HEAD:docs/DATA_PROVENANCE.md
+ok   DATA_DICTIONARY.md exists
+ok   DATA_DICTIONARY.md == HEAD:docs/replacements/DATA_DICTIONARY.md
+ok   DECISIONS_P82_onward.md exists
+ok   DECISIONS_P82_onward.md == HEAD:docs/DECISIONS_P82_onward.md
+ok   PASS4_STATUS.md exists
+ok   PASS4_STATUS.md == HEAD:PASS4_STATUS.md
+ok   P4_M2_note.md exists
+ok   P4_M2_note.md == HEAD:docs/P4_M2_note.md
+ok   P4_CONFIRM_CONFIG.json exists
+ok   P4_CONFIRM_CONFIG.json == HEAD:docs/P4_CONFIRM_CONFIG.json
+ok   P4_DRYRUN_CRITERIA.md exists
+ok   P4_DRYRUN_CRITERIA.md == HEAD:docs/P4_DRYRUN_CRITERIA.md
+ok   p4_1_audit.md exists
+ok   p4_1_audit.md == HEAD:reports/P4_reports/p4_1_audit.md
+ok   P4_dev_document.json exists
+ok   P4_dev_document.json == HEAD:reports/P4_runs/dev/document.json
+
+name | SHA-256 | bytes
+PROJECT_SETUP.md | f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f | 8765
+PLAN.md | b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca | 40898
+DATA_PROVENANCE.md | 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6 | 37133
+DATA_DICTIONARY.md | cf87dc7f1f1cff297808be6944444bd463d9bf447f6710dc5b128904cbabb7d2 | 12046
+DECISIONS_P82_onward.md | 0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890 | 7850
+PASS4_STATUS.md | c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f | 79223
+P4_M2_note.md | a4812e85b6feabc838473ce47a97ce6c4fe88eec7a91762f442cb978b933ec22 | 61188
+P4_CONFIRM_CONFIG.json | 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd | 15227
+P4_DRYRUN_CRITERIA.md | 3590035edb366eb46c1d076a3d7c4c2fdc60d9c43994b5a305181982ea071877 | 8089
+p4_1_audit.md | fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894 | 51577
+P4_dev_document.json | 9a51863e6adda733397736724013e3cd71101328289629c9f29a40459dd64c92 | 83336
+
+ok   each file's bytes == its path's bytes at HEAD
+ok   HEAD unchanged
+ok   nothing in REPO changed: the tree is clean ([])
+failed checks: 0
+U CHECK: True
+exit 0
+
+== readings
+
+R1. The check scripts share one helper, `/tmp/p4_7c_common.py` (P4-7b's helper with this item's message, the four kit-to-destination pairs and UPLOAD), printed first. It imports no module of `ofilt` and reads no data file. Only the four test modules of c.2 imported `ofilt`; `test_docs_d6`'s Project check was skipped on the Mac ("Claude Project not mounted").
+
+R2. b.1's diffs were produced by `diff -u` from inside the kit script, one per replaced file, and are printed in full in its output. They show only the changes P4Q43 and P87 describe:
+- DATA_PROVENANCE: one block added to §4.5, after the Pass 3 paragraph: the Pass 4 supervisor chats and the M2 derivation chat, each by its attestation, with the last chat's recorded directly. Nothing else changes.
+- PROJECT_SETUP: the refresh date (2026-10-07 to 2026-10-12), PLAN v2.5 to v2.6, the `PASS4_STATUS.md` line, the decision file P82–P87, the "After Pass 4" list, and the Pass 4 chat-uploads line.
+- The two tests: their pins and the strings they assert, each change with a comment citing P87 (P4-7c). EDIT 05 lists each change old → new.
+
+R3. Information only, no action. DATA_PROVENANCE's new heading reads "2026-10-07 to 2026-10-12", and its list begins with the fifth supervisor chat (attested in a `PASS3_` handoff). PROJECT_SETUP's Pass 4 chat-uploads line reads "2026-10-08 to 2026-10-12". Both files were installed as given.
+
+R4. The four kit files were installed with `cp -p`, unedited, and each destination's SHA-256 equals its kit file's (I CHECK). The status list then held exactly the four ` M` lines.
+
+R5. The four test modules ran in bash (`bash -c` with a `for` over a literal list, in the message's order), with the venv activated and the data folder, teed to `/tmp/p4_7c_c2.out`:
+- `test_docs_d4`: 4 tests, OK;
+- `test_docs_d5`: 3 tests, OK;
+- `test_docs_d6`: 3 tests, OK (skipped=1);
+- `test_docs_p2`: 3 tests, OK.
+
+R6. The source check of c.3 prints its verdict line as `D4 SOURCES CHECK: True`, before the copy. The step's verdict is `D4 CHECK: True`, after the copy.
+
+R7. The date a.1 printed is 2026-10-12. It dates the acceptance of P4-7b, P4Q43 and the close of F4-2. The records have four placeholders: one in EDIT 01, two in EDIT 03 and one in EDIT 06.
+
+R8. The commit was made by `git commit` (P4Q43), not by `tools/checkpoint.sh`, and the full suite did not run. `git add` named the six paths of c.4's status list and nothing else, and the subject was read from the saved message by `sed`. C checks the tags, `BLIND_FIT_LOG`, `RUN_REGISTRY.jsonl`, the spec and the configuration at HEAD: each by SHA-256, with line counts for the two logs, and with the absence of ACCESS_LOG.
+
+R9. Step e.1 created UPLOAD with `mkdir` without `-p`, so it would fail if UPLOAD existed. It read UPLOAD_FILES from the saved message by `sed`, and copied each path from REPO's clean tree with `cp -p`. U compares each file with `git show HEAD:<path>` (SHA-256 and bytes) and confirms that HEAD and the tree did not change.
+
+== deviations and notes
+
+Deviations: none that I know of.
+- Every step ran in the message's order.
+- The four kit files were installed unedited with `cp -p`.
+- `PASS4_STATUS.md` was replaced only by the records script.
+- No code changed. No data file was opened, listed or hashed, and nothing was computed on any panel.
+- No run of `tools/checkpoint.sh`, `tools/p4_confirm_run.py`, `tools/p3_sealed_run.py` or the full suite.
+
+Notes:
+- Commit `3c37f0aeb27665d7698e2d9a49d77157a811ec87`: `records: P4-7c (...)`, with the six files of c.4's status list. Its parent is `df1c288578596afb747ed6cdbf1854ff9b1f5035`.
+- The full suite was not run (P4Q43). Pass 5's first checkpoint runs it on this commit.
+- The two changed tests passed on their own before the records were written (c.2), and their pins match the committed files (C).
+- For the supervisor's check after the commit: `/tmp/p4_7b.txt` is 84,876 bytes, 1,239 lines, SHA-256 `9c92b4471a1d5759f4877c833b28e7397e05242182979fcc90e345c9985a1f75`. Its line 3 occurs 2 times as a whole line.
+- `PASS4_STATUS.md`: `959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31` after stage 1, and `c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f` after stage 2, the committed file. Both have 344 lines and the nine headings.
+- UPLOAD holds the eleven files of UPLOAD_FILES (table in e.2), outside REPO.
+  - Four replace Project files of the same name: `PROJECT_SETUP.md`, `PLAN.md`, `DATA_PROVENANCE.md` and `DATA_DICTIONARY.md`. PROJECT_SETUP says to delete each old copy before uploading.
+  - The other seven are new names.
+  - `P4_dev_document.json` is the dev first look. Once uploaded, every later session sees it (PROJECT_SETUP, "After Pass 4").
+- Every Python command ran with `-B`. The tree was clean after the commit and after e.
+- Unchanged at HEAD: `RUN_REGISTRY.jsonl` (2 lines), `BLIND_FIT_LOG` (7 lines), the spec and the configuration. No ACCESS_LOG appeared. No tag was created, moved or deleted, and nothing was pushed.
+- This report, `/tmp/p4_7c.txt`, is copied into the repo at Pass 5's first item (EDIT 01).
+
+== this assembler
+--- /tmp/p4_7c_assemble.sh (sha256 d78d530e688a096dacf74c2035136d03a14a054ced1c7f6e9d4b3236d9de5e6c)
+#!/bin/bash
+# P4-7c f: assembles /tmp/p4_7c.txt from command output and saved files only. Read-only in REPO and UPLOAD.
+set -u
+R=/tmp/p4_7c.txt
+T=/tmp/p4_7c
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+first="$T"_first.txt
+[ -f "$first" ] || cp -p "$R" "$first"     # the header written after the message was saved, kept once
+
+show() {   # a file in full, with its SHA-256
+    echo "--- $1 (sha256 $(shasum -a 256 "$1" | cut -d' ' -f1))"
+    cat "$1"
+}
+
+{
+cat "$first"
+echo "date +%F (a.1, captured by tee in /tmp/p4_7c_date.out): $(cat "$T"_date.out)"
+echo
+echo "== the shared helper of the check scripts"
+show "$T"_common.py
+echo
+echo "== a.2: the state check"
+show "$T"_a2.py
+show "$T"_a2.out
+echo
+echo "== b.1: the kit, and the diffs of the four replaced files against their kit versions"
+show "$T"_b1.py
+show "$T"_b1.out
+echo
+echo "== c.1: the install (cp -p, then the check)"
+show "$T"_c1_cp.out
+show "$T"_i.py
+show "$T"_i.out
+echo
+echo "== c.2: the four test runs and their check"
+show "$T"_c2.out
+show "$T"_t.py
+show "$T"_t.out
+echo
+echo "== c.3: P4-7b's report (the source checked first, then the copy, then the copy checked)"
+show "$T"_d4.py
+show "$T"_d4_sources.out
+show "$T"_c3_cp.out
+show "$T"_d4.out
+echo
+echo "== c.4 and d.1: the records script, and its two stages"
+show "$T"_records.py
+show "$T"_d5.out
+show "$T"_e1.out
+echo
+echo "== d.2: the commit (git commit; no checkpoint, P4Q43)"
+show "$T"_d2.sh
+show "$T"_d2.out
+echo
+echo "== d.3: the commit checked"
+show "$T"_c.py
+show "$T"_c.out
+echo
+echo "\$ git diff HEAD~1 -- PASS4_STATUS.md"
+git -C "$REPO" diff HEAD~1 -- PASS4_STATUS.md
+echo
+echo "\$ git show --stat HEAD"
+git -C "$REPO" show --stat HEAD
+echo
+echo "== e.1: the Pass 4 upload folder"
+show "$T"_e1.sh
+show "$T"_e1_upload.out
+echo
+echo "== e.2: the upload folder checked, with its table (name | SHA-256 | bytes)"
+show "$T"_u.py
+show "$T"_u.out
+echo
+cat "$T"_readings.txt
+echo
+cat "$T"_notes.txt
+echo
+echo "== this assembler"
+show "$T"_assemble.sh
+echo
+echo "== the files written under /tmp (this report and its temporary file excluded)"
+for f in "$T"*; do
+    [ -f "$f" ] && [ "$f" != "$R" ] && [ "$f" != "$R.new" ] && shasum -a 256 "$f"
+done
+echo
+echo "== end: the time and HEAD, then git status --porcelain (empty: nothing follows the HEAD line)"
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$R".new 2>&1
+mv "$R".new "$R"
+echo "written: $R ($(wc -l < "$R") lines)"
+
+== the files written under /tmp (this report and its temporary file excluded)
+a734ed08444013ca20988461fd47b67c0e22100a00375dbf91fc0a25bfd425b9  /tmp/p4_7c_a2.out
+3922ea1137b18e1d57c5d7a271b1919e0b034dcf21f9c3fbda5b6b71ad32decf  /tmp/p4_7c_a2.py
+d78d530e688a096dacf74c2035136d03a14a054ced1c7f6e9d4b3236d9de5e6c  /tmp/p4_7c_assemble.sh
+88ff4c688d3ba9509527d89843399416f5e8fc962ffbd53f9f524eb64cd36023  /tmp/p4_7c_b1.out
+eab1c6cccd6eb5e80a7acaa1daa57e075ff3c1b221a6af2901e8bcc22407cef9  /tmp/p4_7c_b1.py
+8ffe46fc97ad48df75ba3b2123ab7c9562a575fdcc82b8517cdf0f4a6415685c  /tmp/p4_7c_c.out
+2178a58b0dd8275dba2863208fc8bea230418f71c5785cf2692c98a5a07eabf0  /tmp/p4_7c_c.py
+e1797d87bfe51ca930aad36efddf1781d85927eb8460b06976bb40b22dfb8663  /tmp/p4_7c_c1_cp.out
+93457aec00fd868127eda2fe51bb43d3cce1a3d5dfa25dd520d632286a4ddfee  /tmp/p4_7c_c2.out
+ab3da85c13d077d91de08d476a9e38fe7e7ae42ece29c5232f0c2207660e7308  /tmp/p4_7c_c3_cp.out
+eaa5ee9662020003781711166320d0b70e9ec939b06dd02e62fcc4750fb402d3  /tmp/p4_7c_common.py
+ef7b375e876d2e290f532ab95e05f44f47c96f449a9e1a7140343c472b339084  /tmp/p4_7c_d2.out
+b97fa26d879579dc6380a5e034caa2ec7daea555341cfa8e6691b1f55cd69c65  /tmp/p4_7c_d2.sh
+ea3506ee38abc3c940fbbbb3de74d0d4bdc7beec6463b580017faa0bf62e7fba  /tmp/p4_7c_d4_sources.out
+5538b50343462d5cdc0c52b9a823f5d72442bd6bd25eccfeef07dbfe8868a9af  /tmp/p4_7c_d4.out
+ff92bafbc33fcef5cfd9469519f262e96033b6366ef647a21d33e1975d9f2525  /tmp/p4_7c_d4.py
+8aa7cfe03c774172b270f2090ea6b4ec282272b35816a68d30c26d31c4937d08  /tmp/p4_7c_d5.out
+a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  /tmp/p4_7c_date.out
+8da5d435b016446cc061e727108c6409342da249f0ee0ab63ad2486bf8632206  /tmp/p4_7c_e1_upload.out
+d8ece43e441046b7784ba8724bd1a36d7475b57db554c6149ccc927afb29877b  /tmp/p4_7c_e1.out
+56851213dfd26e950c31c0177488afd05e297b6c92799c838dc3a0f5e096361f  /tmp/p4_7c_e1.sh
+18a6ad22885cd3cd1d31e9cae6a0ad9b172ac4c8acd0762b06ee1186947a9946  /tmp/p4_7c_first.txt
+96e79ddf25705d5a16a6f0c20911e392dcc581721645803575ff48d2981a9541  /tmp/p4_7c_i.out
+b0d793d3a03a1121c2d4e6ea521ba0e1e210bd46aecf5986853b245710152931  /tmp/p4_7c_i.py
+007138ae9dfbb43231748b1c3faf45ecf7c3686ed49133ab95be4c151c402b14  /tmp/p4_7c_msg.txt
+07ac5b6e1e74b527aae171edba71f5b25400e38455cb0db4017c4b3d765ee582  /tmp/p4_7c_notes.txt
+1c6db35324e044f2fb072d28d7c731c84002ab497bbf14579bd037539da3aeba  /tmp/p4_7c_readings.txt
+6e23aaf50721f84c403460f8216aadc4b94eead487d84017cc6685177468c3fd  /tmp/p4_7c_records.py
+959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31  /tmp/p4_7c_status_s1_dated.md
+b02dcdae2c33acce0be5962ff61a6d88bd2fd61f35355f0052df56d45f3c35cc  /tmp/p4_7c_status_s1_undated.md
+c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f  /tmp/p4_7c_status_s2_dated.md
+bc80f48ce1d37da071de917d1f11d9c7a55fb1d27134461b08512f6fcde3ea80  /tmp/p4_7c_status_s2_undated.md
+cf56c30cd069720963046717e92b0faff22b62c29674d3ed63277ae2b7ab18ad  /tmp/p4_7c_t.out
+a754df07ce69207a12a080d503f347c49087ff821f0b9429304d8d4fd15facb4  /tmp/p4_7c_t.py
+9b57ab7c8e4c92ca82c63f2a78a7b42c7607731e771135631c0605fdd78b8346  /tmp/p4_7c_u.out
+c50c1171247bd0e6b160243b6822d4d654404b9b38a488b0a3b9b5f627880c47  /tmp/p4_7c_u.py
+
+== end: the time and HEAD, then git status --porcelain (empty: nothing follows the HEAD line)
+2026-10-12T14:45:09Z
+3c37f0aeb27665d7698e2d9a49d77157a811ec87

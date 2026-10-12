@@ -27,7 +27,9 @@ class TestP36(unittest.TestCase):
                                            B.CONFIRM_REAL: ("spec-dev-v1", "prereg-v1")})
         self.assertEqual(io.CONFIRM_TAG, "prereg-v1")                          # load_confirm gate (P29)
         self.assertEqual(B._tag_ok("spec-dev-v1"), TS.spec_tagged())  # P3-8b: was "for t in TAGS: self.assertFalse(B._tag_ok(t))" ("neither exists in Pass 1")
-        self.assertFalse(B._tag_ok("prereg-v1"))  # P3-8b: prereg-v1 stays absent until Pass 5
+        self.assertEqual(B._tag_ok("prereg-v1"), TS.prereg_tagged())  # P5-1 (P5Q4, test-change protocol): was self.assertFalse(B._tag_ok("prereg-v1")) ("prereg-v1 stays absent until Pass 5")
+        if TS.prereg_tagged():  # P5-1: with the tag, it is annotated, follows spec-dev-v1 and holds the pinned documents
+            TS.check_prereg_tag(self)  # P5-1
         naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
                         if any(t in p.read_text() for t in TAGS))
         self.assertEqual(naming, ["ofilt/drift/blind.py", "ofilt/drift/io.py"])  # the only unblinding events

@@ -25,6 +25,8 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 import p4_confirm_run as SCRIPT  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # P5-1: the tests folder, for tag_state
+import tag_state as TS  # noqa: E402  (P5-1)
 from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import confirm_claims as CC  # noqa: E402
 from ofilt.drift import confirm_economic as CE  # noqa: E402
@@ -310,7 +312,9 @@ class TestConfirmRun(unittest.TestCase):
             log.parent.mkdir()
             empty = Path(t) / "empty"
             empty.mkdir()
-            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), mock.patch.object(IO, "DATA_DIR", empty):
+            # P5-1 (P5Q3, P5Q4, test-change protocol): TS.io_blinded() added, so io's guard is a throwaway repository
+            # without prereg-v1; was REPO's own guard, which refuses only while REPO lacks the tag.
+            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), mock.patch.object(IO, "DATA_DIR", empty), TS.io_blinded():
                 with self.assertRaises(IO.AccessDenied):
                     IO.load_confirm()
             lines = log.read_text(encoding="utf-8").splitlines()

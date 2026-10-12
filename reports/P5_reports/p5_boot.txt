@@ -1,0 +1,1631 @@
+2026-10-12T16:07:49Z
+3c37f0aeb27665d7698e2d9a49d77157a811ec87
+d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46  /tmp/p5_boot_msg.txt
+
+# P5-boot: a new builder session; the Pass 5 standing prompt found by its hash; read-only orientation
+
+Builder report. The item's date is the output of a.1's first command (R1). No commit; no test run;
+no module of ofilt imported; only paths starting /tmp/p5_boot written.
+
+## Scripts and their outputs
+
+### Shared helper of the Python scripts (reruns and c.2)
+----- /tmp/p5_boot_common.py -----
+"""P5-boot: shared helpers for the a/b/c scripts.
+
+Imports no module of ofilt; reads files as bytes. Expected values are read from
+/tmp/p5_boot_msg.txt, list "## Expected values", one line per name, `- NAME = value`.
+"""
+import hashlib
+import os
+import re
+import subprocess
+
+MSG = "/tmp/p5_boot_msg.txt"
+
+
+def read_bytes(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def sha256(path):
+    return hashlib.sha256(read_bytes(path)).hexdigest()
+
+
+def expected():
+    data = read_bytes(MSG)
+    print(f"message {MSG}: sha256 {hashlib.sha256(data).hexdigest()}")
+    lines = data.decode("utf-8").split("\n")
+    start = lines.index("## Expected values")
+    E = {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            if m.group(1) in E:
+                raise SystemExit(f"duplicate expected value {m.group(1)}")
+            E[m.group(1)] = m.group(2)
+    print(f"expected values read: {len(E)}")
+    return E
+
+
+def path(value):
+    return os.path.expanduser(value)
+
+
+REPO = path("~/Desktop/FX_Project/ofilt_pass1")
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True,
+                          capture_output=True).stdout.decode("utf-8")
+
+
+class Checks:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.n = 0
+        self.fails = []
+
+    def check(self, ok, label, detail=""):
+        self.n += 1
+        if not ok:
+            self.fails.append(label)
+        print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+    def done(self):
+        print(f"checks: {self.n}; failed: {len(self.fails)}")
+        for f in self.fails:
+            print(f"FAIL {f}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+----- end of /tmp/p5_boot_common.py -----
+
+### a.2: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_a2_run1.sh -----
+#!/bin/bash
+# P5-boot a.2: OFILT_RUN_SEALED must be absent from the session's environment (no Python).
+if env | grep -q '^OFILT_RUN_SEALED='; then
+  echo "OFILT_RUN_SEALED present in env: yes"
+  ok=0
+else
+  echo "OFILT_RUN_SEALED present in env: no"
+  ok=1
+fi
+if [ -n "${OFILT_RUN_SEALED+x}" ]; then
+  echo "OFILT_RUN_SEALED set in shell: yes"
+  ok=0
+else
+  echo "OFILT_RUN_SEALED set in shell: no"
+fi
+if [ "$ok" = 1 ]; then echo "A2_ENV CHECK: PASS"; else echo "A2_ENV CHECK: FAIL"; fi
+----- end of /tmp/p5_boot_a2_run1.sh -----
+
+----- /tmp/p5_boot_a2_run1.out -----
+OFILT_RUN_SEALED present in env: no
+OFILT_RUN_SEALED set in shell: no
+A2_ENV CHECK: PASS
+----- end of /tmp/p5_boot_a2_run1.out -----
+
+### a.2: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_a2.sh -----
+#!/bin/bash
+# P5-boot a.2: OFILT_RUN_SEALED must be absent from the session's environment. Runs no Python.
+ok=True
+if env | grep -q '^OFILT_RUN_SEALED='; then
+  echo "OFILT_RUN_SEALED in the exported environment: yes"
+  ok=False
+else
+  echo "OFILT_RUN_SEALED in the exported environment: no"
+fi
+if [ -n "${OFILT_RUN_SEALED+x}" ]; then
+  echo "OFILT_RUN_SEALED set in this shell: yes"
+  ok=False
+else
+  echo "OFILT_RUN_SEALED set in this shell: no"
+fi
+echo "A2_ENV CHECK: ${ok}"
+----- end of /tmp/p5_boot_a2.sh -----
+
+----- /tmp/p5_boot_a2.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p5_boot_a2.out -----
+
+### a.3: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_a3_run1.py -----
+#!/usr/bin/env python3
+"""P5-boot a.3: REPO's state. Reads files as bytes; read-only git commands only."""
+import hashlib
+import os
+import subprocess
+
+REPO = "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1"
+EXP = {
+    "HEAD": "3c37f0aeb27665d7698e2d9a49d77157a811ec87",
+    "PARENT": "df1c288578596afb747ed6cdbf1854ff9b1f5035",
+    "HEAD_SUBJECT_PREFIX": "records: P4-7c",
+    "TAG_LIST": "pass1-final spec-dev-v1",
+    "SPEC_TAG_OBJECT": "cee3b49e81d16f1f32e546cac9524b209ac1e493",
+    "SPEC_TAG_COMMIT": "f5271c03481b7514a1ec4b7e739fb85fbce8a774",
+    "BLIND_FIT_LOG_SHA256": "0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383",
+    "BLIND_FIT_LOG_LINES": 7,
+    "RUN_REGISTRY_SHA256": "9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c",
+    "RUN_REGISTRY_LINES": 2,
+    "PASS4_STATUS_SHA256": "c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f",
+    "PASS4_STATUS_LINES": 344,
+    "SPEC_SHA256": "feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26",
+    "CONFIG_SHA256": "5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd",
+    "SCRIPT_SHA256": "d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d",
+    "ASSEMBLER_SHA256": "998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3",
+    "DEV_DOCUMENT_SHA256": "9a51863e6adda733397736724013e3cd71101328289629c9f29a40459dd64c92",
+    "CRITERIA_SHA256": "3590035edb366eb46c1d076a3d7c4c2fdc60d9c43994b5a305181982ea071877",
+    "PLAN_SHA256": "b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca",
+    "DECISIONS_P82_SHA256": "0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890",
+    "DATA_PROVENANCE_SHA256": "6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6",
+    "PROJECT_SETUP_SHA256": "f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f",
+    "DATA_DICTIONARY_SHA256": "cf87dc7f1f1cff297808be6944444bd463d9bf447f6710dc5b128904cbabb7d2",
+}
+PINNED_PATHS = ("PASS4_STATUS.md spec/analysis_spec_dev_v1.yaml docs/P4_CONFIRM_CONFIG.json "
+                "tools/p4_confirm_run.py ofilt/drift/confirm_run.py reports/P4_runs/dev/document.json "
+                "docs/P4_DRYRUN_CRITERIA.md docs/replacements/PLAN.md docs/DECISIONS_P82_onward.md "
+                "docs/DATA_PROVENANCE.md docs/replacements/PROJECT_SETUP.md "
+                "docs/replacements/DATA_DICTIONARY.md").split()
+PINNED_NAMES = ("PASS4_STATUS_SHA256 SPEC_SHA256 CONFIG_SHA256 SCRIPT_SHA256 ASSEMBLER_SHA256 "
+                "DEV_DOCUMENT_SHA256 CRITERIA_SHA256 PLAN_SHA256 DECISIONS_P82_SHA256 "
+                "DATA_PROVENANCE_SHA256 PROJECT_SETUP_SHA256 DATA_DICTIONARY_SHA256").split()
+
+results = []
+
+
+def check(label, ok, detail=""):
+    results.append(bool(ok))
+    print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True,
+                          capture_output=True).stdout.decode("utf-8")
+
+
+def sha_and_lines(rel):
+    with open(os.path.join(REPO, rel), "rb") as fh:
+        data = fh.read()
+    return hashlib.sha256(data).hexdigest(), data.count(b"\n")
+
+
+# HEAD, parent, subject
+head = git("rev-parse", "HEAD").strip()
+check("HEAD", head == EXP["HEAD"], head)
+parents = git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+check("HEAD has exactly one parent, PARENT", parents == [EXP["PARENT"]], " ".join(parents))
+subject = git("log", "-1", "--format=%s", "HEAD").rstrip("\n")
+print(f"HEAD subject: {subject}")
+check("subject starts with HEAD_SUBJECT_PREFIX", subject.startswith(EXP["HEAD_SUBJECT_PREFIX"]))
+
+# working tree clean
+status = git("status", "--porcelain", "--untracked-files=all")
+check("working tree clean (git status --porcelain --untracked-files=all empty)", status == "",
+      repr(status) if status else "")
+
+# remote-tracking branch
+remote = git("branch", "-r", "--contains", "HEAD")
+current = git("branch", "--show-current").strip()
+print(f"git branch -r --contains HEAD: {remote.strip()!r}")
+print(f"current branch: {current}")
+check("HEAD on a remote-tracking branch", remote.strip() != "")
+
+# tags
+tags = git("tag", "-l").split()
+check("git tag -l == TAG_LIST", tags == EXP["TAG_LIST"].split(), " ".join(tags))
+tag_obj = git("rev-parse", "refs/tags/spec-dev-v1").strip()
+tag_type = git("cat-file", "-t", tag_obj).strip()
+tag_commit = git("rev-parse", "refs/tags/spec-dev-v1^{commit}").strip()
+check("refs/tags/spec-dev-v1 object == SPEC_TAG_OBJECT", tag_obj == EXP["SPEC_TAG_OBJECT"],
+      f"{tag_obj} (type {tag_type})")
+check("spec-dev-v1 commit == SPEC_TAG_COMMIT", tag_commit == EXP["SPEC_TAG_COMMIT"], tag_commit)
+
+# BLIND_FIT_LOG and RUN_REGISTRY.jsonl
+for rel, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+    sha, n = sha_and_lines(rel)
+    check(f"{rel} SHA-256", sha == EXP[key + "_SHA256"], sha)
+    check(f"{rel} lines", n == EXP[key + "_LINES"], str(n))
+
+# no ACCESS_LOG* name anywhere in REPO outside .git (names only; nothing opened, other names not printed)
+hits = []
+for root, dirs, files in os.walk(REPO):
+    if root == REPO and ".git" in dirs:
+        dirs.remove(".git")
+    for name in dirs + files:
+        if name.startswith("ACCESS_LOG"):
+            hits.append(os.path.relpath(os.path.join(root, name), REPO))
+check("no name starting ACCESS_LOG in REPO outside .git", not hits, ", ".join(hits))
+
+# twelve pinned files
+assert len(PINNED_PATHS) == len(PINNED_NAMES) == 12
+for rel, name in zip(PINNED_PATHS, PINNED_NAMES):
+    sha, n = sha_and_lines(rel)
+    check(f"{rel} {name}", sha == EXP[name], sha)
+    if name == "PASS4_STATUS_SHA256":
+        check("PASS4_STATUS.md lines", n == EXP["PASS4_STATUS_LINES"], str(n))
+
+print(f"checks: {len(results)}, passed: {sum(results)}")
+print(f"A3 CHECK: {'PASS' if all(results) else 'FAIL'}")
+----- end of /tmp/p5_boot_a3_run1.py -----
+
+----- /tmp/p5_boot_a3_run1.out -----
+[ok] HEAD: 3c37f0aeb27665d7698e2d9a49d77157a811ec87
+[ok] HEAD has exactly one parent, PARENT: df1c288578596afb747ed6cdbf1854ff9b1f5035
+HEAD subject: records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+[ok] subject starts with HEAD_SUBJECT_PREFIX
+[ok] working tree clean (git status --porcelain --untracked-files=all empty)
+git branch -r --contains HEAD: 'origin/main'
+current branch: main
+[ok] HEAD on a remote-tracking branch
+[ok] git tag -l == TAG_LIST: pass1-final spec-dev-v1
+[ok] refs/tags/spec-dev-v1 object == SPEC_TAG_OBJECT: cee3b49e81d16f1f32e546cac9524b209ac1e493 (type tag)
+[ok] spec-dev-v1 commit == SPEC_TAG_COMMIT: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+[ok] BLIND_FIT_LOG SHA-256: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383
+[ok] BLIND_FIT_LOG lines: 7
+[ok] RUN_REGISTRY.jsonl SHA-256: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c
+[ok] RUN_REGISTRY.jsonl lines: 2
+[ok] no name starting ACCESS_LOG in REPO outside .git
+[ok] PASS4_STATUS.md PASS4_STATUS_SHA256: c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f
+[ok] PASS4_STATUS.md lines: 344
+[ok] spec/analysis_spec_dev_v1.yaml SPEC_SHA256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+[ok] docs/P4_CONFIRM_CONFIG.json CONFIG_SHA256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] tools/p4_confirm_run.py SCRIPT_SHA256: d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d
+[ok] ofilt/drift/confirm_run.py ASSEMBLER_SHA256: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] reports/P4_runs/dev/document.json DEV_DOCUMENT_SHA256: 9a51863e6adda733397736724013e3cd71101328289629c9f29a40459dd64c92
+[ok] docs/P4_DRYRUN_CRITERIA.md CRITERIA_SHA256: 3590035edb366eb46c1d076a3d7c4c2fdc60d9c43994b5a305181982ea071877
+[ok] docs/replacements/PLAN.md PLAN_SHA256: b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca
+[ok] docs/DECISIONS_P82_onward.md DECISIONS_P82_SHA256: 0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890
+[ok] docs/DATA_PROVENANCE.md DATA_PROVENANCE_SHA256: 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6
+[ok] docs/replacements/PROJECT_SETUP.md PROJECT_SETUP_SHA256: f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f
+[ok] docs/replacements/DATA_DICTIONARY.md DATA_DICTIONARY_SHA256: cf87dc7f1f1cff297808be6944444bd463d9bf447f6710dc5b128904cbabb7d2
+checks: 26, passed: 26
+A3 CHECK: PASS
+----- end of /tmp/p5_boot_a3_run1.out -----
+
+### a.3: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_a3.py -----
+"""P5-boot a.3: REPO's state (verdict line `A3 CHECK`).
+
+Imports no module of ofilt; reads files as bytes; read-only git commands only.
+"""
+import hashlib
+import os
+
+from p5_boot_common import REPO, Checks, expected, git, read_bytes
+
+E = expected()
+C = Checks("A3")
+
+head = git("rev-parse", "HEAD").strip()
+C.check(head == E["HEAD"], "HEAD == HEAD", head)
+parents = git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+C.check(parents == [E["PARENT"]], "HEAD's only parent == PARENT", " ".join(parents))
+subject = git("log", "-1", "--format=%s", "HEAD").rstrip("\n")
+print(f"HEAD subject: {subject}")
+C.check(subject.startswith(E["HEAD_SUBJECT_PREFIX"]), "subject starts with HEAD_SUBJECT_PREFIX")
+
+status = git("status", "--porcelain", "--untracked-files=all")
+C.check(status == "", "git status --porcelain --untracked-files=all prints nothing",
+        repr(status) if status else "")
+
+remote = git("branch", "-r", "--contains", "HEAD")
+current = git("branch", "--show-current").strip()
+print(f"git branch -r --contains HEAD: {remote.strip()!r}")
+print(f"current branch: {current}")
+C.check(remote.strip() != "", "HEAD is on a remote-tracking branch")
+
+tags = git("tag", "-l").split()
+C.check(tags == E["TAG_LIST"].split(" "), "git tag -l == TAG_LIST", " ".join(tags))
+tag_obj = git("rev-parse", "refs/tags/spec-dev-v1").strip()
+tag_type = git("cat-file", "-t", tag_obj).strip()
+tag_commit = git("rev-parse", "refs/tags/spec-dev-v1^{commit}").strip()
+C.check(tag_obj == E["SPEC_TAG_OBJECT"], "refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT",
+        f"{tag_obj} (type {tag_type})")
+C.check(tag_commit == E["SPEC_TAG_COMMIT"], "spec-dev-v1's commit == SPEC_TAG_COMMIT", tag_commit)
+
+for rel, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+    data = read_bytes(os.path.join(REPO, rel))
+    sha, n = hashlib.sha256(data).hexdigest(), data.count(b"\n")
+    C.check(sha == E[f"{key}_SHA256"], f"{rel} sha256 == {key}_SHA256", sha)
+    C.check(n == int(E[f"{key}_LINES"]), f"{rel} lines == {key}_LINES", str(n))
+
+# Names only: nothing is opened, and no name other than a match is printed.
+hits = []
+for root, dirs, files in os.walk(REPO):
+    if root == REPO and ".git" in dirs:
+        dirs.remove(".git")
+    hits += [os.path.relpath(os.path.join(root, n), REPO)
+             for n in dirs + files if n.startswith("ACCESS_LOG")]
+C.check(not hits, "no name starting ACCESS_LOG in REPO outside .git", ", ".join(hits))
+
+paths = E["PINNED_PATHS"].split(" ")
+names = E["PINNED_NAMES"].split(" ")
+C.check(len(paths) == len(names) == 12, "twelve PINNED_PATHS paired with twelve PINNED_NAMES",
+        f"{len(paths)} paths, {len(names)} names")
+for rel, name in zip(paths, names):
+    data = read_bytes(os.path.join(REPO, rel))
+    sha = hashlib.sha256(data).hexdigest()
+    C.check(sha == E[name], f"{rel} sha256 == {name}", sha)
+    if name == "PASS4_STATUS_SHA256":
+        n = data.count(b"\n")
+        C.check(n == int(E["PASS4_STATUS_LINES"]), "PASS4_STATUS.md lines == PASS4_STATUS_LINES", str(n))
+
+C.done()
+----- end of /tmp/p5_boot_a3.py -----
+
+----- /tmp/p5_boot_a3.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+[ok] HEAD == HEAD: 3c37f0aeb27665d7698e2d9a49d77157a811ec87
+[ok] HEAD's only parent == PARENT: df1c288578596afb747ed6cdbf1854ff9b1f5035
+HEAD subject: records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)
+[ok] subject starts with HEAD_SUBJECT_PREFIX
+[ok] git status --porcelain --untracked-files=all prints nothing
+git branch -r --contains HEAD: 'origin/main'
+current branch: main
+[ok] HEAD is on a remote-tracking branch
+[ok] git tag -l == TAG_LIST: pass1-final spec-dev-v1
+[ok] refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT: cee3b49e81d16f1f32e546cac9524b209ac1e493 (type tag)
+[ok] spec-dev-v1's commit == SPEC_TAG_COMMIT: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383
+[ok] BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES: 7
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c
+[ok] RUN_REGISTRY.jsonl lines == RUN_REGISTRY_LINES: 2
+[ok] no name starting ACCESS_LOG in REPO outside .git
+[ok] twelve PINNED_PATHS paired with twelve PINNED_NAMES: 12 paths, 12 names
+[ok] PASS4_STATUS.md sha256 == PASS4_STATUS_SHA256: c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f
+[ok] PASS4_STATUS.md lines == PASS4_STATUS_LINES: 344
+[ok] spec/analysis_spec_dev_v1.yaml sha256 == SPEC_SHA256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+[ok] docs/P4_CONFIRM_CONFIG.json sha256 == CONFIG_SHA256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] tools/p4_confirm_run.py sha256 == SCRIPT_SHA256: d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d
+[ok] ofilt/drift/confirm_run.py sha256 == ASSEMBLER_SHA256: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] reports/P4_runs/dev/document.json sha256 == DEV_DOCUMENT_SHA256: 9a51863e6adda733397736724013e3cd71101328289629c9f29a40459dd64c92
+[ok] docs/P4_DRYRUN_CRITERIA.md sha256 == CRITERIA_SHA256: 3590035edb366eb46c1d076a3d7c4c2fdc60d9c43994b5a305181982ea071877
+[ok] docs/replacements/PLAN.md sha256 == PLAN_SHA256: b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca
+[ok] docs/DECISIONS_P82_onward.md sha256 == DECISIONS_P82_SHA256: 0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890
+[ok] docs/DATA_PROVENANCE.md sha256 == DATA_PROVENANCE_SHA256: 6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6
+[ok] docs/replacements/PROJECT_SETUP.md sha256 == PROJECT_SETUP_SHA256: f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f
+[ok] docs/replacements/DATA_DICTIONARY.md sha256 == DATA_DICTIONARY_SHA256: cf87dc7f1f1cff297808be6944444bd463d9bf447f6710dc5b128904cbabb7d2
+checks: 27; failed: 0
+A3 CHECK: True
+----- end of /tmp/p5_boot_a3.out -----
+
+### a.4: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_a4_run1.py -----
+#!/usr/bin/env python3
+"""P5-boot a.4: REPO against the H10 snapshot's manifest. Tracked files hashed as bytes only."""
+import hashlib
+import os
+import subprocess
+
+REPO = "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1"
+MANIFEST_PATH = os.path.expanduser("~/Desktop/FX_Project/files/pass5/REPO_MANIFEST_H10.tsv")
+MANIFEST_SHA256 = "ec1694d85fa5ca03056126ad4d6e6c9e997aec7f6cd5f22c241c8eda705eac80"
+MANIFEST_ENTRIES = 239
+
+results = []
+
+
+def check(label, ok, detail=""):
+    results.append(bool(ok))
+    print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+
+with open(MANIFEST_PATH, "rb") as fh:
+    mbytes = fh.read()
+msha = hashlib.sha256(mbytes).hexdigest()
+check("manifest SHA-256", msha == MANIFEST_SHA256, msha)
+lines = mbytes.decode("utf-8").splitlines()
+check("manifest ends with a newline", mbytes.endswith(b"\n"))
+check("manifest lines == MANIFEST_ENTRIES", len(lines) == MANIFEST_ENTRIES, str(len(lines)))
+
+manifest = {}
+bad_form = []
+for i, line in enumerate(lines, 1):
+    parts = line.split("\t")
+    if (len(parts) != 2 or len(parts[0]) != 64
+            or any(c not in "0123456789abcdef" for c in parts[0]) or not parts[1]):
+        bad_form.append(i)
+        continue
+    if parts[1] in manifest:
+        bad_form.append(i)
+    manifest[parts[1]] = parts[0]
+check("every line is <sha256><TAB><path>, paths unique", not bad_form,
+      "bad lines: " + ",".join(map(str, bad_form)) if bad_form else "")
+
+out = subprocess.run(["git", "-C", REPO, "ls-files", "-z"], check=True,
+                     capture_output=True).stdout.decode("utf-8")
+tracked = [p for p in out.split("\0") if p]
+only_manifest = sorted(set(manifest) - set(tracked))
+only_git = sorted(set(tracked) - set(manifest))
+check("set of manifest paths == git ls-files", not only_manifest and not only_git,
+      f"only in manifest: {only_manifest}; only in git: {only_git}"
+      if (only_manifest or only_git) else f"{len(tracked)} paths")
+
+compared = 0
+diffs = []
+for rel in sorted(set(manifest) & set(tracked)):
+    with open(os.path.join(REPO, rel), "rb") as fh:
+        sha = hashlib.sha256(fh.read()).hexdigest()
+    compared += 1
+    if sha != manifest[rel]:
+        diffs.append((rel, manifest[rel], sha))
+print(f"files compared: {compared}")
+for rel, want, got in diffs:
+    print(f"DIFF {rel}: manifest {want} working tree {got}")
+check("every tracked file's SHA-256 equals the manifest's", not diffs,
+      f"{len(diffs)} differences" if diffs else "0 differences")
+
+print(f"checks: {len(results)}, passed: {sum(results)}")
+print(f"A4 CHECK: {'PASS' if all(results) else 'FAIL'}")
+----- end of /tmp/p5_boot_a4_run1.py -----
+
+----- /tmp/p5_boot_a4_run1.out -----
+[ok] manifest SHA-256: ec1694d85fa5ca03056126ad4d6e6c9e997aec7f6cd5f22c241c8eda705eac80
+[ok] manifest ends with a newline
+[ok] manifest lines == MANIFEST_ENTRIES: 239
+[ok] every line is <sha256><TAB><path>, paths unique
+[ok] set of manifest paths == git ls-files: 239 paths
+files compared: 239
+[ok] every tracked file's SHA-256 equals the manifest's: 0 differences
+checks: 6, passed: 6
+A4 CHECK: PASS
+----- end of /tmp/p5_boot_a4_run1.out -----
+
+### a.4: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_a4.py -----
+"""P5-boot a.4: REPO against the H10 snapshot's manifest (verdict line `A4 CHECK`).
+
+Imports no module of ofilt; tracked files are hashed as bytes only.
+"""
+import hashlib
+import os
+import re
+
+from p5_boot_common import REPO, Checks, expected, git, path, read_bytes
+
+E = expected()
+C = Checks("A4")
+
+mpath = path(E["MANIFEST_PATH"])
+mbytes = read_bytes(mpath)
+msha = hashlib.sha256(mbytes).hexdigest()
+C.check(msha == E["MANIFEST_SHA256"], "MANIFEST_PATH sha256 == MANIFEST_SHA256", msha)
+C.check(mbytes.endswith(b"\n"), "manifest ends with a newline")
+lines = mbytes.decode("utf-8").split("\n")[:-1]
+C.check(len(lines) == int(E["MANIFEST_ENTRIES"]), "manifest lines == MANIFEST_ENTRIES", str(len(lines)))
+
+manifest = {}
+bad = []
+for i, ln in enumerate(lines, 1):
+    m = re.fullmatch(r"([0-9a-f]{64})\t(.+)", ln)
+    if not m or m.group(2) in manifest:
+        bad.append(i)
+        continue
+    manifest[m.group(2)] = m.group(1)
+C.check(not bad, "every line is <sha256><TAB><path>, paths unique",
+        "bad lines " + ",".join(map(str, bad)) if bad else "")
+
+tracked = [p for p in git("ls-files", "-z").split("\0") if p]
+only_manifest = sorted(set(manifest) - set(tracked))
+only_git = sorted(set(tracked) - set(manifest))
+print(f"git ls-files: {len(tracked)} paths; manifest: {len(manifest)} paths")
+for p in only_manifest:
+    print(f"only in manifest: {p}")
+for p in only_git:
+    print(f"only in git ls-files: {p}")
+C.check(not only_manifest and not only_git, "manifest paths == git ls-files")
+
+compared = 0
+diffs = []
+for rel in sorted(set(manifest) & set(tracked)):
+    sha = hashlib.sha256(read_bytes(os.path.join(REPO, rel))).hexdigest()
+    compared += 1
+    if sha != manifest[rel]:
+        diffs.append(rel)
+        print(f"DIFF {rel}: manifest {manifest[rel]}; working tree {sha}")
+print(f"files compared: {compared}; differences: {len(diffs)}")
+C.check(not diffs, "every tracked file's sha256 == the manifest's")
+
+C.done()
+----- end of /tmp/p5_boot_a4.py -----
+
+----- /tmp/p5_boot_a4.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+[ok] MANIFEST_PATH sha256 == MANIFEST_SHA256: ec1694d85fa5ca03056126ad4d6e6c9e997aec7f6cd5f22c241c8eda705eac80
+[ok] manifest ends with a newline
+[ok] manifest lines == MANIFEST_ENTRIES: 239
+[ok] every line is <sha256><TAB><path>, paths unique
+git ls-files: 239 paths; manifest: 239 paths
+[ok] manifest paths == git ls-files
+files compared: 239; differences: 0
+[ok] every tracked file's sha256 == the manifest's
+checks: 6; failed: 0
+A4 CHECK: True
+----- end of /tmp/p5_boot_a4.out -----
+
+### a.5: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_a5_run1.py -----
+#!/usr/bin/env python3
+"""P5-boot a.5: the kept P4-7c report and the retired Pass 4 standing prompt (bytes only)."""
+import hashlib
+import os
+
+KEEP4_P4_7C = os.path.expanduser("~/Desktop/FX_Project/files/pass4_tmp_keep/p4_7c_final/p4_7c.txt")
+TMP_P4_7C = "/tmp/p4_7c.txt"
+PASS4_PROMPT_PATH = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+PASS4_PROMPT_SHA256 = "96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d"
+
+results = []
+
+
+def check(label, ok, detail=""):
+    results.append(bool(ok))
+    print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+
+def read(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+exists = os.path.isfile(KEEP4_P4_7C)
+check("KEEP4_P4_7C exists", exists, KEEP4_P4_7C)
+keep_sha = None
+if exists:
+    data = read(KEEP4_P4_7C)
+    keep_sha = hashlib.sha256(data).hexdigest()
+    print(f"KEEP4_P4_7C SHA-256: {keep_sha}")
+    print(f"KEEP4_P4_7C lines: {data.count(b'\n')}")
+    folder = os.path.dirname(KEEP4_P4_7C)
+    print(f"files in {folder}:")
+    for name in sorted(os.listdir(folder)):
+        p = os.path.join(folder, name)
+        if os.path.isfile(p) and not os.path.islink(p):
+            print(f"  {hashlib.sha256(read(p)).hexdigest()}  {name}")
+        else:
+            print(f"  (not a regular file)  {name}")
+
+tmp_exists = os.path.isfile(TMP_P4_7C)
+print(f"/tmp/p4_7c.txt exists: {tmp_exists}")
+if tmp_exists:
+    tsha = hashlib.sha256(read(TMP_P4_7C)).hexdigest()
+    check("/tmp/p4_7c.txt SHA-256 == KEEP4_P4_7C SHA-256", tsha == keep_sha, tsha)
+
+p4 = os.path.isfile(PASS4_PROMPT_PATH)
+check("PASS4_PROMPT_PATH exists", p4, PASS4_PROMPT_PATH)
+if p4:
+    psha = hashlib.sha256(read(PASS4_PROMPT_PATH)).hexdigest()
+    check("PASS4_PROMPT_PATH SHA-256 == PASS4_PROMPT_SHA256", psha == PASS4_PROMPT_SHA256, psha)
+
+print("P4-7c report acceptance: at P5-1, the supervisor compares the KEEP4_P4_7C SHA-256 above "
+      "with the one H10's closing keep command printed")
+print(f"checks: {len(results)}, passed: {sum(results)}")
+print(f"A5 CHECK: {'PASS' if all(results) else 'FAIL'}")
+----- end of /tmp/p5_boot_a5_run1.py -----
+
+----- /tmp/p5_boot_a5_run1.out -----
+[ok] KEEP4_P4_7C exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep/p4_7c_final/p4_7c.txt
+KEEP4_P4_7C SHA-256: 647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9
+KEEP4_P4_7C lines: 1372
+files in /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep/p4_7c_final:
+  647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9  p4_7c.txt
+  a734ed08444013ca20988461fd47b67c0e22100a00375dbf91fc0a25bfd425b9  p4_7c_a2.out
+  3922ea1137b18e1d57c5d7a271b1919e0b034dcf21f9c3fbda5b6b71ad32decf  p4_7c_a2.py
+  d78d530e688a096dacf74c2035136d03a14a054ced1c7f6e9d4b3236d9de5e6c  p4_7c_assemble.sh
+  88ff4c688d3ba9509527d89843399416f5e8fc962ffbd53f9f524eb64cd36023  p4_7c_b1.out
+  eab1c6cccd6eb5e80a7acaa1daa57e075ff3c1b221a6af2901e8bcc22407cef9  p4_7c_b1.py
+  8ffe46fc97ad48df75ba3b2123ab7c9562a575fdcc82b8517cdf0f4a6415685c  p4_7c_c.out
+  2178a58b0dd8275dba2863208fc8bea230418f71c5785cf2692c98a5a07eabf0  p4_7c_c.py
+  e1797d87bfe51ca930aad36efddf1781d85927eb8460b06976bb40b22dfb8663  p4_7c_c1_cp.out
+  93457aec00fd868127eda2fe51bb43d3cce1a3d5dfa25dd520d632286a4ddfee  p4_7c_c2.out
+  ab3da85c13d077d91de08d476a9e38fe7e7ae42ece29c5232f0c2207660e7308  p4_7c_c3_cp.out
+  eaa5ee9662020003781711166320d0b70e9ec939b06dd02e62fcc4750fb402d3  p4_7c_common.py
+  ef7b375e876d2e290f532ab95e05f44f47c96f449a9e1a7140343c472b339084  p4_7c_d2.out
+  b97fa26d879579dc6380a5e034caa2ec7daea555341cfa8e6691b1f55cd69c65  p4_7c_d2.sh
+  5538b50343462d5cdc0c52b9a823f5d72442bd6bd25eccfeef07dbfe8868a9af  p4_7c_d4.out
+  ff92bafbc33fcef5cfd9469519f262e96033b6366ef647a21d33e1975d9f2525  p4_7c_d4.py
+  ea3506ee38abc3c940fbbbb3de74d0d4bdc7beec6463b580017faa0bf62e7fba  p4_7c_d4_sources.out
+  8aa7cfe03c774172b270f2090ea6b4ec282272b35816a68d30c26d31c4937d08  p4_7c_d5.out
+  a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  p4_7c_date.out
+  d8ece43e441046b7784ba8724bd1a36d7475b57db554c6149ccc927afb29877b  p4_7c_e1.out
+  56851213dfd26e950c31c0177488afd05e297b6c92799c838dc3a0f5e096361f  p4_7c_e1.sh
+  8da5d435b016446cc061e727108c6409342da249f0ee0ab63ad2486bf8632206  p4_7c_e1_upload.out
+  18a6ad22885cd3cd1d31e9cae6a0ad9b172ac4c8acd0762b06ee1186947a9946  p4_7c_first.txt
+  96e79ddf25705d5a16a6f0c20911e392dcc581721645803575ff48d2981a9541  p4_7c_i.out
+  b0d793d3a03a1121c2d4e6ea521ba0e1e210bd46aecf5986853b245710152931  p4_7c_i.py
+  007138ae9dfbb43231748b1c3faf45ecf7c3686ed49133ab95be4c151c402b14  p4_7c_msg.txt
+  07ac5b6e1e74b527aae171edba71f5b25400e38455cb0db4017c4b3d765ee582  p4_7c_notes.txt
+  1c6db35324e044f2fb072d28d7c731c84002ab497bbf14579bd037539da3aeba  p4_7c_readings.txt
+  6e23aaf50721f84c403460f8216aadc4b94eead487d84017cc6685177468c3fd  p4_7c_records.py
+  959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31  p4_7c_status_s1_dated.md
+  b02dcdae2c33acce0be5962ff61a6d88bd2fd61f35355f0052df56d45f3c35cc  p4_7c_status_s1_undated.md
+  c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f  p4_7c_status_s2_dated.md
+  bc80f48ce1d37da071de917d1f11d9c7a55fb1d27134461b08512f6fcde3ea80  p4_7c_status_s2_undated.md
+  cf56c30cd069720963046717e92b0faff22b62c29674d3ed63277ae2b7ab18ad  p4_7c_t.out
+  a754df07ce69207a12a080d503f347c49087ff821f0b9429304d8d4fd15facb4  p4_7c_t.py
+  9b57ab7c8e4c92ca82c63f2a78a7b42c7607731e771135631c0605fdd78b8346  p4_7c_u.out
+  c50c1171247bd0e6b160243b6822d4d654404b9b38a488b0a3b9b5f627880c47  p4_7c_u.py
+/tmp/p4_7c.txt exists: True
+[ok] /tmp/p4_7c.txt SHA-256 == KEEP4_P4_7C SHA-256: 647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9
+[ok] PASS4_PROMPT_PATH exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md
+[ok] PASS4_PROMPT_PATH SHA-256 == PASS4_PROMPT_SHA256: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+P4-7c report acceptance: at P5-1, the supervisor compares the KEEP4_P4_7C SHA-256 above with the one H10's closing keep command printed
+checks: 4, passed: 4
+A5 CHECK: PASS
+----- end of /tmp/p5_boot_a5_run1.out -----
+
+### a.5: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_a5.py -----
+"""P5-boot a.5: the kept P4-7c report and the retired Pass 4 standing prompt (verdict line `A5 CHECK`).
+
+Imports no module of ofilt; reads files as bytes.
+"""
+import hashlib
+import os
+import stat
+
+from p5_boot_common import Checks, expected, path, read_bytes
+
+E = expected()
+C = Checks("A5")
+
+keep = path(E["KEEP4_P4_7C"])
+C.check(os.path.isfile(keep), "KEEP4_P4_7C exists", keep)
+data = read_bytes(keep)
+keep_sha = hashlib.sha256(data).hexdigest()
+print(f"KEEP4_P4_7C sha256: {keep_sha}")
+print(f"KEEP4_P4_7C lines: {data.count(b'\n')}")
+folder = os.path.dirname(keep)
+print(f"files in {folder}:")
+for name in sorted(os.listdir(folder)):
+    p = os.path.join(folder, name)
+    if stat.S_ISREG(os.lstat(p).st_mode):
+        print(f"  {hashlib.sha256(read_bytes(p)).hexdigest()}  {name}")
+    else:
+        print(f"  (not a regular file)  {name}")
+
+tmp = "/tmp/p4_7c.txt"
+tmp_exists = os.path.isfile(tmp)
+print(f"/tmp/p4_7c.txt exists: {tmp_exists}")
+if tmp_exists:
+    tsha = hashlib.sha256(read_bytes(tmp)).hexdigest()
+    C.check(tsha == keep_sha, "/tmp/p4_7c.txt sha256 == KEEP4_P4_7C's", tsha)
+
+p4 = path(E["PASS4_PROMPT_PATH"])
+C.check(os.path.isfile(p4), "PASS4_PROMPT_PATH exists", p4)
+psha = hashlib.sha256(read_bytes(p4)).hexdigest()
+C.check(psha == E["PASS4_PROMPT_SHA256"], "PASS4_PROMPT_PATH sha256 == PASS4_PROMPT_SHA256", psha)
+
+print("P4-7c's report is accepted at P5-1: the supervisor compares KEEP4_P4_7C's sha256 above "
+      "with the one H10's closing keep command printed.")
+C.done()
+----- end of /tmp/p5_boot_a5.py -----
+
+----- /tmp/p5_boot_a5.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+[ok] KEEP4_P4_7C exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep/p4_7c_final/p4_7c.txt
+KEEP4_P4_7C sha256: 647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9
+KEEP4_P4_7C lines: 1372
+files in /Users/isaiahchoi/Desktop/FX_Project/files/pass4_tmp_keep/p4_7c_final:
+  647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9  p4_7c.txt
+  a734ed08444013ca20988461fd47b67c0e22100a00375dbf91fc0a25bfd425b9  p4_7c_a2.out
+  3922ea1137b18e1d57c5d7a271b1919e0b034dcf21f9c3fbda5b6b71ad32decf  p4_7c_a2.py
+  d78d530e688a096dacf74c2035136d03a14a054ced1c7f6e9d4b3236d9de5e6c  p4_7c_assemble.sh
+  88ff4c688d3ba9509527d89843399416f5e8fc962ffbd53f9f524eb64cd36023  p4_7c_b1.out
+  eab1c6cccd6eb5e80a7acaa1daa57e075ff3c1b221a6af2901e8bcc22407cef9  p4_7c_b1.py
+  8ffe46fc97ad48df75ba3b2123ab7c9562a575fdcc82b8517cdf0f4a6415685c  p4_7c_c.out
+  2178a58b0dd8275dba2863208fc8bea230418f71c5785cf2692c98a5a07eabf0  p4_7c_c.py
+  e1797d87bfe51ca930aad36efddf1781d85927eb8460b06976bb40b22dfb8663  p4_7c_c1_cp.out
+  93457aec00fd868127eda2fe51bb43d3cce1a3d5dfa25dd520d632286a4ddfee  p4_7c_c2.out
+  ab3da85c13d077d91de08d476a9e38fe7e7ae42ece29c5232f0c2207660e7308  p4_7c_c3_cp.out
+  eaa5ee9662020003781711166320d0b70e9ec939b06dd02e62fcc4750fb402d3  p4_7c_common.py
+  ef7b375e876d2e290f532ab95e05f44f47c96f449a9e1a7140343c472b339084  p4_7c_d2.out
+  b97fa26d879579dc6380a5e034caa2ec7daea555341cfa8e6691b1f55cd69c65  p4_7c_d2.sh
+  5538b50343462d5cdc0c52b9a823f5d72442bd6bd25eccfeef07dbfe8868a9af  p4_7c_d4.out
+  ff92bafbc33fcef5cfd9469519f262e96033b6366ef647a21d33e1975d9f2525  p4_7c_d4.py
+  ea3506ee38abc3c940fbbbb3de74d0d4bdc7beec6463b580017faa0bf62e7fba  p4_7c_d4_sources.out
+  8aa7cfe03c774172b270f2090ea6b4ec282272b35816a68d30c26d31c4937d08  p4_7c_d5.out
+  a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  p4_7c_date.out
+  d8ece43e441046b7784ba8724bd1a36d7475b57db554c6149ccc927afb29877b  p4_7c_e1.out
+  56851213dfd26e950c31c0177488afd05e297b6c92799c838dc3a0f5e096361f  p4_7c_e1.sh
+  8da5d435b016446cc061e727108c6409342da249f0ee0ab63ad2486bf8632206  p4_7c_e1_upload.out
+  18a6ad22885cd3cd1d31e9cae6a0ad9b172ac4c8acd0762b06ee1186947a9946  p4_7c_first.txt
+  96e79ddf25705d5a16a6f0c20911e392dcc581721645803575ff48d2981a9541  p4_7c_i.out
+  b0d793d3a03a1121c2d4e6ea521ba0e1e210bd46aecf5986853b245710152931  p4_7c_i.py
+  007138ae9dfbb43231748b1c3faf45ecf7c3686ed49133ab95be4c151c402b14  p4_7c_msg.txt
+  07ac5b6e1e74b527aae171edba71f5b25400e38455cb0db4017c4b3d765ee582  p4_7c_notes.txt
+  1c6db35324e044f2fb072d28d7c731c84002ab497bbf14579bd037539da3aeba  p4_7c_readings.txt
+  6e23aaf50721f84c403460f8216aadc4b94eead487d84017cc6685177468c3fd  p4_7c_records.py
+  959e5d4a061f9c53f6899511e2ad0fda06aba2e9f802afb7f41feb8ae8b47b31  p4_7c_status_s1_dated.md
+  b02dcdae2c33acce0be5962ff61a6d88bd2fd61f35355f0052df56d45f3c35cc  p4_7c_status_s1_undated.md
+  c33817f85575701440a838afdb9730e3833c292149672a85147ed51eacc4955f  p4_7c_status_s2_dated.md
+  bc80f48ce1d37da071de917d1f11d9c7a55fb1d27134461b08512f6fcde3ea80  p4_7c_status_s2_undated.md
+  cf56c30cd069720963046717e92b0faff22b62c29674d3ed63277ae2b7ab18ad  p4_7c_t.out
+  a754df07ce69207a12a080d503f347c49087ff821f0b9429304d8d4fd15facb4  p4_7c_t.py
+  9b57ab7c8e4c92ca82c63f2a78a7b42c7607731e771135631c0605fdd78b8346  p4_7c_u.out
+  c50c1171247bd0e6b160243b6822d4d654404b9b38a488b0a3b9b5f627880c47  p4_7c_u.py
+/tmp/p4_7c.txt exists: True
+[ok] /tmp/p4_7c.txt sha256 == KEEP4_P4_7C's: 647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9
+[ok] PASS4_PROMPT_PATH exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md
+[ok] PASS4_PROMPT_PATH sha256 == PASS4_PROMPT_SHA256: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+P4-7c's report is accepted at P5-1: the supervisor compares KEEP4_P4_7C's sha256 above with the one H10's closing keep command printed.
+checks: 4; failed: 0
+A5 CHECK: True
+----- end of /tmp/p5_boot_a5.out -----
+
+### b.1: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_b1_run1.py -----
+#!/usr/bin/env python3
+"""P5-boot b.1: the standing prompt found by its hash among every regular *.md under
+~/Desktop/FX_Project/files (recursive, symlinks not followed, nothing under raw or build_out)."""
+import hashlib
+import os
+import stat
+
+FILES = os.path.expanduser("~/Desktop/FX_Project/files")
+PROMPT_PATH = os.path.expanduser("~/Desktop/FX_Project/files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md")
+PROMPT_SHA256 = "0398c3c748d5a34d395306b0023ca287d19a6e0890d67c55207562eb496b7a03"
+PRUNE = {"raw", "build_out"}
+
+fails = []
+hashed = 0
+skipped_nonregular = []
+pruned = []
+matches = []
+for root, dirs, names in os.walk(FILES, followlinks=False):
+    for d in sorted(dirs):
+        if d in PRUNE:
+            pruned.append(os.path.relpath(os.path.join(root, d), FILES))
+    dirs[:] = [d for d in dirs if d not in PRUNE]
+    for name in names:
+        if not name.endswith(".md"):
+            continue
+        p = os.path.join(root, name)
+        if not stat.S_ISREG(os.lstat(p).st_mode):
+            skipped_nonregular.append(os.path.relpath(p, FILES))
+            continue
+        with open(p, "rb") as fh:
+            sha = hashlib.sha256(fh.read()).hexdigest()
+        hashed += 1
+        if sha == PROMPT_SHA256:
+            matches.append(p)
+print(f"directories pruned (raw, build_out), not entered: {pruned}")
+print(f"*.md entries skipped as not regular files: {skipped_nonregular}")
+print(f"regular *.md files hashed: {hashed}")
+print(f"files with PROMPT_SHA256: {matches}")
+if len(matches) != 1:
+    fails.append("exactly one *.md file has PROMPT_SHA256")
+if matches != [PROMPT_PATH]:
+    fails.append("that file is PROMPT_PATH")
+for f in fails:
+    print(f"FAIL {f}")
+print(f"failed checks: {len(fails)}")
+print(f"B1 CHECK: {not fails}")
+----- end of /tmp/p5_boot_b1_run1.py -----
+
+----- /tmp/p5_boot_b1_run1.out -----
+directories pruned (raw, build_out), not entered: []
+*.md entries skipped as not regular files: []
+regular *.md files hashed: 144
+files with PROMPT_SHA256: ['/Users/isaiahchoi/Desktop/FX_Project/files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md']
+failed checks: 0
+B1 CHECK: True
+----- end of /tmp/p5_boot_b1_run1.out -----
+
+### b.1: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_b1.py -----
+"""P5-boot b.1: the standing prompt found by its hash (verdict line `B1 CHECK`).
+
+Every regular *.md file under ~/Desktop/FX_Project/files, recursively, symlinks not followed;
+no directory named raw or build_out is entered. Imports no module of ofilt; reads files as bytes.
+"""
+import hashlib
+import os
+import stat
+
+from p5_boot_common import Checks, expected, path, read_bytes
+
+E = expected()
+C = Checks("B1")
+
+FILES = path("~/Desktop/FX_Project/files")
+PRUNE = {"raw", "build_out"}
+hashed = 0
+pruned = []
+not_regular = []
+matches = []
+for root, dirs, names in os.walk(FILES, followlinks=False):
+    pruned += [os.path.relpath(os.path.join(root, d), FILES) for d in dirs if d in PRUNE]
+    dirs[:] = sorted(d for d in dirs if d not in PRUNE)
+    for name in sorted(names):
+        if not name.endswith(".md"):
+            continue
+        p = os.path.join(root, name)
+        if not stat.S_ISREG(os.lstat(p).st_mode):
+            not_regular.append(os.path.relpath(p, FILES))
+            continue
+        hashed += 1
+        if hashlib.sha256(read_bytes(p)).hexdigest() == E["PROMPT_SHA256"]:
+            matches.append(p)
+print(f"directories named raw or build_out (not entered): {pruned}")
+print(f"*.md names that are not regular files (skipped): {not_regular}")
+print(f"regular *.md files hashed: {hashed}")
+print(f"files with PROMPT_SHA256: {matches}")
+C.check(len(matches) == 1, "exactly one *.md file has PROMPT_SHA256", str(len(matches)))
+C.check(matches == [path(E["PROMPT_PATH"])], "that file is PROMPT_PATH")
+C.done()
+----- end of /tmp/p5_boot_b1.py -----
+
+----- /tmp/p5_boot_b1.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+directories named raw or build_out (not entered): []
+*.md names that are not regular files (skipped): []
+regular *.md files hashed: 144
+files with PROMPT_SHA256: ['/Users/isaiahchoi/Desktop/FX_Project/files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md']
+[ok] exactly one *.md file has PROMPT_SHA256: 1
+[ok] that file is PROMPT_PATH
+checks: 2; failed: 0
+B1 CHECK: True
+----- end of /tmp/p5_boot_b1.out -----
+
+### b.2: first run, before the standing prompt was read (deviation D1)
+----- /tmp/p5_boot_b2_run1.py -----
+#!/usr/bin/env python3
+"""P5-boot b.2: the standing prompt's form (line count, final newline, ## lines, STOP block)."""
+import hashlib
+import os
+
+PROMPT_PATH = os.path.expanduser("~/Desktop/FX_Project/files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md")
+PROMPT_SHA256 = "0398c3c748d5a34d395306b0023ca287d19a6e0890d67c55207562eb496b7a03"
+PROMPT_LINES = 125
+PROMPT_SECTIONS = ("7: ## Paths (always quote them) | 15: ## Read first, in this order | "
+                   "28: ## How Pass 5 runs | 43: ## Decisions already taken: P5Q1 to P5Q10 | "
+                   "88: ## Hard rules | 99: ## Environment (macOS arm64) | "
+                   "108: ## Reports, STOP and checkpointing")
+
+fails = []
+with open(PROMPT_PATH, "rb") as fh:
+    data = fh.read()
+sha = hashlib.sha256(data).hexdigest()
+print(f"SHA-256: {sha}")
+if sha != PROMPT_SHA256:
+    fails.append("SHA-256 == PROMPT_SHA256")
+n = data.count(b"\n")
+print(f"lines: {n}; ends with newline: {data.endswith(b'\n')}")
+if n != PROMPT_LINES:
+    fails.append("lines == PROMPT_LINES")
+if not data.endswith(b"\n"):
+    fails.append("ends with a newline")
+lines = data.decode("utf-8").split("\n")[:-1]
+sections = [f"{i}: {ln}" for i, ln in enumerate(lines, 1) if ln.startswith("## ")]
+print("## lines:")
+for s in sections:
+    print(f"  {s}")
+expected = PROMPT_SECTIONS.split(" | ")
+if sections != expected:
+    fails.append("## lines == PROMPT_SECTIONS, in order")
+    print(f"expected: {expected}")
+starts = [i for i, ln in enumerate(lines) if ln.startswith("**STOP** means:")]
+ends = [i for i, ln in enumerate(lines) if "Isaiah decides what happens next." in ln]
+print(f"'**STOP** means:' at lines {[i + 1 for i in starts]}; "
+      f"'Isaiah decides what happens next.' at lines {[i + 1 for i in ends]}")
+if len(starts) == 1 and len(ends) == 1 and ends[0] >= starts[0]:
+    print("---- STOP block ----")
+    for i in range(starts[0], ends[0] + 1):
+        print(f"{i + 1}: {lines[i]}")
+    print("---- end STOP block ----")
+else:
+    fails.append("one STOP block, start before end")
+for f in fails:
+    print(f"FAIL {f}")
+print(f"failed checks: {len(fails)}")
+print(f"B2 CHECK: {not fails}")
+----- end of /tmp/p5_boot_b2_run1.py -----
+
+----- /tmp/p5_boot_b2_run1.out -----
+SHA-256: 0398c3c748d5a34d395306b0023ca287d19a6e0890d67c55207562eb496b7a03
+lines: 125; ends with newline: True
+## lines:
+  7: ## Paths (always quote them)
+  15: ## Read first, in this order
+  28: ## How Pass 5 runs
+  43: ## Decisions already taken: P5Q1 to P5Q10
+  88: ## Hard rules
+  99: ## Environment (macOS arm64)
+  108: ## Reports, STOP and checkpointing
+'**STOP** means:' at lines [119]; 'Isaiah decides what happens next.' at lines [125]
+---- STOP block ----
+119: **STOP** means:
+120: - write what you have into the report, including the reason;
+121: - change nothing further (no commit, no revert) unless the item says so;
+122: - run no further command;
+123: - end your response with one line: `STOPPED at <item, step>: <reason>`.
+124: 
+125: Isaiah decides what happens next.
+---- end STOP block ----
+failed checks: 0
+B2 CHECK: True
+----- end of /tmp/p5_boot_b2_run1.out -----
+
+### b.2: rerun in the standing prompt's form (D1)
+----- /tmp/p5_boot_b2.py -----
+"""P5-boot b.2: the standing prompt's form (verdict line `B2 CHECK`).
+
+Imports no module of ofilt; reads the file as bytes.
+"""
+import hashlib
+
+from p5_boot_common import Checks, expected, path, read_bytes
+
+E = expected()
+C = Checks("B2")
+
+data = read_bytes(path(E["PROMPT_PATH"]))
+sha = hashlib.sha256(data).hexdigest()
+C.check(sha == E["PROMPT_SHA256"], "PROMPT_PATH sha256 == PROMPT_SHA256", sha)
+n = data.count(b"\n")
+C.check(n == int(E["PROMPT_LINES"]), "lines == PROMPT_LINES", str(n))
+C.check(data.endswith(b"\n"), "ends with a newline")
+
+lines = data.decode("utf-8").split("\n")[:-1]
+sections = [f"{i}: {ln}" for i, ln in enumerate(lines, 1) if ln.startswith("## ")]
+print("## lines:")
+for s in sections:
+    print(f"  {s}")
+want = E["PROMPT_SECTIONS"].split(" | ")
+C.check(sections == want, "## lines == the seven of PROMPT_SECTIONS, in order", f"{len(sections)} lines")
+
+starts = [i for i, ln in enumerate(lines) if ln.startswith("**STOP** means:")]
+ends = [i for i, ln in enumerate(lines) if "Isaiah decides what happens next." in ln]
+ok = len(starts) == 1 and len(ends) == 1 and ends[0] > starts[0]
+C.check(ok, "one block from '**STOP** means:' to 'Isaiah decides what happens next.'",
+        f"starts at {[i + 1 for i in starts]}, ends at {[i + 1 for i in ends]}")
+if ok:
+    print("---- lines from '**STOP** means:' through 'Isaiah decides what happens next.' ----")
+    for i in range(starts[0], ends[0] + 1):
+        print(f"{i + 1}: {lines[i]}")
+    print("---- end ----")
+C.done()
+----- end of /tmp/p5_boot_b2.py -----
+
+----- /tmp/p5_boot_b2.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+[ok] PROMPT_PATH sha256 == PROMPT_SHA256: 0398c3c748d5a34d395306b0023ca287d19a6e0890d67c55207562eb496b7a03
+[ok] lines == PROMPT_LINES: 125
+[ok] ends with a newline
+## lines:
+  7: ## Paths (always quote them)
+  15: ## Read first, in this order
+  28: ## How Pass 5 runs
+  43: ## Decisions already taken: P5Q1 to P5Q10
+  88: ## Hard rules
+  99: ## Environment (macOS arm64)
+  108: ## Reports, STOP and checkpointing
+[ok] ## lines == the seven of PROMPT_SECTIONS, in order: 7 lines
+[ok] one block from '**STOP** means:' to 'Isaiah decides what happens next.': starts at [119], ends at [125]
+---- lines from '**STOP** means:' through 'Isaiah decides what happens next.' ----
+119: **STOP** means:
+120: - write what you have into the report, including the reason;
+121: - change nothing further (no commit, no revert) unless the item says so;
+122: - run no further command;
+123: - end your response with one line: `STOPPED at <item, step>: <reason>`.
+124: 
+125: Isaiah decides what happens next.
+---- end ----
+checks: 5; failed: 0
+B2 CHECK: True
+----- end of /tmp/p5_boot_b2.out -----
+
+### c.1: line counts of the files read
+----- /tmp/p5_boot_c1.sh -----
+#!/bin/bash
+# P5-boot c.1: line counts (wc -l) of the files read for the standing prompt's "Read first" list,
+# items 2 to 6, in the order read. Runs no Python; reads no data file.
+cd "$HOME/Desktop/FX_Project/ofilt_pass1" || exit 1
+echo "item 2"
+wc -l "PASS4_STATUS.md"
+echo "item 3"
+wc -l "docs/DECISIONS_P82_onward.md"
+echo "item 4 (sections 1.2 to 1.4, 2.3, 8 and 10 read)"
+wc -l "docs/replacements/PLAN.md"
+echo "item 5 (section 5 read)"
+wc -l "docs/PASS2_ADDENDUM.md"
+echo "item 6"
+for f in ofilt/drift/io.py ofilt/drift/blind.py ofilt/drift/_guards_fallback.py ofilt/drift/confirm_run.py \
+         tools/p4_confirm_run.py docs/P4_CONFIRM_RUN_SPEC.md tools/checkpoint.sh tests/tag_state.py \
+         tests/test_docs_d3.py tests/test_docs_d3b.py tests/test_io.py tests/test_guard_p46.py \
+         tests/test_blind.py tests/test_p4_confirm_run.py; do
+  wc -l "$f"
+done
+echo "section headings located in items 4 and 5:"
+grep -n -E '^### 1\.[234] |^### 2\.3 |^## 8\. |^## 10\. |^## 9\. |^## 11\. |^### 1\.1 |^## 2\. |^### 2\.4 |^## 3\. ' "docs/replacements/PLAN.md"
+grep -n -E '^## [56]\. ' "docs/PASS2_ADDENDUM.md"
+----- end of /tmp/p5_boot_c1.sh -----
+
+----- /tmp/p5_boot_c1.out -----
+item 2
+     344 PASS4_STATUS.md
+item 3
+      58 docs/DECISIONS_P82_onward.md
+item 4 (sections 1.2 to 1.4, 2.3, 8 and 10 read)
+     556 docs/replacements/PLAN.md
+item 5 (section 5 read)
+     574 docs/PASS2_ADDENDUM.md
+item 6
+     169 ofilt/drift/io.py
+     227 ofilt/drift/blind.py
+      66 ofilt/drift/_guards_fallback.py
+     115 ofilt/drift/confirm_run.py
+      91 tools/p4_confirm_run.py
+      80 docs/P4_CONFIRM_RUN_SPEC.md
+      61 tools/checkpoint.sh
+      50 tests/tag_state.py
+     140 tests/test_docs_d3.py
+      53 tests/test_docs_d3b.py
+     133 tests/test_io.py
+     113 tests/test_guard_p46.py
+     195 tests/test_blind.py
+     457 tests/test_p4_confirm_run.py
+section headings located in items 4 and 5:
+65:### 1.1 The question
+73:### 1.2 The estimand (P14)
+102:### 1.3 Hypotheses
+129:### 1.4 What counts as success
+147:## 2. Data, samples, holdout
+181:### 2.3 Prior exposure (disclose in the pre-registration; P32)
+189:## 3. Model specification
+404:## 8. Passes and milestones (P36 order; P44 naming)
+439:## 9. Out of scope (possible extensions after confirmation; each needs its own mini pre-registration)
+448:## 10. Operating rules for Claude
+469:## 11. Risks and open flags
+145:## 5. Test-change protocol and the known list (P51)
+188:## 6. Supervisor verification additions (to handoff §9)
+----- end of /tmp/p5_boot_c1.out -----
+
+### c.2: the builder's list, and its comparison with TAGDEP
+----- /tmp/p5_boot_c2_list.txt -----
+tests/test_docs_d3.py::TestP29Blinding::test_tag_gates
+tests/test_docs_d3b.py::TestP36::test_tag_semantics_as_implemented
+tests/test_io.py::TestLoadConfirm::test_denied_and_logged
+tests/test_p4_confirm_run.py::TestConfirmRun::test_load_confirm_refused_and_logged
+----- end of /tmp/p5_boot_c2_list.txt -----
+
+----- /tmp/p5_boot_c2.py -----
+"""P5-boot c.2: the builder's list of prereg-v1-dependent tests against TAGDEP (a reading, not a verdict).
+
+Imports no module of ofilt; reads only /tmp files.
+"""
+from p5_boot_common import expected, read_bytes
+
+E = expected()
+LIST = "/tmp/p5_boot_c2_list.txt"
+
+mine = [ln.strip() for ln in read_bytes(LIST).decode("utf-8").splitlines() if ln.strip()]
+tagdep = E["TAGDEP"].split(" ")
+print(f"{LIST}: {len(mine)} entries")
+for m in mine:
+    print(f"  {m}")
+print(f"TAGDEP: {len(tagdep)} entries")
+for t in tagdep:
+    print(f"  {t}")
+only_mine = sorted(set(mine) - set(tagdep))
+only_tagdep = sorted(set(tagdep) - set(mine))
+print(f"duplicates in the list: {sorted(m for m in set(mine) if mine.count(m) > 1)}")
+print(f"only in the builder's list: {only_mine}")
+print(f"only in TAGDEP: {only_tagdep}")
+print(f"same order: {mine == tagdep}")
+print(f"TAGDEP MATCH: {not only_mine and not only_tagdep and len(mine) == len(set(mine))}")
+----- end of /tmp/p5_boot_c2.py -----
+
+----- /tmp/p5_boot_c2.out -----
+message /tmp/p5_boot_msg.txt: sha256 d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46
+expected values read: 36
+/tmp/p5_boot_c2_list.txt: 4 entries
+  tests/test_docs_d3.py::TestP29Blinding::test_tag_gates
+  tests/test_docs_d3b.py::TestP36::test_tag_semantics_as_implemented
+  tests/test_io.py::TestLoadConfirm::test_denied_and_logged
+  tests/test_p4_confirm_run.py::TestConfirmRun::test_load_confirm_refused_and_logged
+TAGDEP: 4 entries
+  tests/test_docs_d3.py::TestP29Blinding::test_tag_gates
+  tests/test_docs_d3b.py::TestP36::test_tag_semantics_as_implemented
+  tests/test_io.py::TestLoadConfirm::test_denied_and_logged
+  tests/test_p4_confirm_run.py::TestConfirmRun::test_load_confirm_refused_and_logged
+duplicates in the list: []
+only in the builder's list: []
+only in TAGDEP: []
+same order: True
+TAGDEP MATCH: True
+----- end of /tmp/p5_boot_c2.out -----
+
+### c.3: load_confirm, as text
+----- /tmp/p5_boot_c3.sh -----
+#!/bin/bash
+# P5-boot c.3: every mention of load_confirm in ofilt/, tools/ and tests/ (as text), and the lines of
+# tools/p4_confirm_run.py that the confirm refusal reading cites. Runs no Python; imports nothing.
+cd "$HOME/Desktop/FX_Project/ofilt_pass1" || exit 1
+echo "== grep -rn load_confirm ofilt tools tests (*.py)"
+grep -rn --include='*.py' 'load_confirm' ofilt tools tests
+echo "== the lines of io.load_confirm (ofilt/drift/io.py 129-169)"
+sed -n '129,169p' ofilt/drift/io.py | nl -ba -v129
+echo "== tools/p4_confirm_run.py 27-87"
+sed -n '27,87p' tools/p4_confirm_run.py | nl -ba -v27
+echo "== does ofilt.guards exist (the external guard)?"
+ls ofilt/guards.py ofilt/guards 2>&1
+----- end of /tmp/p5_boot_c3.sh -----
+
+----- /tmp/p5_boot_c3.out -----
+== grep -rn load_confirm ofilt tools tests (*.py)
+ofilt/drift/io.py:6:* load_confirm():  calls the access guard with tag 'prereg-v1' BEFORE touching
+ofilt/drift/io.py:156:def load_confirm(path: str | Path | None = None, spec: Spec | None = None) -> pd.DataFrame:
+ofilt/drift/io.py:161:        raise AccessDenied(f"load_confirm refused: {e}") from e
+tests/test_p4_confirm_forecast.py:435:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+tests/test_p4_sim_full.py:593:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR"):
+tests/test_guard_p46.py:60:                IO.load_confirm()
+tests/test_guard_p46.py:107:                    IO.load_confirm()
+tests/test_p4_confirm_economic.py:408:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+tests/test_io.py:103:                    IO.load_confirm()
+tests/test_io.py:105:                    IO.load_confirm()
+tests/test_io.py:114:        """With the tag present (temp repo), load_confirm proceeds to the file and
+tests/test_io.py:124:                    IO.load_confirm()
+tests/test_io.py:129:        self.assertNotIn("repo", inspect.signature(IO.load_confirm).parameters)
+tests/test_docs_d3b.py:28:        self.assertEqual(io.CONFIRM_TAG, "prereg-v1")                          # load_confirm gate (P29)
+tests/test_p4_confirm_run.py:274:            with mock.patch.object(IO, "load_confirm", recorder(log, "confirm")), \
+tests/test_p4_confirm_run.py:307:    def test_load_confirm_refused_and_logged(self):
+tests/test_p4_confirm_run.py:315:                    IO.load_confirm()
+tests/test_p4_confirm_run.py:405:            self.assertNotIn("load_confirm", src, path.name)
+tests/test_p4_confirm_claims.py:52:BANNED_STRINGS = ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY")
+tests/test_p4_confirm_inference.py:471:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR"):
+tests/test_calendar.py:56:        for forbidden in ("panel_confirm", "SEALED.csv", "load_confirm", "read_csv"):
+== the lines of io.load_confirm (ofilt/drift/io.py 129-169)
+   129	def _check_access(tag: str) -> None:
+   130	    """Conjunctive, fail-closed tag gate (P46): the fallback check always runs; if the external
+   131	    guard is importable it must ALSO return None or True without raising."""
+   132	    _fallback.check_access(tag, _GUARD_REPO)
+   133	    if _external_check_access is not None:
+   134	        try:
+   135	            result = _external_check_access(tag)
+   136	        except Exception as e:  # any exception (incl. signature mismatch) is a denial
+   137	            raise AccessDenied(f"external guard denied {tag!r}: {type(e).__name__}: {e}") from e
+   138	        if result is not None and result is not True:  # any other return value is a denial
+   139	            raise AccessDenied(f"external guard returned {result!r} for {tag!r}; only None or True grants")
+   140	
+   141	
+   142	def _log_access(result: str, reason: str) -> None:
+   143	    rec = {
+   144	        "utc": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+   145	        "tag": CONFIRM_TAG,
+   146	        "result": result,
+   147	        "head": _fallback.head_commit(_GUARD_REPO) or "none",
+   148	        "guard": "ofilt.guards" if _external_check_access is not None else "fallback",
+   149	        "caller": "".join(traceback.format_stack(limit=4)[:-2]).strip().replace("\n", " | ")[:400],
+   150	        "reason": reason[:300],
+   151	    }
+   152	    with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as fh:
+   153	        fh.write(json.dumps(rec) + "\n")
+   154	
+   155	
+   156	def load_confirm(path: str | Path | None = None, spec: Spec | None = None) -> pd.DataFrame:
+   157	    try:
+   158	        _check_access(CONFIRM_TAG)
+   159	    except Exception as e:  # fail closed on ANY guard failure
+   160	        _log_access("DENIED", f"{type(e).__name__}: {e}")
+   161	        raise AccessDenied(f"load_confirm refused: {e}") from e
+   162	    _log_access("GRANTED", "tag is an ancestor of HEAD")
+   163	    spec = spec or Spec.load()
+   164	    p = Path(path) if path is not None else DATA_DIR / CONFIRM_FILE
+   165	    digest = _verify(p, spec.data_hash("sealed_panel"), "sealed confirmation panel")
+   166	    df = _read_panel(p)
+   167	    df.attrs.update(provenance="confirm_real", sha256=digest, source=str(p))
+   168	    _register_real_targets(df)
+   169	    return df
+== tools/p4_confirm_run.py 27-87
+    27	ROOT = Path(__file__).resolve().parents[1]
+    28	sys.path.insert(0, str(ROOT))
+    29	from ofilt.drift import confirm_run, io, sim_full  # noqa: E402
+    30	
+    31	EXIT_REFUSED = 2
+    32	CONFIRM_REFUSAL = ("REFUSED: the confirmation panel is not opened in Pass 4 (P4Q3; P13(c)); the confirmation run is "
+    33	                   "Pass 6's")
+    34	DEV_REFUSAL = "REFUSED: the dev run needs its sanction (P4-6): set OFILT_P4_DEV_RUN=P4-6"
+    35	
+    36	
+    37	def _dev_frames():
+    38	    # The sanction is checked first; without it nothing is called. Returns (dev, events, None) or None if refused.
+    39	    if os.environ.get(confirm_run.DEV_RUN_SANCTION_VAR) != confirm_run.DEV_RUN_SANCTION_VALUE:
+    40	        print(DEV_REFUSAL)
+    41	        return None
+    42	    dev = io.load_dev()
+    43	    events = io.load_events_firm()
+    44	    return dev, events, None
+    45	
+    46	
+    47	def _synthetic_frames(seed: int, scenario: dict, dev_dates: int | None):
+    48	    """(dev, events, confirm) of one simulation."""
+    49	    sc = sim_full.Scenario(**{k: tuple(v) if isinstance(v, list) else v for k, v in scenario.items()})
+    50	    dates = None if dev_dates is None else sim_full.dev_calendar()[-dev_dates:]
+    51	    out = sim_full.simulate(seed, sc, dev_dates=dates)
+    52	    return out.dev, out.events, out.confirm
+    53	
+    54	
+    55	def main(argv: list | None = None) -> int:
+    56	    ap = argparse.ArgumentParser(description="The confirmation run (P4Q39).")
+    57	    ap.add_argument("--source", required=True, choices=("synthetic", "dev", "confirm"))
+    58	    ap.add_argument("--out", required=True, type=Path)
+    59	    ap.add_argument("--seed", type=int, default=None)
+    60	    ap.add_argument("--scenario", default=None)
+    61	    ap.add_argument("--dev-dates", type=int, default=None)
+    62	    a = ap.parse_args(argv)
+    63	    if a.source == "confirm":
+    64	        print(CONFIRM_REFUSAL)
+    65	        return EXIT_REFUSED
+    66	    if a.source == "synthetic":
+    67	        if a.seed is None:
+    68	            ap.error("--seed is required with --source synthetic")
+    69	    elif a.seed is not None or a.scenario is not None or a.dev_dates is not None:
+    70	        ap.error("--seed, --scenario and --dev-dates are for --source synthetic only")
+    71	    if a.out.exists():
+    72	        print(f"REFUSED: --out {a.out} exists")
+    73	        return EXIT_REFUSED
+    74	    if a.source == "dev":
+    75	        frames = _dev_frames()
+    76	        if frames is None:
+    77	            return EXIT_REFUSED
+    78	    else:
+    79	        scenario = json.loads(a.scenario) if a.scenario is not None else {}
+    80	        if not isinstance(scenario, dict):
+    81	            ap.error("--scenario must be a JSON object")
+    82	        frames = _synthetic_frames(a.seed, scenario, a.dev_dates)
+    83	    assembled = confirm_run.build_document(*frames)
+    84	    hashes = confirm_run.write_outputs(a.out, assembled)
+    85	    for name in confirm_run.OUTPUT_FILES:
+    86	        print(f"{a.out / name} {hashes[name]}")
+    87	    return 0
+== does ofilt.guards exist (the external guard)?
+ls: ofilt/guards: No such file or directory
+ls: ofilt/guards.py: No such file or directory
+----- end of /tmp/p5_boot_c3.out -----
+
+## Verdict lines
+
+The reruns (grep -h ' CHECK: ' over their outputs, in step order):
+A2_ENV CHECK: True
+A3 CHECK: True
+A4 CHECK: True
+A5 CHECK: True
+B1 CHECK: True
+B2 CHECK: True
+
+The first runs (D1):
+A2_ENV CHECK: PASS
+A3 CHECK: PASS
+A4 CHECK: PASS
+A5 CHECK: PASS
+B1 CHECK: True
+B2 CHECK: True
+
+## TAGDEP MATCH (c.2; a reading, not a verdict)
+
+TAGDEP MATCH: True
+
+## Readings
+
+R1. a.1. The first command, `date +%F`, printed `2026-10-12`: this item's date. `shasum -a 256 /tmp/p5_boot_msg.txt` then printed `d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46`. The file (107 lines, 9,309 bytes), read in full with the Read tool, is the message that opened this session, word for word: the title "P5-boot: a new builder session; the Pass 5 standing prompt found by its hash; read-only orientation", steps a.1 to d, and 36 expected values (HEAD to TAGDEP). Those two outputs went to the session, not to a file, and are transcribed here (deviation D2). Every Python script of this item prints the message's SHA-256 again, with the same value, and reads its 36 expected values from it.
+
+R2. a.3 (A3 CHECK: True; 27 checks):
+- HEAD is `3c37f0aeb27665d7698e2d9a49d77157a811ec87`, with its one parent `df1c288578596afb747ed6cdbf1854ff9b1f5035`. Its whole subject is "records: P4-7c (P4-7b accepted; P4Q43; DATA_PROVENANCE §4.5, PROJECT_SETUP and the Pass 4 upload list; Pass 4 closed)".
+- The current branch is `main`, and `git branch -r --contains HEAD` prints `origin/main`. `git status --porcelain --untracked-files=all` prints nothing.
+- `git tag -l` is exactly `pass1-final spec-dev-v1`. `refs/tags/spec-dev-v1` is the annotated tag object (`cat-file -t` gives `tag`) `cee3b49e…` on the commit `f5271c03…`.
+- BLIND_FIT_LOG has 7 lines and RUN_REGISTRY.jsonl 2, each at its SHA-256. RUN_REGISTRY.jsonl was hashed and counted only.
+- No name starting ACCESS_LOG exists in REPO outside .git.
+- The twelve pinned files have their SHA-256, and PASS4_STATUS.md has 344 lines.
+- `reports/P4_runs/dev/document.json` was hashed as bytes, because the message pins it (DEV_DOCUMENT_SHA256). Nothing under `reports/P4_runs/` was read as text.
+
+R3. a.4 (A4 CHECK: True):
+- The manifest `REPO_MANIFEST_H10.tsv` has its SHA-256, ends with a newline, and has 239 lines, each `<sha256><TAB><path>` with a unique path.
+- Its paths equal `git ls-files` (239 paths).
+- Every tracked file's SHA-256, over its bytes in the clean working tree, equals the manifest's: 239 files compared, 0 differences.
+- So REPO's tracked tree is the H10 snapshot, byte for byte. The tracked files under `reports/P4_runs/` were among those hashed as bytes, as the message allows.
+
+R4. a.5 (A5 CHECK: True):
+- KEEP4_P4_7C (`files/pass4_tmp_keep/p4_7c_final/p4_7c.txt`) exists, with SHA-256 `647b4baad6e69fcbfe90be03d366b4eb387b0fd3b8c31530328445a55b1e24f9` and 1,372 lines.
+- Its folder holds 37 regular files, each printed with its SHA-256 in a.5's output.
+- `/tmp/p4_7c.txt` exists and has the same SHA-256.
+- The retired Pass 4 prompt exists at PASS4_PROMPT_PATH with SHA-256 `96327904…`.
+- P4-7c's report is accepted at P5-1: the supervisor compares `647b4baa…24f9` with the SHA-256 that H10's closing keep command printed.
+
+R5. b.1 (B1 CHECK: True):
+- 144 regular `*.md` files under FILES were hashed, recursively, without following symlinks.
+- No directory named `raw` or `build_out` exists under FILES, so none was entered. No `*.md` name there is a symlink.
+- Exactly one file has PROMPT_SHA256: `files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md`, which is PROMPT_PATH.
+
+R6. b.2 (B2 CHECK: True):
+- The prompt has 125 lines and ends with a newline.
+- Its seven `## ` lines are exactly PROMPT_SECTIONS, in order (lines 7, 15, 28, 43, 88, 99, 108).
+- Lines 119 to 125, from `**STOP** means:` through `Isaiah decides what happens next.`, are printed in b.2's output.
+- I then read the whole file with the Read tool, before step c. This paste adopts it, with P5Q1 to P5Q10, and retires the Pass 4 standing prompt.
+
+R7. c.1. I read the standing prompt's "Read first" items 2 to 6 with the Read tool, in this order. The line counts are c.1's `wc -l` output. Item 1 is the prompt itself (b.2).
+- Item 2: `PASS4_STATUS.md`, 344 lines, read in full: the Decision log (P4Q1 to P4Q8; the standing rules recorded on 2026-10-11; P4Q39 to P4Q43), Test results, Test changes, Flags, Blinding attestation, Deviations and the Disclosure list. The Read tool shows 345 lines, because it counts the empty line after the final newline. 344 is the pinned count.
+- Item 3: `docs/DECISIONS_P82_onward.md`, 58 lines, in full.
+- Item 4: `docs/replacements/PLAN.md` (v2.6), 556 lines: §1.2 to §1.4 (lines 73 to 146), §2.3 (181 to 188), §8 (404 to 437) and §10 (448 to 468).
+- Item 5: `docs/PASS2_ADDENDUM.md`, 574 lines: §5 (lines 145 to 187).
+- Item 6, each in full:
+  - `ofilt/drift/io.py` 169, `ofilt/drift/blind.py` 227, `ofilt/drift/_guards_fallback.py` 66, `ofilt/drift/confirm_run.py` 115;
+  - `tools/p4_confirm_run.py` 91, `docs/P4_CONFIRM_RUN_SPEC.md` 80, `tools/checkpoint.sh` 61;
+  - `tests/tag_state.py` 50, `tests/test_docs_d3.py` 140, `tests/test_docs_d3b.py` 53, `tests/test_io.py` 133, `tests/test_guard_p46.py` 113, `tests/test_blind.py` 195, `tests/test_p4_confirm_run.py` 457.
+
+R8. c.2, the method (a reading of "Read `tests/`" under P5Q9).
+- The test files of item 6 and `tests/tag_state.py` were read in full.
+- Every other file in `tests/` was searched, as text, for every path by which a test can observe REPO's tags:
+  - the tag names;
+  - `git tag`, `refs/tags`, `describe`, `show-ref`, `for-each-ref` and `merge-base`;
+  - tag_state's helpers (`spec_tagged`, `check_spec_tag`, `blinded`);
+  - the guard functions and constants (`_tag_ok`, `is_ancestor_tag`, `check_access`, `_check_access`, `_GUARD_REPO`, `REQUIRED_TAGS`);
+  - `load_confirm`;
+  - the provenance `confirm_real`/`CONFIRM_REAL`, the only provenance whose guard needs `prereg-v1` (`blind.py:60`).
+- Every hit was read in context, together with the library code it reaches: `sim._sealed_blind_fit` (`sim.py:153-171`), `confirm_inference.infer` (`:495-507`), `confirm_forecast._check_inputs` (`:66-78`), `registry.registry_path` (`:41-46`) and `confirm_claims._r23` (`:187-190`). All of it was read as text, with sed and grep.
+- `ofilt.guards` does not exist in REPO (c.3's output). So `io._external_check_access` and `blind._external_check_access` are None, and the fallback (`_guards_fallback.is_ancestor_tag` on `_GUARD_REPO`) alone decides.
+
+R9. c.2, the tests whose outcome would change if `prereg-v1` were an annotated tag on an ancestor of HEAD. All four would fail; none would only take another branch. Tests 1 and 2 fail by AssertionError. Tests 3 and 4 error, by an exception their `assertRaises` does not catch.
+1. `tests/test_docs_d3.py::TestP29Blinding::test_tag_gates`
+   - Line 43 lists REPO's tags. Line 47, `self.assertNotIn("prereg-v1", tags)`, fails first.
+   - Behind it two more parts depend on the tag. Line 49's `(B.CONFIRM_REAL, False)`: `require_unblinded` would return `confirm_real`, so the `assertRaises` at lines 55-56 fails. Lines 64-68: the `assertRaisesRegex(B.BlindingError, r"\['prereg-v1'\]")` fails.
+   - Lines 44-46 and line 49's `DEV_REAL` entry depend on `spec-dev-v1` only, and are unchanged.
+2. `tests/test_docs_d3b.py::TestP36::test_tag_semantics_as_implemented`
+   - Line 30, `self.assertFalse(B._tag_ok("prereg-v1"))`, fails. `blind._GUARD_REPO` is REPO (not patched) and the external guard is None, so `_tag_ok` is the fallback's ancestry check, which would be True.
+   - Lines 26-29 and the name scan at lines 31-33 are unchanged.
+3. `tests/test_io.py::TestLoadConfirm::test_denied_and_logged`
+   - Lines 100-105 patch only `io.ACCESS_LOG_PATH` and `io.DATA_DIR`. `io._GUARD_REPO` stays REPO.
+   - With the tag, `_check_access` passes (`io.py:158`) and `GRANTED` is logged to the temporary log (`io.py:162`). Then `Spec.load` runs, and `_verify` (`io.py:165`) opens `<tmp>/does_not_exist/panel_confirm_SEALED.csv` and raises FileNotFoundError. `assertRaises(IO.AccessDenied)` at line 102 does not catch that, so the test errors at line 103.
+   - Lines 106-111 (two DENIED lines) would fail if reached. The path opened is inside a temporary folder; no real file is reached.
+4. `tests/test_p4_confirm_run.py::TestConfirmRun::test_load_confirm_refused_and_logged`
+   - Lines 313-315: the same mechanism. `io.ACCESS_LOG_PATH` and `io.DATA_DIR` are patched to temporary paths; `io._GUARD_REPO` is not.
+   - With the tag, `GRANTED` is logged and `_verify` raises FileNotFoundError on `<tmp>/empty/panel_confirm_SEALED.csv`. The test errors at line 315.
+   - Lines 316-319 (exactly one DENIED line) would fail if reached. Lines 320-322 are unaffected.
+
+R10. c.2, considered and excluded, because their outcome is the same with the tag:
+- `test_io.py::TestGuardFallback::test_main_repo_has_no_unblinding_tags_while_draft` (lines 89-93) would check `prereg-v1` on REPO_ROOT. It skips at line 91, because the spec is FROZEN, so it is skipped either way.
+- These use their own throwaway repositories:
+  - `test_io.py::TestLoadConfirm::test_guard_is_the_only_gate` (lines 116-125);
+  - all four tests of `test_guard_p46.py` (both gates, the log and DATA_DIR patched, lines 40-43);
+  - `test_blind.py::TestGuard::test_tag_gate_in_temp_repo` (line 174).
+- `test_blind.py::TestGuard::test_dev_real_raises_in_main_repo` (lines 35-42) depends on `spec-dev-v1` only. `test_main_repo_guard_points_at_this_repo` (line 191) compares paths only.
+- These run under `TS.blinded()`, which points blind's guard at a throwaway repository without tags: `test_inference_b1.py:102` and `:110`, `test_inference_b2.py:125`, `test_inference_b3.py:156`, `test_forecast_c1.py:101`, `test_fctests_c5.py:182`, `test_sim_b5.py:179`.
+- `test_sim_b5.py::TestSealedFitMechanics::test_refusals_and_guard_intact` (lines 172-176): `confirm_real` is refused by `_sealed_blind_fit`'s own provenance check (`sim.py:158-159`), before any guard.
+- The refused provenance pairs: `test_p4_confirm_inference.py` test 5 (lines 191-193), `test_p4_confirm_forecast.py` `refusals()` (134-136), `test_p4_confirm_economic.py` (369-370), `test_p4_confirm_claims.py` (439-440) and `test_p4_confirm_run.py` test 11 (359-360). None of them is `(dev_real, confirm_real)`, so each raises ValueError in the pair check (`confirm_inference.py:497-504`; `confirm_forecast.py:68-75`), before `require_unblinded`.
+- `test_p4_confirm_run.py` test 6 (line 274) replaces `load_confirm` by a recorder, which is never called.
+- `test_p4_confirm_run.py` test 9 and `test_importance_registry_c6.py:179`: `registry_path` runs no guard.
+- `test_p4_confirm_claims.py` (lines 135 and 242) sets `confirm_real` on a document dict, for `licensed()` only (`confirm_claims.py:39`, `:188`), which runs no guard.
+- These only scan text that names a tag or `load_confirm`: `test_docs_d3b.py:31-33`, `test_docs_d4.py:81`, `test_p3_launch.py:76`, `test_calendar.py:56`, and the banned strings of the P4 test modules.
+
+R11. `TAGDEP MATCH: True`. My list (`/tmp/p5_boot_c2_list.txt`) and TAGDEP have the same four entries, in the same order. There is no difference to explain.
+
+R12. c.3, every call of `load_confirm` (c.3's grep), and the patches active at each call in `tests/`:
+- In `ofilt/`: no call. It is defined at `io.py:156`. Lines 6 and 161 are its docstring and its refusal message.
+- In `tools/`: no line names it. `test_p4_confirm_run.py:403-405` asserts that the script never names it.
+- In `tests/`:
+  - `test_io.py:103` and `:105` (`test_denied_and_logged`): `io.ACCESS_LOG_PATH` → `<tmp>/ACCESS_LOG`, and `io.DATA_DIR` → `<tmp>/does_not_exist` (absent). Not patched: `io._GUARD_REPO` (REPO) and `io._external_check_access` (None in REPO). It relies on REPO lacking `prereg-v1`.
+  - `test_io.py:124` (`test_guard_is_the_only_gate`):
+    - `io._GUARD_REPO` → a throwaway repository with a lightweight `prereg-v1` at its HEAD;
+    - `io.ACCESS_LOG_PATH` → `<tmp>/ACCESS_LOG`;
+    - `io.DATA_DIR` → `<tmp>/empty`, never created;
+    - `io._external_check_access` → None.
+    - Access is granted, and the test expects FileNotFoundError.
+  - `test_guard_p46.py:60` (`assert_denied`, used by `test_external_returns_false_denied`, `test_external_returns_none_tag_absent_denied` and `test_external_raises_denied`) and `:107` (`test_both_satisfied_granted`):
+    - `io._GUARD_REPO` → a throwaway repository;
+    - `io._external_check_access` → a stand-in external guard;
+    - `io.ACCESS_LOG_PATH` → `<tmp>/ACCESS_LOG`;
+    - `io.DATA_DIR` → `<tmp>/empty`, never created;
+    - blind's `_GUARD_REPO` and `_external_check_access` are patched too (lines 40-43).
+    - At line 107, access is granted, and the test expects FileNotFoundError.
+  - `test_p4_confirm_run.py:274` (test 6, `test_script_refuses_confirm`): `io.load_confirm` itself is replaced by a recorder, as are `io.load_dev` and `sim_full.simulate`. The module-level `io.ACCESS_LOG_PATH` patch (setUpModule, lines 66-74) is active. It is never called (asserted at line 279).
+  - `test_p4_confirm_run.py:315` (test 8, `test_load_confirm_refused_and_logged`): `io.ACCESS_LOG_PATH` → `<tmp>/logs/ACCESS_LOG` (over the module-level patch), and `io.DATA_DIR` → `<tmp>/empty` (created, and asserted empty afterwards). Not patched: `io._GUARD_REPO` (REPO) and `io._external_check_access` (None). It relies on REPO lacking `prereg-v1`.
+  - `test_io.py:129` refers to the function (`inspect.signature`) without calling it. The other mentions are strings or names, not calls: `test_p4_confirm_forecast.py:435`, `test_p4_sim_full.py:593`, `test_p4_confirm_economic.py:408`, `test_p4_confirm_claims.py:52`, `test_p4_confirm_inference.py:471`, `test_calendar.py:56`, `test_p4_confirm_run.py:307` (the method's name) and `:405`, `test_io.py:114` (a docstring) and `test_docs_d3b.py:28` (a comment).
+- The two calls that rely on REPO lacking the tag are R9's tests 3 and 4. P5Q3 ("From P5-1 on, no test relies on REPO lacking `prereg-v1` for a refusal") and P5Q4 address them.
+
+R13. c.3: `tools/p4_confirm_run.py` refuses `--source confirm` before any loader is called. Confirmed:
+- In `main()`, lines 56-62 build the argument parser and parse the arguments (argparse only).
+- Line 63, `if a.source == "confirm":`, is the first statement after parsing. Line 64 prints `CONFIRM_REFUSAL` and line 65 returns `EXIT_REFUSED`, which is 2 (line 31).
+- The loaders are reached only after that:
+  - `io.load_dev` and `io.load_events_firm` are called inside `_dev_frames` (lines 42-43). Its first statement checks the dev sanction (lines 39-41), and it is called only at line 75, under `if a.source == "dev":` (line 74).
+  - `sim_full.simulate` is called inside `_synthetic_frames` (line 51), which is called at line 82.
+  - `confirm_run.build_document` is called at line 83.
+- Even the `--out` existence check (lines 71-73) comes after the confirm refusal. The script never names `load_confirm`.
+- The only thing before line 63 is the module-level import at line 29 (`confirm_run`, `io`, `sim_full`). Of that, I read io's top level: it sets constants, among them `DATA_DIR` from the environment (`io.py:36`), and opens no file.
+- `test_p4_confirm_run.py` test 6 checks the refusal with recorders.
+
+## Deviations and notes
+
+Deviations
+
+D1 (mine). The first runs of a.2 to b.2 broke the standing prompt's form.
+- Why: I made them before reading the standing prompt, which the message places at b.2.
+- They departed from the prompt's form in four ways:
+  - the expected values were typed into the scripts, not read by script from the message (P5Q10);
+  - a.2 to a.5 printed `PASS` where the form requires `True` (b.1 and b.2 already printed True);
+  - the scripts were written by a shell heredoc (`cat > file`), not with the file-editing tool;
+  - Python ran as `~/venvs/ofilt_p2/bin/python -I "<script>"`, without `env -u OFILT_RUN_SEALED`, without activating the venv and without `-B`.
+- Every check of the first runs passed, and their content equals the reruns'. The reruns differ only in labels, the printed message hash and the count of expected values. a.3's rerun adds one check (12 pinned paths paired with 12 names).
+- After reading the prompt, I renamed the first runs' files `*_run1`, with their content unchanged; they are in this report in full.
+- I rewrote the scripts with the editor. Every expected value is now read from `/tmp/p5_boot_msg.txt` through the shared helper `/tmp/p5_boot_common.py`, and every verdict is printed as `<NAME> CHECK: True|False`. I reran each once in the prompt's command form. a.2, which runs no Python, ran with `bash`.
+- No check failed, so this is not strictly a use of the rerun-once rule. It is recorded as a deviation, as P4-boot2's was (PASS4_STATUS.md, Deviations).
+- Effects: `OFILT_RUN_SEALED` was absent from the session throughout (a.2). The first-run scripts import only standard-library modules (`hashlib`, `os`, `subprocess`, `stat`), and no `/tmp/__pycache__` exists.
+
+D2 (mine). a.1's two outputs (the date and the message's SHA-256) were printed to the session, not saved to a file. They are transcribed in R1. Every Python script of this item prints the message's SHA-256 again, with the same value.
+
+Notes
+
+N1. c.3's script `/tmp/p5_boot_c3.sh` exits with status 1. Its last command, `ls ofilt/guards.py ofilt/guards`, finds neither path, and that is the finding: the external guard does not exist in REPO. Every earlier command of the script succeeded.
+
+N2. c.2's "Read `tests/`" was resolved under P5Q9 by the reading closest to its purpose (R8):
+- the test files of the "Read first" list, and `tests/tag_state.py`, were read whole;
+- for every other test file, a complete text search was made of the paths by which a test can observe REPO's tags, and every hit was read in context with the library code it reaches.
+- This changes nothing a test asserts, and the result matches TAGDEP.
+
+N3. For P5-1 (P5Q3, P5Q4), information only:
+- `tests/tag_state.py`'s `blinded()` patches only blind's guard (`tag_state.py:49`). It does not redirect `io._GUARD_REPO` or io's log; P4Q3 recorded the same about the log. So R9's tests 3 and 4 need io's own patches, as `test_guard_p46.gates` applies them (lines 40-43).
+- P5Q3 asks for `io.DATA_DIR` at an empty temporary folder. In the calls that already point the guard at a throwaway repository (`test_io.py:124`, `test_guard_p46.py:60`, `:107`), `io.DATA_DIR` names a temporary path that is never created. `test_p4_confirm_run.py`'s test 8 creates its folder and asserts it stays empty.
+
+N4. Observation: the kept `pass4_tmp_keep/p4_7c_final/p4_7c_status_s2_dated.md` has SHA-256 `c33817f8…`, the same as `PASS4_STATUS.md`, P4-7c's dated records file as committed.
+
+N5. Outside REPO, besides the kit and the files the steps name, I read these, all as text, for form only:
+- my auto-memory notes on the Python environments;
+- `files/pass4_tmp_keep/p4_boot2_final/p4_boot2_b.py`, to see how the earlier boot found its prompt;
+- the `' CHECK: '` lines of the kept P4-7c report, for the verdict form;
+- a text search for `build_out` over `files/pass4_tmp_keep/p4_boot2_final/` and `files/pass4/`.
+- I also listed the folder names of `files/`, `files/pass4_tmp_keep/`, `files/pass4/` and KIT5. KIT5 also holds `P5_BOOT_MSG.md` (9,309 bytes, the size of `/tmp/p5_boot_msg.txt`); this item did not hash or read it.
+- No data file, and nothing under DATA, `raw` or `build_out`, was opened, listed or hashed.
+
+N6. a.3's ACCESS_LOG search walked REPO's names outside `.git`, ignored and untracked paths included. It opened nothing and printed only matches; there were none. In REPO, I read the code beyond the "Read first" list with sed and grep, as text: the excerpts R8 names, `ofilt/drift/io.py`'s top-level constants before c.1, and the hits of the test search.
+
+N7. Blinding: this item ran entirely within its read-only limits:
+- no module of `ofilt` imported, no test run and no commit; no tag created, moved or deleted;
+- no data file opened, listed or hashed, and nothing under `reports/P4_runs/` read as text (its tracked files were hashed as bytes in a.3 and a.4);
+- `RUN_REGISTRY.jsonl` only hashed and counted;
+- only paths starting `/tmp/p5_boot` written; `OFILT_RUN_SEALED` absent from every command.
+
+## SHA-256 of every /tmp/p5_boot* file except this report
+
+37bc5a730ffcdcadc66c0659d48db26086fed009d21bf57a036128ca8aa8d53d  /tmp/p5_boot_a2_run1.out
+62f3ef4e3e4e5d469dc2133ca9014573bc28f8b650a5133c608e6957804b84aa  /tmp/p5_boot_a2_run1.sh
+c185d49143567e9448778b72ae59cf4d8af95411320de066eef3074e9493c429  /tmp/p5_boot_a2.out
+e6cdacf212f487da713ab742cc151da3e41864afa1434285a2bcc5c7d2c658ac  /tmp/p5_boot_a2.sh
+82c3c3f30661d8dac80a24a6bfd1775244a698713f77ec73ac541e94a5556b50  /tmp/p5_boot_a3_run1.out
+d0e4d415cdf0c30fdb7b8194761492c1ec5680e08873918a4bb4e0b2f5276a53  /tmp/p5_boot_a3_run1.py
+5441e4afdbd5ab140b744813da55d27aaff297e6d6a9ec414ad66dfecffe139c  /tmp/p5_boot_a3.out
+d4e8e60342be8eeb16aaf3487bb1d858b31e1b88e2b449dfd77c759f57c4a293  /tmp/p5_boot_a3.py
+24045556f7891157505fb5c2849e0da36d2bcc2f23ece88174a59cf82646d882  /tmp/p5_boot_a4_run1.out
+544530ffc472c453b9cc6460c47f97a197072e7a4913da70c9165d25c2d0542a  /tmp/p5_boot_a4_run1.py
+26546d0c9680c4104491f604f7b144b1a4e3285daec5de22dab29344963b4dbb  /tmp/p5_boot_a4.out
+b7a3876511579534bbd1e53de2a38ae9c69a0d0bec1d10a7aed392703e98caa8  /tmp/p5_boot_a4.py
+a42e9c2062273889ce725cf7da27f47db88b82fa388fbe311031e533bcd40ab1  /tmp/p5_boot_a5_run1.out
+e482cf08e80351727dd3066d463e64c1cbf1f44264f906157cc8b59c6c6fcf38  /tmp/p5_boot_a5_run1.py
+2b13a48ab4f10dade1cb2963eda293e229c47816b81475a2106892dbbf3b2ccd  /tmp/p5_boot_a5.out
+6f9dc080af6cab5f80002e418f4d487a87a86b21c48de611ff723bccbb9a28e3  /tmp/p5_boot_a5.py
+36ea3287e7ef698a31fe48d61607038cea83881b2aa49515255c059c4fd00cbd  /tmp/p5_boot_assemble.sh
+9d28ad0c788b11897b3aca57cf3766093dd7ebd3604754b68a70a5bf1456ccf5  /tmp/p5_boot_b1_run1.out
+d561233f833348ab42d0990608016a1a196f6d8ffa17d93f5b4068ee7bc90cb8  /tmp/p5_boot_b1_run1.py
+4a1723f729dd27e8c7bc234f2a8ba352b3e617678dadc27d07e86c153addcc2e  /tmp/p5_boot_b1.out
+39e9416b699bfacad9d54dfc11de8f390f9edbb8967fc07e7e881aed81b19952  /tmp/p5_boot_b1.py
+47099939c354539115c996620c209dd44ea94c65b001418f387912d95b9aee4b  /tmp/p5_boot_b2_run1.out
+b3f25292828c1f6780ed0ea93223b7a4a1472740b65839f3c464c66ac1b4bbfe  /tmp/p5_boot_b2_run1.py
+ddc51d6861ee4e5d7010ee8451c2aa3dffd30f3d0a718d58b418f773443d2322  /tmp/p5_boot_b2.out
+26a7b679dfaa664c09a36fc6a959e67f940dadacded415eeb3b19915755cb4e4  /tmp/p5_boot_b2.py
+c28716b64b4501152616f161cfe0e070454e0507fca10f07edffa4b9031fcf20  /tmp/p5_boot_c1.out
+68861a33d198f881f53329ee3ee406d8cd006435b045509e9300916344401e3b  /tmp/p5_boot_c1.sh
+55e709b19e41c9e8555549af5bd07fe7cfd73a087a70fb5e505b130c4a23627f  /tmp/p5_boot_c2_list.txt
+e23e756860fa3a6034140dcd3dbd1ef31f376b6ed6f387c82c58dc9318237d11  /tmp/p5_boot_c2.out
+33b82c23ebbb0be7643f8c6b1cfd743affdafb5c8561fea043d5bdbc401af650  /tmp/p5_boot_c2.py
+1e749858544ef43e96ab60ec7afa16d6b0d5c6fb61729028719017aca9756642  /tmp/p5_boot_c3.out
+d7af24b2b8f3484dbe1e8f04fa4df594eab965884f42f916b7a208f2043f1755  /tmp/p5_boot_c3.sh
+52c15dcc38b2e9a5b0c897516f62ba4217031870cb1778a5de2dde62c22358c2  /tmp/p5_boot_common.py
+d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46  /tmp/p5_boot_msg.txt
+702f53312305efb978e234092a81da202cc1ef3e27e5916e7862e00a24c5edc6  /tmp/p5_boot_notes.txt
+cd44e95e5cdad1add3572b5e3a519972925f048ef7161c793ec7572d5a9f950f  /tmp/p5_boot_readings.txt
+
+## The assembler
+
+----- /tmp/p5_boot_assemble.sh -----
+#!/bin/bash
+# P5-boot d: assembles /tmp/p5_boot.txt, in the standing prompt's report form, from command output and this
+# item's /tmp files. Runs no Python; reads no file of REPO except through git.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+OUT="/tmp/p5_boot.txt"
+
+show() {  # one file in full, between markers
+  echo "----- $1 -----"
+  cat "$1"
+  echo "----- end of $1 -----"
+  echo
+}
+
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 "/tmp/p5_boot_msg.txt"
+echo
+echo "# P5-boot: a new builder session; the Pass 5 standing prompt found by its hash; read-only orientation"
+echo
+echo "Builder report. The item's date is the output of a.1's first command (R1). No commit; no test run;"
+echo "no module of ofilt imported; only paths starting /tmp/p5_boot written."
+echo
+echo "## Scripts and their outputs"
+echo
+echo "### Shared helper of the Python scripts (reruns and c.2)"
+show /tmp/p5_boot_common.py
+for s in a2 a3 a4 a5 b1 b2; do
+  if [ "$s" = a2 ]; then ext=sh; else ext=py; fi
+  echo "### ${s:0:1}.${s:1}: first run, before the standing prompt was read (deviation D1)"
+  show "/tmp/p5_boot_${s}_run1.${ext}"
+  show "/tmp/p5_boot_${s}_run1.out"
+  echo "### ${s:0:1}.${s:1}: rerun in the standing prompt's form (D1)"
+  show "/tmp/p5_boot_${s}.${ext}"
+  show "/tmp/p5_boot_${s}.out"
+done
+echo "### c.1: line counts of the files read"
+show /tmp/p5_boot_c1.sh
+show /tmp/p5_boot_c1.out
+echo "### c.2: the builder's list, and its comparison with TAGDEP"
+show /tmp/p5_boot_c2_list.txt
+show /tmp/p5_boot_c2.py
+show /tmp/p5_boot_c2.out
+echo "### c.3: load_confirm, as text"
+show /tmp/p5_boot_c3.sh
+show /tmp/p5_boot_c3.out
+
+echo "## Verdict lines"
+echo
+echo "The reruns (grep -h ' CHECK: ' over their outputs, in step order):"
+grep -h ' CHECK: ' /tmp/p5_boot_a2.out /tmp/p5_boot_a3.out /tmp/p5_boot_a4.out /tmp/p5_boot_a5.out \
+  /tmp/p5_boot_b1.out /tmp/p5_boot_b2.out
+echo
+echo "The first runs (D1):"
+grep -h ' CHECK: ' /tmp/p5_boot_a2_run1.out /tmp/p5_boot_a3_run1.out /tmp/p5_boot_a4_run1.out \
+  /tmp/p5_boot_a5_run1.out /tmp/p5_boot_b1_run1.out /tmp/p5_boot_b2_run1.out
+echo
+echo "## TAGDEP MATCH (c.2; a reading, not a verdict)"
+echo
+grep -h '^TAGDEP MATCH: ' /tmp/p5_boot_c2.out
+echo
+echo "## Readings"
+echo
+cat /tmp/p5_boot_readings.txt
+echo
+echo "## Deviations and notes"
+echo
+cat /tmp/p5_boot_notes.txt
+echo
+echo "## SHA-256 of every /tmp/p5_boot* file except this report"
+echo
+for f in /tmp/p5_boot*; do
+  [ "$f" = "$OUT" ] && continue
+  shasum -a 256 "$f"
+done
+echo
+echo "## The assembler"
+echo
+show /tmp/p5_boot_assemble.sh
+echo "STOPPED at P5-boot, d: planned; Isaiah uploads /tmp/p5_boot.txt to the supervisor chat."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$OUT" 2>&1
+----- end of /tmp/p5_boot_assemble.sh -----
+
+STOPPED at P5-boot, d: planned; Isaiah uploads /tmp/p5_boot.txt to the supervisor chat.
+
+2026-10-12T16:07:49Z
+3c37f0aeb27665d7698e2d9a49d77157a811ec87

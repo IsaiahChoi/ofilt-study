@@ -97,8 +97,10 @@ class TestLoadConfirm(unittest.TestCase):
     def test_denied_and_logged(self):
         with tempfile.TemporaryDirectory() as t:
             log = Path(t) / "ACCESS_LOG"
+            repo = make_temp_repo(Path(t))  # P5-1 (P5Q3, P5Q4, test-change protocol): the guard on a throwaway repository without prereg-v1; was REPO's own guard, which refuses only while REPO lacks the tag
             with mock.patch.object(IO, "ACCESS_LOG_PATH", log), \
-                 mock.patch.object(IO, "DATA_DIR", Path(t) / "does_not_exist"):
+                 mock.patch.object(IO, "DATA_DIR", Path(t) / "does_not_exist"), \
+                 mock.patch.object(IO, "_GUARD_REPO", repo), mock.patch.object(IO, "_external_check_access", None):  # P5-1
                 with self.assertRaises(IO.AccessDenied):   # guard fires before any path is touched
                     IO.load_confirm()
                 with self.assertRaises(IO.AccessDenied):

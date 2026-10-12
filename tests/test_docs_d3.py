@@ -44,9 +44,12 @@ class TestP29Blinding(unittest.TestCase):
         dev_open = "spec-dev-v1" in tags  # P3-8b: was self.assertNotIn("spec-dev-v1", tags) ("Pass 1: neither tag exists"); the state on both sides of the tag
         if dev_open:  # P3-8b: with the tag, it is annotated, an ancestor of HEAD and on the frozen spec
             TS.check_spec_tag(self)  # P3-8b
-        self.assertNotIn("prereg-v1", tags)
+        prereg_open = "prereg-v1" in tags  # P5-1 (P5Q4, test-change protocol): was self.assertNotIn("prereg-v1", tags); the state on both sides of prereg-v1
+        if prereg_open:  # P5-1: with the tag, it follows spec-dev-v1 and holds the frozen spec, the configuration and the pre-registration
+            self.assertTrue(dev_open)  # P5-1
+            TS.check_prereg_tag(self)  # P5-1
         df = pd.DataFrame({"date": pd.to_datetime(["2030-01-07"]), "ticker": ["5706"], "x": [0.123456789]})
-        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, dev_open), (B.CONFIRM_REAL, False), ("other", False)):  # P3-8b: was (B.DEV_REAL, False)
+        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, dev_open), (B.CONFIRM_REAL, dev_open and prereg_open), ("other", False)):  # P3-8b: was (B.DEV_REAL, False); P5-1: was (B.CONFIRM_REAL, False)
             d = df.copy()
             d.attrs = {"provenance": prov}
             if ok:
@@ -61,7 +64,7 @@ class TestP29Blinding(unittest.TestCase):
         with self.assertRaises(B.BlindingError):                                # attrs and kwarg must agree
             B.require_unblinded(d, provenance=B.DEV_REAL)
         self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())
-        if dev_open:  # P3-8b: with the tag, confirm_real is refused for prereg-v1 alone
+        if dev_open and not prereg_open:  # P3-8b: with the tag, confirm_real is refused for prereg-v1 alone; P5-1: was `if dev_open:`
             c = df.copy()  # P3-8b
             c.attrs = {"provenance": B.CONFIRM_REAL}  # P3-8b
             with self.assertRaisesRegex(B.BlindingError, r"\['prereg-v1'\]"):  # P3-8b
