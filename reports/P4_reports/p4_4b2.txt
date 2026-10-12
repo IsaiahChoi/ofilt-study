@@ -1,0 +1,2052 @@
+2026-10-12T01:05:52Z
+ff318775ef05b8266b6d286bd78c4ee0372d2ef0
+5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c  /tmp/p4_4b2_msg.txt
+
+=== P4-4b2 report ===
+(lines 1-3 written after a.1's date step and the message's saving, before a.2, by: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_4b2_msg.txt; } > /tmp/p4_4b2_head.out && cp /tmp/p4_4b2_head.out /tmp/p4_4b2.txt && mkdir /tmp/p4_4b2_nodata /tmp/p4_4b2_registry)
+2026-10-12T01:05:52Z
+ff318775ef05b8266b6d286bd78c4ee0372d2ef0
+5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c  /tmp/p4_4b2_msg.txt
+
+=== the message (cat /tmp/p4_4b2_msg.txt; saved verbatim from the transcript with the file-editing tool) ===
+# Pass 4, item P4-4b2: P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests (supervisor message)
+
+This item follows the standing Pass 4 prompt (`files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md`; its SHA-256 is PROMPT_SHA256 below). It has no date gate. Pasting it records Isaiah's acceptance of P4-4b1, with its readings and deviation, and adopts P4Q37, exactly as the kit's edits file writes them, dated by the date step a.1 prints. The item then builds the confirmation module's economic evaluation (row O45) and its tests exactly as the kit's specification says, and commits them with P4-4b1's report.
+
+Save this message verbatim as `/tmp/p4_4b2_msg.txt` from this session's transcript, as the item's first action after a.1's date command. Every expected value is read by script from the list "Expected values", never typed. Each label begins exactly one line of that list, in the form `- NAME = value`; the steps refer to values by NAME only. A value holding several names separates them by single spaces.
+
+**Rules of this item.**
+- No script of this item opens a data file. The new test file, the probe and any scratch script run with `OFILT_DATA_DIR` set to NODATA, an empty folder that step a.1 creates. The four static test modules of step d.3 and the checkpoint's suite run with `OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data"`, as at every checkpoint.
+- The only code of `ofilt` that runs is: the probe of step c.2 and scratch scripts, on synthetic data; the new test file; the four static test modules; and the checkpoint's suite. No frame labelled `dev_real` or `confirm_real` is passed to the new module, except in the refused pairs of the specification's test 13.
+- The probe and every scratch script that calls `forecast.walk_forward` (directly or through `confirm_forecast.run_calls`) first patch `registry.SYNTHETIC_PATH` and `registry.REAL_PATH` to files under REGDIR, a folder that step a.1 creates. Nothing of this item writes to `RUN_REGISTRY.jsonl` or to the system temp registry, except the checkpoint's suite, as at every checkpoint.
+- No run of `tools/p3_sealed_run.py`. `OFILT_RUN_SEALED` is unset in every command (`env -u`). No tag is created, moved or deleted. Do not push.
+- Write and edit every file with your file-editing tool, never through an interpreter.
+- Resolve and record (standing, P4-4b1): where the specification or this message is unclear or cannot be met as written, resolve the point by the reading closest to its purpose, record it in the report under "readings", and go on. STOP only if the resolution would change what a test of the specification's §6.2 asserts, a quantity its §4 computes, or a rule of this message.
+
+**Files that may change.**
+- In REPO: `PASS4_STATUS.md`, by the targeted edits of steps d.5 and e.1; the four files of NEW_FILES, and no other; `reports/B6_coverage.json`, only as `tools/checkpoint.sh` rewrites and restores it; `__pycache__` folders, which `.gitignore` covers.
+- Outside REPO: only paths starting `/tmp/p4_4b2`, plus what the suite writes under `$TMPDIR`, as at every checkpoint.
+
+**STOP** means: write the report so far, print its path, change nothing more (no commit, no revert), and wait.
+
+**Paths.** KIT = "$HOME/Desktop/FX_Project/files/pass4/p4_4b2_kit", which holds the supervisor's two kit files. KEEP4 = "$HOME/Desktop/FX_Project/files/pass4_tmp_keep". Both are read-only.
+
+**Report header.** Write the report's first lines (UTC time, HEAD, the SHA-256 line of `/tmp/p4_4b2_msg.txt`) right after the message is saved, before step a.2, and its last lines at the end.
+
+## Expected values
+- HEAD_BEFORE = ff318775ef05b8266b6d286bd78c4ee0372d2ef0
+- PARENT_BEFORE = 5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99
+- TAG_LIST = pass1-final spec-dev-v1
+- TAG_OBJECT = cee3b49e81d16f1f32e546cac9524b209ac1e493
+- TAG_COMMIT = f5271c03481b7514a1ec4b7e739fb85fbce8a774
+- BLIND_FIT_LOG_SHA256 = 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383
+- BLIND_FIT_LOG_LINES = 7
+- RUN_REGISTRY_BYTES = 0
+- PROMPT_SHA256 = 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+- SPEC_SHA256 = feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+- PASS3_STATUS_SHA256 = b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+- STATUS_BEFORE_SHA256 = d88f77739ed88f07fe49b4c7ab6867615548867236050ecb5a57e9ea783dc201
+- CONFIG_SHA256 = 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+- COST_INPUTS_SHA256 = a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6
+- SIM_MODULE_SHA256 = ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+- SIM_TESTS_SHA256 = 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+- SIM_SPEC_SHA256 = 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+- INF_MODULE_SHA256 = 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1
+- INF_TESTS_SHA256 = bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026
+- INF_SPEC_SHA256 = a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65
+- FC_MODULE_SHA256 = b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff
+- FC_TESTS_SHA256 = 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a
+- FC_SPEC_SHA256 = a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6
+- KIT_FILES = p4_4b2_P4_CONFIRM_ECON_SPEC.md p4_4b2_STATUS_EDITS.txt
+- KIT_SPEC_SHA256 = 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+- KIT_EDITS_SHA256 = 84434446d985aee98ecd3ae8e52840fea33668543786c1275f198e7bf6b714d9
+- NEW_FILES = docs/P4_CONFIRM_ECON_SPEC.md ofilt/drift/confirm_economic.py tests/test_p4_confirm_economic.py reports/P4_reports/p4_4b1.txt
+- REPORTS_BEFORE = p4_0a.txt p4_0b.txt p4_1.txt p4_1_audit.md p4_2.txt p4_3.txt p4_4a.txt p4_4p.txt p4_boot.txt
+- P4_4B1_LINE1 = 2026-10-11T22:42:45Z
+- P4_4B1_LINE2 = 5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99
+- P4_4B1_LINE3 = 118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6  /tmp/p4_4b1_msg.txt
+- P4_4B1_LAST = 2026-10-12T00:39:21Z
+- STATUS_S1_TEMPLATE = daddab3ea9dd247474dc38ae68befdf565326f0f2dda83beefa7d21d61699bfd
+- STATUS_S2_TEMPLATE = e41528f3bb8e5e0d2d45b89956a6ab5df65e90dbcd0f192c8c1a1964970145c6
+- STATUS_LINES = 238
+- STAGE1_EDITS = 8
+- MAX_ATTEMPTS = 8
+- NEW_RAN = Ran 14 tests
+- NEW_OK = OK
+- SUITE_RAN = Ran 359 tests
+- SUITE_OK = OK (skipped=6)
+- COMMIT_ITEM = P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)
+- COMMIT_FILE_COUNT = 5
+- NODATA = /tmp/p4_4b2_nodata
+- REGDIR = /tmp/p4_4b2_registry
+## a. Date and state
+1. `date +%F` runs first, captured by tee to `/tmp/p4_4b2_date.out`; it is the date of the acceptance of P4-4b1 and of P4Q37. No date stops this item. Then save the message, write the report header, and create NODATA and REGDIR, both empty.
+2. Read-only, by script (verdict line `A CHECK`):
+   - HEAD is HEAD_BEFORE, its only parent is PARENT_BEFORE, and `git status --porcelain --untracked-files=all` is empty;
+   - `git tag -l` prints exactly the names of TAG_LIST; `refs/tags/spec-dev-v1` is TAG_OBJECT and its commit is TAG_COMMIT;
+   - `BLIND_FIT_LOG` has BLIND_FIT_LOG_SHA256 and BLIND_FIT_LOG_LINES lines; `RUN_REGISTRY.jsonl` has RUN_REGISTRY_BYTES bytes; no name starting ACCESS_LOG exists in REPO outside `.git`; `OFILT_RUN_SEALED` is absent from the environment;
+   - SHA-256: the standing prompt PROMPT_SHA256; the spec SPEC_SHA256; `PASS3_STATUS.md` PASS3_STATUS_SHA256; `PASS4_STATUS.md` STATUS_BEFORE_SHA256; `docs/P4_CONFIRM_CONFIG.json` CONFIG_SHA256; `docs/P3_COST_INPUTS.json` COST_INPUTS_SHA256; `ofilt/drift/sim_full.py` SIM_MODULE_SHA256; `tests/test_p4_sim_full.py` SIM_TESTS_SHA256; `docs/P4_SIM_SPEC.md` SIM_SPEC_SHA256; `ofilt/drift/confirm_inference.py` INF_MODULE_SHA256; `tests/test_p4_confirm_inference.py` INF_TESTS_SHA256; `docs/P4_CONFIRM_INF_SPEC.md` INF_SPEC_SHA256; `ofilt/drift/confirm_forecast.py` FC_MODULE_SHA256; `tests/test_p4_confirm_forecast.py` FC_TESTS_SHA256; `docs/P4_CONFIRM_FC_SPEC.md` FC_SPEC_SHA256;
+   - `reports/P4_reports/` holds exactly the files of REPORTS_BEFORE, no file of NEW_FILES exists, and NODATA and REGDIR exist and are empty.
+
+   Any difference: STOP.
+
+## b. The kit
+1. By script (verdict line `B CHECK`): KIT holds exactly the files of KIT_FILES, hidden files included; `p4_4b2_P4_CONFIRM_ECON_SPEC.md` has KIT_SPEC_SHA256 and `p4_4b2_STATUS_EDITS.txt` has KIT_EDITS_SHA256. Any difference: STOP.
+2. Read the specification `p4_4b2_P4_CONFIRM_ECON_SPEC.md` in full. It is the item's design.
+
+## c. Reading and the probe
+1. Read, as text, the files of the specification's §1.3. A file read earlier in this session need not be read again if `git` shows it unchanged since; list which files were read in this item and which were not.
+2. The probe (no verdict line; it asserts nothing): `/tmp/p4_4b2_probe.py`, run in REPO under NODATA, with the registry patched as the rules say, and with `tools` on `sys.path` (as `tests/test_p3_1_sesoi.py` does). On `sim_full.simulate(<spec seed> + 8,300,001, Scenario(b=1.0, a2=0.6, delta_cc=1.5), dev_dates=sim_full.dev_calendar()[-900:])`, with 5706's prices scaled as the specification's §6.1 says, it runs `confirm_forecast.run_calls` with the zero-forecast M7 stand-in of §6.1, and prints: the main call's evaluated M3 rows (count, dates, first and last date); the traded prices per ticker and side (min and max, after the price factor); `tools/p3_1_sesoi.costs` on the rows' `px`, per case, with its detail; the same on the unscaled frames (or the exception it raises); and the wall time of each part. Print its output in the report; settle what it shows under "resolve and record" before writing code.
+
+## d. The build
+1. Copy the kit's specification with `cp -p` to `docs/P4_CONFIRM_ECON_SPEC.md`, and check its SHA-256 is KIT_SPEC_SHA256 (verdict line `D1 CHECK`).
+2. Write `ofilt/drift/confirm_economic.py`, then `tests/test_p4_confirm_economic.py`, as the specification says, with your file-editing tool. Scratch scripts on synthetic data are allowed, as `/tmp/p4_4b2_scratch_*.py`, run under NODATA; each is kept and printed in the report with its output.
+3. Run the new test file in REPO:
+
+   `env -u OFILT_RUN_SEALED OFILT_DATA_DIR=<NODATA> bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && python -B -m unittest discover -s tests -p "test_p4_confirm_economic.py" -v'`
+
+   - Tee attempt k to `/tmp/p4_4b2_d3_run<k>.out`, for k = 1, 2 and so on, and keep every attempt. Between attempts, change only the two files of step d.2: never the specification, never an existing file, and never what a test of the specification's §6.2 asserts.
+   - All tests must pass by attempt MAX_ATTEMPTS. If a test can pass only by departing from the specification, or the specification is wrong on a point a test depends on: STOP and say which.
+   - Then run each of `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6` the same way but with `OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data"` (`-p "<module>.py"`), teeing all four to `/tmp/p4_4b2_d3_static.out`.
+   - Then `/tmp/p4_4b2_d3.py` (verdict line `D3 CHECK`) checks: the last attempt has a line starting with NEW_RAN and a line equal to NEW_OK, and no attempt beyond MAX_ATTEMPTS exists; each static run ends with a result line starting `OK` and none shows `FAILED`; the test methods of the new file, read by `ast`, are exactly the 14 names of §6.2, parsed from the copied specification; the tripwires and the ACCESS_LOG absence are as in step a.2, and NODATA is still empty; `git status --porcelain --untracked-files=all` lists exactly the first three files of NEW_FILES, as `??` lines. It prints the SHA-256 and line count of the module and of the test file (the reviewed versions, which step e.3 compares with HEAD's) and the last attempt's run time.
+4. Copy P4-4b1's report (verdict line `D4 CHECK`). The source is `/tmp/p4_4b1.txt`; if it does not exist, STOP. Check: line 1 is P4_4B1_LINE1, line 2 P4_4B1_LINE2, line 3 P4_4B1_LINE3; the last non-empty line is HEAD_BEFORE and the last-but-one P4_4B1_LAST; the report holds the lines `D3 CHECK: True`, `D4 CHECK: True` and `E CHECK: True`, each exactly, as a whole line. Print its SHA-256, byte and line counts, and the number of times line 3 occurs, which the supervisor checks after the commit. Copy it with `cp -p` to `reports/P4_reports/p4_4b1.txt` and check the destination has the source's SHA-256.
+5. Stage 1 of the records (verdict line `D5 CHECK`).
+   - A script reads `p4_4b2_STATUS_EDITS.txt` by the rules in its header, after checking its SHA-256, and applies its STAGE1_EDITS stage-1 edits (EDIT 01 to EDIT 08) in order to `PASS4_STATUS.md` twice, each time from the file as it is: once with each NEW span as written (the undated result), and once with the date of step a.1 in place of the placeholder (the dated result).
+   - These are targeted edits: each OLD text must occur exactly once when its edit is applied, in both passes.
+   - Write both results to temporary files first. Replace `PASS4_STATUS.md` with the dated result only if: the undated result's SHA-256 is STATUS_S1_TEMPLATE; replacing each placeholder of the undated result by the date gives the dated result exactly; and the dated result has STATUS_LINES lines and the nine section headings of the standing prompt, in order. Print the dated result's SHA-256. Keep the undated result for e.1.
+   - Then `git status --porcelain --untracked-files=all` must list exactly ` M PASS4_STATUS.md` and the four files of NEW_FILES as `??` lines.
+
+Any difference in steps d.4 or d.5: STOP, with `PASS4_STATUS.md` unchanged if the failure is in d.5.
+
+## e. Checkpoint
+1. Stage 2 (verdict line `E1 CHECK`): apply the edit FINAL in the same way, to the undated result of d.5 and to `PASS4_STATUS.md`. The undated result's SHA-256 must be STATUS_S2_TEMPLATE; replacing each placeholder of it by the date must give the dated result exactly; and the dated result must have STATUS_LINES lines and the nine headings. Replace `PASS4_STATUS.md` with the dated result and print its SHA-256. The status list of d.5 is otherwise unchanged. Any difference: STOP.
+2. Run in REPO, as P4-4b1's e.2 did, teeing to `/tmp/p4_4b2_e2.out`: the UTC time; then, with the venv activated and `env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data"`, `bash tools/checkpoint.sh` with two arguments, COMMIT_ITEM and a `Co-Authored-By:` trailer naming your own model, in P4-0b's form; then `checkpoint exit:` with its status, the UTC time, and the path of the suite log under `$TMPDIR`. The suite takes longer than the command tool's 600-s limit: start this command in the background with the tool's own option, wait for its completion notice, and run nothing in REPO until then. If the suite fails, checkpoint.sh does not commit: STOP.
+3. By script, after the commit (verdict line `E CHECK`):
+   - the checkpoint exit is 0; its output contains a line starting with SUITE_RAN and the line SUITE_OK, and no `TESTS FAILED`;
+   - HEAD is the commit checkpoint.sh printed, its only parent is HEAD_BEFORE, its subject is `checkpoint: ` followed by COMMIT_ITEM, and its message holds the trailer;
+   - the commit holds exactly COMMIT_FILE_COUNT files: `PASS4_STATUS.md` and the four files of NEW_FILES; `git status --porcelain --untracked-files=all` is empty;
+   - at HEAD: `PASS4_STATUS.md` has the SHA-256 e.1 printed; `docs/P4_CONFIRM_ECON_SPEC.md` has KIT_SPEC_SHA256; `reports/P4_reports/p4_4b1.txt` has the SHA-256 d.4 printed; the module and the test file have the SHA-256 D3 printed;
+   - the tags, `BLIND_FIT_LOG`, `RUN_REGISTRY.jsonl`, the absence of ACCESS_LOG, `PASS3_STATUS.md`, the spec, the configuration, the cost inputs, the three P4-3 files, the three P4-4a files and the three P4-4b1 files are as in step a.2.
+
+   Any difference: STOP.
+
+## f. Report and STOP
+Write `/tmp/p4_4b2.txt` from command output only. It starts with the UTC time and HEAD, then the SHA-256 line of `/tmp/p4_4b2_msg.txt`. It holds: every script in full, with the steps' outputs and every verdict line; the probe and its output; every attempt of step d.3, the static runs, and every scratch script with its output; the module and the test file in full, as `git show HEAD:<path>` prints them, or as the working files if the item stopped earlier; step d.4's source and its checks; the new commit's `git show --stat`; the paths and SHA-256 of the files written under `/tmp`; and the sections "readings" and "deviations and notes". Its last lines repeat the time and HEAD, then `git status --porcelain`, which must be empty. Print the path.
+
+STOP (planned): Isaiah pushes, and uploads `/tmp/p4_4b2.txt` to the supervisor chat. The supervisor reviews it, then gives P4-4c.
+
+=== how each step ran ===
+a.1: date +%F | tee /tmp/p4_4b2_date.out (the local date, 2026-10-11, while UTC was already 2026-10-12); the message saved; the header and NODATA and REGDIR as above
+a.2 (environment part), no Python, so not under env -u: bash /tmp/p4_4b2_env.sh 2>&1 | tee /tmp/p4_4b2_env.out
+a.2, b.1, d.3's check, d.4, d.5, e.1 and e.3, as: ND=$(grep '^- NODATA = ' /tmp/p4_4b2_msg.txt | sed 's/^- NODATA = //'); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4b2_<script>.py' 2>&1 | tee /tmp/p4_4b2_<script>.out
+b.2: the specification read in full with the file-editing tool's reader
+c.1: read in this item, as text: tools/p3_1_sesoi.py lines 1-230 (load_inputs, _segment, factor, dev_table, tick, traded, conforms, half_tick_bp, side_ticks, partial_e, costs, side_ticks_table), tests/test_p3_1_sesoi.py and docs/P3_COST_INPUTS.json in full, PASS3_STATUS.md D2.3 to D2.8, the audit's row O45 and gaps G16 and G17, and the configuration's economic_evaluation; also, by grep, the tool modules' top-level statements (no import-time side effect beyond definitions and sys.path). Not read again: ofilt/drift/confirm_forecast.py, written in this session at P4-4b1, committed at HEAD_BEFORE and pinned at a.2 (FC_MODULE_SHA256)
+c.2, in REPO: ND=<NODATA, read from the message>; env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && python -B /tmp/p4_4b2_probe.py' 2>&1 | tee /tmp/p4_4b2_probe.out
+d.2: the module written with the file-editing tool and edited once before any run (the Flag 4 window filter, reading 9); then d.1; then the test file, edited twice before its first run (a redundant string check removed; a comment's typo)
+d.1, one inline command in REPO (output in /tmp/p4_4b2_d1.out), run after the module was written and before the test file (deviation 1):
+   cd REPO && { cmd="cp -p $HOME/Desktop/FX_Project/files/pass4/p4_4b2_kit/p4_4b2_P4_CONFIRM_ECON_SPEC.md docs/P4_CONFIRM_ECON_SPEC.md"; echo "run: $cmd"; cp -p "$HOME/Desktop/FX_Project/files/pass4/p4_4b2_kit/p4_4b2_P4_CONFIRM_ECON_SPEC.md" docs/P4_CONFIRM_ECON_SPEC.md; exp=$(grep '^- KIT_SPEC_SHA256 = ' /tmp/p4_4b2_msg.txt | sed 's/^- KIT_SPEC_SHA256 = //'); got=$(shasum -a 256 docs/P4_CONFIRM_ECON_SPEC.md | cut -d' ' -f1); echo "docs/P4_CONFIRM_ECON_SPEC.md sha256: expected=$exp actual=$got"; [ "$exp" = "$got" ] && echo "D1 CHECK: True" || echo "D1 CHECK: False"; } 2>&1 | tee /tmp/p4_4b2_d1.out
+d.3 attempt k, in REPO: env -u OFILT_RUN_SEALED OFILT_DATA_DIR=<NODATA> bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && python -B -m unittest discover -s tests -p "test_p4_confirm_economic.py" -v' 2>&1 | tee /tmp/p4_4b2_d3_run<k>.out
+d.3 static runs, in REPO: the same form with OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" and -p "<module>.py" for test_schema, test_sim_b5, test_docs_d3b and test_docs_d6, each preceded by an '=== <module>' line, all teed to /tmp/p4_4b2_d3_static.out
+e.2, one inline command in REPO, started with the command tool's background option (output in /tmp/p4_4b2_e2.out); nothing ran in REPO until its completion notice:
+   cd REPO && { date -u +%FT%TZ; n=$(grep -c '^- COMMIT_ITEM = ' /tmp/p4_4b2_msg.txt); ITEM=$(grep '^- COMMIT_ITEM = ' /tmp/p4_4b2_msg.txt | sed 's/^- COMMIT_ITEM = //'); echo "COMMIT_ITEM lines in /tmp/p4_4b2_msg.txt: $n; item: [$ITEM]"; source "$HOME/venvs/ofilt_p2/bin/activate" && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "$ITEM" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"; echo "checkpoint exit: $?"; date -u +%FT%TZ; echo "suite log (newest ckpt_tests.* under \$TMPDIR): $(ls -t "${TMPDIR:-/tmp}"/ckpt_tests.* | head -n 1)"; } 2>&1 | tee /tmp/p4_4b2_e2.out
+f: bash /tmp/p4_4b2_report.sh (this script), which appends to /tmp/p4_4b2.txt
+
+=== c.1: the file not read again, unchanged since it was written (git log -n 1; git diff --stat HEAD_BEFORE..HEAD) ===
+ofilt/drift/confirm_forecast.py: ff31877 2026-10-11 checkpoint: P4-4b1 (P4-4a accepted; P4Q36; the confirmation module's forecasting rows and their tests)
+lines of git diff --stat ff318775ef05b8266b6d286bd78c4ee0372d2ef0 HEAD for it: 0
+
+=== a.1: output /tmp/p4_4b2_date.out ===
+2026-10-11
+
+=== script /tmp/p4_4b2_common.py (in full) ===
+# P4-4b2 shared helpers. Every expected value is read from /tmp/p4_4b2_msg.txt's list "Expected values" by its label.
+# Reads files as text or bytes; imports no module of ofilt.
+import hashlib
+import os
+import subprocess
+from pathlib import Path
+
+HOME = os.environ["HOME"]
+MSG = Path("/tmp/p4_4b2_msg.txt").read_text(encoding="utf-8")
+FXP = Path(HOME) / "Desktop/FX_Project"
+REPO = FXP / "ofilt_pass1"
+PROMPT = FXP / "files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md"
+KIT = FXP / "files/pass4/p4_4b2_kit"
+KEEP4 = FXP / "files/pass4_tmp_keep"
+_SEC = MSG.split("\n## Expected values\n")[1].split("\n## ")[0].split("\n")
+
+
+def ev(name):
+    hits = [ln for ln in _SEC if ln.startswith(f"- {name} = ")]
+    assert len(hits) == 1, name
+    return hits[0][len(f"- {name} = "):]
+
+
+def evlist(name):
+    return ev(name).split(" ")
+
+
+def sha256_bytes(b):
+    return hashlib.sha256(b).hexdigest()
+
+
+def sha256(p):
+    return sha256_bytes(Path(p).read_bytes())
+
+
+def git(*args, check=True):
+    return subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, check=check)
+
+
+def show(label, expected, actual):
+    ok = expected == actual
+    print(f"{label}: expected={expected!r} actual={actual!r} ok={ok}")
+    return ok
+
+
+def status_lines():
+    return git("status", "--porcelain", "--untracked-files=all").stdout.splitlines()
+
+
+def empty_dir(oks, label):
+    d = Path(ev(label))
+    oks.append(show(f"{label} exists and is empty", (True, []), (d.is_dir(), sorted(os.listdir(d)) if d.is_dir() else None)))
+
+
+def tripwires(oks):
+    """Tags, BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG and NODATA, as in step a.2 (the tree is checked by each step)."""
+    oks.append(show("git tag -l", evlist("TAG_LIST"), git("tag", "-l").stdout.split()))
+    oks.append(show("refs/tags/spec-dev-v1", ev("TAG_OBJECT"), git("rev-parse", "refs/tags/spec-dev-v1").stdout.strip()))
+    oks.append(show("spec-dev-v1^{commit}", ev("TAG_COMMIT"), git("rev-parse", "refs/tags/spec-dev-v1^{commit}").stdout.strip()))
+    bfl = (REPO / "BLIND_FIT_LOG").read_bytes()
+    oks.append(show("BLIND_FIT_LOG sha256", ev("BLIND_FIT_LOG_SHA256"), sha256_bytes(bfl)))
+    oks.append(show("BLIND_FIT_LOG lines", int(ev("BLIND_FIT_LOG_LINES")), bfl.count(b"\n")))
+    oks.append(show("RUN_REGISTRY.jsonl bytes", int(ev("RUN_REGISTRY_BYTES")), (REPO / "RUN_REGISTRY.jsonl").stat().st_size))
+    found = []
+    for d, dirs, files in os.walk(REPO):
+        dirs[:] = [x for x in dirs if not (d == str(REPO) and x == ".git")]
+        found += [os.path.join(d, x) for x in dirs + files if x.startswith("ACCESS_LOG")]
+    oks.append(show("names starting ACCESS_LOG in REPO outside .git", [], found))
+    empty_dir(oks, "NODATA")
+
+
+PINNED = {"PROMPT_SHA256": PROMPT, "SPEC_SHA256": REPO / "spec/analysis_spec_dev_v1.yaml",
+          "PASS3_STATUS_SHA256": REPO / "PASS3_STATUS.md", "STATUS_BEFORE_SHA256": REPO / "PASS4_STATUS.md",
+          "CONFIG_SHA256": REPO / "docs/P4_CONFIRM_CONFIG.json", "COST_INPUTS_SHA256": REPO / "docs/P3_COST_INPUTS.json",
+          "SIM_MODULE_SHA256": REPO / "ofilt/drift/sim_full.py", "SIM_TESTS_SHA256": REPO / "tests/test_p4_sim_full.py",
+          "SIM_SPEC_SHA256": REPO / "docs/P4_SIM_SPEC.md",
+          "INF_MODULE_SHA256": REPO / "ofilt/drift/confirm_inference.py",
+          "INF_TESTS_SHA256": REPO / "tests/test_p4_confirm_inference.py",
+          "INF_SPEC_SHA256": REPO / "docs/P4_CONFIRM_INF_SPEC.md",
+          "FC_MODULE_SHA256": REPO / "ofilt/drift/confirm_forecast.py",
+          "FC_TESTS_SHA256": REPO / "tests/test_p4_confirm_forecast.py",
+          "FC_SPEC_SHA256": REPO / "docs/P4_CONFIRM_FC_SPEC.md"}
+
+
+def pinned(oks, labels):
+    for label in labels:
+        oks.append(show(f"sha256 {PINNED[label].name} ({label})", ev(label), sha256(PINNED[label])))
+
+=== script /tmp/p4_4b2_env.sh (in full) ===
+#!/bin/bash
+# P4-4b2 a.2 (part): OFILT_RUN_SEALED is absent from this session's environment.
+# Runs no Python, so it is not under env -u; it sees the session's environment as is.
+n=$(env | grep -c '^OFILT_RUN_SEALED=')
+echo "env lines starting OFILT_RUN_SEALED=: $n"
+echo "printenv OFILT_RUN_SEALED: [$(printenv OFILT_RUN_SEALED)]"
+if [ -z "${OFILT_RUN_SEALED+set}" ] && [ "$n" = "0" ]; then ok=True; else ok=False; fi
+echo "A_ENV CHECK: $ok"
+
+=== script /tmp/p4_4b2_a2.py (in full) ===
+# P4-4b2 a.2: REPO state, read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import PINNED, REPO, empty_dir, ev, evlist, git, pinned, show, status_lines, tripwires  # noqa: E402
+
+oks = []
+print("date of the acceptance of P4-4b1 and of P4Q37 (a.1):", open("/tmp/p4_4b2_date.out").read().strip())
+oks.append(show("HEAD", ev("HEAD_BEFORE"), git("rev-parse", "HEAD").stdout.strip()))
+oks.append(show("HEAD's parents", [ev("PARENT_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+oks.append(show("git status --porcelain --untracked-files=all", [], status_lines()))
+tripwires(oks)
+empty_dir(oks, "REGDIR")
+pinned(oks, tuple(PINNED))
+oks.append(show("reports/P4_reports/ holds exactly REPORTS_BEFORE", sorted(evlist("REPORTS_BEFORE")),
+                sorted(os.listdir(REPO / "reports/P4_reports"))))
+oks.append(show("files of NEW_FILES that exist", [], [f for f in evlist("NEW_FILES") if os.path.lexists(REPO / f)]))
+print("checks:", len(oks), "passed:", sum(oks))
+print("A CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_b1.py (in full) ===
+# P4-4b2 b.1: the kit, read-only.
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import KIT, ev, evlist, sha256, show  # noqa: E402
+
+oks = []
+print("KIT:", KIT, "| is a directory:", KIT.is_dir())
+oks.append(show("KIT's entries, hidden files included", sorted(evlist("KIT_FILES")),
+                sorted(os.listdir(KIT)) if KIT.is_dir() else None))
+if all(oks):
+    oks.append(show("sha256 p4_4b2_P4_CONFIRM_ECON_SPEC.md", ev("KIT_SPEC_SHA256"), sha256(KIT / "p4_4b2_P4_CONFIRM_ECON_SPEC.md")))
+    oks.append(show("sha256 p4_4b2_STATUS_EDITS.txt", ev("KIT_EDITS_SHA256"), sha256(KIT / "p4_4b2_STATUS_EDITS.txt")))
+    for f in sorted(os.listdir(KIT)):
+        p = KIT / f
+        print(f"{f}: {p.stat().st_size} bytes, {p.read_bytes().count(b'\n')} lines")
+print("checks:", len(oks), "passed:", sum(oks))
+print("B CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_probe.py (in full) ===
+# P4-4b2 c.2: the probe (asserts nothing). On sim_full.simulate(spec seed + 8,300,001, SA, dev_dates = the last 900 dev
+# calendar dates), with 5706's open, close and prev_close multiplied by 0.1 (the specification's §6.1), it runs
+# confirm_forecast.run_calls with the zero-forecast M7 stand-in, and prints the main call's evaluated M3 rows, the
+# traded prices per ticker and side, tools/p3_1_sesoi.costs on the rows' px per case with its detail, and the same on
+# the unscaled frames. The run registry is patched to files under REGDIR first; no data file is read (NODATA).
+import sys
+import time
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev  # noqa: E402
+
+sys.path.insert(0, str(REPO))
+sys.path.insert(0, str(REPO / "tools"))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import p3_1_sesoi as P31  # noqa: E402
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import registry  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift import targets as TG  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+REGDIR = Path(ev("REGDIR"))
+registry.SYNTHETIC_PATH = REGDIR / "probe_synthetic.jsonl"
+registry.REAL_PATH = REGDIR / "probe_real.jsonl"
+print("registry patched:", registry.SYNTHETIC_PATH, "|", registry.REAL_PATH)
+
+
+class ZeroM7(FC.ForecastModel):
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def scaled(df):
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def frame_T(dev, confirm, events):
+    J = pd.concat([dev, confirm], ignore_index=True)
+    J.attrs = {"provenance": B.SYNTHETIC}
+    return TG.add_masks(TG.add_targets(J, SPEC), events, SPEC)
+
+
+SPEC = Spec.load()
+t = time.perf_counter()
+o = SF.simulate(SPEC.seed + 8_300_001, SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5), dev_dates=SF.dev_calendar()[-900:])
+dev_s, conf_s = scaled(o.dev), scaled(o.confirm)
+print(f"simulate and scale: {time.perf_counter() - t:.2f} s | dev attrs keys {list(dev_s.attrs)}")
+t = time.perf_counter()
+calls = CF.run_calls(dev_s, o.events, conf_s, spec=SPEC, factories={"M7": ZeroM7})
+print(f"run_calls: {time.perf_counter() - t:.1f} s | mode {calls.mode} | E0 {calls.E0} | main {calls.main.status} "
+      f"| m7 {calls.m7.status} {calls.m7.reason}")
+ev_main = calls.main.ev
+R = ev_main.loc[ev_main["model"] == "M3"].sort_values(["date", "ticker"], kind="mergesort").reset_index(drop=True)
+R2 = ev_main.loc[ev_main["model"] == "M2"].sort_values(["date", "ticker"], kind="mergesort").reset_index(drop=True)
+print(f"M3 evaluated rows: {len(R)}, dates {R['date'].nunique()}, first {R['date'].min().date()}, last "
+      f"{R['date'].max().date()} | per ticker {R['ticker'].value_counts().sort_index().to_dict()}")
+print("M2 keys equal M3's:", R[["date", "ticker"]].equals(R2[["date", "ticker"]]))
+print("M3 yhat == 0 rows:", int((R["yhat"] == 0).sum()), "| M2:", int((R2["yhat"] == 0).sum()))
+
+t = time.perf_counter()
+T = frame_T(dev_s, conf_s, o.events)
+keys = pd.MultiIndex.from_frame(T[["date", "ticker"]].astype({"ticker": str}))
+pos = keys.get_indexer(pd.MultiIndex.from_frame(R[["date", "ticker"]].astype({"ticker": str})))
+print(f"T built {time.perf_counter() - t:.2f} s | keys of R found in T: {int((pos >= 0).sum())} of {len(R)} | "
+      f"T keys unique: {keys.is_unique}")
+px = T.iloc[pos][["date", "ticker", "open", "close", "beta"]].reset_index(drop=True)
+print("R's y equals T's abn_oc at the keys:", bool(np.array_equal(R["y"].to_numpy(), T["abn_oc"].to_numpy()[pos])))
+inputs = P31.load_inputs()
+print("\n######## traded prices (stored / f) per ticker and side, scaled frames")
+for tkr in sorted(px["ticker"].astype(str).unique()):
+    sub = px.loc[px["ticker"].astype(str) == tkr]
+    for side in P31.SIDES:
+        tp = np.array([P31.traded(np.array([s]), P31.factor(inputs, tkr, d))[0] for d, s in zip(sub["date"], sub[side])])
+        print(f"  {tkr} {side}: min {tp.min():.2f} max {tp.max():.2f} | factor {P31.factor(inputs, tkr, sub['date'].iloc[0])}")
+
+
+def show_costs(label, frame):
+    t0 = time.perf_counter()
+    try:
+        cc = P31.costs(frame, inputs)
+        print(f"\n######## costs on {label}: {time.perf_counter() - t0:.2f} s")
+        for case in P31.CASES:
+            print(f"  {case}: {cc[case]}")
+        print("  beta_bar:", cc["beta_bar"])
+        print("  detail:", cc["detail"])
+    except Exception as e:
+        print(f"\n######## costs on {label}: {time.perf_counter() - t0:.2f} s | EXCEPTION {type(e).__name__}: {e}")
+
+
+show_costs("the scaled px", px)
+Tu = frame_T(o.dev, o.confirm, o.events)
+posu = pd.MultiIndex.from_frame(Tu[["date", "ticker"]].astype({"ticker": str})).get_indexer(
+    pd.MultiIndex.from_frame(R[["date", "ticker"]].astype({"ticker": str})))
+pxu = Tu.iloc[posu][["date", "ticker", "open", "close", "beta"]].reset_index(drop=True)
+print("\nunscaled T: abn_oc at R's keys equals the scaled T's:",
+      bool(np.array_equal(Tu["abn_oc"].to_numpy()[posu], T["abn_oc"].to_numpy()[pos])),
+      "| beta equal:", bool(np.array_equal(pxu["beta"].to_numpy(), px["beta"].to_numpy())))
+for tkr in ("5706",):
+    sub = pxu.loc[pxu["ticker"].astype(str) == tkr]
+    for side in P31.SIDES:
+        tp = np.array([P31.traded(np.array([s]), P31.factor(inputs, tkr, d))[0] for d, s in zip(sub["date"], sub[side])])
+        print(f"  unscaled {tkr} {side}: min {tp.min():.2f} max {tp.max():.2f}")
+show_costs("the unscaled px", pxu)
+print("\nregistry lines written:", sum(1 for _ in open(registry.SYNTHETIC_PATH)), "| real file exists:",
+      registry.REAL_PATH.exists())
+
+=== script /tmp/p4_4b2_d3.py (in full) ===
+# P4-4b2 d.3's check: the attempts, the static runs, the 14 test names, the tripwires and the tree. Read-only.
+import ast
+import glob
+import re
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev, evlist, sha256, show, status_lines, tripwires  # noqa: E402
+
+oks = []
+runs = {int(re.fullmatch(r"/tmp/p4_4b2_d3_run(\d+)\.out", p).group(1)): p for p in glob.glob("/tmp/p4_4b2_d3_run*.out")}
+print("attempts:", sorted(runs))
+oks.append(show("attempts are 1..k with no gap", list(range(1, len(runs) + 1)), sorted(runs)))
+oks.append(show(f"no attempt beyond MAX_ATTEMPTS = {ev('MAX_ATTEMPTS')}", True, max(runs) <= int(ev("MAX_ATTEMPTS"))))
+last = Path(runs[max(runs)]).read_text(encoding="utf-8").splitlines()
+oks.append(show(f"last attempt (run{max(runs)}) has a line starting {ev('NEW_RAN')!r}", True,
+                any(ln.startswith(ev("NEW_RAN")) for ln in last)))
+oks.append(show(f"last attempt has a line equal to {ev('NEW_OK')!r}", True, ev("NEW_OK") in last))
+for k in sorted(runs):
+    txt = Path(runs[k]).read_text(encoding="utf-8").splitlines()
+    print(f"run{k}: " + " | ".join(ln for ln in txt if ln.startswith("Ran ") or ln.startswith("OK")
+                                   or ln.startswith("FAILED")))
+print("last attempt's run time:", [ln for ln in last if ln.startswith("Ran ")])
+
+static = Path("/tmp/p4_4b2_d3_static.out").read_text(encoding="utf-8")
+sections = re.split(r"^=== (\w+)\n", static, flags=re.M)[1:]
+mods = dict(zip(sections[0::2], sections[1::2]))
+oks.append(show("static modules run", ["test_schema", "test_sim_b5", "test_docs_d3b", "test_docs_d6"], list(mods)))
+for m, body in mods.items():
+    ne = [ln for ln in body.splitlines() if ln.strip()]
+    oks.append(show(f"{m}: last line starts OK, and no FAILED", (True, False),
+                    (ne[-1].startswith("OK"), "FAILED" in body)))
+    print(f"  {m}: {ne[-2]} | {ne[-1]}")
+
+spec_text = (REPO / "docs/P4_CONFIRM_ECON_SPEC.md").read_text(encoding="utf-8")
+sec = spec_text.split("\n### 6.2 The 14 tests\n")[1].split("\n## ")[0]
+listed = [m.group(1) for m in re.finditer(r"^\d+\. `(test_\w+)`", sec, flags=re.M)]
+tree = ast.parse((REPO / "tests/test_p4_confirm_economic.py").read_text(encoding="utf-8"))
+methods = [f.name for c in tree.body if isinstance(c, ast.ClassDef) for f in c.body
+           if isinstance(f, ast.FunctionDef) and f.name.startswith("test")]
+print("names listed in §6.2:", len(listed))
+oks.append(show("test methods of the new file = the 14 names of §6.2", sorted(listed), sorted(methods)))
+oks.append(show("§6.2 lists 14 distinct names", 14, len(set(listed))))
+
+tripwires(oks)
+new3 = evlist("NEW_FILES")[:3]
+oks.append(show("git status --porcelain --untracked-files=all", sorted(f"?? {f}" for f in new3), sorted(status_lines())))
+for f in ("ofilt/drift/confirm_economic.py", "tests/test_p4_confirm_economic.py"):
+    p = REPO / f
+    print(f"reviewed version: {f} sha256 {sha256(p)} lines {p.read_bytes().count(b'\n')}")
+print("checks:", len(oks), "passed:", sum(oks))
+print("D3 CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_d4.py (in full) ===
+# P4-4b2 d.4: copy P4-4b1's report to reports/P4_reports/p4_4b1.txt with cp -p, after checking it. The source is
+# /tmp/p4_4b1.txt only. The three verdict lines are matched exactly, as whole lines.
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev, sha256, show  # noqa: E402
+
+oks = []
+src = Path("/tmp/p4_4b1.txt")
+print("source: /tmp/p4_4b1.txt | exists:", src.exists())
+oks.append(show("/tmp/p4_4b1.txt exists", True, src.exists()))
+if src.exists():
+    data = src.read_bytes()
+    ls = data.decode("utf-8").split("\n")
+    if ls and ls[-1] == "":
+        ls.pop()
+    ne = [x for x in ls if x != ""]
+    oks += [show("line 1 (P4_4B1_LINE1)", ev("P4_4B1_LINE1"), ls[0]),
+            show("line 2 (P4_4B1_LINE2)", ev("P4_4B1_LINE2"), ls[1]),
+            show("line 3 (P4_4B1_LINE3)", ev("P4_4B1_LINE3"), ls[2]),
+            show("last non-empty line (HEAD_BEFORE)", ev("HEAD_BEFORE"), ne[-1]),
+            show("last-but-one non-empty line (P4_4B1_LAST)", ev("P4_4B1_LAST"), ne[-2])]
+    for line in ("D3 CHECK: True", "D4 CHECK: True", "E CHECK: True"):
+        oks.append(show(f"whole lines equal to {line!r} (at least one)", True, ls.count(line) >= 1))
+        print(f"    whole lines equal to {line!r}: {ls.count(line)}")
+    h = sha256(src)
+    print(f"P4-4b1 report sha256 {h} | bytes {len(data)} | lines {data.count(b'\n')} | line 3 occurs {ls.count(ls[2])} "
+          f"times  (for the supervisor's check)")
+    if all(oks):
+        dest = REPO / "reports/P4_reports/p4_4b1.txt"
+        cmd = ["cp", "-p", str(src), str(dest)]
+        print("run:", " ".join(cmd))
+        subprocess.run(cmd, check=True)
+        oks.append(show("reports/P4_reports/p4_4b1.txt sha256 = the source's", h, sha256(dest)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("D4 CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_edits.py (in full) ===
+# P4-4b2 d.5 and e.1 helper: read the kit's edits file by the rules in its header, after checking its SHA-256, and
+# apply a list of its edits to a text, with the placeholder kept (date None) or replaced by a date.
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import KIT, PROMPT, ev, sha256  # noqa: E402
+
+EDITS_FILE = KIT / "p4_4b2_STATUS_EDITS.txt"
+MARK = re.compile(r"^@@@ (EDIT \d\d|FINAL) (OLD|NEW|END)$")
+
+
+def read_edits():
+    """(placeholder, {name: (old, new)}) in file order."""
+    assert sha256(EDITS_FILE) == ev("KIT_EDITS_SHA256"), "edits file SHA-256"
+    lines = EDITS_FILE.read_bytes().decode("utf-8").split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    k = 0
+    header = []
+    while not MARK.match(lines[k]):
+        header.append(lines[k])
+        k += 1
+    ph = re.findall(r"each occurrence of the placeholder (@@[A-Z]+@@) is replaced", " ".join(header))
+    assert len(ph) == 1, ph
+    edits = {}
+    while k < len(lines):
+        m = MARK.match(lines[k])
+        assert m and m.group(2) == "OLD", (k, lines[k])
+        name = m.group(1)
+        assert name not in edits, name
+        j = k + 1
+        while not MARK.match(lines[j]):
+            j += 1
+        assert MARK.match(lines[j]).groups() == (name, "NEW"), (j, lines[j])
+        e = j + 1
+        while not MARK.match(lines[e]):
+            e += 1
+        assert MARK.match(lines[e]).groups() == (name, "END"), (e, lines[e])
+        edits[name] = ("\n".join(lines[k + 1:j]), "\n".join(lines[j + 1:e]))
+        k = e + 1
+    return ph[0], edits
+
+
+def apply(text, names, date):
+    """Apply the named edits in order (date None: the placeholder kept). Returns (text or None, log lines)."""
+    ph, edits = read_edits()
+    log = []
+    for name in names:
+        old, new = edits[name]
+        if date is not None:
+            new = new.replace(ph, date)
+        n = text.count(old)
+        log.append(f"{name}: OLD occurs {n} time(s)")
+        if n != 1:
+            return None, log
+        text = text.replace(old, new, 1)
+    return text, log
+
+
+def headings():
+    sec = re.search(r"\*\*PASS4_STATUS\.md\*\* has these sections: (.+?)\. After", PROMPT.read_text(encoding="utf-8"))
+    return ["## " + s.strip() for s in sec.group(1).split(",")]
+
+=== script /tmp/p4_4b2_d5.py (in full) ===
+# P4-4b2 d.5, stage 1 of the records: the STAGE1_EDITS edits (EDIT 01 to EDIT 08) applied twice to PASS4_STATUS.md as
+# it is, undated (the placeholder kept) and dated (the date of step a.1). PASS4_STATUS.md is replaced by the dated
+# result only if the undated result's SHA-256 is STATUS_S1_TEMPLATE, the placeholder replaced in it gives the dated
+# result exactly, and the dated result has STATUS_LINES lines and the standing prompt's nine headings in order.
+import shutil
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev, evlist, sha256, show, status_lines  # noqa: E402
+from p4_4b2_edits import EDITS_FILE, apply, headings, read_edits  # noqa: E402
+
+oks = []
+d = Path("/tmp/p4_4b2_date.out").read_text(encoding="utf-8").strip()
+print("date of step a.1:", d)
+oks.append(show("edits file sha256 (KIT_EDITS_SHA256)", ev("KIT_EDITS_SHA256"), sha256(EDITS_FILE)))
+ph, edits = read_edits()
+print("placeholder:", ph, "| edits in the file:", list(edits))
+n1 = int(ev("STAGE1_EDITS"))
+names = [f"EDIT {i:02d}" for i in range(1, n1 + 1)]
+oks.append(show(f"EDIT 01 to EDIT {n1:02d} and FINAL present, in order", names + ["FINAL"], list(edits)))
+status = REPO / "PASS4_STATUS.md"
+print("PASS4_STATUS.md before, sha256:", sha256(status))
+text = status.read_bytes().decode("utf-8")
+undated, log_u = apply(text, names, None)
+dated, log_d = apply(text, names, d)
+print("undated pass:", "; ".join(log_u))
+print("dated pass:", "; ".join(log_d))
+oks.append(show("every OLD occurs once, both passes", (True, True), (undated is not None, dated is not None)))
+if undated is not None and dated is not None:
+    tu, td = Path("/tmp/p4_4b2_status_s1_undated.md"), Path("/tmp/p4_4b2_status_s1_dated.md")
+    tu.write_bytes(undated.encode("utf-8"))
+    td.write_bytes(dated.encode("utf-8"))
+    oks.append(show("undated result sha256 (STATUS_S1_TEMPLATE)", ev("STATUS_S1_TEMPLATE"), sha256(tu)))
+    oks.append(show("placeholder replaced in the undated result = the dated result", True,
+                    undated.replace(ph, d) == dated))
+    print("placeholders in the undated result:", undated.count(ph))
+    oks.append(show("dated result lines (STATUS_LINES)", int(ev("STATUS_LINES")), td.read_bytes().count(b"\n")))
+    oks.append(show("the nine headings, in order", headings(), [ln for ln in dated.split("\n") if ln.startswith("## ")]))
+    oks.append(show("the standing prompt names nine headings", 9, len(headings())))
+    if all(oks):
+        shutil.copyfile(td, status)
+        print(f"PASS4_STATUS.md replaced by the dated result; dated result SHA-256: {sha256(status)}")
+        oks.append(show("PASS4_STATUS.md = the dated result", sha256(td), sha256(status)))
+    else:
+        print("PASS4_STATUS.md NOT replaced")
+st = status_lines()
+for ln in st:
+    print("  " + ln)
+oks.append(show("status", sorted([" M PASS4_STATUS.md"] + ["?? " + p for p in evlist("NEW_FILES")]), sorted(st)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("D5 CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_e1.py (in full) ===
+# P4-4b2 e.1, stage 2 of the records: the edit FINAL applied to d.5's undated result and to PASS4_STATUS.md (the dated
+# stage-1 result). PASS4_STATUS.md is replaced by the dated stage-2 result only if the undated one's SHA-256 is
+# STATUS_S2_TEMPLATE, the placeholder replaced in it gives the dated one exactly, and the dated one has STATUS_LINES
+# lines and the nine headings.
+import shutil
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev, evlist, sha256, show, status_lines  # noqa: E402
+from p4_4b2_edits import apply, headings, read_edits  # noqa: E402
+
+oks = []
+d = Path("/tmp/p4_4b2_date.out").read_text(encoding="utf-8").strip()
+ph, _ = read_edits()
+status = REPO / "PASS4_STATUS.md"
+print("PASS4_STATUS.md before stage 2, sha256:", sha256(status))
+undated1 = Path("/tmp/p4_4b2_status_s1_undated.md").read_bytes().decode("utf-8")
+undated, log_u = apply(undated1, ["FINAL"], None)
+dated, log_d = apply(status.read_bytes().decode("utf-8"), ["FINAL"], d)
+print("undated pass:", "; ".join(log_u))
+print("dated pass:", "; ".join(log_d))
+oks.append(show("FINAL's OLD occurs once, both passes", (True, True), (undated is not None, dated is not None)))
+if undated is not None and dated is not None:
+    tu, td = Path("/tmp/p4_4b2_status_s2_undated.md"), Path("/tmp/p4_4b2_status_s2_dated.md")
+    tu.write_bytes(undated.encode("utf-8"))
+    td.write_bytes(dated.encode("utf-8"))
+    oks.append(show("undated result sha256 (STATUS_S2_TEMPLATE)", ev("STATUS_S2_TEMPLATE"), sha256(tu)))
+    oks.append(show("placeholder replaced in the undated result = the dated result", True,
+                    undated.replace(ph, d) == dated))
+    oks.append(show("dated result lines (STATUS_LINES)", int(ev("STATUS_LINES")), td.read_bytes().count(b"\n")))
+    oks.append(show("the nine headings, in order", headings(), [ln for ln in dated.split("\n") if ln.startswith("## ")]))
+    if all(oks):
+        shutil.copyfile(td, status)
+        print(f"PASS4_STATUS.md replaced by the dated stage-2 result; its SHA-256: {sha256(status)}")
+        oks.append(show("PASS4_STATUS.md = the dated stage-2 result", sha256(td), sha256(status)))
+    else:
+        print("PASS4_STATUS.md NOT replaced")
+st = status_lines()
+oks.append(show("status as after d.5", sorted([" M PASS4_STATUS.md"] + ["?? " + p for p in evlist("NEW_FILES")]),
+                sorted(st)))
+print("checks:", len(oks), "passed:", sum(oks))
+print("E1 CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_e3.py (in full) ===
+# P4-4b2 e.3, after the commit: the checkpoint's output, the new commit, its files and their SHA-256 at HEAD, the tree,
+# and the tripwires and pinned files as in step a.2. Read-only.
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+sys.path.insert(0, "/tmp")
+from p4_4b2_common import REPO, ev, evlist, git, pinned, sha256_bytes, show, status_lines, tripwires  # noqa: E402
+
+oks = []
+out = Path("/tmp/p4_4b2_e2.out").read_text(encoding="utf-8").splitlines()
+oks.append(show("checkpoint exit", ["checkpoint exit: 0"], [ln for ln in out if ln.startswith("checkpoint exit:")]))
+oks.append(show(f"lines starting '{ev('SUITE_RAN')} '", 1, sum(ln.startswith(ev("SUITE_RAN") + " ") for ln in out)))
+oks.append(show(f"lines equal to '{ev('SUITE_OK')}'", 1, out.count(ev("SUITE_OK"))))
+oks.append(show("'TESTS FAILED' absent", False, any("TESTS FAILED" in ln for ln in out)))
+print("suite:", [ln for ln in out if ln.startswith("Ran ")])
+commits = [ln.split()[1] for ln in out if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+head = git("rev-parse", "HEAD").stdout.strip()
+print("new HEAD:", head)
+oks.append(show("HEAD = the commit checkpoint.sh printed", commits, [head]))
+oks.append(show("HEAD's parents", [ev("HEAD_BEFORE")], git("rev-list", "--parents", "-n", "1", "HEAD").stdout.split()[1:]))
+msg = git("log", "-1", "--format=%B", "HEAD").stdout.rstrip("\n").split("\n")
+print("commit message:")
+for ln in msg:
+    print("  " + ln)
+oks.append(show("subject", "checkpoint: " + ev("COMMIT_ITEM"), msg[0]))
+prev = git("log", "-1", "--format=%B", ev("HEAD_BEFORE")).stdout.split("\n")
+oks.append(show("the trailer, in P4-0b's form (the previous checkpoint's trailer line)",
+                [ln for ln in prev if ln.startswith("Co-Authored-By:")], [ln for ln in msg if ln.startswith("Co-Authored-By:")]))
+files = sorted(x for x in git("show", "--name-only", "--format=", "HEAD").stdout.split("\n") if x)
+oks.append(show("files in the commit", sorted(["PASS4_STATUS.md"] + evlist("NEW_FILES")), files))
+oks.append(show("number of files (COMMIT_FILE_COUNT)", int(ev("COMMIT_FILE_COUNT")), len(files)))
+oks.append(show("git status --porcelain --untracked-files=all", [], status_lines()))
+
+
+def at_head(path):
+    return sha256_bytes(subprocess.run(["git", "-C", str(REPO), "show", f"HEAD:{path}"],
+                                       capture_output=True, check=True).stdout)
+
+
+e1 = re.findall(r"^PASS4_STATUS\.md replaced by the dated stage-2 result; its SHA-256: ([0-9a-f]{64})$",
+                Path("/tmp/p4_4b2_e1.out").read_text(encoding="utf-8"), re.M)
+oks.append(show("PASS4_STATUS.md at HEAD = the SHA-256 e.1 printed", e1, [at_head("PASS4_STATUS.md")]))
+oks.append(show("docs/P4_CONFIRM_ECON_SPEC.md at HEAD (KIT_SPEC_SHA256)", ev("KIT_SPEC_SHA256"),
+                at_head("docs/P4_CONFIRM_ECON_SPEC.md")))
+d4 = re.findall(r"^P4-4b1 report sha256 ([0-9a-f]{64}) ", Path("/tmp/p4_4b2_d4.out").read_text(encoding="utf-8"), re.M)
+oks.append(show("reports/P4_reports/p4_4b1.txt at HEAD = the SHA-256 d.4 printed", d4,
+                [at_head("reports/P4_reports/p4_4b1.txt")]))
+reviewed = dict(re.findall(r"^reviewed version: (\S+) sha256 ([0-9a-f]{64}) lines \d+$",
+                           Path("/tmp/p4_4b2_d3.out").read_text(encoding="utf-8"), re.M))
+for rel in ("ofilt/drift/confirm_economic.py", "tests/test_p4_confirm_economic.py"):
+    oks.append(show(f"{rel} at HEAD = the version D3 printed", reviewed.get(rel), at_head(rel)))
+tripwires(oks)
+pinned(oks, ("PASS3_STATUS_SHA256", "SPEC_SHA256", "CONFIG_SHA256", "COST_INPUTS_SHA256", "SIM_MODULE_SHA256",
+             "SIM_TESTS_SHA256", "SIM_SPEC_SHA256", "INF_MODULE_SHA256", "INF_TESTS_SHA256", "INF_SPEC_SHA256",
+             "FC_MODULE_SHA256", "FC_TESTS_SHA256", "FC_SPEC_SHA256"))
+print("NEW COMMIT:", head)
+print("checks:", len(oks), "passed:", sum(oks))
+print("E CHECK:", all(oks))
+
+=== script /tmp/p4_4b2_report.sh (in full) ===
+#!/bin/bash
+# P4-4b2, f: append the report body and its last lines to /tmp/p4_4b2.txt, whose first three lines (UTC time, HEAD, the
+# SHA-256 line of /tmp/p4_4b2_msg.txt) were written right after the message was saved, before a.2. Command output only.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+PY='ND=$(grep '\''^- NODATA = '\'' /tmp/p4_4b2_msg.txt | sed '\''s/^- NODATA = //'\''); env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$ND" bash -c '\''source "$HOME/venvs/ofilt_p2/bin/activate" && cd /tmp && python -B /tmp/p4_4b2_<script>.py'\'''
+{
+echo
+echo "=== P4-4b2 report ==="
+echo "(lines 1-3 written after a.1's date step and the message's saving, before a.2, by: { date -u +%FT%TZ; git -C REPO rev-parse HEAD; shasum -a 256 /tmp/p4_4b2_msg.txt; } > /tmp/p4_4b2_head.out && cp /tmp/p4_4b2_head.out /tmp/p4_4b2.txt && mkdir /tmp/p4_4b2_nodata /tmp/p4_4b2_registry)"
+cat /tmp/p4_4b2_head.out
+echo
+echo "=== the message (cat /tmp/p4_4b2_msg.txt; saved verbatim from the transcript with the file-editing tool) ==="
+cat /tmp/p4_4b2_msg.txt
+echo
+echo "=== how each step ran ==="
+echo "a.1: date +%F | tee /tmp/p4_4b2_date.out (the local date, 2026-10-11, while UTC was already 2026-10-12); the message saved; the header and NODATA and REGDIR as above"
+echo "a.2 (environment part), no Python, so not under env -u: bash /tmp/p4_4b2_env.sh 2>&1 | tee /tmp/p4_4b2_env.out"
+echo "a.2, b.1, d.3's check, d.4, d.5, e.1 and e.3, as: ${PY} 2>&1 | tee /tmp/p4_4b2_<script>.out"
+echo "b.2: the specification read in full with the file-editing tool's reader"
+echo "c.1: read in this item, as text: tools/p3_1_sesoi.py lines 1-230 (load_inputs, _segment, factor, dev_table, tick, traded, conforms, half_tick_bp, side_ticks, partial_e, costs, side_ticks_table), tests/test_p3_1_sesoi.py and docs/P3_COST_INPUTS.json in full, PASS3_STATUS.md D2.3 to D2.8, the audit's row O45 and gaps G16 and G17, and the configuration's economic_evaluation; also, by grep, the tool modules' top-level statements (no import-time side effect beyond definitions and sys.path). Not read again: ofilt/drift/confirm_forecast.py, written in this session at P4-4b1, committed at HEAD_BEFORE and pinned at a.2 (FC_MODULE_SHA256)"
+echo "c.2, in REPO: ND=<NODATA, read from the message>; env -u OFILT_RUN_SEALED OFILT_DATA_DIR=\"\$ND\" bash -c 'source \"\$HOME/venvs/ofilt_p2/bin/activate\" && python -B /tmp/p4_4b2_probe.py' 2>&1 | tee /tmp/p4_4b2_probe.out"
+echo "d.2: the module written with the file-editing tool and edited once before any run (the Flag 4 window filter, reading 9); then d.1; then the test file, edited twice before its first run (a redundant string check removed; a comment's typo)"
+echo "d.1, one inline command in REPO (output in /tmp/p4_4b2_d1.out), run after the module was written and before the test file (deviation 1):"
+cat <<'EOF'
+   cd REPO && { cmd="cp -p $HOME/Desktop/FX_Project/files/pass4/p4_4b2_kit/p4_4b2_P4_CONFIRM_ECON_SPEC.md docs/P4_CONFIRM_ECON_SPEC.md"; echo "run: $cmd"; cp -p "$HOME/Desktop/FX_Project/files/pass4/p4_4b2_kit/p4_4b2_P4_CONFIRM_ECON_SPEC.md" docs/P4_CONFIRM_ECON_SPEC.md; exp=$(grep '^- KIT_SPEC_SHA256 = ' /tmp/p4_4b2_msg.txt | sed 's/^- KIT_SPEC_SHA256 = //'); got=$(shasum -a 256 docs/P4_CONFIRM_ECON_SPEC.md | cut -d' ' -f1); echo "docs/P4_CONFIRM_ECON_SPEC.md sha256: expected=$exp actual=$got"; [ "$exp" = "$got" ] && echo "D1 CHECK: True" || echo "D1 CHECK: False"; } 2>&1 | tee /tmp/p4_4b2_d1.out
+EOF
+echo "d.3 attempt k, in REPO: env -u OFILT_RUN_SEALED OFILT_DATA_DIR=<NODATA> bash -c 'source \"\$HOME/venvs/ofilt_p2/bin/activate\" && python -B -m unittest discover -s tests -p \"test_p4_confirm_economic.py\" -v' 2>&1 | tee /tmp/p4_4b2_d3_run<k>.out"
+echo "d.3 static runs, in REPO: the same form with OFILT_DATA_DIR=\"\$HOME/Desktop/FX_Project/data\" and -p \"<module>.py\" for test_schema, test_sim_b5, test_docs_d3b and test_docs_d6, each preceded by an '=== <module>' line, all teed to /tmp/p4_4b2_d3_static.out"
+echo "e.2, one inline command in REPO, started with the command tool's background option (output in /tmp/p4_4b2_e2.out); nothing ran in REPO until its completion notice:"
+cat <<'EOF'
+   cd REPO && { date -u +%FT%TZ; n=$(grep -c '^- COMMIT_ITEM = ' /tmp/p4_4b2_msg.txt); ITEM=$(grep '^- COMMIT_ITEM = ' /tmp/p4_4b2_msg.txt | sed 's/^- COMMIT_ITEM = //'); echo "COMMIT_ITEM lines in /tmp/p4_4b2_msg.txt: $n; item: [$ITEM]"; source "$HOME/venvs/ofilt_p2/bin/activate" && env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "$ITEM" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"; echo "checkpoint exit: $?"; date -u +%FT%TZ; echo "suite log (newest ckpt_tests.* under \$TMPDIR): $(ls -t "${TMPDIR:-/tmp}"/ckpt_tests.* | head -n 1)"; } 2>&1 | tee /tmp/p4_4b2_e2.out
+EOF
+echo "f: bash /tmp/p4_4b2_report.sh (this script), which appends to /tmp/p4_4b2.txt"
+echo
+echo "=== c.1: the file not read again, unchanged since it was written (git log -n 1; git diff --stat HEAD_BEFORE..HEAD) ==="
+printf 'ofilt/drift/confirm_forecast.py: '; git -C "$REPO" log --format='%h %ad %s' --date=short -n 1 -- ofilt/drift/confirm_forecast.py
+printf 'lines of git diff --stat ff318775ef05b8266b6d286bd78c4ee0372d2ef0 HEAD for it: '; git -C "$REPO" diff --stat ff318775ef05b8266b6d286bd78c4ee0372d2ef0 HEAD -- ofilt/drift/confirm_forecast.py | wc -l | tr -d ' '
+echo
+echo "=== a.1: output /tmp/p4_4b2_date.out ==="
+cat /tmp/p4_4b2_date.out
+for f in common.py env.sh a2.py b1.py probe.py d3.py d4.py edits.py d5.py e1.py e3.py report.sh; do
+  echo
+  echo "=== script /tmp/p4_4b2_$f (in full) ==="
+  cat "/tmp/p4_4b2_$f"
+done
+for s in env a2 b1 probe d1 d3_run1 d3_static d3 d4 d5 e1 e2 e3; do
+  echo
+  echo "=== output /tmp/p4_4b2_$s.out ==="
+  cat "/tmp/p4_4b2_$s.out"
+done
+echo
+echo "=== verdict lines (the last line of each output that ends with a CHECK verdict) ==="
+for s in env a2 b1 d1 d3 d4 d5 e1 e3; do
+  printf '%s: ' "$s.out"; grep -h -E '^[A-Z0-9_]+ CHECK: (True|False)$' "/tmp/p4_4b2_$s.out" | tail -1 || echo "(no verdict line)"
+done
+echo "(the probe has no verdict line: it asserts nothing)"
+echo
+echo "=== d.4's source and its checks ==="
+grep -h '^source: \|ok=\|^P4-4b1 report sha256\|^run: \|whole lines equal' /tmp/p4_4b2_d4.out
+echo
+echo "=== the module, as git show HEAD:ofilt/drift/confirm_economic.py prints it ==="
+git -C "$REPO" show HEAD:ofilt/drift/confirm_economic.py
+echo
+echo "=== the test file, as git show HEAD:tests/test_p4_confirm_economic.py prints it ==="
+git -C "$REPO" show HEAD:tests/test_p4_confirm_economic.py
+echo
+echo "=== the new commit: git show --stat HEAD ==="
+git -C "$REPO" show --stat HEAD
+echo
+echo "=== files written under /tmp by this item (all start /tmp/p4_4b2; the report itself excluded) ==="
+for f in /tmp/p4_4b2*; do
+  if [ "$f" = /tmp/p4_4b2.txt ]; then continue; fi
+  if [ -d "$f" ]; then
+    echo "directory $f: entries $(ls -A "$f" | wc -l | tr -d ' ')"
+    for g in "$f"/*; do [ -f "$g" ] && echo "  $(shasum -a 256 "$g")  ($(wc -l < "$g" | tr -d ' ') lines)"; done
+  else shasum -a 256 "$f"; fi
+done
+echo "--- under \$TMPDIR: the suite's log (e.2's last line); the test files' temporary folders (the patched registry; test 1's altered copy), created and removed by the tests"
+echo
+echo "=== readings ==="
+echo "Points settled under 'resolve and record' (standing). None changes what a test of §6.2 asserts, a quantity §4 computes, or a rule of the message."
+echo "1. What the probe shows, settled before writing code: with 5706's prices scaled by 0.1 every traded price lies inside its tables (5706 about 1,922 to 5,274 yen, 5711 about 1,633 to 3,654, 5713 about 2,395 to 6,699), and the tool computes all three cases; the primary x_m is 2.0 on every ticker (the impact floor binds) and its share of half ticks above the impact is 0; on the unscaled frames the tool raises ValueError (a 5706 traded price of 31,235 yen above the last bound, 30,000) and, raising as a whole, computes no case, hence the module's case-by-case computation (§3); the main call's M3 and M2 rows have the same keys (2,913 rows, 1,013 dates), no zero forecast, and y equal to T's abn_oc at those keys; run_calls with the zero M7 takes about 4 s."
+echo "2. TICKERS is a literal tuple in the module: the tool takes them from io, which §1.1 forbids, and §1.1's names from confirm_inference do not include its TICKERS."
+echo "3. economic_px raises a private exception for a failed main call or no M3 row, which economic_row turns into the not-estimable entry (§4.1), and ValueError for frames that do not match the calls (§4.1), including calls made in the other mode."
+echo "4. round_trip_bp holds, per case, §3's dict without the rt array and without x_m_by_ticker, which has its own key (§4.2); x_m_by_ticker is, per case, the primary per-ticker averages, the high per-ticker means of the row values, and the low impact for every ticker present (§3)."
+echo "5. A case fails on ValueError only (a price above a table's bound, a date no segment covers); any other exception propagates."
+echo "6. The break-evens use pnl_bp's gross (the cost argument does not enter it); traded_share is the share of rows whose forecast's sign is not 0."
+echo "7. E0 for 'from' is the first date of confirm (as confirm_forecast computes it), written as an ISO date; None in the dev mode."
+echo "8. The non-finite check runs on every float of the entry's plain values, as in the other two modules."
+echo "9. The Flag 4 windows skip the keys starting '_', as the tool does; the module first filtered them as the tickers it knows, which gives the same windows on this file, and was changed to the tool's form before any run."
+echo "10. Tests: test 2 and test 7 load the cost inputs through the tool's load_inputs; test 7 recomputes the per-row round trips with the tool's own helpers (side_ticks_table, half_tick_bp, side_ticks) and costs' formula, since costs returns only means; test 3's six prices sit on the bands of the fine and standard tables (traded 5706 prices 950, 1,200, 2,500 and 4,000); test 11 sets the open of the first evaluated 5706 row to 1e7 in a copy of the confirmation frame; test 12 adds 0.01 to the y_oc of the first evaluated row; test 8 compares beta_bar exactly (the same array, the same order); test 14 checks the imports by ast."
+echo "11. The new file took 12.3 s (§6.1: under 120 s)."
+echo
+echo "=== deviations and notes ==="
+echo "Deviations:"
+echo "1. Step order, as at P4-4b1: the module was written before d.1 copied the specification to docs/P4_CONFIRM_ECON_SPEC.md; the copy came before the test file, the test run and every check. It is byte-identical to the kit (D1 CHECK True); the module does not read it."
+echo "No other deviation."
+echo
+echo "Notes:"
+echo "1. d.3: one attempt, all 14 tests passed (12.3 s)."
+echo "2. No scratch script was used. The probe ran once (about 5 s) and wrote 2 lines to REGDIR's synthetic file; its real file was not created."
+echo "3. d.4 matched the three verdict lines exactly, as whole lines, as the message says ('D4 CHECK: True' occurs twice in P4-4b1's report: in its d4.out and in its verdict-line list)."
+echo "4. The checkpoint ran in the background with the tool's own option, and nothing ran in REPO until its completion notice. The suite took 1212.0 s (P4-4b1's: 1291.2 s)."
+echo "5. The verdict-line list above takes, from each output, the last line that is exactly a CHECK verdict, so that d.4's own check labels (which quote 'CHECK: True') are not listed as verdicts."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} >> /tmp/p4_4b2.txt
+
+=== output /tmp/p4_4b2_env.out ===
+env lines starting OFILT_RUN_SEALED=: 0
+printenv OFILT_RUN_SEALED: []
+A_ENV CHECK: True
+
+=== output /tmp/p4_4b2_a2.out ===
+date of the acceptance of P4-4b1 and of P4Q37 (a.1): 2026-10-11
+HEAD: expected='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' actual='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' ok=True
+HEAD's parents: expected=['5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99'] actual=['5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99'] ok=True
+git status --porcelain --untracked-files=all: expected=[] actual=[] ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+NODATA exists and is empty: expected=(True, []) actual=(True, []) ok=True
+REGDIR exists and is empty: expected=(True, []) actual=(True, []) ok=True
+sha256 PASS4_BUILDER_PROMPT_2026-10-08.md (PROMPT_SHA256): expected='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' actual='96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d' ok=True
+sha256 analysis_spec_dev_v1.yaml (SPEC_SHA256): expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+sha256 PASS3_STATUS.md (PASS3_STATUS_SHA256): expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+sha256 PASS4_STATUS.md (STATUS_BEFORE_SHA256): expected='d88f77739ed88f07fe49b4c7ab6867615548867236050ecb5a57e9ea783dc201' actual='d88f77739ed88f07fe49b4c7ab6867615548867236050ecb5a57e9ea783dc201' ok=True
+sha256 P4_CONFIRM_CONFIG.json (CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+sha256 P3_COST_INPUTS.json (COST_INPUTS_SHA256): expected='a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6' actual='a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6' ok=True
+sha256 sim_full.py (SIM_MODULE_SHA256): expected='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' actual='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' ok=True
+sha256 test_p4_sim_full.py (SIM_TESTS_SHA256): expected='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' actual='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' ok=True
+sha256 P4_SIM_SPEC.md (SIM_SPEC_SHA256): expected='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' actual='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' ok=True
+sha256 confirm_inference.py (INF_MODULE_SHA256): expected='77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1' actual='77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1' ok=True
+sha256 test_p4_confirm_inference.py (INF_TESTS_SHA256): expected='bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026' actual='bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026' ok=True
+sha256 P4_CONFIRM_INF_SPEC.md (INF_SPEC_SHA256): expected='a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65' actual='a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65' ok=True
+sha256 confirm_forecast.py (FC_MODULE_SHA256): expected='b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff' actual='b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff' ok=True
+sha256 test_p4_confirm_forecast.py (FC_TESTS_SHA256): expected='723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a' actual='723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a' ok=True
+sha256 P4_CONFIRM_FC_SPEC.md (FC_SPEC_SHA256): expected='a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6' actual='a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6' ok=True
+reports/P4_reports/ holds exactly REPORTS_BEFORE: expected=['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4p.txt', 'p4_boot.txt'] actual=['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4p.txt', 'p4_boot.txt'] ok=True
+files of NEW_FILES that exist: expected=[] actual=[] ok=True
+checks: 29 passed: 29
+A CHECK: True
+
+=== output /tmp/p4_4b2_b1.out ===
+KIT: /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4b2_kit | is a directory: True
+KIT's entries, hidden files included: expected=['p4_4b2_P4_CONFIRM_ECON_SPEC.md', 'p4_4b2_STATUS_EDITS.txt'] actual=['p4_4b2_P4_CONFIRM_ECON_SPEC.md', 'p4_4b2_STATUS_EDITS.txt'] ok=True
+sha256 p4_4b2_P4_CONFIRM_ECON_SPEC.md: expected='42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785' actual='42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785' ok=True
+sha256 p4_4b2_STATUS_EDITS.txt: expected='84434446d985aee98ecd3ae8e52840fea33668543786c1275f198e7bf6b714d9' actual='84434446d985aee98ecd3ae8e52840fea33668543786c1275f198e7bf6b714d9' ok=True
+p4_4b2_P4_CONFIRM_ECON_SPEC.md: 14207 bytes, 93 lines
+p4_4b2_STATUS_EDITS.txt: 10472 bytes, 63 lines
+checks: 3 passed: 3
+B CHECK: True
+
+=== output /tmp/p4_4b2_probe.out ===
+registry patched: /tmp/p4_4b2_registry/probe_synthetic.jsonl | /tmp/p4_4b2_registry/probe_real.jsonl
+simulate and scale: 0.22 s | dev attrs keys ['provenance', 'part', 'truth']
+run_calls: 3.7 s | mode confirmation | E0 2022-01-04 00:00:00 | main ok | m7 ok None
+M3 evaluated rows: 2913, dates 1013, first 2022-01-04, last 2026-03-05 | per ticker {'5706': 971, '5711': 971, '5713': 971}
+M2 keys equal M3's: True
+M3 yhat == 0 rows: 0 | M2: 0
+T built 0.03 s | keys of R found in T: 2913 of 2913 | T keys unique: True
+R's y equals T's abn_oc at the keys: True
+
+######## traded prices (stored / f) per ticker and side, scaled frames
+  5706 open: min 1921.81 max 5270.22 | factor 1/10
+  5706 close: min 1924.07 max 5273.73 | factor 1/10
+  5711 open: min 1655.26 max 3654.39 | factor 1
+  5711 close: min 1632.74 max 3652.08 | factor 1
+  5713 open: min 2404.04 max 6665.08 | factor 1
+  5713 close: min 2394.86 max 6699.39 | factor 1
+
+######## costs on the scaled px: 0.06 s
+  primary: {'miner_commission': 8.6, 'miner_execution': 4.0, 'hedge_leg': 11.336665152007253, 'short': 0.0, 'mean_rt': 23.936665152007254, 'c_m': 4.3, 'c_h': 4.3, 'x_h': 1.5, 's': 0.0}
+  low: {'miner_commission': 0.0, 'miner_execution': 1.0, 'hedge_leg': 0.9772987200006252, 'short': 0.0, 'mean_rt': 1.9772987200006253, 'c_m': 0.0, 'c_h': 0.0, 'x_h': 0.5, 's': 0.0}
+  high: {'miner_commission': 16.0, 'miner_execution': 21.758147379986532, 'hedge_leg': 31.664478528020258, 'short': 1.0, 'mean_rt': 70.42262590800678, 'c_m': 8.0, 'c_h': 8.0, 'x_h': 8.2, 's': 1.0}
+  beta_bar: 0.9772987200006252
+  detail: {'primary_rows': {'5706': 971, '5711': 971, '5713': 971}, 'primary_xm': {'5706': 2.0, '5711': 2.0, '5713': 2.0}, 'primary_share': {'5706': 0.0, '5711': 0.0, '5713': 0.0}, 'high_xm': {'5706': 12.98222606712197, '5711': 10.565771177956098, '5713': 9.089223824901731}}
+
+unscaled T: abn_oc at R's keys equals the scaled T's: True | beta equal: True
+  unscaled 5706 open: min 19218.10 max 52702.24
+  unscaled 5706 close: min 19240.73 max 52737.33
+
+######## costs on the unscaled px: 0.00 s | EXCEPTION ValueError: traded price 31235.342058734404 exceeds the table's last bound 30000
+
+registry lines written: 2 | real file exists: False
+
+=== output /tmp/p4_4b2_d1.out ===
+run: cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4b2_kit/p4_4b2_P4_CONFIRM_ECON_SPEC.md docs/P4_CONFIRM_ECON_SPEC.md
+docs/P4_CONFIRM_ECON_SPEC.md sha256: expected=42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785 actual=42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+D1 CHECK: True
+
+=== output /tmp/p4_4b2_d3_run1.out ===
+test_break_even_and_difference (test_p4_confirm_economic.TestConfirmEconomic.test_break_even_and_difference) ... ok
+test_cost_case_failure (test_p4_confirm_economic.TestConfirmEconomic.test_cost_case_failure) ... ok
+test_cost_inputs_pin_and_refusal (test_p4_confirm_economic.TestConfirmEconomic.test_cost_inputs_pin_and_refusal) ... ok
+test_dev_mode (test_p4_confirm_economic.TestConfirmEconomic.test_dev_mode) ... ok
+test_entry_schema_and_fill (test_p4_confirm_economic.TestConfirmEconomic.test_entry_schema_and_fill) ... ok
+test_main_call_failed (test_p4_confirm_economic.TestConfirmEconomic.test_main_call_failed) ... ok
+test_mismatched_frames_refused (test_p4_confirm_economic.TestConfirmEconomic.test_mismatched_frames_refused) ... ok
+test_module_source (test_p4_confirm_economic.TestConfirmEconomic.test_module_source) ... ok
+test_net_pnl (test_p4_confirm_economic.TestConfirmEconomic.test_net_pnl) ... ok
+test_pnl_bp (test_p4_confirm_economic.TestConfirmEconomic.test_pnl_bp) ... ok
+test_provenance_pairs_refused (test_p4_confirm_economic.TestConfirmEconomic.test_provenance_pairs_refused) ... ok
+test_round_trips_hand_computation (test_p4_confirm_economic.TestConfirmEconomic.test_round_trips_hand_computation) ... ok
+test_round_trips_match_the_tool (test_p4_confirm_economic.TestConfirmEconomic.test_round_trips_match_the_tool) ... ok
+test_rows_beta_and_prices (test_p4_confirm_economic.TestConfirmEconomic.test_rows_beta_and_prices) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 12.251s
+
+OK
+
+=== output /tmp/p4_4b2_d3_static.out ===
+=== test_schema
+test_allowed (test_schema.TestAllowlist.test_allowed) ... ok
+test_derived_sources (test_schema.TestAllowlist.test_derived_sources) ... ok
+test_every_non_feature_group_member_refused (test_schema.TestAllowlist.test_every_non_feature_group_member_refused) ... ok
+test_unknown_refused (test_schema.TestAllowlist.test_unknown_refused) ... ok
+test_every_panel_column_in_exactly_one_group (test_schema.TestGroups.test_every_panel_column_in_exactly_one_group) ... ok
+test_pairwise_disjoint (test_schema.TestGroups.test_pairwise_disjoint) ... ok
+test_sizes (test_schema.TestGroups.test_sizes) ... ok
+test_unknown_columns_fail_closed (test_schema.TestGroups.test_unknown_columns_fail_closed) ... ok
+test_package_source (test_schema.TestNoPatternColumnSelection.test_package_source) ... ok
+test_pre_open_features_and_m7_unchanged (test_schema.TestP50FeaturePins.test_pre_open_features_and_m7_unchanged) ... ok
+test_derived_values (test_schema.TestSelectFeatures.test_derived_values) ... ok
+test_forbidden_in_production_path (test_schema.TestSelectFeatures.test_forbidden_in_production_path) ... ok
+test_synthetic_column_must_be_supplied (test_schema.TestSelectFeatures.test_synthetic_column_must_be_supplied) ... ok
+test_secondary_family_strings_match_implementation (test_schema.TestSpecConsistency.test_secondary_family_strings_match_implementation) ... ok
+test_spec_columns_are_in_the_right_groups (test_schema.TestSpecConsistency.test_spec_columns_are_in_the_right_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 1.035s
+
+OK
+=== test_sim_b5
+test_identity_map_returns_b_sim_exactly (test_sim_b5.TestDevCalibrated.test_identity_map_returns_b_sim_exactly) ... ok
+test_no_leak_and_recovery_under_bootstrap (test_sim_b5.TestDevCalibrated.test_no_leak_and_recovery_under_bootstrap) ... ok
+test_output_contract (test_sim_b5.TestDevCalibrated.test_output_contract) ... ok
+test_stationary_bootstrap (test_sim_b5.TestDevCalibrated.test_stationary_bootstrap) ... ok
+test_draw_passes_guard_and_contract (test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_keys_orthogonality_span_silence_and_log (test_sim_b5.TestSealedFitMechanics.test_keys_orthogonality_span_silence_and_log) ... ok
+test_real_fit_is_opt_in (test_sim_b5.TestSealedFitMechanics.test_real_fit_is_opt_in) ... ok
+test_refusals_and_guard_intact (test_sim_b5.TestSealedFitMechanics.test_refusals_and_guard_intact) ... ok
+test_design_core_called_from_exactly_two_places (test_sim_b5.TestStatic.test_design_core_called_from_exactly_two_places) ... ok
+test_scanner_catches_bypasses (test_sim_b5.TestStatic.test_scanner_catches_bypasses) ... ok
+test_sealed_fit_ast_containment (test_sim_b5.TestStatic.test_sealed_fit_ast_containment) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.823s
+
+OK (skipped=2)
+=== test_docs_d3b
+test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag) ... ok
+test_tag_semantics_as_implemented (test_docs_d3b.TestP36.test_tag_semantics_as_implemented) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.132s
+
+OK
+=== test_docs_d6
+test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_repo_claims (test_docs_d6.TestProjectSetup.test_repo_claims) ... ok
+test_restored_byte_for_byte (test_docs_d6.TestProjectSetup.test_restored_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.032s
+
+OK (skipped=1)
+
+=== output /tmp/p4_4b2_d3.out ===
+attempts: [1]
+attempts are 1..k with no gap: expected=[1] actual=[1] ok=True
+no attempt beyond MAX_ATTEMPTS = 8: expected=True actual=True ok=True
+last attempt (run1) has a line starting 'Ran 14 tests': expected=True actual=True ok=True
+last attempt has a line equal to 'OK': expected=True actual=True ok=True
+run1: Ran 14 tests in 12.251s | OK
+last attempt's run time: ['Ran 14 tests in 12.251s']
+static modules run: expected=['test_schema', 'test_sim_b5', 'test_docs_d3b', 'test_docs_d6'] actual=['test_schema', 'test_sim_b5', 'test_docs_d3b', 'test_docs_d6'] ok=True
+test_schema: last line starts OK, and no FAILED: expected=(True, False) actual=(True, False) ok=True
+  test_schema: Ran 15 tests in 1.035s | OK
+test_sim_b5: last line starts OK, and no FAILED: expected=(True, False) actual=(True, False) ok=True
+  test_sim_b5: Ran 12 tests in 1.823s | OK (skipped=2)
+test_docs_d3b: last line starts OK, and no FAILED: expected=(True, False) actual=(True, False) ok=True
+  test_docs_d3b: Ran 2 tests in 0.132s | OK
+test_docs_d6: last line starts OK, and no FAILED: expected=(True, False) actual=(True, False) ok=True
+  test_docs_d6: Ran 3 tests in 0.032s | OK (skipped=1)
+names listed in §6.2: 14
+test methods of the new file = the 14 names of §6.2: expected=['test_break_even_and_difference', 'test_cost_case_failure', 'test_cost_inputs_pin_and_refusal', 'test_dev_mode', 'test_entry_schema_and_fill', 'test_main_call_failed', 'test_mismatched_frames_refused', 'test_module_source', 'test_net_pnl', 'test_pnl_bp', 'test_provenance_pairs_refused', 'test_round_trips_hand_computation', 'test_round_trips_match_the_tool', 'test_rows_beta_and_prices'] actual=['test_break_even_and_difference', 'test_cost_case_failure', 'test_cost_inputs_pin_and_refusal', 'test_dev_mode', 'test_entry_schema_and_fill', 'test_main_call_failed', 'test_mismatched_frames_refused', 'test_module_source', 'test_net_pnl', 'test_pnl_bp', 'test_provenance_pairs_refused', 'test_round_trips_hand_computation', 'test_round_trips_match_the_tool', 'test_rows_beta_and_prices'] ok=True
+§6.2 lists 14 distinct names: expected=14 actual=14 ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+NODATA exists and is empty: expected=(True, []) actual=(True, []) ok=True
+git status --porcelain --untracked-files=all: expected=['?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? tests/test_p4_confirm_economic.py'] actual=['?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? tests/test_p4_confirm_economic.py'] ok=True
+reviewed version: ofilt/drift/confirm_economic.py sha256 caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73 lines 306
+reviewed version: tests/test_p4_confirm_economic.py sha256 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da lines 418
+checks: 20 passed: 20
+D3 CHECK: True
+
+=== output /tmp/p4_4b2_d4.out ===
+source: /tmp/p4_4b1.txt | exists: True
+/tmp/p4_4b1.txt exists: expected=True actual=True ok=True
+line 1 (P4_4B1_LINE1): expected='2026-10-11T22:42:45Z' actual='2026-10-11T22:42:45Z' ok=True
+line 2 (P4_4B1_LINE2): expected='5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99' actual='5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99' ok=True
+line 3 (P4_4B1_LINE3): expected='118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6  /tmp/p4_4b1_msg.txt' actual='118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6  /tmp/p4_4b1_msg.txt' ok=True
+last non-empty line (HEAD_BEFORE): expected='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' actual='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' ok=True
+last-but-one non-empty line (P4_4B1_LAST): expected='2026-10-12T00:39:21Z' actual='2026-10-12T00:39:21Z' ok=True
+whole lines equal to 'D3 CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'D3 CHECK: True': 1
+whole lines equal to 'D4 CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'D4 CHECK: True': 2
+whole lines equal to 'E CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'E CHECK: True': 1
+P4-4b1 report sha256 16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039 | bytes 150368 | lines 2186 | line 3 occurs 3 times  (for the supervisor's check)
+run: cp -p /tmp/p4_4b1.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_4b1.txt
+reports/P4_reports/p4_4b1.txt sha256 = the source's: expected='16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039' actual='16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039' ok=True
+checks: 10 passed: 10
+D4 CHECK: True
+
+=== output /tmp/p4_4b2_d5.out ===
+date of step a.1: 2026-10-11
+edits file sha256 (KIT_EDITS_SHA256): expected='84434446d985aee98ecd3ae8e52840fea33668543786c1275f198e7bf6b714d9' actual='84434446d985aee98ecd3ae8e52840fea33668543786c1275f198e7bf6b714d9' ok=True
+placeholder: @@DATE@@ | edits in the file: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'FINAL']
+EDIT 01 to EDIT 08 and FINAL present, in order: expected=['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'FINAL'] actual=['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'EDIT 08', 'FINAL'] ok=True
+PASS4_STATUS.md before, sha256: d88f77739ed88f07fe49b4c7ab6867615548867236050ecb5a57e9ea783dc201
+undated pass: EDIT 01: OLD occurs 1 time(s); EDIT 02: OLD occurs 1 time(s); EDIT 03: OLD occurs 1 time(s); EDIT 04: OLD occurs 1 time(s); EDIT 05: OLD occurs 1 time(s); EDIT 06: OLD occurs 1 time(s); EDIT 07: OLD occurs 1 time(s); EDIT 08: OLD occurs 1 time(s)
+dated pass: EDIT 01: OLD occurs 1 time(s); EDIT 02: OLD occurs 1 time(s); EDIT 03: OLD occurs 1 time(s); EDIT 04: OLD occurs 1 time(s); EDIT 05: OLD occurs 1 time(s); EDIT 06: OLD occurs 1 time(s); EDIT 07: OLD occurs 1 time(s); EDIT 08: OLD occurs 1 time(s)
+every OLD occurs once, both passes: expected=(True, True) actual=(True, True) ok=True
+undated result sha256 (STATUS_S1_TEMPLATE): expected='daddab3ea9dd247474dc38ae68befdf565326f0f2dda83beefa7d21d61699bfd' actual='daddab3ea9dd247474dc38ae68befdf565326f0f2dda83beefa7d21d61699bfd' ok=True
+placeholder replaced in the undated result = the dated result: expected=True actual=True ok=True
+placeholders in the undated result: 3
+dated result lines (STATUS_LINES): expected=238 actual=238 ok=True
+the nine headings, in order: expected=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] actual=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] ok=True
+the standing prompt names nine headings: expected=9 actual=9 ok=True
+PASS4_STATUS.md replaced by the dated result; dated result SHA-256: c53e622889afd5e570afb20b79c39a462cd670f8e4da2bcfe79644080eb7baae
+PASS4_STATUS.md = the dated result: expected='c53e622889afd5e570afb20b79c39a462cd670f8e4da2bcfe79644080eb7baae' actual='c53e622889afd5e570afb20b79c39a462cd670f8e4da2bcfe79644080eb7baae' ok=True
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_ECON_SPEC.md
+  ?? ofilt/drift/confirm_economic.py
+  ?? reports/P4_reports/p4_4b1.txt
+  ?? tests/test_p4_confirm_economic.py
+status: expected=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? reports/P4_reports/p4_4b1.txt', '?? tests/test_p4_confirm_economic.py'] actual=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? reports/P4_reports/p4_4b1.txt', '?? tests/test_p4_confirm_economic.py'] ok=True
+checks: 10 passed: 10
+D5 CHECK: True
+
+=== output /tmp/p4_4b2_e1.out ===
+PASS4_STATUS.md before stage 2, sha256: c53e622889afd5e570afb20b79c39a462cd670f8e4da2bcfe79644080eb7baae
+undated pass: FINAL: OLD occurs 1 time(s)
+dated pass: FINAL: OLD occurs 1 time(s)
+FINAL's OLD occurs once, both passes: expected=(True, True) actual=(True, True) ok=True
+undated result sha256 (STATUS_S2_TEMPLATE): expected='e41528f3bb8e5e0d2d45b89956a6ab5df65e90dbcd0f192c8c1a1964970145c6' actual='e41528f3bb8e5e0d2d45b89956a6ab5df65e90dbcd0f192c8c1a1964970145c6' ok=True
+placeholder replaced in the undated result = the dated result: expected=True actual=True ok=True
+dated result lines (STATUS_LINES): expected=238 actual=238 ok=True
+the nine headings, in order: expected=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] actual=['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list'] ok=True
+PASS4_STATUS.md replaced by the dated stage-2 result; its SHA-256: 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264
+PASS4_STATUS.md = the dated stage-2 result: expected='021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264' actual='021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264' ok=True
+status as after d.5: expected=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? reports/P4_reports/p4_4b1.txt', '?? tests/test_p4_confirm_economic.py'] actual=[' M PASS4_STATUS.md', '?? docs/P4_CONFIRM_ECON_SPEC.md', '?? ofilt/drift/confirm_economic.py', '?? reports/P4_reports/p4_4b1.txt', '?? tests/test_p4_confirm_economic.py'] ok=True
+checks: 7 passed: 7
+E1 CHECK: True
+
+=== output /tmp/p4_4b2_e2.out ===
+2026-10-12T01:14:01Z
+COMMIT_ITEM lines in /tmp/p4_4b2_msg.txt: 1; item: [P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)]
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 4140261b7642e63ecc50b9f9c3f8b067be6a3b808733802155ca3c52e3795265
+before suite: git status --porcelain
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_ECON_SPEC.md
+?? ofilt/drift/confirm_economic.py
+?? reports/P4_reports/p4_4b1.txt
+?? tests/test_p4_confirm_economic.py
+----------------------------------------------------------------------
+Ran 359 tests in 1212.043s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_ECON_SPEC.md
+?? ofilt/drift/confirm_economic.py
+?? reports/P4_reports/p4_4b1.txt
+?? tests/test_p4_confirm_economic.py
+commit d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+checkpoint exit: 0
+2026-10-12T01:34:16Z
+suite log (newest ckpt_tests.* under $TMPDIR): /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.SE10Z3
+
+=== output /tmp/p4_4b2_e3.out ===
+checkpoint exit: expected=['checkpoint exit: 0'] actual=['checkpoint exit: 0'] ok=True
+lines starting 'Ran 359 tests ': expected=1 actual=1 ok=True
+lines equal to 'OK (skipped=6)': expected=1 actual=1 ok=True
+'TESTS FAILED' absent: expected=False actual=False ok=True
+suite: ['Ran 359 tests in 1212.043s']
+new HEAD: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+HEAD = the commit checkpoint.sh printed: expected=['d4253b87594c234ea6147e0fe0fa55c47b52eb6d'] actual=['d4253b87594c234ea6147e0fe0fa55c47b52eb6d'] ok=True
+HEAD's parents: expected=['ff318775ef05b8266b6d286bd78c4ee0372d2ef0'] actual=['ff318775ef05b8266b6d286bd78c4ee0372d2ef0'] ok=True
+commit message:
+  checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)
+  
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+subject: expected="checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)" actual="checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)" ok=True
+the trailer, in P4-0b's form (the previous checkpoint's trailer line): expected=['Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'] actual=['Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>'] ok=True
+files in the commit: expected=['PASS4_STATUS.md', 'docs/P4_CONFIRM_ECON_SPEC.md', 'ofilt/drift/confirm_economic.py', 'reports/P4_reports/p4_4b1.txt', 'tests/test_p4_confirm_economic.py'] actual=['PASS4_STATUS.md', 'docs/P4_CONFIRM_ECON_SPEC.md', 'ofilt/drift/confirm_economic.py', 'reports/P4_reports/p4_4b1.txt', 'tests/test_p4_confirm_economic.py'] ok=True
+number of files (COMMIT_FILE_COUNT): expected=5 actual=5 ok=True
+git status --porcelain --untracked-files=all: expected=[] actual=[] ok=True
+PASS4_STATUS.md at HEAD = the SHA-256 e.1 printed: expected=['021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264'] actual=['021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264'] ok=True
+docs/P4_CONFIRM_ECON_SPEC.md at HEAD (KIT_SPEC_SHA256): expected='42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785' actual='42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785' ok=True
+reports/P4_reports/p4_4b1.txt at HEAD = the SHA-256 d.4 printed: expected=['16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039'] actual=['16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039'] ok=True
+ofilt/drift/confirm_economic.py at HEAD = the version D3 printed: expected='caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73' actual='caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73' ok=True
+tests/test_p4_confirm_economic.py at HEAD = the version D3 printed: expected='7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da' actual='7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da' ok=True
+git tag -l: expected=['pass1-final', 'spec-dev-v1'] actual=['pass1-final', 'spec-dev-v1'] ok=True
+refs/tags/spec-dev-v1: expected='cee3b49e81d16f1f32e546cac9524b209ac1e493' actual='cee3b49e81d16f1f32e546cac9524b209ac1e493' ok=True
+spec-dev-v1^{commit}: expected='f5271c03481b7514a1ec4b7e739fb85fbce8a774' actual='f5271c03481b7514a1ec4b7e739fb85fbce8a774' ok=True
+BLIND_FIT_LOG sha256: expected='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' actual='0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383' ok=True
+BLIND_FIT_LOG lines: expected=7 actual=7 ok=True
+RUN_REGISTRY.jsonl bytes: expected=0 actual=0 ok=True
+names starting ACCESS_LOG in REPO outside .git: expected=[] actual=[] ok=True
+NODATA exists and is empty: expected=(True, []) actual=(True, []) ok=True
+sha256 PASS3_STATUS.md (PASS3_STATUS_SHA256): expected='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' actual='b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9' ok=True
+sha256 analysis_spec_dev_v1.yaml (SPEC_SHA256): expected='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' actual='feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26' ok=True
+sha256 P4_CONFIRM_CONFIG.json (CONFIG_SHA256): expected='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' actual='5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd' ok=True
+sha256 P3_COST_INPUTS.json (COST_INPUTS_SHA256): expected='a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6' actual='a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6' ok=True
+sha256 sim_full.py (SIM_MODULE_SHA256): expected='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' actual='ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769' ok=True
+sha256 test_p4_sim_full.py (SIM_TESTS_SHA256): expected='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' actual='50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a' ok=True
+sha256 P4_SIM_SPEC.md (SIM_SPEC_SHA256): expected='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' actual='972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4' ok=True
+sha256 confirm_inference.py (INF_MODULE_SHA256): expected='77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1' actual='77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1' ok=True
+sha256 test_p4_confirm_inference.py (INF_TESTS_SHA256): expected='bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026' actual='bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026' ok=True
+sha256 P4_CONFIRM_INF_SPEC.md (INF_SPEC_SHA256): expected='a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65' actual='a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65' ok=True
+sha256 confirm_forecast.py (FC_MODULE_SHA256): expected='b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff' actual='b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff' ok=True
+sha256 test_p4_confirm_forecast.py (FC_TESTS_SHA256): expected='723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a' actual='723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a' ok=True
+sha256 P4_CONFIRM_FC_SPEC.md (FC_SPEC_SHA256): expected='a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6' actual='a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6' ok=True
+NEW COMMIT: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+checks: 37 passed: 37
+E CHECK: True
+
+=== verdict lines (the last line of each output that ends with a CHECK verdict) ===
+env.out: A_ENV CHECK: True
+a2.out: A CHECK: True
+b1.out: B CHECK: True
+d1.out: D1 CHECK: True
+d3.out: D3 CHECK: True
+d4.out: D4 CHECK: True
+d5.out: D5 CHECK: True
+e1.out: E1 CHECK: True
+e3.out: E CHECK: True
+(the probe has no verdict line: it asserts nothing)
+
+=== d.4's source and its checks ===
+source: /tmp/p4_4b1.txt | exists: True
+/tmp/p4_4b1.txt exists: expected=True actual=True ok=True
+line 1 (P4_4B1_LINE1): expected='2026-10-11T22:42:45Z' actual='2026-10-11T22:42:45Z' ok=True
+line 2 (P4_4B1_LINE2): expected='5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99' actual='5bf3b318fb7591659c9d4f3d1ff24a9e7bf9bc99' ok=True
+line 3 (P4_4B1_LINE3): expected='118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6  /tmp/p4_4b1_msg.txt' actual='118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6  /tmp/p4_4b1_msg.txt' ok=True
+last non-empty line (HEAD_BEFORE): expected='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' actual='ff318775ef05b8266b6d286bd78c4ee0372d2ef0' ok=True
+last-but-one non-empty line (P4_4B1_LAST): expected='2026-10-12T00:39:21Z' actual='2026-10-12T00:39:21Z' ok=True
+whole lines equal to 'D3 CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'D3 CHECK: True': 1
+whole lines equal to 'D4 CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'D4 CHECK: True': 2
+whole lines equal to 'E CHECK: True' (at least one): expected=True actual=True ok=True
+    whole lines equal to 'E CHECK: True': 1
+P4-4b1 report sha256 16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039 | bytes 150368 | lines 2186 | line 3 occurs 3 times  (for the supervisor's check)
+run: cp -p /tmp/p4_4b1.txt /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P4_reports/p4_4b1.txt
+reports/P4_reports/p4_4b1.txt sha256 = the source's: expected='16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039' actual='16490057a4ab2bef40260134279173e264c5811b1ada63ae7f08bd1e0b54a039' ok=True
+
+=== the module, as git show HEAD:ofilt/drift/confirm_economic.py prints it ===
+"""The confirmation module, the economic evaluation (P4-4b2; P4Q37), as docs/P4_CONFIRM_ECON_SPEC.md (version 1) specifies.
+
+`economic_row` computes row O45 from the main forecast call of confirm_forecast.run_calls (M3 and M2): the break-even
+of each (the mean gross P&L per name-day, in bp, of the every-day, beta-hedged, open-to-close strategy that trades the
+sign of the forecast), their difference, and the mean net P&L under the primary, low and high round trips of D2.3 to
+D2.5, with each row's own beta and own prices (D2.8, P4Q24, P4Q25). The round trips re-implement the cost arithmetic of
+the P3-1 SESOI tool operation for operation, each case on its own, so that one case's failure leaves the others.
+`fill` writes the entry into the document in place of its pending O45. The module reads one file besides the spec
+and the configuration, the cost inputs, whose SHA-256 it pins; it writes no file and draws no random number.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+from fractions import Fraction
+from typing import Any
+
+import numpy as np
+import pandas as pd
+
+from . import blind, targets
+from .confirm_forecast import Calls, _check_inputs
+from .confirm_inference import ITEM_OF, _plain, load_config
+from .spec import REPO_ROOT, Spec
+
+COST_INPUTS_PATH = REPO_ROOT / "docs" / "P3_COST_INPUTS.json"
+COST_INPUTS_SHA256 = "a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6"
+CASES = ("primary", "low", "high")
+MODELS = ("M3", "M2")
+TICKERS = ("5706", "5711", "5713")
+SIDES = ("open", "close")
+CASE_KEYS = ("notional_jpy", "commission_miners_bp", "commission_1306_bp", "impact_miners_bp", "impact_1306_bp",
+             "short_cost_per_day_bp", "half_tick_1306_bp")
+REQUIRED_KEYS = ("decided",) + CASE_KEYS + ("price_factor", "tick_tables", "dev_table", "primary_table",
+                                            "flag4_windows", "sources")
+PX_COLUMNS = ("date", "ticker", "open", "close", "beta")
+ROW_ID = "O45"
+
+
+# ------------------------------------------------------------------ the cost inputs
+def check_cost_inputs(obj) -> None:
+    """ValueError if a key the P3-1 tool requires is missing, or a case of a case-valued key, or a ticker."""
+    missing = [k for k in REQUIRED_KEYS if k not in obj]
+    missing += [f"{k}.{c}" for k in CASE_KEYS if k in obj for c in CASES if c not in obj[k]]
+    for k in ("price_factor", "dev_table"):
+        missing += [f"{k}.{t}" for t in TICKERS if k in obj and t not in obj[k]]
+    missing += [f"primary_table.{t}" for t in TICKERS if "primary_table" in obj and t not in obj["primary_table"]]
+    if missing:
+        raise ValueError(f"the cost inputs lack key(s) {missing}")
+
+
+def load_cost_inputs(path=None) -> dict:
+    """The cost inputs' decoded content; ValueError unless their SHA-256 is COST_INPUTS_SHA256 and no key is missing."""
+    p = COST_INPUTS_PATH if path is None else type(COST_INPUTS_PATH)(path)
+    data = p.read_bytes()
+    digest = hashlib.sha256(data).hexdigest()
+    if digest != COST_INPUTS_SHA256:
+        raise ValueError(f"cost inputs {p} have SHA-256 {digest}, not {COST_INPUTS_SHA256}")
+    obj = json.loads(data.decode("utf-8"))
+    check_cost_inputs(obj)
+    return obj
+
+
+# ------------------------------------------------------------------ the tool's helpers, re-implemented
+def _segment(segments: list, date: pd.Timestamp, field: str):
+    """Value of the last segment whose start (inclusive; None = -inf) is on or before date."""
+    val = None
+    for s in segments:
+        if s["start"] is None or pd.Timestamp(s["start"]) <= date:
+            val = s[field]
+    if val is None:
+        raise ValueError(f"no segment covers {date.date()}")
+    return val
+
+
+def _factor(inputs: dict, ticker: str, date) -> Fraction:
+    return Fraction(_segment(inputs["price_factor"][ticker], pd.Timestamp(date), "f"))
+
+
+def _dev_table(inputs: dict, ticker: str, date) -> str:
+    return _segment(inputs["dev_table"][ticker], pd.Timestamp(date), "table")
+
+
+def _tick(rows: list, price: float) -> float:
+    """Tick of a traded price under a table of [inclusive upper bound, tick] rows; ValueError above the last bound."""
+    for bound, t in rows:
+        if price <= bound:
+            return float(t)
+    raise ValueError(f"traded price {price} exceeds the table's last bound {rows[-1][0]}")
+
+
+def _traded(stored: np.ndarray, f: Fraction) -> np.ndarray:
+    """Traded price = stored / f."""
+    return np.asarray(stored, dtype=float) * f.denominator / f.numerator
+
+
+def _half_tick_bp(price: np.ndarray, t: np.ndarray) -> np.ndarray:
+    return 1e4 * 0.5 * np.asarray(t, dtype=float) / np.asarray(price, dtype=float)
+
+
+def _side_ticks(px: pd.DataFrame, inputs: dict, table: str | None) -> dict:
+    """Per side: (traded price, tick, above-bound flag) for each row; table None = the row's dev table."""
+    tables = inputs["tick_tables"]
+    out = {}
+    for side in SIDES:
+        p = np.empty(len(px))
+        tk = np.empty(len(px))
+        above = np.zeros(len(px), dtype=bool)
+        for i, (d, tkr, s) in enumerate(zip(px["date"], px["ticker"].astype(str), px[side].to_numpy(float))):
+            p[i] = _traded(np.array([s]), _factor(inputs, tkr, d))[0]
+            rows = tables[_dev_table(inputs, tkr, d) if table is None else table]["rows"]
+            try:
+                tk[i] = _tick(rows, p[i])
+            except ValueError:
+                tk[i], above[i] = np.nan, True
+        out[side] = (p, tk, above)
+    return out
+
+
+def _side_ticks_table(px: pd.DataFrame, inputs: dict, table_by_ticker: dict, side: str) -> tuple:
+    """(traded price, tick) of one side under a per-ticker table name (the primary table); ValueError above a bound."""
+    tables = inputs["tick_tables"]
+    p = np.empty(len(px))
+    tk = np.empty(len(px))
+    for i, (d, t, s) in enumerate(zip(px["date"], px["ticker"].astype(str), px[side].to_numpy(float))):
+        p[i] = _traded(np.array([s]), _factor(inputs, t, d))[0]
+        tk[i] = _tick(tables[table_by_ticker[t]]["rows"], p[i])
+    return p, tk
+
+
+# ------------------------------------------------------------------ §3: the round trips
+def _one_case(case: str, px: pd.DataFrame, inputs: dict, tk: np.ndarray, beta: np.ndarray, bbar: float,
+              win: np.ndarray) -> dict:
+    c_m, c_h = float(inputs["commission_miners_bp"][case]), float(inputs["commission_1306_bp"][case])
+    imp_m, imp_h = float(inputs["impact_miners_bp"][case]), float(inputs["impact_1306_bp"][case])
+    s = float(inputs["short_cost_per_day_bp"][case])
+    ht_h = inputs["half_tick_1306_bp"][case]
+    if case == "primary":
+        prim = {side: _side_ticks_table(px, inputs, inputs["primary_table"], side) for side in SIDES}
+        x_side = {side: np.maximum(imp_m, _half_tick_bp(*prim[side])) for side in SIDES}
+        by_ticker = {}
+        for t in sorted(set(tk)):
+            use = (tk == t) & ~win
+            by_ticker[t] = float(np.mean(np.r_[x_side["open"][use], x_side["close"][use]]))
+        x_m = np.array([by_ticker[t] for t in tk])
+        x_h = max(imp_h, float(ht_h))
+    elif case == "low":
+        x_m = np.full(len(px), imp_m)
+        x_h = imp_h
+        by_ticker = {t: imp_m for t in sorted(set(tk))}
+    else:
+        st = _side_ticks(px, inputs, None)
+        if any(st[side][2].any() for side in SIDES):
+            raise ValueError("a traded price exceeds its dev table's last bound")
+        x_m = imp_m + 0.5 * (_half_tick_bp(st["open"][0], st["open"][1]) + _half_tick_bp(st["close"][0], st["close"][1]))
+        x_h = imp_h + float(ht_h)
+        by_ticker = {t: float(x_m[tk == t].mean()) for t in sorted(set(tk))}
+    rt = 2 * (c_m + x_m) + beta * 2 * (c_h + x_h) + s
+    return dict(rt=rt, miner_commission=2 * c_m, miner_execution=float(np.mean(2 * x_m)),
+                hedge_leg=bbar * 2 * (c_h + x_h), short=s, mean_rt=float(np.mean(rt)),
+                c_m=c_m, c_h=c_h, x_h=x_h, s=s, x_m_by_ticker=by_ticker)
+
+
+def round_trips(px: pd.DataFrame, inputs: dict) -> dict:
+    """Round trips per case on px (date, ticker, open, close, beta), in bp, as the P3-1 tool's `costs` computes them;
+    a case that raises ValueError is returned as {"error": ...} and the others are computed."""
+    tk = px["ticker"].astype(str).to_numpy()
+    beta = px["beta"].to_numpy(float)
+    bbar = float(beta.mean())
+    win = np.zeros(len(px), dtype=bool)
+    for t, w in ((t, w) for t, w in inputs["flag4_windows"].items() if not t.startswith("_")):
+        win |= (tk == t) & (px["date"] < pd.Timestamp(w["before"])).to_numpy()
+    out: dict = {}
+    for case in CASES:
+        try:
+            out[case] = _one_case(case, px, inputs, tk, beta, bbar, win)
+        except ValueError as e:
+            out[case] = {"error": f"{type(e).__name__}: {e}"}
+    out["beta_bar"] = bbar
+    return out
+
+
+def pnl_bp(y, yhat, rt):
+    """Per row: the position is the forecast's sign; gross = 1e4 * sign * y; net = gross - rt * |sign|."""
+    s = np.sign(np.asarray(yhat, dtype=float))
+    gross = 1e4 * s * np.asarray(y, dtype=float)
+    net = gross - np.asarray(rt, dtype=float) * np.abs(s)
+    return gross, net
+
+
+# ------------------------------------------------------------------ §4: the row
+class _NotEstimable(Exception):
+    def __init__(self, reason: str, n_rows: int | None = None, n_dates: int | None = None):
+        super().__init__(reason)
+        self.reason, self.n_rows, self.n_dates = reason, n_rows, n_dates
+
+
+def _frame_T(dev, events, confirm, spec: Spec) -> pd.DataFrame:
+    """The frame T exactly as confirm_forecast's run_calls builds it."""
+    if confirm is not None:
+        J = pd.concat([dev, confirm], ignore_index=True)
+        J.attrs = {"provenance": blind.provenance_of(confirm)}
+    else:
+        J = dev.copy()
+    return targets.add_masks(targets.add_targets(J, spec), events, spec)
+
+
+def _keys(frame: pd.DataFrame) -> pd.MultiIndex:
+    return pd.MultiIndex.from_arrays([frame["date"].to_numpy(), frame["ticker"].astype(str).to_numpy()])
+
+
+def _model_rows(ev: pd.DataFrame, model: str) -> pd.DataFrame:
+    rows = ev.loc[ev["model"] == model]
+    return rows.sort_values(["date", "ticker"], kind="mergesort").reset_index(drop=True)
+
+
+def economic_px(calls: Calls, dev, events, confirm=None, *, spec=None):
+    """§4.1: (R, R2, px), the main call's evaluated M3 and M2 rows and their prices and betas in T. A failed main call
+    or no M3 row raises _NotEstimable (economic_row turns it into the entry); frames that do not match the calls raise
+    ValueError."""
+    _check_inputs(dev, confirm)
+    spec = spec or Spec.load()
+    T = _frame_T(dev, events, confirm, spec)
+    if calls.mode != ("confirmation" if confirm is not None else "dev"):
+        raise ValueError(f"the calls were made in the {calls.mode} mode")
+    if calls.main.status != "ok":
+        raise _NotEstimable(calls.main.reason)
+    R, R2 = _model_rows(calls.main.ev, "M3"), _model_rows(calls.main.ev, "M2")
+    if R.empty:
+        raise _NotEstimable("no rows", 0, 0)
+    if not (len(R) == len(R2) and _keys(R).equals(_keys(R2))):
+        raise ValueError("M3's and M2's evaluated rows differ: not one call's sample")
+    tkeys = _keys(T)
+    if not tkeys.is_unique:
+        raise ValueError("duplicate (date, ticker) keys in the frame")
+    pos = tkeys.get_indexer(_keys(R))
+    if (pos < 0).any():
+        raise ValueError(f"{int((pos < 0).sum())} evaluated row(s) have no row in the frame")
+    if not np.array_equal(R["y"].to_numpy(dtype=float), T["abn_oc"].to_numpy(dtype=float)[pos]):
+        raise ValueError("the evaluated rows' y differs from the frame's abn_oc: the frames do not match the calls")
+    px = T.iloc[pos][list(PX_COLUMNS)].reset_index(drop=True)
+    return R, R2, px
+
+
+def _all_finite(x: Any) -> bool:
+    if isinstance(x, float):
+        return math.isfinite(x)
+    if isinstance(x, dict):
+        return all(_all_finite(v) for v in x.values())
+    if isinstance(x, list):
+        return all(_all_finite(v) for v in x)
+    return True
+
+
+def _entry(status: str, values, reason, n_rows, n_dates) -> dict:
+    return {"id": ROW_ID, "item": ITEM_OF[ROW_ID], "status": status, "values": values, "reason": reason,
+            "n_rows": _plain(n_rows), "n_dates": _plain(n_dates), "lag": None}
+
+
+def economic_row(calls: Calls, dev, events, confirm=None, *, spec=None, inputs=None) -> dict:
+    """The O45 entry (§4) from run_calls on the same three frames."""
+    try:
+        R, R2, px = economic_px(calls, dev, events, confirm, spec=spec)
+    except _NotEstimable as e:
+        return _entry("not_estimable", None, e.reason, e.n_rows, e.n_dates)
+    inputs = load_cost_inputs() if inputs is None else inputs
+    cfg = load_config()
+    E0 = None if confirm is None else pd.Timestamp(confirm["date"].min())
+    rts = round_trips(px, inputs)
+    rows = {"M3": R, "M2": R2}
+    gross = {m: pnl_bp(r["y"], r["yhat"], np.zeros(len(r)))[0] for m, r in rows.items()}
+    be = {m: float(np.mean(gross[m])) for m in MODELS}
+    failed = {c: rts[c]["error"] for c in CASES if "error" in rts[c]}
+    ok = [c for c in CASES if c not in failed]
+    values = {
+        "models": list(MODELS), "call": "main", "mode": calls.mode, "from": E0,
+        "aggregation": cfg["economic_evaluation"]["aggregation"], "decisions": ["P4Q24", "P4Q25"],
+        "break_even_bp": {"M3": be["M3"], "M2": be["M2"], "difference": be["M3"] - be["M2"]},
+        "traded_share": {m: float(np.mean(np.sign(r["yhat"].to_numpy(dtype=float)) != 0)) for m, r in rows.items()},
+        "round_trip_bp": {c: ({k: v for k, v in rts[c].items() if k not in ("rt", "x_m_by_ticker")} if c in ok
+                              else None) for c in CASES},
+        "x_m_by_ticker": {c: (rts[c]["x_m_by_ticker"] if c in ok else None) for c in CASES},
+        "beta_bar": rts["beta_bar"],
+        "net_bp": {m: {c: (float(np.mean(pnl_bp(r["y"], r["yhat"], rts[c]["rt"])[1])) if c in ok else None)
+                       for c in CASES} for m, r in rows.items()},
+        "cases_failed": failed,
+        "sesoi_locked": cfg["constants"]["sesoi"],
+    }
+    values = _plain(values)
+    n_rows, n_dates = len(R), int(R["date"].nunique())
+    if not _all_finite(values):
+        return _entry("not_estimable", None, "non-finite estimate", n_rows, n_dates)
+    return _entry("estimated", values, None, n_rows, n_dates)
+
+
+def fill(doc: dict, entry: dict) -> dict:
+    """A copy of the document (made with _plain) with its pending O45 replaced by the entry."""
+    old = doc["rows"][ROW_ID]
+    if old.get("status") != "pending" or old.get("item") != "P4-4b":
+        raise ValueError("the document's O45 is not a pending P4-4b entry")
+    if entry.get("id") != ROW_ID or entry.get("item") != "P4-4b":
+        raise ValueError("the entry is not O45 of P4-4b")
+    out = _plain(doc)
+    out["rows"][ROW_ID] = _plain(entry)
+    return out
+
+=== the test file, as git show HEAD:tests/test_p4_confirm_economic.py prints it ===
+"""P4-4b2 (P4Q37): ofilt/drift/confirm_economic.py against docs/P4_CONFIRM_ECON_SPEC.md (version 1). Exactly the 14
+test methods of its §6.2. Seeds are the spec seed + 8,300,000 + k (§6.1), disjoint from every earlier block. Every
+frame is synthetic, with 5706's open, close and prev_close multiplied by 0.1 so that its traded prices stay inside the
+tick tables (§6.1); frames labelled dev_real or confirm_real appear only in test 13's refused pairs. Every run_calls
+uses a zero-forecast M7 stand-in. The run registry is patched to a temporary folder for the whole module. Expected
+values are recomputed from calls.main.ev, the test's own T and tools/p3_1_sesoi.py, never from the module."""
+import ast
+import copy
+import hashlib
+import json
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import p3_1_sesoi as P31  # noqa: E402
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import confirm_inference as CI  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift import targets as TG  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+SPEC = Spec.load()
+MODULE = ROOT / "ofilt" / "drift" / "confirm_economic.py"
+SA = SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5)
+CALENDARS = {"SHORT": SF.dev_calendar()[-900:], "TINY": SF.dev_calendar()[-300:], "DEFAULT": None}
+RUN_SPECS = {"E1": (1, "SHORT", "confirmation"), "E3": (3, "DEFAULT", "dev"), "E4": (4, "TINY", "dev")}
+ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+COMPONENTS = ("mean_rt", "miner_commission", "miner_execution", "hedge_leg", "short", "c_m", "c_h", "x_h", "s")
+_PATCHES: list = []
+_TMP = None
+_CACHE: dict = {}
+
+
+class ZeroM7(FC.ForecastModel):
+    """The M7 stand-in of §6.1: no feature, a zero forecast, no noise column."""
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def setUpModule():
+    global _TMP
+    _TMP = tempfile.TemporaryDirectory()
+    folder = Path(_TMP.name)
+    for attr, name in (("SYNTHETIC_PATH", "synthetic.jsonl"), ("REAL_PATH", "real.jsonl")):
+        p = mock.patch.object(RG, attr, folder / name)
+        p.start()
+        _PATCHES.append(p)
+
+
+def tearDownModule():
+    for p in reversed(_PATCHES):
+        p.stop()
+    _TMP.cleanup()
+
+
+def seed(k):
+    return SPEC.seed + 8_300_000 + k
+
+
+def scaled(df):
+    """A copy with 5706's open, close and prev_close multiplied by 0.1, attrs kept (§6.1)."""
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def frames(label):
+    """(dev, events, confirm or None) of a run, scaled."""
+    if ("frames", label) not in _CACHE:
+        k, cal, mode = RUN_SPECS[label]
+        dates = CALENDARS[cal]
+        o = SF.simulate(seed(k), SA) if dates is None else SF.simulate(seed(k), SA, dev_dates=dates)
+        _CACHE[("frames", label)] = (scaled(o.dev), o.events, scaled(o.confirm) if mode == "confirmation" else None)
+    return _CACHE[("frames", label)]
+
+
+def calls_of(label):
+    if ("calls", label) not in _CACHE:
+        dev, events, conf = frames(label)
+        _CACHE[("calls", label)] = CF.run_calls(dev, events, conf, spec=SPEC, factories={"M7": ZeroM7})
+    return _CACHE[("calls", label)]
+
+
+def entry_of(label):
+    if ("entry", label) not in _CACHE:
+        dev, events, conf = frames(label)
+        _CACHE[("entry", label)] = CE.economic_row(calls_of(label), dev, events, conf, spec=SPEC)
+    return _CACHE[("entry", label)]
+
+
+def frame_T(label):
+    """The test's own T (§3.1 of the forecasting specification)."""
+    dev, events, conf = frames(label)
+    J = pd.concat([dev, conf], ignore_index=True) if conf is not None else dev.copy()
+    J.attrs = {"provenance": B.SYNTHETIC}
+    return TG.add_masks(TG.add_targets(J, SPEC), events, SPEC)
+
+
+def model_rows(calls, model):
+    ev = calls.main.ev
+    return ev.loc[ev["model"] == model].sort_values(["date", "ticker"], kind="mergesort").reset_index(drop=True)
+
+
+def test_px(label):
+    """The test's px: its own T's date, ticker, open, close and beta at the M3 rows' keys, in their order."""
+    if ("px", label) not in _CACHE:
+        T = frame_T(label)
+        R = model_rows(calls_of(label), "M3")
+        tk = pd.MultiIndex.from_arrays([T["date"].to_numpy(), T["ticker"].astype(str).to_numpy()])
+        pos = tk.get_indexer(pd.MultiIndex.from_arrays([R["date"].to_numpy(), R["ticker"].astype(str).to_numpy()]))
+        assert (pos >= 0).all()
+        _CACHE[("px", label)] = T.iloc[pos][["date", "ticker", "open", "close", "beta"]].reset_index(drop=True)
+    return _CACHE[("px", label)]
+
+
+def tool_rt(px, inputs):
+    """Per-row round trips per case by costs' formula, with the tool's own helpers (tools/p3_1_sesoi.py)."""
+    tk = px["ticker"].astype(str).to_numpy()
+    beta = px["beta"].to_numpy(float)
+    win = np.zeros(len(px), dtype=bool)
+    for t, w in ((t, w) for t, w in inputs["flag4_windows"].items() if not t.startswith("_")):
+        win |= (tk == t) & (px["date"] < pd.Timestamp(w["before"])).to_numpy()
+    out = {}
+    for case in P31.CASES:
+        c_m, c_h = float(inputs["commission_miners_bp"][case]), float(inputs["commission_1306_bp"][case])
+        imp_m, imp_h = float(inputs["impact_miners_bp"][case]), float(inputs["impact_1306_bp"][case])
+        s = float(inputs["short_cost_per_day_bp"][case])
+        ht_h = inputs["half_tick_1306_bp"][case]
+        if case == "primary":
+            prim = {side: P31.side_ticks_table(px, inputs, inputs["primary_table"], side) for side in P31.SIDES}
+            x_side = {side: np.maximum(imp_m, P31.half_tick_bp(*prim[side])) for side in P31.SIDES}
+            xm_t = {t: float(np.mean(np.r_[x_side["open"][(tk == t) & ~win], x_side["close"][(tk == t) & ~win]]))
+                    for t in sorted(set(tk))}
+            x_m, x_h = np.array([xm_t[t] for t in tk]), max(imp_h, float(ht_h))
+        elif case == "low":
+            x_m, x_h = np.full(len(px), imp_m), imp_h
+        else:
+            st = P31.side_ticks(px, inputs, None)
+            x_m = imp_m + 0.5 * (P31.half_tick_bp(st["open"][0], st["open"][1])
+                                 + P31.half_tick_bp(st["close"][0], st["close"][1]))
+            x_h = imp_h + float(ht_h)
+        out[case] = 2 * (c_m + x_m) + beta * 2 * (c_h + x_h) + s
+    return out
+
+
+def relabel(df, provenance):
+    r = df.copy()
+    attrs = {k: v for k, v in df.attrs.items() if k != "provenance"}
+    if provenance is not None:
+        attrs["provenance"] = provenance
+    r.attrs = attrs
+    return r
+
+
+def ht(t, p):
+    """Half a tick in bp, by hand."""
+    return 1e4 * 0.5 * t / p
+
+
+class TestConfirmEconomic(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.inputs = P31.load_inputs()            # docs/P3_COST_INPUTS.json, through the tool (not data)
+
+    # 1
+    def test_cost_inputs_pin_and_refusal(self):
+        data = CE.COST_INPUTS_PATH.read_bytes()
+        self.assertEqual(hashlib.sha256(data).hexdigest(), CE.COST_INPUTS_SHA256)
+        obj = json.loads(data.decode("utf-8"))
+        self.assertEqual(CE.load_cost_inputs(), obj)
+        bad = bytearray(data)
+        bad[data.index(b"decided")] ^= 0x01
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "P3_COST_INPUTS.json"
+            p.write_bytes(bytes(bad))
+            with self.assertRaises(ValueError):
+                CE.load_cost_inputs(p)
+        self.assertIsNone(CE.check_cost_inputs(obj))
+        with self.assertRaises(ValueError):
+            CE.check_cost_inputs({k: v for k, v in obj.items() if k != "flag4_windows"})
+
+    # 2
+    def test_round_trips_match_the_tool(self):
+        px = test_px("E1")
+        mine = CE.round_trips(px, self.inputs)
+        tool = P31.costs(px, self.inputs)
+        for case in CE.CASES:
+            for k in COMPONENTS:
+                self.assertLessEqual(abs(mine[case][k] - tool[case][k]), 1e-12, (case, k))
+        self.assertLessEqual(abs(mine["beta_bar"] - tool["beta_bar"]), 1e-12)
+        for case, key in (("primary", "primary_xm"), ("high", "high_xm")):
+            self.assertEqual(sorted(mine[case]["x_m_by_ticker"]), sorted(tool["detail"][key]))
+            for t, v in tool["detail"][key].items():
+                self.assertLessEqual(abs(mine[case]["x_m_by_ticker"][t] - v), 1e-12, (case, t))
+
+    # 3
+    def test_round_trips_hand_computation(self):
+        px = pd.DataFrame({
+            "date": pd.to_datetime(["2023-03-01"] * 3 + ["2023-03-02"] * 3),
+            "ticker": ["5706", "5711", "5713"] * 2,
+            "open": [95.0, 2800.0, 600.0, 120.0, 900.0, 3000.0],     # 5706 traded = stored x 10 (f = 1/10)
+            "close": [250.0, 4000.0, 12000.0, 400.0, 20000.0, 8000.0],
+            "beta": [0.9, 1.1, 1.2, 1.0, 0.8, 1.3]})
+        beta = px["beta"].to_numpy()
+        # primary, the fine table: x_m per ticker = mean over its rows and sides of max(2, half tick)
+        xm = {"5706": np.mean([max(2, ht(0.1, 950)), max(2, ht(0.5, 1200)), max(2, ht(0.5, 2500)), max(2, ht(1, 4000))]),
+              "5711": np.mean([max(2, ht(0.5, 2800)), max(2, ht(0.1, 900)), max(2, ht(1, 4000)), max(2, ht(5, 20000))]),
+              "5713": np.mean([max(2, ht(0.1, 600)), max(2, ht(0.5, 3000)), max(2, ht(5, 12000)), max(2, ht(1, 8000))])}
+        rt_p = np.array([2 * (4.3 + xm[t]) + b * 2 * (4.3 + max(1.5, 1.25)) + 0 for t, b in zip(px["ticker"], beta)])
+        rt_l = np.array([2 * (0 + 0.5) + b * 2 * (0 + 0.5) + 0 for b in beta])
+        # high, the dev tables (5706 and 5711 standard, 5713 fine): x_m per row = 8 + mean of its sides' half ticks
+        xh = 8 + 0.5 * np.array([ht(1, 950) + ht(1, 2500), ht(1, 2800) + ht(5, 4000), ht(0.1, 600) + ht(5, 12000),
+                                 ht(1, 1200) + ht(5, 4000), ht(1, 900) + ht(10, 20000), ht(0.5, 3000) + ht(1, 8000)])
+        rt_h = 2 * (8 + xh) + beta * 2 * (8 + 4 + 4.2) + 1
+        r = CE.round_trips(px, self.inputs)
+        for case, rt in (("primary", rt_p), ("low", rt_l), ("high", rt_h)):
+            self.assertEqual(r[case]["rt"].shape, (6,), case)
+            self.assertLessEqual(float(np.max(np.abs(r[case]["rt"] - rt))), 1e-12, case)
+        self.assertGreater(xm["5706"], 2.0)           # a half tick above the impact (2.083 bp at 1,200 yen)
+        self.assertEqual(xm["5711"], 2.0)             # the impact floor binds
+
+    # 4
+    def test_pnl_bp(self):
+        y = np.array([0.01, -0.02, 0.005, -0.004])
+        yhat = np.array([0.3, -0.1, 0.0, 0.2])
+        rt = np.array([20.0, 20.0, 20.0, 15.0])
+        gross, net = CE.pnl_bp(y, yhat, rt)
+        self.assertTrue(np.allclose(gross, [100.0, 200.0, 0.0, -40.0], rtol=0, atol=1e-12))
+        self.assertTrue(np.allclose(net, [80.0, 180.0, 0.0, -55.0], rtol=0, atol=1e-12))
+        self.assertEqual((gross[2], net[2]), (0.0, 0.0))
+
+    # 5
+    def test_entry_schema_and_fill(self):
+        e = entry_of("E1")
+        self.assertEqual(list(e), ENTRY_KEYS)
+        self.assertEqual((e["id"], e["item"], e["status"]), ("O45", "P4-4b", "estimated"))
+        dev, events, conf = frames("E1")
+        d1 = CF.fill(CI.infer(dev, events, conf), CF.forecast_rows(calls_of("E1")))
+        d2 = CE.fill(d1, e)
+        self.assertEqual([r for r, x in d2["rows"].items() if x["item"] == "P4-4b" and x["status"] == "pending"], [])
+        self.assertEqual(d2["rows"]["O45"], e)
+        self.assertEqual({k: v for k, v in d2["rows"].items() if k != "O45"},
+                         {k: v for k, v in d1["rows"].items() if k != "O45"})
+        self.assertEqual({k: d2[k] for k in d2 if k != "rows"}, {k: d1[k] for k in d1 if k != "rows"})
+        text = CI.to_json(d2)
+        self.assertNotIn("NaN", text)
+        self.assertNotIn("Infinity", text)
+        self.assertEqual(json.loads(text), d2)
+        with self.assertRaises(ValueError):
+            CE.fill(d2, e)                                         # O45 no longer pending
+        with self.assertRaises(ValueError):
+            CE.fill(d1, dict(e, id="O44"))
+
+    # 6
+    def test_break_even_and_difference(self):
+        calls, v = calls_of("E1"), entry_of("E1")["values"]
+        ev = calls.main.ev
+        be, share = {}, {}
+        for m in ("M3", "M2"):
+            r = ev.loc[ev["model"] == m]
+            s = np.sign(r["yhat"].to_numpy(dtype=float))
+            be[m] = 1e4 * float(np.mean(s * r["y"].to_numpy(dtype=float)))
+            share[m] = float(np.mean(s != 0))
+            self.assertLessEqual(abs(v["break_even_bp"][m] - be[m]), 1e-12, m)
+        self.assertLessEqual(abs(v["break_even_bp"]["difference"] - (be["M3"] - be["M2"])), 1e-12)
+        self.assertEqual(v["break_even_bp"]["difference"], v["break_even_bp"]["M3"] - v["break_even_bp"]["M2"])
+        self.assertEqual(v["traded_share"], share)
+
+    # 7
+    def test_net_pnl(self):
+        calls, v = calls_of("E1"), entry_of("E1")["values"]
+        rt = tool_rt(test_px("E1"), self.inputs)
+        for m in ("M3", "M2"):
+            r = model_rows(calls, m)
+            s = np.sign(r["yhat"].to_numpy(dtype=float))
+            for case in CE.CASES:
+                net = float(np.mean(1e4 * s * r["y"].to_numpy(dtype=float) - rt[case] * np.abs(s)))
+                self.assertLessEqual(abs(v["net_bp"][m][case] - net), 1e-9, (m, case))
+
+    # 8
+    def test_rows_beta_and_prices(self):
+        calls, e = calls_of("E1"), entry_of("E1")
+        dev, events, conf = frames("E1")
+        R3 = model_rows(calls, "M3")
+        self.assertEqual((e["n_rows"], e["n_dates"]), (len(R3), R3["date"].nunique()))
+        R, R2, px = CE.economic_px(calls, dev, events, conf, spec=SPEC)
+        self.assertGreaterEqual(R["date"].min(), conf["date"].min())
+        mine = test_px("E1")
+        for c in ("date", "ticker", "open", "close", "beta"):
+            self.assertTrue(np.array_equal(px[c].to_numpy(), mine[c].to_numpy()), c)
+        self.assertEqual(e["values"]["beta_bar"], float(mine["beta"].mean()))
+
+    # 9
+    def test_dev_mode(self):
+        e = entry_of("E3")
+        dev, events, _ = frames("E3")
+        self.assertEqual(e["status"], "estimated")
+        self.assertEqual((e["values"]["mode"], e["values"]["from"]), ("dev", None))
+        R, _, _ = CE.economic_px(calls_of("E3"), dev, events, None, spec=SPEC)
+        self.assertLess(R["date"].max(), pd.Timestamp("2022-01-01"))
+
+    # 10
+    def test_main_call_failed(self):
+        e, calls = entry_of("E4"), calls_of("E4")
+        self.assertEqual(calls.main.status, "failed")
+        self.assertEqual((e["status"], e["reason"]), ("not_estimable", calls.main.reason))
+        self.assertTrue(e["reason"].startswith("walk_forward ("))
+        self.assertEqual((e["values"], e["n_rows"], e["n_dates"], e["lag"]), (None, None, None, None))
+
+    # 11
+    def test_cost_case_failure(self):
+        calls = calls_of("E1")
+        dev, events, conf = frames("E1")
+        R = model_rows(calls, "M3")
+        d = R.loc[R["ticker"].astype(str) == "5706", "date"].iloc[0]
+        conf2 = conf.copy()
+        conf2.loc[((conf2["date"] == d) & (conf2["ticker"].astype(str) == "5706")).to_numpy(), "open"] = 1e7
+        conf2.attrs = dict(conf.attrs)
+        e = CE.economic_row(calls, dev, events, conf2, spec=SPEC)
+        v = e["values"]
+        self.assertEqual(e["status"], "estimated")
+        self.assertEqual(sorted(v["cases_failed"]), ["high", "primary"])
+        for case in ("primary", "high"):
+            self.assertTrue(v["cases_failed"][case].startswith("ValueError"), case)
+            self.assertIsNone(v["round_trip_bp"][case])
+            self.assertIsNone(v["x_m_by_ticker"][case])
+            self.assertEqual([v["net_bp"][m][case] for m in ("M3", "M2")], [None, None])
+        self.assertIsInstance(v["round_trip_bp"]["low"], dict)
+        self.assertIsInstance(v["net_bp"]["M3"]["low"], float)
+        self.assertEqual(v["break_even_bp"], entry_of("E1")["values"]["break_even_bp"])
+
+    # 12
+    def test_mismatched_frames_refused(self):
+        calls = calls_of("E1")
+        dev, events, conf = frames("E1")
+        R = model_rows(calls, "M3")
+        d, t = R["date"].iloc[0], str(R["ticker"].iloc[0])
+        conf3 = conf.copy()
+        rows = ((conf3["date"] == d) & (conf3["ticker"].astype(str) == t)).to_numpy()
+        conf3.loc[rows, "y_oc"] = conf3.loc[rows, "y_oc"] + 0.01
+        conf3.attrs = dict(conf.attrs)
+        with self.assertRaises(ValueError):
+            CE.economic_row(calls, dev, events, conf3, spec=SPEC)
+
+    # 13
+    def test_provenance_pairs_refused(self):
+        calls = calls_of("E1")
+        dev, events, conf = frames("E1")
+        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+        for d, c in cases:
+            before = B.registered_labels()
+            with self.assertRaises(ValueError):
+                CE.economic_row(calls, d, events, c, spec=SPEC)
+            self.assertEqual(B.registered_labels(), before)
+
+    # 14
+    def test_module_source(self):
+        src = MODULE.read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        absolute = {"__future__", "dataclasses", "fractions", "hashlib", "json", "math", "typing", "numpy", "pandas"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    self.assertIn(a.name, absolute)
+            elif isinstance(node, ast.ImportFrom):
+                names = {a.name for a in node.names}
+                if node.level == 0:
+                    self.assertIn(node.module, absolute)
+                elif node.module is None:
+                    self.assertLessEqual(names, {"blind", "targets"})
+                elif node.module == "spec":
+                    self.assertLessEqual(names, {"Spec", "REPO_ROOT"})
+                elif node.module == "confirm_inference":
+                    self.assertLessEqual(names, {"ITEM_OF", "load_config", "_plain"})
+                else:
+                    self.assertEqual(node.module, "confirm_forecast")
+                    self.assertLessEqual(names, {"Calls", "_check_inputs"})
+        called = []
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Call):
+                f = node.func
+                called.append(f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None)
+        for bad in ("open", "read_csv", "to_csv", "read_text", "write_text", "write_bytes", "to_parquet", "to_pickle",
+                    "to_excel"):
+            self.assertNotIn(bad, called)
+        self.assertEqual(called.count("read_bytes"), 1)
+        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+            self.assertNotIn(s, src)
+        functions = {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
+        assigned = {t.id for n in tree.body if isinstance(n, ast.Assign) for t in n.targets if isinstance(t, ast.Name)}
+        self.assertLessEqual({"load_cost_inputs", "check_cost_inputs", "round_trips", "pnl_bp", "economic_px",
+                              "economic_row", "fill"}, functions)
+        self.assertLessEqual({"COST_INPUTS_PATH", "COST_INPUTS_SHA256", "CASES", "MODELS"}, assigned)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+=== the new commit: git show --stat HEAD ===
+commit d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+Author: ofilt-pass1 <pass1@localhost>
+Date:   Sun Oct 11 21:34:16 2026 -0400
+
+    checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md                   |   22 +-
+ docs/P4_CONFIRM_ECON_SPEC.md      |   93 ++
+ ofilt/drift/confirm_economic.py   |  306 ++++++
+ reports/P4_reports/p4_4b1.txt     | 2186 +++++++++++++++++++++++++++++++++++++
+ tests/test_p4_confirm_economic.py |  418 +++++++
+ 5 files changed, 3022 insertions(+), 3 deletions(-)
+
+=== files written under /tmp by this item (all start /tmp/p4_4b2; the report itself excluded) ===
+4d5814ef71869e6179e1d96c3ea67695b6c91707179645b1804bf5ae3e69ba35  /tmp/p4_4b2_a2.out
+ebaff515903425cab7dc2112d44959169521abc536fc04d063aee832bbdfbef7  /tmp/p4_4b2_a2.py
+948bb05d3a19c384345f9f939fb9d9e3a9998c72c26dc71683e9abbc4f803295  /tmp/p4_4b2_b1.out
+fa37f728e8705d8dcad7fd32f6932281cd20b95c5b8550c363c993548422b82a  /tmp/p4_4b2_b1.py
+890ac7ed8e134f77c212bc0b0c0c45a6b2bf2ac763bd9402f1265b241ec8717b  /tmp/p4_4b2_common.py
+97740a08fd0d705f4faa2ce86cb33cf85d2bbfb7d771226e368b0e69e4d5829b  /tmp/p4_4b2_d1.out
+1bc610c25421d0f2ac5124c6733d7aa14f3eedbc2c23e300f2e34ff21c4413cb  /tmp/p4_4b2_d3_run1.out
+bef67ee96528c519af206369e3172a1bda6f900fe4ce10db0fc66b6162410b02  /tmp/p4_4b2_d3_static.out
+c88899cbfa0e328e88d3a453e61264fc1a9b2fe3523ee7efd16d44541475a3fb  /tmp/p4_4b2_d3.out
+5ed52485745ac3a654e8ae3d673db7c5916ab15a8295931483706989ef65ec72  /tmp/p4_4b2_d3.py
+e285703363e53a458a8979ea5cc3c3b9e839bb7a5bcf957d02a6f7eebcb6e71f  /tmp/p4_4b2_d4.out
+85aff180159ba59c7ec3f0bba5d76d7000e8766c5341ec760efc6f766060326d  /tmp/p4_4b2_d4.py
+10349d39d2236f7495f9be2c23c233778663b1b0f54dc09f6b0d02daf5d6cedd  /tmp/p4_4b2_d5.out
+a69d754762a301dc987ecb8a4c8cacba3d1f13e28cc049eb8634ffca2938f486  /tmp/p4_4b2_d5.py
+4e28bb068dec06f80575ad6124dfd5a7e43f29cf2d81835506c608732638fb32  /tmp/p4_4b2_date.out
+198d143095f894b7534686bc6720705d31cc092c403e140b843fccd3509e928a  /tmp/p4_4b2_e1.out
+3c4118a08243b5c0d1ad7c8b9eae9d06b0f80782f8c182a13ec17d6ce8797e17  /tmp/p4_4b2_e1.py
+150ffc8463718a527ace33e845327082b90a34d81e7dbfc48f2a39e03c5a543c  /tmp/p4_4b2_e2.out
+f46fb843310dff3c80391444bc72280576afa5a2d9eb1e56d6ffab1d0dee473c  /tmp/p4_4b2_e3.out
+2f045f9b52ec2d10ed33291292b7002de46a873fdc42abf93529e62a26ed00c2  /tmp/p4_4b2_e3.py
+d460003713d33296acdc661b26fce54bfd3fa08c9591a6604e5b65b127a5aa0a  /tmp/p4_4b2_edits.py
+4a065848743ec76955bc966f67df8ced58afd08c0f2494f3e6baefa4b3e4455f  /tmp/p4_4b2_env.out
+1c32ac787457a19043f8198674a4526f6e8951ba1d352ee1d9f06bf0d54c70d6  /tmp/p4_4b2_env.sh
+02deef6df41ebb2c430319ef792a1e2a6a13847a95399dded6bdd8a21e39c4f9  /tmp/p4_4b2_head.out
+5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c  /tmp/p4_4b2_msg.txt
+directory /tmp/p4_4b2_nodata: entries 0
+629a390325905472f429d634185b22cd71f94865be5af3e1b0a16f0782288db1  /tmp/p4_4b2_probe.out
+28cd5754862a6de2d1b229e39a82a1e396cdde50a5de059c1b722f5156956f8c  /tmp/p4_4b2_probe.py
+directory /tmp/p4_4b2_registry: entries 1
+  5ff02afd62be2b3ed64f2f3a1d4b7eae6e65abffbbc1a889db285598e0311ace  /tmp/p4_4b2_registry/probe_synthetic.jsonl  (2 lines)
+780442e69ced8f7478a5e61a24cb35cd9a5980e0b308536efd443aee83c75d33  /tmp/p4_4b2_report.sh
+c53e622889afd5e570afb20b79c39a462cd670f8e4da2bcfe79644080eb7baae  /tmp/p4_4b2_status_s1_dated.md
+daddab3ea9dd247474dc38ae68befdf565326f0f2dda83beefa7d21d61699bfd  /tmp/p4_4b2_status_s1_undated.md
+021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264  /tmp/p4_4b2_status_s2_dated.md
+e41528f3bb8e5e0d2d45b89956a6ab5df65e90dbcd0f192c8c1a1964970145c6  /tmp/p4_4b2_status_s2_undated.md
+--- under $TMPDIR: the suite's log (e.2's last line); the test files' temporary folders (the patched registry; test 1's altered copy), created and removed by the tests
+
+=== readings ===
+Points settled under 'resolve and record' (standing). None changes what a test of §6.2 asserts, a quantity §4 computes, or a rule of the message.
+1. What the probe shows, settled before writing code: with 5706's prices scaled by 0.1 every traded price lies inside its tables (5706 about 1,922 to 5,274 yen, 5711 about 1,633 to 3,654, 5713 about 2,395 to 6,699), and the tool computes all three cases; the primary x_m is 2.0 on every ticker (the impact floor binds) and its share of half ticks above the impact is 0; on the unscaled frames the tool raises ValueError (a 5706 traded price of 31,235 yen above the last bound, 30,000) and, raising as a whole, computes no case, hence the module's case-by-case computation (§3); the main call's M3 and M2 rows have the same keys (2,913 rows, 1,013 dates), no zero forecast, and y equal to T's abn_oc at those keys; run_calls with the zero M7 takes about 4 s.
+2. TICKERS is a literal tuple in the module: the tool takes them from io, which §1.1 forbids, and §1.1's names from confirm_inference do not include its TICKERS.
+3. economic_px raises a private exception for a failed main call or no M3 row, which economic_row turns into the not-estimable entry (§4.1), and ValueError for frames that do not match the calls (§4.1), including calls made in the other mode.
+4. round_trip_bp holds, per case, §3's dict without the rt array and without x_m_by_ticker, which has its own key (§4.2); x_m_by_ticker is, per case, the primary per-ticker averages, the high per-ticker means of the row values, and the low impact for every ticker present (§3).
+5. A case fails on ValueError only (a price above a table's bound, a date no segment covers); any other exception propagates.
+6. The break-evens use pnl_bp's gross (the cost argument does not enter it); traded_share is the share of rows whose forecast's sign is not 0.
+7. E0 for 'from' is the first date of confirm (as confirm_forecast computes it), written as an ISO date; None in the dev mode.
+8. The non-finite check runs on every float of the entry's plain values, as in the other two modules.
+9. The Flag 4 windows skip the keys starting '_', as the tool does; the module first filtered them as the tickers it knows, which gives the same windows on this file, and was changed to the tool's form before any run.
+10. Tests: test 2 and test 7 load the cost inputs through the tool's load_inputs; test 7 recomputes the per-row round trips with the tool's own helpers (side_ticks_table, half_tick_bp, side_ticks) and costs' formula, since costs returns only means; test 3's six prices sit on the bands of the fine and standard tables (traded 5706 prices 950, 1,200, 2,500 and 4,000); test 11 sets the open of the first evaluated 5706 row to 1e7 in a copy of the confirmation frame; test 12 adds 0.01 to the y_oc of the first evaluated row; test 8 compares beta_bar exactly (the same array, the same order); test 14 checks the imports by ast.
+11. The new file took 12.3 s (§6.1: under 120 s).
+
+=== deviations and notes ===
+Deviations:
+1. Step order, as at P4-4b1: the module was written before d.1 copied the specification to docs/P4_CONFIRM_ECON_SPEC.md; the copy came before the test file, the test run and every check. It is byte-identical to the kit (D1 CHECK True); the module does not read it.
+No other deviation.
+
+Notes:
+1. d.3: one attempt, all 14 tests passed (12.3 s).
+2. No scratch script was used. The probe ran once (about 5 s) and wrote 2 lines to REGDIR's synthetic file; its real file was not created.
+3. d.4 matched the three verdict lines exactly, as whole lines, as the message says ('D4 CHECK: True' occurs twice in P4-4b1's report: in its d4.out and in its verdict-line list).
+4. The checkpoint ran in the background with the tool's own option, and nothing ran in REPO until its completion notice. The suite took 1212.0 s (P4-4b1's: 1291.2 s).
+5. The verdict-line list above takes, from each output, the last line that is exactly a CHECK verdict, so that d.4's own check labels (which quote 'CHECK: True') are not listed as verdicts.
+
+2026-10-12T01:34:31Z
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d

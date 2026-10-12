@@ -1,0 +1,964 @@
+2026-10-12T01:40:53Z
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62  /tmp/p4_boot2_msg.txt
+date +%F (a.1, captured by tee in /tmp/p4_boot2_date.out): 2026-10-11
+
+== a.1: the report's first write (kept as /tmp/p4_boot2_first.txt; readings R3)
+# P4-boot2 report
+start_utc: 2026-10-12T01:40:53Z
+date_out: 2026-10-11
+HEAD: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62  /tmp/p4_boot2_msg.txt
+
+== a.2 to a.4, run 1: the scripts as they ran, and their outputs (readings R1, R2)
+--- /tmp/p4_boot2_a_env_run1.sh (sha256 fabf8fe38edd0c92bf3f72d5e832ccdd2eb916e2bbcb5b994c772ff7b9964ceb)
+#!/bin/sh
+# P4-boot2 a.2: OFILT_RUN_SEALED must be absent from the session's environment (no Python).
+if env | grep -q '^OFILT_RUN_SEALED='; then
+  echo "OFILT_RUN_SEALED: present"
+  echo "A_ENV CHECK: FAIL"
+  exit 1
+fi
+echo "OFILT_RUN_SEALED: absent"
+echo "A_ENV CHECK: PASS"
+--- /tmp/p4_boot2_a_run1.py (sha256 195e236df39eb1ee661db493eccdd0cd7d594ebcfac1cc977b59b76346dc33d3)
+"""P4-boot2 a.3: read-only state check (verdict line `A CHECK`).
+
+Imports no module of ofilt; reads files as text or bytes and calls git.
+Expected values are read from /tmp/p4_boot2_msg.txt, list "Expected values".
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_boot2_msg.txt"
+
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True,
+                          capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def expected_values():
+    lines = open(MSG, encoding="utf-8").read().split("\n")
+    start = lines.index("## Expected values")
+    vals, counts = {}, {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+            vals[m.group(1)] = m.group(2)
+    for k, c in counts.items():
+        check(c == 1, f"label {k} begins exactly one line (count {c})")
+    return vals
+
+
+E = expected_values()
+print(f"expected values read: {len(E)} names")
+
+# --- HEAD, parent, status, files of HEAD's commit
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+subject = gtext("log", "-1", "--format=%s", "HEAD")
+print(f"HEAD subject: {subject}")
+check(subject == E["HEAD_SUBJECT"], "HEAD subject == HEAD_SUBJECT")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+print(f"HEAD parents: {parents}")
+check(parents == [E["PARENT_EXPECTED"]], "HEAD's only parent == PARENT_EXPECTED")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+print(f"git status --porcelain --untracked-files=all: {status!r}")
+check(status == "", "working tree clean (porcelain, untracked=all)")
+files = gtext("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")
+print("files of HEAD's commit:")
+for f in files:
+    print(f"  {f}")
+check(sorted(files) == sorted(E["NEW_AT_HEAD"].split(" ")),
+      "files of HEAD's commit == NEW_AT_HEAD")
+
+# --- tags
+tags = gtext("tag", "-l").split("\n")
+print(f"git tag -l: {tags}")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), "git tag -l == TAG_LIST")
+tag_obj = gtext("rev-parse", "refs/tags/spec-dev-v1")
+tag_commit = gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}")
+print(f"refs/tags/spec-dev-v1: {tag_obj}; commit: {tag_commit}")
+check(tag_obj == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(tag_commit == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+
+# --- BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG*
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+b_sha = hashlib.sha256(b).hexdigest()
+b_lines = len(b.decode("utf-8").splitlines())
+print(f"BLIND_FIT_LOG: sha256 {b_sha}; lines {b_lines}")
+check(b_sha == E["BLIND_FIT_LOG_SHA256"], "BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256")
+check(b_lines == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+print(f"RUN_REGISTRY.jsonl: {rr} bytes")
+check(rr == int(E["RUN_REGISTRY_BYTES"]), "RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    for n in dirs + names:
+        if n.startswith("ACCESS_LOG"):
+            access.append(os.path.relpath(os.path.join(root, n), REPO))
+print(f"names starting ACCESS_LOG outside .git: {access}")
+check(access == [], "no name starting ACCESS_LOG in REPO outside .git")
+
+# --- SHA-256 at HEAD
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"),
+    ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"),
+    ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"),
+    ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"),
+    ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"),
+    ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"),
+    ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"),
+    ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"),
+    ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"),
+    ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"),
+    ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"),
+]
+for path, name in pinned:
+    sha = hashlib.sha256(git("show", f"HEAD:{path}")).hexdigest()
+    print(f"{path}: {sha}")
+    check(sha == E[name], f"{path} sha256 at HEAD == {name}")
+for path in ["PASS4_STATUS.md", "ofilt/drift/confirm_economic.py",
+             "tests/test_p4_confirm_economic.py"]:
+    data = git("show", f"HEAD:{path}")
+    print(f"{path}: sha256 {hashlib.sha256(data).hexdigest()}; "
+          f"lines {len(data.decode('utf-8').splitlines())}")
+
+# --- reports/P4_reports/
+at_head = [p.rsplit("/", 1)[1] for p in
+           gtext("ls-tree", "--name-only", "HEAD", "reports/P4_reports/").split("\n")]
+on_disk = sorted(os.listdir(os.path.join(REPO, "reports", "P4_reports")))
+print(f"reports/P4_reports/ at HEAD: {sorted(at_head)}")
+print(f"reports/P4_reports/ on disk: {on_disk}")
+want = sorted(E["REPORTS_AT_HEAD"].split(" "))
+check(sorted(at_head) == want, "reports/P4_reports/ at HEAD == REPORTS_AT_HEAD")
+check(on_disk == want, "reports/P4_reports/ on disk == REPORTS_AT_HEAD")
+
+# --- information only
+print(f"git rev-list --count origin/main..HEAD: "
+      f"{gtext('rev-list', '--count', 'origin/main..HEAD')}")
+
+print("A CHECK: " + ("PASS" if not fails else f"FAIL ({len(fails)})"))
+sys.exit(1 if fails else 0)
+--- /tmp/p4_boot2_b_run1.py (sha256 097dd8e560389b4c1185228e9bea8e10e152a7e3b8f88468ec6b3784beda544b)
+"""P4-boot2 a.4: the standing prompt found in KIT4 by name and hash (verdict line `B CHECK`).
+
+Imports no module of ofilt; reads files as bytes.
+Expected values are read from /tmp/p4_boot2_msg.txt, list "Expected values".
+"""
+import hashlib
+import os
+import re
+import sys
+
+KIT4 = os.path.expanduser("~/Desktop/FX_Project/files/pass4")
+MSG = "/tmp/p4_boot2_msg.txt"
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+fails = []
+found = []
+for root, dirs, names in os.walk(KIT4):
+    if E["PROMPT_NAME"] in names:
+        found.append(os.path.join(root, E["PROMPT_NAME"]))
+print(f"files named {E['PROMPT_NAME']} in KIT4: {found}")
+if len(found) != 1:
+    fails.append("exactly one file of PROMPT_NAME in KIT4")
+for p in found:
+    data = open(p, "rb").read()
+    sha = hashlib.sha256(data).hexdigest()
+    text = data.decode("utf-8")
+    print(f"{p}: sha256 {sha}; lines {len(text.splitlines())}")
+    if sha != E["PROMPT_SHA256"]:
+        fails.append(f"{p} sha256 == PROMPT_SHA256")
+    print("headings (## ):")
+    for ln in text.splitlines():
+        if ln.startswith("## "):
+            print(f"  {ln}")
+for f in fails:
+    print(f"FAIL {f}")
+print("B CHECK: " + ("PASS" if not fails else f"FAIL ({len(fails)})"))
+sys.exit(1 if fails else 0)
+--- /tmp/p4_boot2_a_env_run1.out (sha256 fb0f232a4c845782ba78fe6de5f11326575feba892368547051f4a65adcea29d)
+OFILT_RUN_SEALED: absent
+A_ENV CHECK: PASS
+exit 0
+--- /tmp/p4_boot2_a_run1.out (sha256 0e2166ad2cf22debc8bbeebd660c1733ab998ff1353f2602e94d0b1bfff63ac5)
+ok   label PROMPT_NAME begins exactly one line (count 1)
+ok   label PROMPT_SHA256 begins exactly one line (count 1)
+ok   label HEAD_SUBJECT begins exactly one line (count 1)
+ok   label PARENT_EXPECTED begins exactly one line (count 1)
+ok   label TAG_LIST begins exactly one line (count 1)
+ok   label TAG_OBJECT begins exactly one line (count 1)
+ok   label TAG_COMMIT begins exactly one line (count 1)
+ok   label BLIND_FIT_LOG_SHA256 begins exactly one line (count 1)
+ok   label BLIND_FIT_LOG_LINES begins exactly one line (count 1)
+ok   label RUN_REGISTRY_BYTES begins exactly one line (count 1)
+ok   label SPEC_SHA256 begins exactly one line (count 1)
+ok   label PASS3_STATUS_SHA256 begins exactly one line (count 1)
+ok   label CONFIG_SHA256 begins exactly one line (count 1)
+ok   label COST_INPUTS_SHA256 begins exactly one line (count 1)
+ok   label SIM_MODULE_SHA256 begins exactly one line (count 1)
+ok   label SIM_TESTS_SHA256 begins exactly one line (count 1)
+ok   label SIM_SPEC_SHA256 begins exactly one line (count 1)
+ok   label INF_MODULE_SHA256 begins exactly one line (count 1)
+ok   label INF_TESTS_SHA256 begins exactly one line (count 1)
+ok   label INF_SPEC_SHA256 begins exactly one line (count 1)
+ok   label FC_MODULE_SHA256 begins exactly one line (count 1)
+ok   label FC_TESTS_SHA256 begins exactly one line (count 1)
+ok   label FC_SPEC_SHA256 begins exactly one line (count 1)
+ok   label ECON_SPEC_SHA256 begins exactly one line (count 1)
+ok   label REPORTS_AT_HEAD begins exactly one line (count 1)
+ok   label NEW_AT_HEAD begins exactly one line (count 1)
+expected values read: 26 names
+HEAD: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+HEAD subject: checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)
+ok   HEAD subject == HEAD_SUBJECT
+HEAD parents: ['ff318775ef05b8266b6d286bd78c4ee0372d2ef0']
+ok   HEAD's only parent == PARENT_EXPECTED
+git status --porcelain --untracked-files=all: ''
+ok   working tree clean (porcelain, untracked=all)
+files of HEAD's commit:
+  PASS4_STATUS.md
+  docs/P4_CONFIRM_ECON_SPEC.md
+  ofilt/drift/confirm_economic.py
+  reports/P4_reports/p4_4b1.txt
+  tests/test_p4_confirm_economic.py
+ok   files of HEAD's commit == NEW_AT_HEAD
+git tag -l: ['pass1-final', 'spec-dev-v1']
+ok   git tag -l == TAG_LIST
+refs/tags/spec-dev-v1: cee3b49e81d16f1f32e546cac9524b209ac1e493; commit: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256
+ok   BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES
+RUN_REGISTRY.jsonl: 0 bytes
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES
+names starting ACCESS_LOG outside .git: []
+ok   no name starting ACCESS_LOG in REPO outside .git
+spec/analysis_spec_dev_v1.yaml: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+ok   spec/analysis_spec_dev_v1.yaml sha256 at HEAD == SPEC_SHA256
+PASS3_STATUS.md: b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+ok   PASS3_STATUS.md sha256 at HEAD == PASS3_STATUS_SHA256
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+ok   docs/P4_CONFIRM_CONFIG.json sha256 at HEAD == CONFIG_SHA256
+docs/P3_COST_INPUTS.json: a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6
+ok   docs/P3_COST_INPUTS.json sha256 at HEAD == COST_INPUTS_SHA256
+ofilt/drift/sim_full.py: ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+ok   ofilt/drift/sim_full.py sha256 at HEAD == SIM_MODULE_SHA256
+tests/test_p4_sim_full.py: 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+ok   tests/test_p4_sim_full.py sha256 at HEAD == SIM_TESTS_SHA256
+docs/P4_SIM_SPEC.md: 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+ok   docs/P4_SIM_SPEC.md sha256 at HEAD == SIM_SPEC_SHA256
+ofilt/drift/confirm_inference.py: 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1
+ok   ofilt/drift/confirm_inference.py sha256 at HEAD == INF_MODULE_SHA256
+tests/test_p4_confirm_inference.py: bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026
+ok   tests/test_p4_confirm_inference.py sha256 at HEAD == INF_TESTS_SHA256
+docs/P4_CONFIRM_INF_SPEC.md: a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65
+ok   docs/P4_CONFIRM_INF_SPEC.md sha256 at HEAD == INF_SPEC_SHA256
+ofilt/drift/confirm_forecast.py: b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff
+ok   ofilt/drift/confirm_forecast.py sha256 at HEAD == FC_MODULE_SHA256
+tests/test_p4_confirm_forecast.py: 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a
+ok   tests/test_p4_confirm_forecast.py sha256 at HEAD == FC_TESTS_SHA256
+docs/P4_CONFIRM_FC_SPEC.md: a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6
+ok   docs/P4_CONFIRM_FC_SPEC.md sha256 at HEAD == FC_SPEC_SHA256
+docs/P4_CONFIRM_ECON_SPEC.md: 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+ok   docs/P4_CONFIRM_ECON_SPEC.md sha256 at HEAD == ECON_SPEC_SHA256
+PASS4_STATUS.md: sha256 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264; lines 238
+ofilt/drift/confirm_economic.py: sha256 caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73; lines 306
+tests/test_p4_confirm_economic.py: sha256 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da; lines 418
+reports/P4_reports/ at HEAD: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4p.txt', 'p4_boot.txt']
+reports/P4_reports/ on disk: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4p.txt', 'p4_boot.txt']
+ok   reports/P4_reports/ at HEAD == REPORTS_AT_HEAD
+ok   reports/P4_reports/ on disk == REPORTS_AT_HEAD
+git rev-list --count origin/main..HEAD: 0
+A CHECK: PASS
+exit 0
+--- /tmp/p4_boot2_b_run1.out (sha256 22a74f323651101e67cc3d90d48bc825e2002b5d98aa593f4333d7503b99668e)
+files named PASS4_BUILDER_PROMPT_2026-10-08.md in KIT4: ['/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md']
+/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md: sha256 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d; lines 226
+headings (## ):
+  ## Paths (always quote them)
+  ## Read first, in this order
+  ## How Pass 4 runs
+  ## Decisions already taken: P4Q1 to P4Q8
+  ## Hard rules
+  ## Environment (macOS arm64)
+  ## Reports, STOP and checkpointing
+B CHECK: PASS
+exit 0
+
+== the edit between run 1 and run 2 (diff run-1 script, run-2 script)
+5c5
+<   echo "A_ENV CHECK: FAIL"
+---
+>   echo "A_ENV CHECK: False"
+9c9
+< echo "A_ENV CHECK: PASS"
+---
+> echo "A_ENV CHECK: True"
+141c141,142
+< print("A CHECK: " + ("PASS" if not fails else f"FAIL ({len(fails)})"))
+---
+> print(f"failed checks: {len(fails)}")
+> print(f"A CHECK: {not fails}")
+44c44,45
+< print("B CHECK: " + ("PASS" if not fails else f"FAIL ({len(fails)})"))
+---
+> print(f"failed checks: {len(fails)}")
+> print(f"B CHECK: {not fails}")
+
+== a.2 to a.4, run 2: the scripts in full and their outputs
+--- /tmp/p4_boot2_a_env.sh (sha256 a45f9cb4ab0c28eda02dce013a36df50fbb6f7862d79d6357fb6a8c951e415d0)
+#!/bin/sh
+# P4-boot2 a.2: OFILT_RUN_SEALED must be absent from the session's environment (no Python).
+if env | grep -q '^OFILT_RUN_SEALED='; then
+  echo "OFILT_RUN_SEALED: present"
+  echo "A_ENV CHECK: False"
+  exit 1
+fi
+echo "OFILT_RUN_SEALED: absent"
+echo "A_ENV CHECK: True"
+--- /tmp/p4_boot2_a.py (sha256 d528343871c65f2625b95d626f24c7d9b6d9665b56ecb466c98ef120c1f15ec3)
+"""P4-boot2 a.3: read-only state check (verdict line `A CHECK`).
+
+Imports no module of ofilt; reads files as text or bytes and calls git.
+Expected values are read from /tmp/p4_boot2_msg.txt, list "Expected values".
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_boot2_msg.txt"
+
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True,
+                          capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def expected_values():
+    lines = open(MSG, encoding="utf-8").read().split("\n")
+    start = lines.index("## Expected values")
+    vals, counts = {}, {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+            vals[m.group(1)] = m.group(2)
+    for k, c in counts.items():
+        check(c == 1, f"label {k} begins exactly one line (count {c})")
+    return vals
+
+
+E = expected_values()
+print(f"expected values read: {len(E)} names")
+
+# --- HEAD, parent, status, files of HEAD's commit
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+subject = gtext("log", "-1", "--format=%s", "HEAD")
+print(f"HEAD subject: {subject}")
+check(subject == E["HEAD_SUBJECT"], "HEAD subject == HEAD_SUBJECT")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+print(f"HEAD parents: {parents}")
+check(parents == [E["PARENT_EXPECTED"]], "HEAD's only parent == PARENT_EXPECTED")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+print(f"git status --porcelain --untracked-files=all: {status!r}")
+check(status == "", "working tree clean (porcelain, untracked=all)")
+files = gtext("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")
+print("files of HEAD's commit:")
+for f in files:
+    print(f"  {f}")
+check(sorted(files) == sorted(E["NEW_AT_HEAD"].split(" ")),
+      "files of HEAD's commit == NEW_AT_HEAD")
+
+# --- tags
+tags = gtext("tag", "-l").split("\n")
+print(f"git tag -l: {tags}")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), "git tag -l == TAG_LIST")
+tag_obj = gtext("rev-parse", "refs/tags/spec-dev-v1")
+tag_commit = gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}")
+print(f"refs/tags/spec-dev-v1: {tag_obj}; commit: {tag_commit}")
+check(tag_obj == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(tag_commit == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+
+# --- BLIND_FIT_LOG, RUN_REGISTRY.jsonl, ACCESS_LOG*
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+b_sha = hashlib.sha256(b).hexdigest()
+b_lines = len(b.decode("utf-8").splitlines())
+print(f"BLIND_FIT_LOG: sha256 {b_sha}; lines {b_lines}")
+check(b_sha == E["BLIND_FIT_LOG_SHA256"], "BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256")
+check(b_lines == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+print(f"RUN_REGISTRY.jsonl: {rr} bytes")
+check(rr == int(E["RUN_REGISTRY_BYTES"]), "RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    for n in dirs + names:
+        if n.startswith("ACCESS_LOG"):
+            access.append(os.path.relpath(os.path.join(root, n), REPO))
+print(f"names starting ACCESS_LOG outside .git: {access}")
+check(access == [], "no name starting ACCESS_LOG in REPO outside .git")
+
+# --- SHA-256 at HEAD
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"),
+    ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"),
+    ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"),
+    ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"),
+    ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"),
+    ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"),
+    ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"),
+    ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"),
+    ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"),
+    ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"),
+    ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"),
+]
+for path, name in pinned:
+    sha = hashlib.sha256(git("show", f"HEAD:{path}")).hexdigest()
+    print(f"{path}: {sha}")
+    check(sha == E[name], f"{path} sha256 at HEAD == {name}")
+for path in ["PASS4_STATUS.md", "ofilt/drift/confirm_economic.py",
+             "tests/test_p4_confirm_economic.py"]:
+    data = git("show", f"HEAD:{path}")
+    print(f"{path}: sha256 {hashlib.sha256(data).hexdigest()}; "
+          f"lines {len(data.decode('utf-8').splitlines())}")
+
+# --- reports/P4_reports/
+at_head = [p.rsplit("/", 1)[1] for p in
+           gtext("ls-tree", "--name-only", "HEAD", "reports/P4_reports/").split("\n")]
+on_disk = sorted(os.listdir(os.path.join(REPO, "reports", "P4_reports")))
+print(f"reports/P4_reports/ at HEAD: {sorted(at_head)}")
+print(f"reports/P4_reports/ on disk: {on_disk}")
+want = sorted(E["REPORTS_AT_HEAD"].split(" "))
+check(sorted(at_head) == want, "reports/P4_reports/ at HEAD == REPORTS_AT_HEAD")
+check(on_disk == want, "reports/P4_reports/ on disk == REPORTS_AT_HEAD")
+
+# --- information only
+print(f"git rev-list --count origin/main..HEAD: "
+      f"{gtext('rev-list', '--count', 'origin/main..HEAD')}")
+
+print(f"failed checks: {len(fails)}")
+print(f"A CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_boot2_b.py (sha256 73754dd1712f739ee16dd5bb8993a6cf6030f09e9a465d352d08e1a6a8c5cf6b)
+"""P4-boot2 a.4: the standing prompt found in KIT4 by name and hash (verdict line `B CHECK`).
+
+Imports no module of ofilt; reads files as bytes.
+Expected values are read from /tmp/p4_boot2_msg.txt, list "Expected values".
+"""
+import hashlib
+import os
+import re
+import sys
+
+KIT4 = os.path.expanduser("~/Desktop/FX_Project/files/pass4")
+MSG = "/tmp/p4_boot2_msg.txt"
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+fails = []
+found = []
+for root, dirs, names in os.walk(KIT4):
+    if E["PROMPT_NAME"] in names:
+        found.append(os.path.join(root, E["PROMPT_NAME"]))
+print(f"files named {E['PROMPT_NAME']} in KIT4: {found}")
+if len(found) != 1:
+    fails.append("exactly one file of PROMPT_NAME in KIT4")
+for p in found:
+    data = open(p, "rb").read()
+    sha = hashlib.sha256(data).hexdigest()
+    text = data.decode("utf-8")
+    print(f"{p}: sha256 {sha}; lines {len(text.splitlines())}")
+    if sha != E["PROMPT_SHA256"]:
+        fails.append(f"{p} sha256 == PROMPT_SHA256")
+    print("headings (## ):")
+    for ln in text.splitlines():
+        if ln.startswith("## "):
+            print(f"  {ln}")
+for f in fails:
+    print(f"FAIL {f}")
+print(f"failed checks: {len(fails)}")
+print(f"B CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_boot2_a_env.out (sha256 8201a61440b965ff85b3ca180a26e6cd9a443328bccbde8eb714a61d7172543d)
+OFILT_RUN_SEALED: absent
+A_ENV CHECK: True
+exit 0
+--- /tmp/p4_boot2_a.out (sha256 c68b1a07e1e57f1b051f0c5df72e3b82f0463e4158e9ac1b3f9630fec2accee2)
+ok   label PROMPT_NAME begins exactly one line (count 1)
+ok   label PROMPT_SHA256 begins exactly one line (count 1)
+ok   label HEAD_SUBJECT begins exactly one line (count 1)
+ok   label PARENT_EXPECTED begins exactly one line (count 1)
+ok   label TAG_LIST begins exactly one line (count 1)
+ok   label TAG_OBJECT begins exactly one line (count 1)
+ok   label TAG_COMMIT begins exactly one line (count 1)
+ok   label BLIND_FIT_LOG_SHA256 begins exactly one line (count 1)
+ok   label BLIND_FIT_LOG_LINES begins exactly one line (count 1)
+ok   label RUN_REGISTRY_BYTES begins exactly one line (count 1)
+ok   label SPEC_SHA256 begins exactly one line (count 1)
+ok   label PASS3_STATUS_SHA256 begins exactly one line (count 1)
+ok   label CONFIG_SHA256 begins exactly one line (count 1)
+ok   label COST_INPUTS_SHA256 begins exactly one line (count 1)
+ok   label SIM_MODULE_SHA256 begins exactly one line (count 1)
+ok   label SIM_TESTS_SHA256 begins exactly one line (count 1)
+ok   label SIM_SPEC_SHA256 begins exactly one line (count 1)
+ok   label INF_MODULE_SHA256 begins exactly one line (count 1)
+ok   label INF_TESTS_SHA256 begins exactly one line (count 1)
+ok   label INF_SPEC_SHA256 begins exactly one line (count 1)
+ok   label FC_MODULE_SHA256 begins exactly one line (count 1)
+ok   label FC_TESTS_SHA256 begins exactly one line (count 1)
+ok   label FC_SPEC_SHA256 begins exactly one line (count 1)
+ok   label ECON_SPEC_SHA256 begins exactly one line (count 1)
+ok   label REPORTS_AT_HEAD begins exactly one line (count 1)
+ok   label NEW_AT_HEAD begins exactly one line (count 1)
+expected values read: 26 names
+HEAD: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+HEAD subject: checkpoint: P4-4b2 (P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests)
+ok   HEAD subject == HEAD_SUBJECT
+HEAD parents: ['ff318775ef05b8266b6d286bd78c4ee0372d2ef0']
+ok   HEAD's only parent == PARENT_EXPECTED
+git status --porcelain --untracked-files=all: ''
+ok   working tree clean (porcelain, untracked=all)
+files of HEAD's commit:
+  PASS4_STATUS.md
+  docs/P4_CONFIRM_ECON_SPEC.md
+  ofilt/drift/confirm_economic.py
+  reports/P4_reports/p4_4b1.txt
+  tests/test_p4_confirm_economic.py
+ok   files of HEAD's commit == NEW_AT_HEAD
+git tag -l: ['pass1-final', 'spec-dev-v1']
+ok   git tag -l == TAG_LIST
+refs/tags/spec-dev-v1: cee3b49e81d16f1f32e546cac9524b209ac1e493; commit: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256
+ok   BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES
+RUN_REGISTRY.jsonl: 0 bytes
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES
+names starting ACCESS_LOG outside .git: []
+ok   no name starting ACCESS_LOG in REPO outside .git
+spec/analysis_spec_dev_v1.yaml: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+ok   spec/analysis_spec_dev_v1.yaml sha256 at HEAD == SPEC_SHA256
+PASS3_STATUS.md: b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+ok   PASS3_STATUS.md sha256 at HEAD == PASS3_STATUS_SHA256
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+ok   docs/P4_CONFIRM_CONFIG.json sha256 at HEAD == CONFIG_SHA256
+docs/P3_COST_INPUTS.json: a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6
+ok   docs/P3_COST_INPUTS.json sha256 at HEAD == COST_INPUTS_SHA256
+ofilt/drift/sim_full.py: ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+ok   ofilt/drift/sim_full.py sha256 at HEAD == SIM_MODULE_SHA256
+tests/test_p4_sim_full.py: 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+ok   tests/test_p4_sim_full.py sha256 at HEAD == SIM_TESTS_SHA256
+docs/P4_SIM_SPEC.md: 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+ok   docs/P4_SIM_SPEC.md sha256 at HEAD == SIM_SPEC_SHA256
+ofilt/drift/confirm_inference.py: 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1
+ok   ofilt/drift/confirm_inference.py sha256 at HEAD == INF_MODULE_SHA256
+tests/test_p4_confirm_inference.py: bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026
+ok   tests/test_p4_confirm_inference.py sha256 at HEAD == INF_TESTS_SHA256
+docs/P4_CONFIRM_INF_SPEC.md: a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65
+ok   docs/P4_CONFIRM_INF_SPEC.md sha256 at HEAD == INF_SPEC_SHA256
+ofilt/drift/confirm_forecast.py: b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff
+ok   ofilt/drift/confirm_forecast.py sha256 at HEAD == FC_MODULE_SHA256
+tests/test_p4_confirm_forecast.py: 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a
+ok   tests/test_p4_confirm_forecast.py sha256 at HEAD == FC_TESTS_SHA256
+docs/P4_CONFIRM_FC_SPEC.md: a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6
+ok   docs/P4_CONFIRM_FC_SPEC.md sha256 at HEAD == FC_SPEC_SHA256
+docs/P4_CONFIRM_ECON_SPEC.md: 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+ok   docs/P4_CONFIRM_ECON_SPEC.md sha256 at HEAD == ECON_SPEC_SHA256
+PASS4_STATUS.md: sha256 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264; lines 238
+ofilt/drift/confirm_economic.py: sha256 caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73; lines 306
+tests/test_p4_confirm_economic.py: sha256 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da; lines 418
+reports/P4_reports/ at HEAD: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4p.txt', 'p4_boot.txt']
+reports/P4_reports/ on disk: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4p.txt', 'p4_boot.txt']
+ok   reports/P4_reports/ at HEAD == REPORTS_AT_HEAD
+ok   reports/P4_reports/ on disk == REPORTS_AT_HEAD
+git rev-list --count origin/main..HEAD: 0
+failed checks: 0
+A CHECK: True
+exit 0
+--- /tmp/p4_boot2_b.out (sha256 9bf236d9a9f6ae3132b973bda907c8ad623af26df3938a26f6dd484cb0acbbd2)
+files named PASS4_BUILDER_PROMPT_2026-10-08.md in KIT4: ['/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md']
+/Users/isaiahchoi/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md: sha256 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d; lines 226
+headings (## ):
+  ## Paths (always quote them)
+  ## Read first, in this order
+  ## How Pass 4 runs
+  ## Decisions already taken: P4Q1 to P4Q8
+  ## Hard rules
+  ## Environment (macOS arm64)
+  ## Reports, STOP and checkpointing
+failed checks: 0
+B CHECK: True
+exit 0
+
+== run 1 and run 2 outputs compared, verdict lines excluded
+A: equal apart from the verdict lines
+B: equal apart from the verdict lines
+A_ENV: equal apart from the verdict lines
+
+== c: the record of the reading (the script in full and its output; parts read in the last column)
+--- /tmp/p4_boot2_c.py (sha256 a7789e795042bf45e04999b55d0300c7bc668776124472fe536114998a37b06f)
+"""P4-boot2 c: the record of the reading (verdict line `C CHECK`).
+
+Imports no module of ofilt; reads files as bytes and calls git. For every file read in step b: its path, line count
+and SHA-256 at HEAD, a check that it exists at HEAD, and a check that the working-tree bytes (which the reader read)
+equal HEAD's. The standing prompt is not in REPO: it is checked in KIT4 against PROMPT_SHA256 of the saved message.
+The "parts read" column is the builder's record of the parts read where step b names parts.
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+KIT4 = os.path.expanduser("~/Desktop/FX_Project/files/pass4")
+MSG = "/tmp/p4_boot2_msg.txt"
+
+READ = [   # (step, path, parts read)
+    ("b.1", "docs/replacements/PLAN.md",
+     "§1 (L59-137), §2.3 (L173-177), §4 (L239-297), §6 (L326-344), §8 (L396-427), §10 (L440-457), §11 (L461-479);"
+     " §2.1-§2.2 (L139-171) read in passing"),
+    ("b.1", "docs/DECISIONS_P14_onward.md", "P29 (L242-268), P32 (L296-307), P33 (L309-334), P36 (L367-385)"),
+    ("b.1", "spec/analysis_spec_dev_v1.yaml", "in full"),
+    ("b.1", "spec/SPEC_AMENDMENTS.md", "AM-03, AM-05, AM-07, AM-09, AM-10 (L51-121; AM-04 read in passing)"),
+    ("b.1", "docs/DECISIONS_P58_onward.md", "P58 (L42-72) and its list, 'Carried to the pre-registration' (L364-369)"),
+    ("b.1", "docs/DECISIONS_P71_onward.md",
+     "P79 to P81 (L158-199) and 'Carried to the pre-registration' (L201-217)"),
+    ("b.1", "PASS3_STATUS.md",
+     "Next action (L36-38); the Decision log from P3-8a on (L398-410, with the P3-7b block before it, L392-396);"
+     " Flags (L933-955); Deviations (L1162-1302); Progress (L1-34) read in passing"),
+    ("b.1", "docs/PASS2_ADDENDUM.md", "§5 (L145-185)"),
+    ("b.1", "tests/tag_state.py", "in full"),
+    ("b.2", "PASS4_STATUS.md", "in full"),
+    ("b.3", "docs/P4_CONFIRM_CONFIG.json", "in full"),
+    ("b.3", "reports/P4_reports/p4_1_audit.md",
+     "L1-91: the preamble and §1 in full; §2's headings (L92-329) by a listing of the heading lines"),
+    ("b.4", "docs/P4_SIM_SPEC.md", "in full"),
+    ("b.4", "docs/P4_CONFIRM_INF_SPEC.md", "in full"),
+    ("b.4", "docs/P4_CONFIRM_FC_SPEC.md", "in full"),
+    ("b.4", "docs/P4_CONFIRM_ECON_SPEC.md", "in full"),
+    ("b.5", "ofilt/drift/sim_full.py", "in full"),
+    ("b.5", "ofilt/drift/confirm_inference.py", "in full"),
+    ("b.5", "ofilt/drift/confirm_forecast.py", "in full"),
+    ("b.5", "ofilt/drift/confirm_economic.py", "in full"),
+    ("b.5", "tests/test_p4_sim_full.py", "in full"),
+    ("b.5", "tests/test_p4_confirm_inference.py", "in full"),
+    ("b.5", "tests/test_p4_confirm_forecast.py", "in full"),
+    ("b.5", "tests/test_p4_confirm_economic.py", "in full"),
+    ("b.6", "ofilt/drift/io.py",
+     "in full (DATA_DIR L36, ACCESS_LOG_PATH L41, load_dev L85-94, load_events_firm L110-118, load_confirm L156-169)"),
+    ("b.6", "ofilt/drift/blind.py", "in full"),
+    ("b.6", "ofilt/drift/registry.py", "in full"),
+    ("b.6", "tools/checkpoint.sh", "in full"),
+]
+
+fails = []
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], capture_output=True)
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+# b.1: the standing prompt, in KIT4 (not in REPO)
+p = os.path.join(KIT4, E["PROMPT_NAME"])
+data = open(p, "rb").read()
+sha = hashlib.sha256(data).hexdigest()
+ok = sha == E["PROMPT_SHA256"]
+print(f"b.1 | KIT4/{E['PROMPT_NAME']} | lines {len(data.decode('utf-8').splitlines())} | sha256 {sha} | "
+      f"in KIT4, not in REPO; sha256 == PROMPT_SHA256: {ok} | in full")
+if not ok:
+    fails.append("prompt")
+
+for step, path, parts in READ:
+    exists = git("cat-file", "-e", f"HEAD:{path}").returncode == 0
+    if not exists:
+        print(f"{step} | {path} | NOT AT HEAD")
+        fails.append(path)
+        continue
+    blob = git("show", f"HEAD:{path}").stdout
+    with open(os.path.join(REPO, path), "rb") as fh:
+        same = fh.read() == blob
+    print(f"{step} | {path} | lines {len(blob.decode('utf-8').splitlines())} | "
+          f"sha256 {hashlib.sha256(blob).hexdigest()} | at HEAD: True; working tree == HEAD: {same} | {parts}")
+    if not same:
+        fails.append(f"{path} (working tree)")
+
+print(f"files: {len(READ)} in REPO, 1 in KIT4")
+print(f"failed checks: {len(fails)} {fails if fails else ''}".rstrip())
+print(f"C CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_boot2_c.out (sha256 54155ffe881c723b7fed626ac250f76bdfcd6528c44f2493dc04799d5a4ad2e5)
+b.1 | KIT4/PASS4_BUILDER_PROMPT_2026-10-08.md | lines 226 | sha256 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d | in KIT4, not in REPO; sha256 == PROMPT_SHA256: True | in full
+b.1 | docs/replacements/PLAN.md | lines 544 | sha256 cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772 | at HEAD: True; working tree == HEAD: True | §1 (L59-137), §2.3 (L173-177), §4 (L239-297), §6 (L326-344), §8 (L396-427), §10 (L440-457), §11 (L461-479); §2.1-§2.2 (L139-171) read in passing
+b.1 | docs/DECISIONS_P14_onward.md | lines 385 | sha256 3d13201636ad459ce0bb61fb5e29385c2a7531cf7daad848d1a970706ca02dd0 | at HEAD: True; working tree == HEAD: True | P29 (L242-268), P32 (L296-307), P33 (L309-334), P36 (L367-385)
+b.1 | spec/analysis_spec_dev_v1.yaml | lines 70 | sha256 feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26 | at HEAD: True; working tree == HEAD: True | in full
+b.1 | spec/SPEC_AMENDMENTS.md | lines 121 | sha256 c603206bd68ba225904fae8c30d25651c3c5c56afb8e8242f54cc52a85a52617 | at HEAD: True; working tree == HEAD: True | AM-03, AM-05, AM-07, AM-09, AM-10 (L51-121; AM-04 read in passing)
+b.1 | docs/DECISIONS_P58_onward.md | lines 369 | sha256 e7874506706198850c9c680bf052859d6fcf453f511f6bc3ba5403dbef119131 | at HEAD: True; working tree == HEAD: True | P58 (L42-72) and its list, 'Carried to the pre-registration' (L364-369)
+b.1 | docs/DECISIONS_P71_onward.md | lines 217 | sha256 c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83 | at HEAD: True; working tree == HEAD: True | P79 to P81 (L158-199) and 'Carried to the pre-registration' (L201-217)
+b.1 | PASS3_STATUS.md | lines 1302 | sha256 b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9 | at HEAD: True; working tree == HEAD: True | Next action (L36-38); the Decision log from P3-8a on (L398-410, with the P3-7b block before it, L392-396); Flags (L933-955); Deviations (L1162-1302); Progress (L1-34) read in passing
+b.1 | docs/PASS2_ADDENDUM.md | lines 574 | sha256 36a7dadc23a5c0fea41019ecafc5317a4ed5bae779428af3e5925b5d9d3e316c | at HEAD: True; working tree == HEAD: True | §5 (L145-185)
+b.1 | tests/tag_state.py | lines 50 | sha256 2b0cb379e2e5ec677098feb5e82a802b43ba4a0c12e6e3ad264e7f66b8348684 | at HEAD: True; working tree == HEAD: True | in full
+b.2 | PASS4_STATUS.md | lines 238 | sha256 021148554b38b908e76a54833d765bde957031e8f833f962a5b80f556d97d264 | at HEAD: True; working tree == HEAD: True | in full
+b.3 | docs/P4_CONFIRM_CONFIG.json | lines 599 | sha256 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd | at HEAD: True; working tree == HEAD: True | in full
+b.3 | reports/P4_reports/p4_1_audit.md | lines 391 | sha256 fb80a779f9e8c8926b6846c3fa77d44b8375619b0901799202ee451ff276a894 | at HEAD: True; working tree == HEAD: True | L1-91: the preamble and §1 in full; §2's headings (L92-329) by a listing of the heading lines
+b.4 | docs/P4_SIM_SPEC.md | lines 491 | sha256 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4 | at HEAD: True; working tree == HEAD: True | in full
+b.4 | docs/P4_CONFIRM_INF_SPEC.md | lines 197 | sha256 a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65 | at HEAD: True; working tree == HEAD: True | in full
+b.4 | docs/P4_CONFIRM_FC_SPEC.md | lines 123 | sha256 a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6 | at HEAD: True; working tree == HEAD: True | in full
+b.4 | docs/P4_CONFIRM_ECON_SPEC.md | lines 93 | sha256 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785 | at HEAD: True; working tree == HEAD: True | in full
+b.5 | ofilt/drift/sim_full.py | lines 565 | sha256 ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769 | at HEAD: True; working tree == HEAD: True | in full
+b.5 | ofilt/drift/confirm_inference.py | lines 555 | sha256 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1 | at HEAD: True; working tree == HEAD: True | in full
+b.5 | ofilt/drift/confirm_forecast.py | lines 315 | sha256 b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff | at HEAD: True; working tree == HEAD: True | in full
+b.5 | ofilt/drift/confirm_economic.py | lines 306 | sha256 caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73 | at HEAD: True; working tree == HEAD: True | in full
+b.5 | tests/test_p4_sim_full.py | lines 604 | sha256 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a | at HEAD: True; working tree == HEAD: True | in full
+b.5 | tests/test_p4_confirm_inference.py | lines 481 | sha256 bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026 | at HEAD: True; working tree == HEAD: True | in full
+b.5 | tests/test_p4_confirm_forecast.py | lines 439 | sha256 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a | at HEAD: True; working tree == HEAD: True | in full
+b.5 | tests/test_p4_confirm_economic.py | lines 418 | sha256 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da | at HEAD: True; working tree == HEAD: True | in full
+b.6 | ofilt/drift/io.py | lines 169 | sha256 35946fbc15b8a6df05d1468d4dec91877a76568f7499271d393bc44827d0011a | at HEAD: True; working tree == HEAD: True | in full (DATA_DIR L36, ACCESS_LOG_PATH L41, load_dev L85-94, load_events_firm L110-118, load_confirm L156-169)
+b.6 | ofilt/drift/blind.py | lines 227 | sha256 2d99f672673c8f1ba2157ab7629a45ced27a5018a197f8c907c6eef3c34d8d50 | at HEAD: True; working tree == HEAD: True | in full
+b.6 | ofilt/drift/registry.py | lines 121 | sha256 8cc30b32ca7287fa3837dbdab437db80f7603d10dc999f53bd3eb38215948167 | at HEAD: True; working tree == HEAD: True | in full
+b.6 | tools/checkpoint.sh | lines 61 | sha256 0616069754bc407bdadbd995024c80d2a389d43b801a75e7fe47b42fbfb4dea0 | at HEAD: True; working tree == HEAD: True | in full
+files: 28 in REPO, 1 in KIT4
+failed checks: 0
+C CHECK: True
+exit 0
+
+== notes: evidence (read-only commands on tracked files)
+$ git grep -n RUN_REGISTRY -- tests/
+tests/test_docs_d3b.py:44:        self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+tests/test_docs_d6.py:36:                  "RUN_REGISTRY.jsonl", "PASS1_STATUS.md", "docs/DECISIONS_P14_onward.md"):
+tests/test_importance_registry_c6.py:189:        real = ROOT / "RUN_REGISTRY.jsonl"
+tests/test_p4_confirm_economic.py:408:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+tests/test_p4_confirm_forecast.py:358:        self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").stat().st_size, 0)
+tests/test_p4_confirm_forecast.py:430:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+$ sed -n '188,191p' tests/test_importance_registry_c6.py
+    def test_committed_registry_empty_while_draft(self):
+        real = ROOT / "RUN_REGISTRY.jsonl"
+        self.assertTrue(real.exists())
+        if self.spec.status == "DRAFT":                                       # no real forecast before the tags
+$ sed -n '52,54p' ofilt/drift/schema.py
+PRE_OPEN_ROBUSTNESS = frozenset({
+    "xau_ret", "xau_rv", "xau_bv", "n225_ret", "usdjpy_us_ret", "ewj_oc_jpy", "gotobi_day",
+})
+$ grep -n -E 'def o1[89]|def o2[0-2]|"(fcx_oc|ewj_oc_jpy|xau_ret|n225_ret)"' ofilt/drift/confirm_inference.py
+407:    def o18(self) -> _Out:
+408:        return self.augmented("copx_to_fcx", self.finite("fcx_oc"), lambda d: self.ticker_specific(d, "fcx_oc"),
+411:    def o19(self) -> _Out:
+412:        return self.augmented("ewj_yen_denominated", self.finite("ewj_oc_jpy"),
+413:                              lambda d: self.ticker_specific(d, "ewj_oc_jpy"))
+415:    def o20(self) -> _Out:
+416:        return self.augmented("xau_control", self.finite("xau_ret"), lambda d: self.ticker_specific(d, "xau_ret"))
+422:                & np.isfinite(values("n225_ret")))
+424:    def o21(self) -> _Out:
+429:                              lambda d: self.ticker_specific(d, "n225_ret"),
+432:    def o22(self) -> _Out:
+$ grep -n 'def test_px' tests/test_p4_confirm_economic.py
+124:def test_px(label):
+$ sed -n '552p' ofilt/drift/confirm_inference.py
+    return {"module": "confirm_inference", "spec_version": 1, "config_sha256": CONFIG_SHA256, "mode": mode,
+$ sed -n '14,15p' ofilt/drift/blind.py; sed -n '105p' ofilt/drift/io.py
+Real target values (y_oc, y_topix_oc at load; constructed targets at
+construction) are registered as 9-significant-digit decimal mantissas (sign-
+        for c in ("y_oc", "y_topix_oc", "y_1306_oc"):   # P52: y_1306_oc registered (label dev_real:y_1306_oc)
+$ sed -n '143,146p' ofilt/drift/confirm_economic.py
+        for t in sorted(set(tk)):
+            use = (tk == t) & ~win
+            by_ticker[t] = float(np.mean(np.r_[x_side["open"][use], x_side["close"][use]]))
+        x_m = np.array([by_ticker[t] for t in tk])
+$ git rev-list --count origin/main..HEAD; git rev-parse origin/main HEAD
+0
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+$ sed -n '45p;59p;116,120p;127p;136p;139p;165p;177,178p;215p' PASS4_STATUS.md
+>   - Regressors outside the forecasting allowlist come from an inference-only allowlist holding exactly the columns P33 and AM-05 name for the robustness rows. A static test shows that no forecasting code uses it. Columns are selected by explicit name only.
+>   - Its forecasting part appends to `RUN_REGISTRY.jsonl`, so that commit rewrites `test_docs_d3b`'s empty-registry assertion to the new state by decision, under the test-change protocol. `BLIND_FIT_LOG` stays at 7 lines, and the run asserts it.
+> - P4Q33 (Isaiah, 2026-10-11, on the supervisor's recommendation): one structural contact with the dev panel (P4Q1).
+>   - One read-only script of P4-3 (step c.1) and one test (`test_dev_panel_kinds_and_guard` in `tests/test_p4_sim_full.py`) read the dev panel through `io.load_dev` and the firm events through `io.load_events_firm`, each verified by its hash, for their column names, the columns' order and each column's dtype kind only.
+>   - The test also lets `io.load_dev` register the real targets in the guard's fingerprint registry, as the existing tests that call it do, so that `blind.require_unblinded` then checks the simulator's frames against them.
+>   - No value is printed, compared or computed beyond these. Both are listed in the Disclosure list.
+> - No date gates (Isaiah, 2026-10-11): from P4-3's message version 2 on, a block records the date its first command prints and uses it as the decision date. A records edit is checked before the commit by a date-independent template hash (its result with the placeholder kept), and the supervisor checks the dated result after the commit.
+>   - P4-4c: the run script and the claims (R10 to R26): the end-to-end script, the claim tiers and wording rules, the two-run byte-identity rule, the registry routing, the `io.load_confirm` refusal tests and the static test of the inference-only allowlist.
+> - Resolve and record, for P4-4a (Isaiah, 2026-10-11, on the supervisor's recommendation): where the specification is unclear or cannot be met as written, the builder resolves the point by the reading closest to its purpose and records it in the report, and stops only if the resolution would change what a test asserts, a quantity a row computes, or a rule of the item's message. Whether it becomes standing is decided at P4-4b.
+> - Resolve and record, standing (Isaiah, 2026-10-11, on the supervisor's recommendation): from P4-4b1 on, the rule adopted for P4-4a applies to every item unless its message says otherwise.
+- P4-4b2: before this record was written, the new file `tests/test_p4_confirm_economic.py` passed on its own (`Ran 14 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4b2`); its result is in the report `/tmp/p4_4b2.txt`, copied at the next checkpoint. Expected: `Ran 359 tests`, `OK (skipped=6)`.
+- F4-1 (carried from P3-8c): `test_docs_d3` and `test_docs_d3b` assert Pass 3's end state (`BLIND_FIT_LOG` 7 lines; `RUN_REGISTRY.jsonl` empty). The dev run's commit changes them by decision (P4Q6).
+- F4-2 (carried from P3-8c and the handoffs): DATA_PROVENANCE §4.5 needs the entries of the fifth supervisor chat, of the two supervisor chats that began on 2026-10-08 (with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md` and with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`), of the M2 derivation chat (its attestation is §10 of `docs/P4_M2_note.md`), of the supervisor chat that began on 2026-10-09 (with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`) of the supervisor chat that began on 2026-10-11 (with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`) and of the one that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md`, and PROJECT_SETUP's chat-uploads line needs updating. Both go in through the documentation kit (P4-7), with their pins moved.
+  - A deviation in e.2: the checkpoint ran longer than the command tool's 600-s limit, and the tool moved it to the background; it completed unchanged (exit 0), and the builder ran nothing in REPO until it had. Accepted; from P4-4b1 the message says how to run it.
+
+== readings
+
+R1. Verdict lines; the rerun-once rule.
+- Run 1 of a.2, a.3 and a.4 printed `A_ENV CHECK: PASS`, `A CHECK: PASS` and `B CHECK: PASS`. The standing prompt (Reports) requires `<NAME> CHECK: True` or `<NAME> CHECK: False`, and says a check without its verdict line did not pass.
+- I read the wrong format as the scripts' own bug. I fixed the verdict lines and reran each script once (run 2): `A_ENV CHECK: True`, `A CHECK: True`, `B CHECK: True`.
+- Run 1's Python commands called the venv's interpreter by its path, under `env -u OFILT_RUN_SEALED`, but did not activate the venv inside the command as the standing prompt's Environment section asks. Run 2 activates it.
+- The scripts were edited in place after run 1. To keep run 1's scripts in the record, I copied the edited files to `*_run1.*` and reverted their verdict lines with the editor. The diff above is between those copies and the run-2 scripts.
+- Apart from the verdict lines, run 1's and run 2's outputs are equal. A and B were compared by `diff` with the verdict lines excluded; A_ENV has no other line.
+
+R2. A zsh slip.
+- The first command block ran a.2's script, then failed at `echo ====` (zsh's `=` expansion: "=== not found") before a.3 and a.4 ran. Those two ran in the next command.
+- a.2's run-1 output had been written before the error.
+- The same slip is recorded for the Pass 3 boot (PASS3_STATUS.md, Deviations).
+
+R3. The header. a.1's first write had labelled lines ("start_utc:", "date_out:", "HEAD:") under a title line. When the report was assembled, its first lines were rewritten into the standing prompt's form: the UTC time, HEAD, and the message's SHA-256 line, each value extracted by command from the first write. a.1's date follows them.
+
+R4. Readings where the message is silent.
+- Expected values: every script reads them from `/tmp/p4_boot2_msg.txt`, from the lines after `## Expected values` up to the next `## ` heading. a.3 also checks that each label begins exactly one line.
+- "The files of HEAD's commit": `git diff-tree --no-commit-id --name-only -r HEAD`, compared with NEW_AT_HEAD as a set.
+- "git tag -l prints exactly the names": compared as sorted lists.
+- "SHA-256 at HEAD": the hash of the blob at HEAD (`git show HEAD:<path>`). The tree was clean, and c also checks that each working-tree file I read equals its HEAD blob.
+- `BLIND_FIT_LOG` and `RUN_REGISTRY.jsonl` are read from the working tree, which is clean.
+- "reports/P4_reports/ holds exactly": checked both at HEAD and on disk.
+- "No name starting ACCESS_LOG in REPO outside .git": `os.walk` over REPO, with `.git` pruned at the top level. It compares names only and would print only matches; there were none. DATA is outside REPO: `io.DATA_DIR` comes from `OFILT_DATA_DIR`, and the standing prompt's DATA is `~/Desktop/FX_Project/data`.
+- c's "exists at HEAD" does not apply to the standing prompt, which lives in KIT4. c checks it there against PROMPT_SHA256.
+
+R5. Commands outside the scripts, all read-only.
+- Before a.3, to locate BLIND_FIT_LOG and RUN_REGISTRY.jsonl: `git ls-files | grep` for the log and registry names, `ls -a` of REPO's top level, and `ls` of KIT4.
+- Also before a.3, to place DATA before writing the ACCESS_LOG search: a `grep` of `io.py` for `DATA_DIR` and `ACCESS_LOG_PATH`, `git check-ignore build`, and `cat .gitignore`.
+- In b, no script ran. `grep -n` of heading lines and `wc -l` located the named parts; the file reader did the reading.
+- Before d, `git grep`, `grep` and `sed -n` on tracked tests, `ofilt/drift/schema.py` and `PASS4_STATUS.md` gathered the notes' evidence. They are repeated, with their output, under "notes: evidence".
+- No data file was opened, listed or hashed. No module of `ofilt` was imported, and no test ran.
+
+R6. Reading beyond the named parts, as recorded in c:
+- read in passing: PLAN §2.1 to §2.2, AM-04, PASS3_STATUS.md's Progress, and the P3-7b block that precedes P3-8a in its Decision log;
+- the four test files of b.5 were read in full, not only each test's name and docstring.
+
+R7. Files written: only paths starting `/tmp/p4_boot2`. They are the message, the date, the scripts and their run-1 copies, their outputs, these readings, the notes and this report. Nothing in REPO, KIT4 or KEEP4 changed.
+
+== notes (plain statements; nothing was changed)
+
+N1. The message says each standing amendment is recorded in PASS4_STATUS.md's Decision log. Only some are.
+- In the Decision log: amendment 1, no date gates (L120); amendment 2, resolve and record (L136, L139); amendment 5, P4Q33 (L116-119).
+- Amendment 3, the long commands, is recorded under Deviations (P4-4a, second run, L215: "from P4-4b1 the message says how to run it"), not as a Decision-log entry.
+- Amendment 4's count is in Test results (L165), not in the Decision log.
+- Amendment 6, the new session, has no entry.
+
+N2. The two descriptions of the date-gate check differ.
+- The Decision log's "No date gates" entry (L120): the records edit is checked before the commit by a template hash, and "the supervisor checks the dated result after the commit".
+- This message's amendment 1: the check before the commit is both the template hash and "the substitution of the date into that template".
+- They differ on who checks the dated result, and when. The message's lines hold.
+
+N3. More tests assert an empty registry than F4-1 and P4Q6 name.
+- F4-1 (L177) and P4Q6 (L59) name `test_docs_d3` and `test_docs_d3b` as the tests that assert Pass 3's end state, which the dev run's commit changes by decision.
+- `tests/test_p4_confirm_forecast.py:358` (test 14, `test_registry_routing`) also asserts that the committed `RUN_REGISTRY.jsonl` has 0 bytes. The dev run's commit would make it fail unless it is changed by decision too.
+- `tests/test_importance_registry_c6.py:191` asserts emptiness only while the spec is DRAFT.
+
+N4. No module at HEAD defines the allowlist that P4Q2 describes.
+- P4Q2 (L45) asks for an inference-only allowlist "holding exactly the columns P33 and AM-05 name for the robustness rows", with a static test showing that no forecasting code uses it. P4Q34 (L127) gives that static test to P4-4c.
+- `ofilt/drift/confirm_inference.py` names the added columns inline (`_Run.o18` to `o22`): fcx_oc, ewj_oc_jpy, xau_ret, n225_ret, c_usdjpy_sess_ret, c_eurusd_sess_ret, gotobi_day, plus n225_stale_start_min and n225_stale_end_min as filters.
+- `schema.PRE_OPEN_ROBUSTNESS` (schema.py:52-54) is not that set:
+  - it holds xau_ret, xau_rv, xau_bv, n225_ret, usdjpy_us_ret, ewj_oc_jpy and gotobi_day;
+  - it lacks fcx_oc and the two session-FX columns;
+  - it adds xau_rv, xau_bv and usdjpy_us_ret, which no row adds.
+
+N5. `tests/test_p4_confirm_economic.py:124` defines a module-level helper named `test_px`. unittest's discovery does not collect it, so the file has its 14 tests under the suite's runner. pytest would collect it as a test function.
+
+N6. `git rev-list --count origin/main..HEAD` printed 0, so the local `origin/main` ref already contains HEAD (`d4253b8`, the P4-4b2 checkpoint), whose review is pending. No fetch was run. This reflects the last push or fetch recorded locally. Information only.
+
+N7. `ofilt/drift/blind.py`'s docstring (L14-15) says the real target values registered at load are y_oc and y_topix_oc. `io._register_real_targets` (io.py:105) also registers y_1306_oc (P52).
+
+N8. The document field `spec_version` is 1 (confirm_inference.py:552; INF spec §4.1). The INF specification is version 2, and the analysis spec's id is `drift-dev-v1`. Which version the field refers to is not stated, and P4-4c's run script will write it.
+
+N9. Possible path in `confirm_economic._one_case`, primary case (the same arithmetic as `tools/p3_1_sesoi.costs`, which it re-implements).
+- If every evaluated row of a ticker lies inside that ticker's Flag 4 window, its per-ticker mean is taken over no values (NaN).
+- O45 would then be not estimable ("non-finite estimate") as a whole, rather than reporting the primary case as failed while the other cases stand.
+- Whether this can occur depends on the windows' dates in `docs/P3_COST_INPUTS.json`, which this message did not ask me to read.
+
+N10. F4-2 (PASS4_STATUS.md L178) has no separator between "(with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`)" and "of the supervisor chat that began on 2026-10-11".
+
+== the /tmp/p4_boot2 files (this report and its temporary file excluded)
+fb0f232a4c845782ba78fe6de5f11326575feba892368547051f4a65adcea29d  /tmp/p4_boot2_a_env_run1.out
+fabf8fe38edd0c92bf3f72d5e832ccdd2eb916e2bbcb5b994c772ff7b9964ceb  /tmp/p4_boot2_a_env_run1.sh
+8201a61440b965ff85b3ca180a26e6cd9a443328bccbde8eb714a61d7172543d  /tmp/p4_boot2_a_env.out
+a45f9cb4ab0c28eda02dce013a36df50fbb6f7862d79d6357fb6a8c951e415d0  /tmp/p4_boot2_a_env.sh
+0e2166ad2cf22debc8bbeebd660c1733ab998ff1353f2602e94d0b1bfff63ac5  /tmp/p4_boot2_a_run1.out
+195e236df39eb1ee661db493eccdd0cd7d594ebcfac1cc977b59b76346dc33d3  /tmp/p4_boot2_a_run1.py
+c68b1a07e1e57f1b051f0c5df72e3b82f0463e4158e9ac1b3f9630fec2accee2  /tmp/p4_boot2_a.out
+d528343871c65f2625b95d626f24c7d9b6d9665b56ecb466c98ef120c1f15ec3  /tmp/p4_boot2_a.py
+18c4dda841648035f4a2e3f6504e24c8746ae22650556c7883d5f5f84f44b32f  /tmp/p4_boot2_assemble.sh
+22a74f323651101e67cc3d90d48bc825e2002b5d98aa593f4333d7503b99668e  /tmp/p4_boot2_b_run1.out
+097dd8e560389b4c1185228e9bea8e10e152a7e3b8f88468ec6b3784beda544b  /tmp/p4_boot2_b_run1.py
+9bf236d9a9f6ae3132b973bda907c8ad623af26df3938a26f6dd484cb0acbbd2  /tmp/p4_boot2_b.out
+73754dd1712f739ee16dd5bb8993a6cf6030f09e9a465d352d08e1a6a8c5cf6b  /tmp/p4_boot2_b.py
+54155ffe881c723b7fed626ac250f76bdfcd6528c44f2493dc04799d5a4ad2e5  /tmp/p4_boot2_c.out
+a7789e795042bf45e04999b55d0300c7bc668776124472fe536114998a37b06f  /tmp/p4_boot2_c.py
+4e28bb068dec06f80575ad6124dfd5a7e43f29cf2d81835506c608732638fb32  /tmp/p4_boot2_date.out
+0bde290d332fbceea682b5292d7a14c90a6460b0b9292802e07f35477106eade  /tmp/p4_boot2_first.txt
+76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62  /tmp/p4_boot2_msg.txt
+fda0d392f4928c24747638d21f011d74166ca0b92c21b11f893a53b71855900a  /tmp/p4_boot2_notes.txt
+bac8a36eb3da8fab561c067cd98e36447cb72db7ed655d58c24e54c4569b480c  /tmp/p4_boot2_readings.txt
+
+== end: the time and HEAD, then git status --porcelain (empty: nothing follows the HEAD line)
+2026-10-12T01:48:45Z
+d4253b87594c234ea6147e0fe0fa55c47b52eb6d
