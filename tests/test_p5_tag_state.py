@@ -74,7 +74,7 @@ class TestP5TagState(unittest.TestCase):
         self.assertEqual(sha((ROOT / TS.CONFIG_PATH).read_bytes()), TS.CONFIG_SHA256)
         self.assertEqual(json.loads((ROOT / TS.CONFIG_PATH).read_text(encoding="utf-8"))["version"], 1)
         self.assertEqual(TS.PREREG_PATH, "docs/PREREG_v1.md")
-        self.assertIsNone(TS.PREREG_SHA256)   # P5-1: the pin is set at P5-2, when the document is installed
+        self.assertEqual(TS.PREREG_SHA256, sha((ROOT / TS.PREREG_PATH).read_bytes()))  # P5-2 (P5Q18, documentation pin): was self.assertIsNone(TS.PREREG_SHA256) (P5-1)
 
     # 2
     def test_prereg_absent_and_present(self):

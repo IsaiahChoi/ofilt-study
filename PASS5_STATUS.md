@@ -8,14 +8,14 @@ Standing prompt: `files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `0398
 |---|---|---|
 | Pass 5 | in progress | The pre-registration and the tag `prereg-v1` (PLAN §8, row 5). |
 | P5-boot a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P5_reports/p5_boot.txt`. |
-| P5-1 P4-7c and P5-boot accepted; Pass 5 opened; P5Q11 to P5Q17; the confirmation script and the tag-state tests | done | `checkpoint: P5-1`, made by its second run; the first stopped before b.1 (Decision log; Deviations). Report `/tmp/p5_1.txt`, copied at P5-2. |
-| P5-2 the pre-registration installed and pinned; the tagged-clone rehearsal; the checkpoint Isaiah tags | to do | Full-suite checkpoint, then STOP for the tag. |
+| P5-1 P4-7c and P5-boot accepted; Pass 5 opened; P5Q11 to P5Q17; the confirmation script and the tag-state tests | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-1` (`386057a5223d47c7248d913b70eb9774ba6d96c0`), made by its second run; the first stopped before b.1 (Decision log; Deviations). Report `reports/P5_reports/p5_1.txt` (both runs). |
+| P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done | `checkpoint: P5-2`, the commit Isaiah tags `prereg-v1`. Report `/tmp/p5_2.txt`, copied at P5-3. |
 | P5-3 the tag verified; the full suite with the tag present; the tag recorded | to do | Full-suite checkpoint. |
 | P5-4 decisions P88 onward, PLAN v2.7, README, DATA_PROVENANCE §4.5, PROJECT_SETUP and the upload list; Pass 5 closed | to do | Records-only commits after the documentation tests. |
 
 ## Next action
 
-The supervisor drafts `docs/PREREG_v1.md` from P5Q11 to P5Q17. Isaiah reviews it as acting advisor (P5Q11), and P5-2 installs and pins it.
+Isaiah creates the annotated tag `prereg-v1` in Terminal on P5-2's checkpoint commit, pushes the branch and the tag, and files the OSF registration (P5Q11). Then P5-3 verifies the tag and runs the full suite with it present.
 
 ## Decision log
 
@@ -132,11 +132,32 @@ The supervisor drafts `docs/PREREG_v1.md` from P5Q11 to P5Q17. Isaiah reviews it
 >   - It is built and run after the confirmation run, under its own sanction, with the Pass 2 build extended and the event calendars extended (FY2025 FULL earnings, the 2026 BoJ meetings), and with the 5706 split checked (ex-date 2026-09-29; P13(a)).
 >   - P64's intraday PX_OPEN check sits beside it where the data allow.
 >   - It is reported as a sanity check that licenses no claim, and it is never pooled with the confirmation for any claim.
+>
+> - P5-1 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-2 paste).
+>   - Checkpoint `386057a5223d47c7248d913b70eb9774ba6d96c0` (`checkpoint: P5-1`, parent `3c37f0aeb27665d7698e2d9a49d77157a811ec87`), made by its second run (message `c9e28cd149848673233d25e3c692ee53479ba14ddf20aa940ce545f823e58148`).
+>   - Every verdict True. The six focused modules gave `Ran 40 tests`, `OK (skipped=1)`; the suite gave `Ran 398 tests`, `OK (skipped=6)` (1,536 s).
+>   - The commit holds exactly the twelve planned files. `PASS5_STATUS.md` was `d4ad1a3b31e24f6a10a93ecd8b5b820177802cbfdc8ea41f08aee56bb532b1a0`, recomputed by the supervisor from the template and the date.
+>   - Accepted with it: its readings R1 to R10. R10: every call of `io.load_confirm` lies within P5Q3 as clarified.
+>   - Also accepted: its deviation D1 (Deviations), and its note N1 (the commit body is the attribution line the earlier checkpoints carry).
+>   - Report `reports/P5_reports/p5_1.txt`, which holds the second run's steps and the first run's report in full (SHA-256 `c7942e32e38cb8f705cd3526af78000119ceb986fe3466913fb9db26e821c335`).
+> - The pre-registration signed off (Isaiah, 2026-10-12, as acting advisor, P5Q11; by the P5-2 paste).
+>   - `docs/PREREG_v1.md`, SHA-256 `79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6`, as drafted by the supervisor chat. It includes the two readings added at review: §4.1's borderline results, and §4.2's reading of a failed tier (ii).
+>   - With it, its advisor-style review `docs/PREREG_v1_REVIEW.md`, SHA-256 `74d149f5e5d8a5c28a0ea794831eac65dfc867fa9447fe740ad64be20ce989e9`, which recommends sign-off.
+>   - The document had no independent advisor review (its §9.9).
+>   - This closes F4-3 (P5Q12).
+> - P5Q18 (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-2 paste): P5-2's content.
+>   - It installs the pre-registration and its review, and `docs/DECISIONS_ADDENDUM.md`. That is P01 to P13, including P13's one-shot rule, byte-identical to the Project copy (SHA-256 `09ad0d1114c46b2987eb981c47dd9967089e47f0965946d318b1b3124a9bec22`). Until now it was untracked (P3-7a), so with it the tagged commit holds every decision file.
+>   - The pins move under the test-change protocol as documentation pins: `PREREG_SHA256` in `tests/tag_state.py`; `test_p5_tag_state`'s first test; and the three new documents in `tests/test_docs_p2.py`.
+>   - The full-suite checkpoint before the tag (P5Q2, rule 3) is the commit Isaiah tags.
+>   - After it, the tag-dependent tests are rehearsed in a temporary clone of that commit carrying a local annotated `prereg-v1`, with `OFILT_DATA_DIR` set to an empty folder (P5Q4). The clone is removed, and its tag never reaches REPO or the remote.
+>   - Then the item stops, and Isaiah tags.
+>   - Not chosen: a rehearsal before the checkpoint, when the commit to be tagged does not yet exist.
 
 ## Test results
 
 - P5-boot: read-only; no suite run.
-- P5-1: the new and changed modules passed on their own before the commit (`test_p5_tag_state` 5, `test_p6_confirm_run` 7, `test_docs_d3` 6, `test_docs_d3b` 2, `test_io` 8, `test_p4_confirm_run` 12), and the suite ran inside this item's checkpoint (`checkpoint: P5-1`). Its counts are in the report.
+- P5-1 (second run): the new and changed modules passed on their own before the commit (`test_p5_tag_state` 5, `test_p6_confirm_run` 7, `test_docs_d3` 6, `test_docs_d3b` 2, `test_io` 8, `test_p4_confirm_run` 12), and the suite ran inside this item's checkpoint (`checkpoint: P5-1`). Its counts are in the report: `Ran 398 tests`, `OK (skipped=6)`.
+- P5-2: `test_p5_tag_state`, `test_docs_p2`, `test_docs_d3` and `test_docs_d3b` passed on their own before the commit (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-2`). After it, the tagged-clone rehearsal ran 25 tests (OK, skipped=1) in a clone carrying a local `prereg-v1`. The counts are in the report.
 
 ## Test changes
 
@@ -147,11 +168,16 @@ The supervisor drafts `docs/PREREG_v1.md` from P5Q11 to P5Q17. Isaiah reviews it
   - `tests/test_p4_confirm_run.py`, `test_load_confirm_refused_and_logged`. Was: REPO's own guard. Now: `tag_state.io_blinded()` added to its patches, and `tag_state` imported. Assertions unchanged.
   - `tests/tag_state.py` (a helper, not a test module): the `prereg-v1` helpers and `io_blinded` added; the existing helpers unchanged in behaviour.
   - New: `tests/test_p6_confirm_run.py` (7 tests) and `tests/test_p5_tag_state.py` (5 tests). The suite grows from 386 to 398 tests.
+- P5-2 (P5Q18; documentation pins under the test-change protocol, each change with a comment citing P5-2):
+  - `tests/tag_state.py`. Was: `PREREG_SHA256 = None`. Now: the document's SHA-256, `79447ba1…`.
+  - `tests/test_p5_tag_state.py`, `test_constants`. Was: `assertIsNone(TS.PREREG_SHA256)`. Now: `PREREG_SHA256` equals the SHA-256 of `docs/PREREG_v1.md`.
+  - `tests/test_docs_p2.py`, `NEW_PINNED`: adds `docs/PREREG_v1.md`, `docs/PREREG_v1_REVIEW.md` and `docs/DECISIONS_ADDENDUM.md`.
+  - No test added or removed; the suite stays at 398.
 
 ## Flags
 
 Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (closed). Pass 5's:
-- F4-3 (carried): the pre-registration's wording of b's reading. It is decided by P5Q12 and closes when `docs/PREREG_v1.md` is installed (P5-2).
+- F4-3 (closed at P5-2, 2026-10-12): `docs/PREREG_v1.md` §4.4 states the reading of b (P5Q12). Was: F4-3 (carried), the pre-registration's wording of b's reading, decided by P5Q12, to close when the document is installed.
 - F5-1: `ACCESS_LOG` is not in `.gitignore`.
   - The Pass 6 run creates it in REPO.
   - `tools/checkpoint.sh`'s `git add -A` would commit it, and `test_p4_confirm_run`'s test 8 asserts that no name starting `ACCESS_LOG` exists in REPO.
@@ -174,9 +200,16 @@ Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (close
   - the checkpoint's suite reads `panel_dev.csv` only through its existing structural and target-only tests and P4-3's dtype test;
   - `RUN_REGISTRY.jsonl` unchanged (2 lines), `BLIND_FIT_LOG` unchanged (7 lines);
   - `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P5-2:
+  - no data file opened and nothing computed on real data by any script of this item;
+  - documents and documentation pins only, and the checkpoint's suite reads `panel_dev.csv` only through its existing tests;
+  - the tagged-clone rehearsal ran in a temporary clone with `OFILT_DATA_DIR` at an empty folder, which stayed empty, and the clone was removed;
+  - REPO's tags are unchanged: the builder created no tag in REPO, and `prereg-v1` is Isaiah's;
+  - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset.
 
 ## Deviations
 
+- P5-1, its second run (message `c9e28cd149848673233d25e3c692ee53479ba14ddf20aa940ce545f823e58148`; recorded at P5-2, from its report). D1: in step d, the builder typed the module list in place of `<FOCUSED>` rather than reading it by script. The list is exactly FOCUSED, and the run's count equals FOCUSED_RAN. Accepted.
 - P5-1, its first run (message `299375e6109d1429590475717982c2facbd385943c4dfb69c7820287b2b5e2f8`): stopped before b.1, changing nothing in REPO; the cause was the supervisor's wording of P5Q3 (Decision log). The builder's reading of the kit before b.1, which the message did not ask for (its R4 and N1), wrote nothing and is accepted. Its report is kept in `files/pass5_tmp_keep/p5_1_run1/` and printed in full in the second run's report.
 - P5-boot (message `d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46`; recorded at P5-1, from its report):
   - D1: the first runs of a.2 to b.2 were made before the standing prompt was read. They typed the expected values, printed PASS rather than True in a.2 to a.5, were written by a shell heredoc, and ran Python without `env -u OFILT_RUN_SEALED`, the venv activated or `-B`. Every check passed. Each was rerun once in the prompt's form, with equal results, and both runs are in the report. Accepted, as P4-boot2's was.
@@ -188,7 +221,8 @@ For the pre-registration (P5Q13), continuing `PASS4_STATUS.md`'s Disclosure list
 - The supervisor chat that began on 2026-10-12 with handoff H10:
   - read the H10 snapshot and manifest, the Project's documents and the dev document, which shows the dev first look, by design;
   - hashed the Project's document copies, not its data files; the chat interface attached the column names, inferred types and row counts of `panel_dev.csv`, `events_firm.csv` and `events_boj.csv`, which were ignored;
-  - ran, in its sandbox, synthetic tests of the P5-1 kit on a copy of the snapshot, with `OFILT_DATA_DIR` set to an empty folder and stand-in tags that existed only in that copy (`docs/P5_CONFIRM_SCRIPT_SPEC.md`, section 6);
+  - ran, in its sandbox, synthetic tests of the P5-1 kit, and P5-2's pins and tagged-clone rehearsal, on a copy of the snapshot, with `OFILT_DATA_DIR` set to an empty folder and stand-in tags that existed only in that copy (`docs/P5_CONFIRM_SCRIPT_SPEC.md`, section 6);
   - no data file was opened, and no real data were computed on.
 - The P5-boot builder session: no dev value seen (P5-boot's Blinding attestation).
 - The confirmation script's specification `docs/P5_CONFIRM_SCRIPT_SPEC.md`, version 1, and the script `tools/p6_confirm_run.py`, both written after the dev run. The dev run's script and every shared module are unchanged (P5Q5).
+- The pre-registration `docs/PREREG_v1.md` and its review `docs/PREREG_v1_REVIEW.md`, both written after the dev run. Their §9 and §4 state every dev number they use, labelled.

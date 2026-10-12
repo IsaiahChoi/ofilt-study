@@ -21,6 +21,9 @@ NEW_PINNED = {  # P70 (row 22): docs added at P2-6
     "docs/DECISIONS_P58_onward.md": "e7874506706198850c9c680bf052859d6fcf453f511f6bc3ba5403dbef119131",
     "docs/DECISIONS_P71_onward.md": "c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83",  # P81 (P3-7b): the Pass 3 decision file
     "docs/DECISIONS_P82_onward.md": "0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890",  # P87 (P4-7b): the Pass 4 decision file
+    "docs/PREREG_v1.md": "79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6",  # P5-2 (P5Q18): the pre-registration (P5Q6)
+    "docs/PREREG_v1_REVIEW.md": "74d149f5e5d8a5c28a0ea794831eac65dfc867fa9447fe740ad64be20ce989e9",  # P5-2 (P5Q18): its advisor-style review (P5Q11)
+    "docs/DECISIONS_ADDENDUM.md": "09ad0d1114c46b2987eb981c47dd9967089e47f0965946d318b1b3124a9bec22",  # P5-2 (P5Q18): P01 to P13, byte-identical to the Project copy
 }
 
 

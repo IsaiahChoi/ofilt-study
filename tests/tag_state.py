@@ -28,7 +28,7 @@ SPEC_TAG, PREREG_TAG = "spec-dev-v1", "prereg-v1"                               
 CONFIG_PATH = "docs/P4_CONFIRM_CONFIG.json"                                                 # P5-1
 CONFIG_SHA256 = "5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd"          # P5-1: P4Q9 to P4Q31, version 1
 PREREG_PATH = "docs/PREREG_v1.md"                                                           # P5-1 (P5Q6)
-PREREG_SHA256 = None                                                                        # P5-1: set at P5-2 (the document's pin)
+PREREG_SHA256 = "79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6"  # P5-2 (P5Q18, documentation pin): was None (P5-1)
 
 
 def _git_at(root, *args, text=True):
