@@ -275,6 +275,23 @@ No data file was opened in the four Pass 3 chats, and in none of them did anythi
 
 The builder's real-data contact in Pass 3 is listed in PASS3_STATUS, Blinding attestation, including the one sanctioned sealed fit (`BLIND_FIT_LOG` line 7).
 
+**Pass 4 supervisor chats, and the M2 derivation chat (2026-10-07 to 2026-10-12).** Each chat's own attestation is in the handoff it wrote; the last chat's is recorded here directly. The handoffs stay on the Mac, outside the repo and the Project.
+- **The fifth supervisor chat:** its attestation is in `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md`.
+- **The supervisor chat that began on 2026-10-08 with `PASS3_SUPERVISOR_HANDOFF_6_2026-10-08.md`:** its attestation is in `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`.
+- **The supervisor chat that began on 2026-10-08 with `PASS4_SUPERVISOR_HANDOFF_1_2026-10-08.md`:** its attestation is in `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md` (H7, revised 2026-10-09).
+- **The M2 derivation chat (2026-10-08):** its attestation is §10 of `docs/P4_M2_note.md`. Symbolic work and synthetic draws only; no data file opened, read, hashed or listed; the column names and row counts the chat interface attached were ignored.
+- **The supervisor chat that began on 2026-10-09 with `PASS4_SUPERVISOR_HANDOFF_2_2026-10-08.md`:** its attestation is §6 of `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md` (H8).
+- **The supervisor chat that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_3_2026-10-11.md`:** its attestation is §6 of `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md` (H9).
+- **The supervisor chat that began on 2026-10-11 with `PASS4_SUPERVISOR_HANDOFF_4_2026-10-11.md` (P4-4a to P4-7c),** recorded here:
+  - the chat interface attached the column names, inferred column types and row counts of the Project's `panel_dev.csv`, `events_firm.csv` and `events_boj.csv` (no values);
+  - read as text: the H9 repository snapshot and its manifest (code, documents, tests, the configuration and the cost inputs, the last two through Python's `json` module); the Project's documents; the builder reports of P4-4a to P4-7b; the kit files it wrote;
+  - **the dev first look, by design:** the whole dev document and its headline values, printed in P4-5/6's report (P4Q1, P4Q6; `PASS4_STATUS.md`, Disclosure list);
+  - computations in the supervisor's sandbox: dry runs of every records edit on the committed status file, lints, mock-folder tests of the setup scripts, and the repository's documentation tests (`test_docs_d4`, `test_docs_d5`, `test_docs_d6`, `test_docs_p2`) on a patched copy of the snapshot. Because the Project was mounted, `test_docs_d6`'s Project check ran, reading the Project dev panel's `date` column for its last date (asserted on or before 2021-12-31; no value printed). No other column of any data file was read; no web search.
+
+What each earlier chat saw is as its attestation records. In the last chat, the only figures relating a predictor to a target were the dev run's committed outputs, the one sanctioned dev computation of Pass 4; no raw, sealed or 2022+ real value was seen (the 2022+ dates it saw were the dry run's synthetic panels).
+
+The builder's real-data contact in Pass 4 is listed in PASS4_STATUS, Blinding attestation, including the one sanctioned dev run (P4-6).
+
 ### 4.6 Calendar facts used by the Pass 2 build (2026-10-05)
 
 **TSE sessions.**

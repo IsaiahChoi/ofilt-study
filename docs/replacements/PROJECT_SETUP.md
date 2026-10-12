@@ -1,4 +1,4 @@
-# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-07)
+# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-12)
 
 This supersedes the earlier October 2026 versions: the pre-Pass-1 one, and the after-Pass-1 one of 2026-10-02.
 
@@ -27,13 +27,14 @@ The analysis machine is a git repository, not project files: `ofilt/drift/`, `sp
 ## In the project
 
 **Plan and status:**
-- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.5);
+- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.6);
 - `PASS2_HANDOFF.md`, `PASS2_ADDENDUM.md`;
 - `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`), `REBUILD_VERIFICATION.md`;
 - `PASS2_STATUS.md` and the Pass 2 reports;
-- `PASS3_STATUS.md` and the Pass 3 reports.
+- `PASS3_STATUS.md` and the Pass 3 reports;
+- `PASS4_STATUS.md` and the Pass 4 documents and outputs listed under "After Pass 4".
 
-**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81).
+**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81), `DECISIONS_P82_onward.md` (P82–P87).
 
 **Data documentation:** `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`, `MANIFEST.json`, `PASS2_INPUTS.json`.
 
@@ -59,6 +60,13 @@ After Pass 3 (replaced at the Pass 3 upload, after the `spec-dev-v1` tag):
 
 The data, event and build files do not change in Pass 3.
 
+After Pass 4 (replaced at the Pass 4 upload, after P4-7c):
+- replaced: `PROJECT_SETUP.md`, `PLAN.md` (v2.6), `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`;
+- added: `DECISIONS_P82_onward.md`, `PASS4_STATUS.md`, `P4_M2_note.md`, `P4_CONFIRM_CONFIG.json`, `P4_DRYRUN_CRITERIA.md`, the audit `p4_1_audit.md`, and the dev run's document `reports/P4_runs/dev/document.json`, uploaded as `P4_dev_document.json`;
+- the dev document holds the dev first look (P4-6). It is dev, not sealed, and it is disclosed in the pre-registration; once uploaded, every later session sees it.
+
+The data, event and build files do not change in Pass 4. The confirmation code and its specifications stay in the repo.
+
 ## Chat uploads
 
 A file uploaded to a chat is not a Project file, but it stays in that chat.
@@ -67,6 +75,7 @@ A file uploaded to a chat is not a Project file, but it stays in that chat.
 - There is no need to do this again: the Pass 2 build runs on the Mac and verifies every hash itself.
 - The later supervisor chats (2026-10-05 and 2026-10-06) uploaded no raw file and worked on the Project copies only (DATA_PROVENANCE §4.5).
 - The Pass 3 supervisor chats (2026-10-06 and 2026-10-07) uploaded no raw or data file: only supervisor handoffs, status files and builder reports (DATA_PROVENANCE §4.5). The Pass 3 handoffs stay on the Mac, outside the Project.
+- The Pass 4 supervisor chats (2026-10-08 to 2026-10-12) uploaded no raw or data file: only supervisor handoffs, repository snapshots (code, documents and committed reports; no panel), status files and builder reports, which include the dev run's committed outputs (DATA_PROVENANCE §4.5). The Pass 4 handoffs stay on the Mac, outside the Project.
 - Never upload the sealed panel to any chat.
 
 ## Removed from the project (superseded; they would mislead future sessions)

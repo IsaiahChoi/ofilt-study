@@ -22,14 +22,15 @@ PROJECT = Path("/mnt/project")
 class TestProjectSetup(unittest.TestCase):
     def test_restored_byte_for_byte(self):
         data = DOC.read_bytes()
-        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("267c3aa8f22724cc"))  # P81 (P3-7b): was 8b342d1ec69d6069; P70: was c137831848fb3956; P57: was d2afcf2a1fe90074
+        self.assertTrue(hashlib.sha256(data).hexdigest().startswith("f0991f0360787079"))  # P87 (P4-7c): was 267c3aa8f22724cc; P81 (P3-7b): was 8b342d1ec69d6069; P70: was c137831848fb3956; P57: was d2afcf2a1fe90074
         if (PROJECT / "PROJECT_SETUP.md").exists():
             self.assertEqual(data, (PROJECT / "PROJECT_SETUP.md").read_bytes())
         # P57: was "# What goes in the Claude Project, and why (October 2026, after Pass 1)"
         # P70: was "...; refreshed 2026-10-05)"
         # P81 (P3-7b): was "...; refreshed 2026-10-06)"
+        # P87 (P4-7c): was "...; refreshed 2026-10-07)"
         self.assertTrue(DOC.read_text(encoding="utf-8").startswith(
-            "# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-07)"))
+            "# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-12)"))
 
     def test_repo_claims(self):
         for p in ("ofilt/drift", "spec", "tests", "tools", "docs", "reports", "BLIND_FIT_LOG",
@@ -56,8 +57,8 @@ class TestProjectSetup(unittest.TestCase):
         last = pd.read_csv(PROJECT / "panel_dev.csv", usecols=["date"]).date.max()
         self.assertLessEqual(last, "2021-12-31")                                  # no 2022+ rows in the Project
         # Differences recorded in REBUILD_VERIFICATION D6 (not asserted as agreement):
-        self.assertIn("`PLAN.md` (v2.5)", DOC.read_text(encoding="utf-8"))                     # P81 (P3-7b): was (v2.4); P70: was (v2.3); P57: was (v2.1)
-        self.assertTrue((PROJECT / "PLAN.md").read_text(encoding="utf-8").startswith("# Research Plan v2.5"))  # P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
+        self.assertIn("`PLAN.md` (v2.6)", DOC.read_text(encoding="utf-8"))                     # P87 (P4-7c): was (v2.5); P81 (P3-7b): was (v2.4); P70: was (v2.3); P57: was (v2.1)
+        self.assertTrue((PROJECT / "PLAN.md").read_text(encoding="utf-8").startswith("# Research Plan v2.6"))  # P87 (P4-7c): was v2.5; P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
 
 
 if __name__ == "__main__":
