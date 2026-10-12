@@ -9,13 +9,13 @@ Standing prompt: `files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `0398
 | Pass 5 | in progress | The pre-registration and the tag `prereg-v1` (PLAN §8, row 5). |
 | P5-boot a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P5_reports/p5_boot.txt`. |
 | P5-1 P4-7c and P5-boot accepted; Pass 5 opened; P5Q11 to P5Q17; the confirmation script and the tag-state tests | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-1` (`386057a5223d47c7248d913b70eb9774ba6d96c0`), made by its second run; the first stopped before b.1 (Decision log; Deviations). Report `reports/P5_reports/p5_1.txt` (both runs). |
-| P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done | `checkpoint: P5-2`, the commit Isaiah tags `prereg-v1`. Report `/tmp/p5_2.txt`, copied at P5-3. |
-| P5-3 the tag verified; the full suite with the tag present; the tag recorded | to do | Full-suite checkpoint. |
+| P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-2` (`8341ffd930caea6e0327e8fcac90fc2e34652962`), tagged `prereg-v1` by Isaiah. Report `reports/P5_reports/p5_2.txt`. |
+| P5-3 P5-2 accepted; the tag `prereg-v1` verified and recorded; the full suite with the tag present | done | `checkpoint: P5-3`. Report `/tmp/p5_3.txt`, copied at P5-4. |
 | P5-4 decisions P88 onward, PLAN v2.7, README, DATA_PROVENANCE §4.5, PROJECT_SETUP and the upload list; Pass 5 closed | to do | Records-only commits after the documentation tests. |
 
 ## Next action
 
-Isaiah creates the annotated tag `prereg-v1` in Terminal on P5-2's checkpoint commit, pushes the branch and the tag, and files the OSF registration (P5Q11). Then P5-3 verifies the tag and runs the full suite with it present.
+Isaiah files the embargoed OSF registration (P5Q11; the pre-registration's §7.1 and §10). Then P5-4 records its identifier, writes the Pass 5 documents and closes Pass 5.
 
 ## Decision log
 
@@ -152,12 +152,27 @@ Isaiah creates the annotated tag `prereg-v1` in Terminal on P5-2's checkpoint co
 >   - After it, the tag-dependent tests are rehearsed in a temporary clone of that commit carrying a local annotated `prereg-v1`, with `OFILT_DATA_DIR` set to an empty folder (P5Q4). The clone is removed, and its tag never reaches REPO or the remote.
 >   - Then the item stops, and Isaiah tags.
 >   - Not chosen: a rehearsal before the checkpoint, when the commit to be tagged does not yet exist.
+>
+> - P5-2 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-3 paste).
+>   - Checkpoint `8341ffd930caea6e0327e8fcac90fc2e34652962` (`checkpoint: P5-2`, parent `386057a5223d47c7248d913b70eb9774ba6d96c0`), message `cc2050efc89b3003f7f00ccba2f5708f94620ea0239a5bc8da44da3f3239b211`.
+>   - Every verdict True. The focused modules gave 16 tests, OK; the suite gave `Ran 398 tests`, `OK (skipped=6)` (1,488 s). All 40 rows of the pre-registration's Appendix A match REPO.
+>   - The tagged-clone rehearsal ran 25 tests, `OK (skipped=1)`, with an annotated `prereg-v1` on `8341ffd…`, in a clone with no remote and an empty data folder that stayed empty. The clone was removed.
+>   - `PASS5_STATUS.md` was `a092582630de8a98a3bf27d2b7250a15f1498208ebf566502c66e85355bb3129`, recomputed by the supervisor.
+>   - Accepted with it: its readings R1 to R12. R5: the builder read only the pre-registration's outline, Appendix A and §7, so that session has seen no dev value.
+>   - Also accepted: its deviation D1 (Deviations).
+>   - Report `reports/P5_reports/p5_2.txt`.
+> - **The tag `prereg-v1` (Isaiah, in Terminal, after the supervisor's review of P5-2; recorded by the P5-3 paste).**
+>   - It is an annotated tag, object `148b742e097c0ed6945992b7707d928ad21b4d37`, on commit `8341ffd930caea6e0327e8fcac90fc2e34652962`, created with the guarded command the supervisor gave. That command refused unless HEAD was that commit, the tree was clean and no `prereg-v1` existed.
+>   - Its message names `docs/PREREG_v1.md` with SHA-256 `79447ba1…`, and the acting-advisor sign-off. Its tagger line records its date and time.
+>   - Isaiah pushed `main` (`386057a..8341ffd`) and then the tag to `origin`, and the push printed `[new tag] prereg-v1 -> prereg-v1`.
+>   - From the tag on, the guard grants `confirm_real`. Every change to code or tests is a dated, labelled deviation (P13(c)), and the confirmation panel is opened only by Pass 6's sanctioned run (the pre-registration's §7).
 
 ## Test results
 
 - P5-boot: read-only; no suite run.
 - P5-1 (second run): the new and changed modules passed on their own before the commit (`test_p5_tag_state` 5, `test_p6_confirm_run` 7, `test_docs_d3` 6, `test_docs_d3b` 2, `test_io` 8, `test_p4_confirm_run` 12), and the suite ran inside this item's checkpoint (`checkpoint: P5-1`). Its counts are in the report: `Ran 398 tests`, `OK (skipped=6)`.
 - P5-2: `test_p5_tag_state`, `test_docs_p2`, `test_docs_d3` and `test_docs_d3b` passed on their own before the commit (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-2`). After it, the tagged-clone rehearsal ran 25 tests (OK, skipped=1) in a clone carrying a local `prereg-v1`. The counts are in the report.
+- P5-3, with `prereg-v1` present in REPO: `test_p5_tag_state`, `test_docs_d3`, `test_docs_d3b` and `test_docs_p2` passed on their own (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-3`; P5Q2, rule 3). The counts are in the report.
 
 ## Test changes
 
@@ -206,9 +221,17 @@ Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (close
   - the tagged-clone rehearsal ran in a temporary clone with `OFILT_DATA_DIR` at an empty folder, which stayed empty, and the clone was removed;
   - REPO's tags are unchanged: the builder created no tag in REPO, and `prereg-v1` is Isaiah's;
   - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset.
+- P5-3 (the first item with `prereg-v1` present):
+  - no data file opened and nothing computed on real data by any script of this item;
+  - records only, and the checkpoint's suite reads `panel_dev.csv` and the event files only through its existing tests;
+  - with the tag present, every call of `io.load_confirm` in the suite lies within P5Q3 as clarified: a throwaway guard, or the function replaced, and a temporary data path;
+  - no ACCESS_LOG appeared in REPO, which shows that no call reached REPO's own guard;
+  - `tools/p6_confirm_run.py` was not run except by its tests;
+  - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset; no tag created, moved or deleted.
 
 ## Deviations
 
+- P5-2 (message `cc2050efc89b3003f7f00ccba2f5708f94620ea0239a5bc8da44da3f3239b211`; recorded at P5-3, from its report). D1: step f's check script parsed only lowercase keys, so its first run failed two checks on values the rehearsal had printed correctly. The script was fixed (one line) and rerun once under the rerun-once rule: F CHECK True. The rehearsal itself ran once. Accepted.
 - P5-1, its second run (message `c9e28cd149848673233d25e3c692ee53479ba14ddf20aa940ce545f823e58148`; recorded at P5-2, from its report). D1: in step d, the builder typed the module list in place of `<FOCUSED>` rather than reading it by script. The list is exactly FOCUSED, and the run's count equals FOCUSED_RAN. Accepted.
 - P5-1, its first run (message `299375e6109d1429590475717982c2facbd385943c4dfb69c7820287b2b5e2f8`): stopped before b.1, changing nothing in REPO; the cause was the supervisor's wording of P5Q3 (Decision log). The builder's reading of the kit before b.1, which the message did not ask for (its R4 and N1), wrote nothing and is accepted. Its report is kept in `files/pass5_tmp_keep/p5_1_run1/` and printed in full in the second run's report.
 - P5-boot (message `d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46`; recorded at P5-1, from its report):
