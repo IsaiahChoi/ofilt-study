@@ -6,16 +6,16 @@ Standing prompt: `files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `0398
 
 | Item | Status | Notes |
 |---|---|---|
-| Pass 5 | in progress | The pre-registration and the tag `prereg-v1` (PLAN §8, row 5). |
+| Pass 5 | closed 2026-10-12 | The pre-registration and the tag `prereg-v1` (PLAN §8, row 5): `prereg-v1` on `8341ffd…`; OSF `osf.io/3mr5h`. |
 | P5-boot a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P5_reports/p5_boot.txt`. |
 | P5-1 P4-7c and P5-boot accepted; Pass 5 opened; P5Q11 to P5Q17; the confirmation script and the tag-state tests | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-1` (`386057a5223d47c7248d913b70eb9774ba6d96c0`), made by its second run; the first stopped before b.1 (Decision log; Deviations). Report `reports/P5_reports/p5_1.txt` (both runs). |
 | P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-2` (`8341ffd930caea6e0327e8fcac90fc2e34652962`), tagged `prereg-v1` by Isaiah. Report `reports/P5_reports/p5_2.txt`. |
-| P5-3 P5-2 accepted; the tag `prereg-v1` verified and recorded; the full suite with the tag present | done | `checkpoint: P5-3`. Report `/tmp/p5_3.txt`, copied at P5-4. |
-| P5-4 decisions P88 onward, PLAN v2.7, README, DATA_PROVENANCE §4.5, PROJECT_SETUP and the upload list; Pass 5 closed | to do | Records-only commits after the documentation tests. |
+| P5-3 P5-2 accepted; the tag `prereg-v1` verified and recorded; the full suite with the tag present | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-3` (`41f5de3e893fc833bc6a2c5323859ff405c30f14`). Report `reports/P5_reports/p5_3.txt`. |
+| P5-4 P5-3 accepted; the OSF registration recorded; P5Q19; decisions P88 to P92; Pass 5 closed | done | `records: P5-4`, a records-only commit after the documentation tests (no suite: P5Q2). The pinned documents are left for Pass 6 (P5Q19, P92). Report `/tmp/p5_4.txt`, copied at Pass 6's first item. |
 
 ## Next action
 
-Isaiah files the embargoed OSF registration (P5Q11; the pre-registration's §7.1 and §10). Then P5-4 records its identifier, writes the Pass 5 documents and closes Pass 5.
+Pass 5 is closed. Next is Pass 6, the confirmation run, under its own sanction, gate and command (the pre-registration's §7). Pass 6's first item records P5-4's acceptance and copies its report. Its records refresh the pinned documents (P92).
 
 ## Decision log
 
@@ -166,13 +166,39 @@ Isaiah files the embargoed OSF registration (P5Q11; the pre-registration's §7.1
 >   - Its message names `docs/PREREG_v1.md` with SHA-256 `79447ba1…`, and the acting-advisor sign-off. Its tagger line records its date and time.
 >   - Isaiah pushed `main` (`386057a..8341ffd`) and then the tag to `origin`, and the push printed `[new tag] prereg-v1 -> prereg-v1`.
 >   - From the tag on, the guard grants `confirm_real`. Every change to code or tests is a dated, labelled deviation (P13(c)), and the confirmation panel is opened only by Pass 6's sanctioned run (the pre-registration's §7).
+>
+> - P5-3 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-4 paste).
+>   - Checkpoint `41f5de3e893fc833bc6a2c5323859ff405c30f14` (`checkpoint: P5-3`, parent `8341ffd…`), message `bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82`.
+>   - Every verdict True. With `prereg-v1` present in REPO:
+>     - the four tag-dependent documentation modules gave 16 tests, OK;
+>     - the suite gave `Ran 398 tests`, `OK (skipped=6)` (1,539 s), the same counts as before the tag;
+>     - no ACCESS_LOG appeared, so no call reached REPO's own guard.
+>   - The tag was verified: annotated, object `148b742e…` on `8341ffd…`, its message naming the pre-registration's SHA-256, and at the tag the frozen spec, the configuration, the pre-registration, the confirmation script and the assembler at their SHA-256. GitHub holds it at `148b742e…`, by the setup script's `git ls-remote` and again by the builder's reading.
+>   - `PASS5_STATUS.md` was `1d95e250a297108606a59885208731aed75ba1858e1a120fadd7e9f2afe31170`, recomputed by the supervisor.
+>   - Accepted with it: its readings R1 to R11 and notes N1 to N6. N1: the message's `timeout` command does not exist on macOS, which was the supervisor's error. The reading was made with an equivalent bound instead; it was not a verdict.
+>   - Report `reports/P5_reports/p5_3.txt`.
+> - **The OSF registration (Isaiah, 2026-10-12; P5Q11; recorded by the P5-4 paste).**
+>   - An embargoed registration, Open-Ended template, `https://osf.io/3mr5h`. It holds the pre-registration, its review, the repository's tracked tree at the tag (`git archive` of `prereg-v1`) and a hash file (`OSF_HASHES.txt`) with the tag object, the commit and their SHA-256.
+>   - The embargo is to end on or before 2030-10-01.
+>   - This meets the pre-registration's §7.1 precondition (filed, identifier recorded) and its §10.
+> - P5Q19 (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-4 paste): the pinned documents are left for Pass 6 (P92).
+>   - After the tag, refreshing `PLAN.md`, `DATA_PROVENANCE.md`, `PROJECT_SETUP.md` or `README.md`, or pinning a new document, would change `tests/test_docs_p2.py`. That is a labelled deviation (P13(c)).
+>   - So Pass 5's record stays in this file and in `docs/DECISIONS_P88_onward.md` (P88 to P92; SHA-256 `30c3bedf838e21f321f4006cccfae48071e1621750d6ddb2dd7b945814757f54`), neither of which any test reads.
+>   - Pass 6's records refresh those documents and pin the decision file, alongside the test changes Pass 6 needs anyway (F5-1).
+>   - It supersedes P5Q1's scope of P5-4, and P5Q7's clause "pinned in `tests/test_docs_p2.py` when written (P5-4)".
+>   - Not chosen: refreshing them now as labelled documentation-pin deviations.
+> - **Pass 5 closed (Isaiah, 2026-10-12; recorded by the P5-4 paste).**
+>   - PLAN §8's Pass 5 is done: the pre-registration fixed, signed off as P5Q11 describes, tagged `prereg-v1`, and registered externally.
+>   - No full suite ran at P5-4: the last ran at P5-3, after the last change to tests (P5-2's pins), so P5Q2's rule 4 is met.
+>   - This file is closed from Pass 6's first item; that item records P5-4's acceptance in `PASS6_STATUS.md`.
 
 ## Test results
 
 - P5-boot: read-only; no suite run.
 - P5-1 (second run): the new and changed modules passed on their own before the commit (`test_p5_tag_state` 5, `test_p6_confirm_run` 7, `test_docs_d3` 6, `test_docs_d3b` 2, `test_io` 8, `test_p4_confirm_run` 12), and the suite ran inside this item's checkpoint (`checkpoint: P5-1`). Its counts are in the report: `Ran 398 tests`, `OK (skipped=6)`.
 - P5-2: `test_p5_tag_state`, `test_docs_p2`, `test_docs_d3` and `test_docs_d3b` passed on their own before the commit (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-2`). After it, the tagged-clone rehearsal ran 25 tests (OK, skipped=1) in a clone carrying a local `prereg-v1`. The counts are in the report.
-- P5-3, with `prereg-v1` present in REPO: `test_p5_tag_state`, `test_docs_d3`, `test_docs_d3b` and `test_docs_p2` passed on their own (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-3`; P5Q2, rule 3). The counts are in the report.
+- P5-3, with `prereg-v1` present in REPO: `test_p5_tag_state`, `test_docs_d3`, `test_docs_d3b` and `test_docs_p2` passed on their own (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-3`; P5Q2, rule 3): `Ran 398 tests`, `OK (skipped=6)`.
+- P5-4: the seven documentation modules (`test_docs_p2`, `test_docs_d3`, `test_docs_d3b`, `test_docs_d4`, `test_docs_d5`, `test_docs_d6`, `test_p5_tag_state`) passed before the records-only commit: 26 tests, `OK (skipped=1)`, the skip being `test_docs_d6`'s Project check off the Project. No full suite (P5Q2, rule 4).
 
 ## Test changes
 
@@ -197,7 +223,7 @@ Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (close
   - The Pass 6 run creates it in REPO.
   - `tools/checkpoint.sh`'s `git add -A` would commit it, and `test_p4_confirm_run`'s test 8 asserts that no name starting `ACCESS_LOG` exists in REPO.
   - P5Q14 fixes its handling for Pass 6's run note.
-- F5-2: README's status block is stale (it still names `spec-dev-v1` as next). P5-4 refreshes it.
+- F5-2: README's status block is stale (it still names `spec-dev-v1` as next). It is refreshed in Pass 6's records, with PLAN, DATA_PROVENANCE and PROJECT_SETUP (P5Q19, P92). Was: "P5-4 refreshes it".
 - F5-3 (from P86): Pass 6's run note reads `git_dirty` with `RUN_REGISTRY.jsonl` excluded (P5Q14).
 
 ## Blinding attestation
@@ -228,6 +254,12 @@ Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (close
   - no ACCESS_LOG appeared in REPO, which shows that no call reached REPO's own guard;
   - `tools/p6_confirm_run.py` was not run except by its tests;
   - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset; no tag created, moved or deleted.
+- P5-4:
+  - records only: one new decision file, this file, and a report copied;
+  - no data file opened, nothing computed on real data, and no full suite (P5Q2, rule 4);
+  - the documentation modules read no data;
+  - no file of code or tests changed (P5Q19);
+  - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` unset; no tag created, moved or deleted.
 
 ## Deviations
 
@@ -249,3 +281,5 @@ For the pre-registration (P5Q13), continuing `PASS4_STATUS.md`'s Disclosure list
 - The P5-boot builder session: no dev value seen (P5-boot's Blinding attestation).
 - The confirmation script's specification `docs/P5_CONFIRM_SCRIPT_SPEC.md`, version 1, and the script `tools/p6_confirm_run.py`, both written after the dev run. The dev run's script and every shared module are unchanged (P5Q5).
 - The pre-registration `docs/PREREG_v1.md` and its review `docs/PREREG_v1_REVIEW.md`, both written after the dev run. Their §9 and §4 state every dev number they use, labelled.
+- The OSF registration `osf.io/3mr5h` (embargoed): it holds the pre-registration, its review and the repository's tracked tree at `prereg-v1`. No data file is tracked, so it holds none. The tracked tree includes the dev run's committed outputs (`reports/P4_runs/dev/`) and the aggregate reports of the sealed simulations, which §9 discloses.
+- For DATA_PROVENANCE §4.5, until Pass 6 refreshes it (P92): Pass 5's builder sessions read no dev value, and opened, listed and hashed no data file (each item's Blinding attestation). Its supervisor chat is as above. It also read the builder reports of P5-boot to P5-3, and gave Isaiah the commands for the tag and the OSF export.

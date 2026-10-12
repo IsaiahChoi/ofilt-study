@@ -1,0 +1,1098 @@
+2026-10-12T20:32:12Z
+41f5de3e893fc833bc6a2c5323859ff405c30f14
+bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82  /tmp/p5_3_msg.txt
+
+# P5-3: P5-2 accepted; the tag prereg-v1 verified and recorded; the full suite with the tag present
+
+Builder report.
+
+## Scripts and their outputs
+
+### a.1
+----- /tmp/p5_3_date.out -----
+2026-10-12
+----- end of /tmp/p5_3_date.out -----
+
+----- /tmp/p5_3_msgsha.out -----
+bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82  /tmp/p5_3_msg.txt
+----- end of /tmp/p5_3_msgsha.out -----
+
+### Shared helper of the Python scripts
+----- /tmp/p5_3_common.py -----
+"""P5-3: shared helpers for the item's Python scripts.
+
+Imports no module of ofilt; reads files as bytes. Expected values are read from /tmp/p5_3_msg.txt, list
+"## Expected values", one line per name, `- NAME = value`; the item's date D from /tmp/p5_3_date.out (a.1).
+"""
+import hashlib
+import os
+import re
+import subprocess
+
+MSG = "/tmp/p5_3_msg.txt"
+DATE_FILE = "/tmp/p5_3_date.out"
+
+
+def read_bytes(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def sha256_bytes(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256(path):
+    return sha256_bytes(read_bytes(path))
+
+
+def expected():
+    data = read_bytes(MSG)
+    print(f"message {MSG}: sha256 {sha256_bytes(data)}")
+    lines = data.decode("utf-8").split("\n")
+    start = lines.index("## Expected values")
+    E = {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            if m.group(1) in E:
+                raise SystemExit(f"duplicate expected value {m.group(1)}")
+            E[m.group(1)] = m.group(2)
+    print(f"expected values read: {len(E)}")
+    return E
+
+
+def item_date():
+    d = read_bytes(DATE_FILE).decode("utf-8").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        raise SystemExit(f"{DATE_FILE} does not hold a date: {d!r}")
+    print(f"D (from {DATE_FILE}): {d}")
+    return d
+
+
+def path(value):
+    return os.path.expanduser(value)
+
+
+def spaced(value):
+    """Items separated by a space."""
+    return value.split(" ")
+
+
+def pairs(value):
+    """`path:sha256` items separated by ` | `, split at the last colon."""
+    return [tuple(item.rsplit(":", 1)) for item in value.split(" | ")]
+
+
+REPO = path("~/Desktop/FX_Project/ofilt_pass1")
+
+
+def git_raw(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True)
+
+
+def git(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], check=True,
+                          capture_output=True).stdout.decode("utf-8")
+
+
+def lines_of(data):
+    return data.count(b"\n")
+
+
+def access_log_hits(root=REPO):
+    """Names starting ACCESS_LOG under root outside .git (names only; nothing opened, other names not printed)."""
+    hits = []
+    for r, dirs, files in os.walk(root):
+        if r == root and ".git" in dirs:
+            dirs.remove(".git")
+        hits += [os.path.relpath(os.path.join(r, n), root) for n in dirs + files if n.startswith("ACCESS_LOG")]
+    return hits
+
+
+def porcelain(repo=REPO):
+    """`git status --porcelain --untracked-files=all` as a list of (status, path)."""
+    out = git("status", "--porcelain", "--untracked-files=all", repo=repo)
+    return [(ln[:2], ln[3:]) for ln in out.splitlines() if ln]
+
+
+def logs_unchanged(C, E):
+    for rel, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+        data = read_bytes(os.path.join(REPO, rel))
+        C.check(sha256_bytes(data) == E[f"{key}_SHA256"] and lines_of(data) == int(E[f"{key}_LINES"]),
+                f"{rel} sha256 == {key}_SHA256 and lines == {key}_LINES",
+                f"{sha256_bytes(data)}, {lines_of(data)} lines")
+
+
+def tag_state(C, E):
+    """prereg-v1 and spec-dev-v1 as the message gives them."""
+    obj = git("rev-parse", "refs/tags/prereg-v1").strip()
+    C.check(obj == E["PREREG_TAG_OBJECT"], "refs/tags/prereg-v1 == PREREG_TAG_OBJECT", obj)
+    kind = git("cat-file", "-t", "refs/tags/prereg-v1").strip()
+    C.check(kind == "tag", "prereg-v1 is of type tag (annotated)", kind)
+    commit = git("rev-parse", "refs/tags/prereg-v1^{commit}").strip()
+    C.check(commit == E["PREREG_TAG_COMMIT"], "prereg-v1's commit == PREREG_TAG_COMMIT", commit)
+    return commit
+
+
+class Checks:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.n = 0
+        self.fails = []
+
+    def check(self, ok, label, detail=""):
+        self.n += 1
+        if not ok:
+            self.fails.append(label)
+        print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+    def done(self):
+        print(f"checks: {self.n}; failed: {len(self.fails)}")
+        for f in self.fails:
+            print(f"FAIL {f}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+----- end of /tmp/p5_3_common.py -----
+
+### a.2
+----- /tmp/p5_3_a2.sh -----
+#!/bin/bash
+# P5-3 a.2: OFILT_RUN_SEALED must be absent from the session's environment. Runs no Python.
+ok=True
+if env | grep -q '^OFILT_RUN_SEALED='; then
+  echo "OFILT_RUN_SEALED in the exported environment: yes"
+  ok=False
+else
+  echo "OFILT_RUN_SEALED in the exported environment: no"
+fi
+if [ -n "${OFILT_RUN_SEALED+x}" ]; then
+  echo "OFILT_RUN_SEALED set in this shell: yes"
+  ok=False
+else
+  echo "OFILT_RUN_SEALED set in this shell: no"
+fi
+echo "A2_ENV CHECK: ${ok}"
+----- end of /tmp/p5_3_a2.sh -----
+
+----- /tmp/p5_3_a2.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p5_3_a2.out -----
+
+### a.3 (with the tag's text, and the ls-remote reading)
+----- /tmp/p5_3_a3.py -----
+"""P5-3 a.3: REPO and the tag prereg-v1, before any change (verdict line `A3 CHECK`).
+
+Imports no module of ofilt; reads files as bytes; read-only git commands only (the ls-remote reading reads the
+remote, read-only).
+"""
+import os
+import subprocess
+
+from p5_3_common import (REPO, Checks, access_log_hits, expected, git, git_raw, logs_unchanged, pairs, sha256,
+                         sha256_bytes, spaced, tag_state)
+
+E = expected()
+C = Checks("A3")
+
+head = git("rev-parse", "HEAD").strip()
+C.check(head == E["HEAD"], "HEAD == HEAD", head)
+status = git("status", "--porcelain", "--untracked-files=all")
+C.check(status == "", "git status --porcelain --untracked-files=all prints nothing", repr(status) if status else "")
+remote = git("branch", "-r", "--contains", "HEAD").strip()
+print(f"git branch -r --contains HEAD: {remote!r}; current branch: {git('branch', '--show-current').strip()}")
+C.check(remote != "", "HEAD is on a remote-tracking branch")
+tags = git("tag", "-l").split()
+C.check(tags == spaced(E["TAG_LIST"]), "git tag -l == TAG_LIST", " ".join(tags))
+
+commit = tag_state(C, E)
+C.check(commit == head, "prereg-v1's commit is HEAD")
+spec_obj = git("rev-parse", "refs/tags/spec-dev-v1").strip()
+C.check(spec_obj == E["SPEC_TAG_OBJECT"], "refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT", spec_obj)
+spec_commit = git("rev-parse", "refs/tags/spec-dev-v1^{commit}").strip()
+C.check(spec_commit == E["SPEC_TAG_COMMIT"], "spec-dev-v1's commit == SPEC_TAG_COMMIT", spec_commit)
+anc = git_raw("merge-base", "--is-ancestor", E["SPEC_TAG_COMMIT"], E["PREREG_TAG_COMMIT"]).returncode
+C.check(anc == 0, "SPEC_TAG_COMMIT is an ancestor of PREREG_TAG_COMMIT")
+
+raw = git("cat-file", "-p", "refs/tags/prereg-v1")
+print("---- git cat-file -p refs/tags/prereg-v1 ----")
+print(raw, end="" if raw.endswith("\n") else "\n")
+print("---- end ----")
+C.check(E["TAG_MESSAGE_CONTAINS"] in raw, "the tag's message contains TAG_MESSAGE_CONTAINS")
+
+for rel, want in pairs(E["AT_TAG"]):
+    blob = git_raw("show", f"refs/tags/prereg-v1:{rel}")
+    got = sha256_bytes(blob.stdout) if blob.returncode == 0 else f"git show failed ({blob.returncode})"
+    C.check(got == want, f"at the tag: {rel} sha256", got)
+
+logs_unchanged(C, E)
+hits = access_log_hits()
+C.check(not hits, "no name starting ACCESS_LOG in REPO outside .git", ", ".join(hits))
+for name in ("OLD", "UNCHANGED"):
+    for rel, want in pairs(E[name]):
+        got = sha256(os.path.join(REPO, rel))
+        C.check(got == want, f"{name} {rel} sha256", got)
+for rel in spaced(E["ABSENT"]):
+    C.check(not os.path.lexists(os.path.join(REPO, rel)), f"ABSENT {rel} does not exist")
+
+print("---- reading (not a verdict): the message's ls-remote command ----")
+env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+cmd = ["timeout", "30", "git", "-C", REPO, "ls-remote", "--tags", "origin", "refs/tags/prereg-v1"]
+print("$ GIT_TERMINAL_PROMPT=0 " + " ".join(cmd))
+try:
+    r = subprocess.run(cmd, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL)
+    print(f"exit {r.returncode}; stdout: {r.stdout.strip()!r}; stderr: {r.stderr.strip()!r}")
+except FileNotFoundError as e:
+    print(f"failed: {e}")
+    print("---- reading (not a verdict): the same git ls-remote, bounded by Python's 30-s timeout instead ----")
+    cmd = cmd[2:]
+    print("$ GIT_TERMINAL_PROMPT=0 " + " ".join(cmd) + "   (subprocess timeout=30, stdin closed)")
+    try:
+        r = subprocess.run(cmd, env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=30)
+        print(f"exit {r.returncode}; stdout: {r.stdout.strip()!r}; stderr: {r.stderr.strip()!r}")
+    except subprocess.TimeoutExpired:
+        print("failed: no answer within 30 s")
+print("---- end of reading ----")
+
+C.done()
+----- end of /tmp/p5_3_a3.py -----
+
+----- /tmp/p5_3_a3.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+[ok] HEAD == HEAD: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] git status --porcelain --untracked-files=all prints nothing
+git branch -r --contains HEAD: 'origin/main'; current branch: main
+[ok] HEAD is on a remote-tracking branch
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] prereg-v1's commit is HEAD
+[ok] refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT: cee3b49e81d16f1f32e546cac9524b209ac1e493
+[ok] spec-dev-v1's commit == SPEC_TAG_COMMIT: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+[ok] SPEC_TAG_COMMIT is an ancestor of PREREG_TAG_COMMIT
+---- git cat-file -p refs/tags/prereg-v1 ----
+object 8341ffd930caea6e0327e8fcac90fc2e34652962
+type commit
+tag prereg-v1
+tagger ofilt-pass1 <pass1@localhost> 1791833487 -0400
+
+prereg-v1: pre-registration v1 (docs/PREREG_v1.md, sha256 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6), signed off by Isaiah Choi as acting advisor (P5Q11); on checkpoint: P5-2
+---- end ----
+[ok] the tag's message contains TAG_MESSAGE_CONTAINS
+[ok] at the tag: spec/analysis_spec_dev_v1.yaml sha256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+[ok] at the tag: docs/P4_CONFIRM_CONFIG.json sha256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] at the tag: docs/PREREG_v1.md sha256: 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+[ok] at the tag: tools/p6_confirm_run.py sha256: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] at the tag: ofilt/drift/confirm_run.py sha256: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] no name starting ACCESS_LOG in REPO outside .git
+[ok] OLD PASS5_STATUS.md sha256: a092582630de8a98a3bf27d2b7250a15f1498208ebf566502c66e85355bb3129
+[ok] UNCHANGED tools/p6_confirm_run.py sha256: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] UNCHANGED docs/PREREG_v1.md sha256: 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+[ok] UNCHANGED tests/tag_state.py sha256: fb8c16309cbdea97675ab294074ee2de2447161002bdeb8f06e089153cc2ccc0
+[ok] UNCHANGED docs/P4_CONFIRM_CONFIG.json sha256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] UNCHANGED spec/analysis_spec_dev_v1.yaml sha256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+[ok] ABSENT reports/P5_reports/p5_2.txt does not exist
+---- reading (not a verdict): the message's ls-remote command ----
+$ GIT_TERMINAL_PROMPT=0 timeout 30 git -C /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1 ls-remote --tags origin refs/tags/prereg-v1
+failed: [Errno 2] No such file or directory: 'timeout'
+---- reading (not a verdict): the same git ls-remote, bounded by Python's 30-s timeout instead ----
+$ GIT_TERMINAL_PROMPT=0 git -C /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1 ls-remote --tags origin refs/tags/prereg-v1   (subprocess timeout=30, stdin closed)
+exit 0; stdout: '148b742e097c0ed6945992b7707d928ad21b4d37\trefs/tags/prereg-v1'; stderr: ''
+---- end of reading ----
+checks: 27; failed: 0
+A3 CHECK: True
+----- end of /tmp/p5_3_a3.out -----
+
+### a.4
+----- /tmp/p5_3_a4.py -----
+"""P5-3 a.4: the kit and P5-2's kept report (verdict line `A4 CHECK`).
+
+Imports no module of ofilt; reads files as bytes.
+"""
+import os
+import stat
+
+from p5_3_common import Checks, expected, lines_of, pairs, path, read_bytes, sha256, sha256_bytes
+
+E = expected()
+C = Checks("A4")
+
+kit_dir = path(E["KIT_DIR"])
+kit = pairs(E["KIT"])
+entries = sorted(os.listdir(kit_dir))
+print(f"entries in {kit_dir}: {entries}")
+C.check(entries == sorted(n for n, _ in kit) and len(kit) == 1, "KIT_DIR holds exactly the one file of KIT")
+for name, want in kit:
+    p = os.path.join(kit_dir, name)
+    ok = os.path.lexists(p) and stat.S_ISREG(os.lstat(p).st_mode)
+    got = sha256(p) if ok else "missing"
+    C.check(ok and got == want, f"KIT {name} sha256", got)
+
+src = path(E["P5_2_SRC"])
+C.check(os.path.isfile(src), "P5_2_SRC exists", src)
+data = read_bytes(src)
+print(f"P5_2_SRC sha256: {sha256_bytes(data)}; lines: {lines_of(data)}")
+tmp = "/tmp/p5_2.txt"
+print(f"/tmp/p5_2.txt exists: {os.path.isfile(tmp)}")
+if os.path.isfile(tmp):
+    C.check(sha256(tmp) == sha256_bytes(data), "/tmp/p5_2.txt sha256 == P5_2_SRC's", sha256(tmp))
+
+C.done()
+----- end of /tmp/p5_3_a4.py -----
+
+----- /tmp/p5_3_a4.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+entries in /Users/isaiahchoi/Desktop/FX_Project/files/pass5/p5_3: ['PASS5_STATUS.template.md']
+[ok] KIT_DIR holds exactly the one file of KIT
+[ok] KIT PASS5_STATUS.template.md sha256: 7feb365fb48c7c497ec9bec64e2e8dc19d5e2422162b8d73c2ece88ea01f9d34
+[ok] P5_2_SRC exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass5_tmp_keep/p5_2_final/p5_2.txt
+P5_2_SRC sha256: 0bc607f84dc728d48d8f97ab22a021c54908c47229eca6f54a12d744e588e044; lines: 1649
+/tmp/p5_2.txt exists: True
+[ok] /tmp/p5_2.txt sha256 == P5_2_SRC's: 0bc607f84dc728d48d8f97ab22a021c54908c47229eca6f54a12d744e588e044
+checks: 4; failed: 0
+A4 CHECK: True
+----- end of /tmp/p5_3_a4.out -----
+
+### b.1: the copy (bash) and its check (Python)
+----- /tmp/p5_3_b1.sh -----
+#!/bin/bash
+# P5-3 b.1: copy P5-2's kept report into REPO with cp -p. Runs no Python. P5_2_SRC and P5_2_DEST are read from the
+# message's "## Expected values" list; `~` is expanded to the home folder.
+set -u
+MSG=/tmp/p5_3_msg.txt
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+val() {  # the value of `- NAME = value` in the Expected values list
+  sed -n '/^## Expected values$/,$p' "$MSG" | sed -n "s/^- $1 = //p"
+}
+src="$(val P5_2_SRC)"
+src="${src/#\~/$HOME}"
+dest="$REPO/$(val P5_2_DEST)"
+if [ -e "$dest" ]; then
+  echo "REFUSED: $dest exists"
+  exit 1
+fi
+if cp -p "$src" "$dest"; then
+  echo "cp -p \"$src\" \"$dest\": done"
+else
+  echo "cp -p \"$src\" \"$dest\": FAILED"
+  exit 1
+fi
+----- end of /tmp/p5_3_b1.sh -----
+
+----- /tmp/p5_3_b1.out -----
+cp -p "/Users/isaiahchoi/Desktop/FX_Project/files/pass5_tmp_keep/p5_2_final/p5_2.txt" "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/reports/P5_reports/p5_2.txt": done
+----- end of /tmp/p5_3_b1.out -----
+
+----- /tmp/p5_3_b1_check.py -----
+"""P5-3 b.1, the check: P5_2_DEST's SHA-256 equals P5_2_SRC's (verdict line `B1 CHECK`).
+
+Imports no module of ofilt; reads files as bytes.
+"""
+import os
+
+from p5_3_common import REPO, Checks, expected, path, sha256
+
+E = expected()
+C = Checks("B1")
+
+s, d = path(E["P5_2_SRC"]), os.path.join(REPO, E["P5_2_DEST"])
+got = sha256(d) if os.path.isfile(d) else "missing"
+C.check(got == sha256(s), f"{E['P5_2_DEST']} sha256 == P5_2_SRC's", got)
+print(f"    mtime preserved (cp -p): {os.stat(s).st_mtime == os.stat(d).st_mtime}")
+
+C.done()
+----- end of /tmp/p5_3_b1_check.py -----
+
+----- /tmp/p5_3_b1_check.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+[ok] reports/P5_reports/p5_2.txt sha256 == P5_2_SRC's: 0bc607f84dc728d48d8f97ab22a021c54908c47229eca6f54a12d744e588e044
+    mtime preserved (cp -p): True
+checks: 1; failed: 0
+B1 CHECK: True
+----- end of /tmp/p5_3_b1_check.out -----
+
+### b.2
+----- /tmp/p5_3_b2.py -----
+"""P5-3 b.2: PASS5_STATUS.md rewritten from the kit's template, with D (verdict line `B2 CHECK`).
+
+Imports no module of ofilt; reads and writes files as bytes. Writes one file, REPO/PASS5_STATUS.md, and only if it
+has BASE_STATUS_SHA256 and the template passes its checks.
+"""
+import os
+
+from p5_3_common import REPO, Checks, expected, item_date, pairs, path, read_bytes, sha256_bytes
+
+E = expected()
+D = item_date()
+C = Checks("B2")
+
+target = os.path.join(REPO, "PASS5_STATUS.md")
+base = read_bytes(target)
+C.check(sha256_bytes(base) == E["BASE_STATUS_SHA256"], "REPO/PASS5_STATUS.md sha256 == BASE_STATUS_SHA256",
+        sha256_bytes(base))
+name = pairs(E["KIT"])[0][0]
+template = read_bytes(os.path.join(path(E["KIT_DIR"]), name))
+C.check(sha256_bytes(template) == E["TEMPLATE_SHA256"], f"{name} sha256 == TEMPLATE_SHA256", sha256_bytes(template))
+count = template.count(b"{DATE}")
+C.check(count == int(E["TEMPLATE_PLACEHOLDERS"]), "template's {DATE} count == TEMPLATE_PLACEHOLDERS", str(count))
+
+if not C.fails:
+    dated = template.replace(b"{DATE}", D.encode("utf-8"))
+    with open(target, "wb") as fh:
+        fh.write(dated)
+    written = read_bytes(target)
+    C.check(written == dated, "PASS5_STATUS.md's bytes == the template's with every {DATE} replaced by D")
+    C.check(b"{DATE}" not in written, "PASS5_STATUS.md holds no {DATE}")
+    print(f"PASS5_STATUS.md sha256: {sha256_bytes(written)}; lines: {written.count(b'\n')}")
+    print("the template's lines that held {DATE}, as written:")
+    for i, ln in enumerate(template.decode("utf-8").split("\n"), 1):
+        if "{DATE}" in ln:
+            out = ln.replace("{DATE}", D)
+            print(f"  {i}: {out[:160]}{'…' if len(out) > 160 else ''}")
+else:
+    print("not written: a check above failed")
+
+C.done()
+----- end of /tmp/p5_3_b2.py -----
+
+----- /tmp/p5_3_b2.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+D (from /tmp/p5_3_date.out): 2026-10-12
+[ok] REPO/PASS5_STATUS.md sha256 == BASE_STATUS_SHA256: a092582630de8a98a3bf27d2b7250a15f1498208ebf566502c66e85355bb3129
+[ok] PASS5_STATUS.template.md sha256 == TEMPLATE_SHA256: 7feb365fb48c7c497ec9bec64e2e8dc19d5e2422162b8d73c2ece88ea01f9d34
+[ok] template's {DATE} count == TEMPLATE_PLACEHOLDERS: 2
+[ok] PASS5_STATUS.md's bytes == the template's with every {DATE} replaced by D
+[ok] PASS5_STATUS.md holds no {DATE}
+PASS5_STATUS.md sha256: 1d95e250a297108606a59885208731aed75ba1858e1a120fadd7e9f2afe31170; lines: 251
+the template's lines that held {DATE}, as written:
+  12: | P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done; accepted by I…
+  156: > - P5-2 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-3 paste).
+checks: 5; failed: 0
+B2 CHECK: True
+----- end of /tmp/p5_3_b2.out -----
+
+### c (with git diff -- PASS5_STATUS.md)
+----- /tmp/p5_3_c.py -----
+"""P5-3 c: REPO after installing (verdict line `C CHECK`).
+
+Imports no module of ofilt; reads files as bytes; read-only git commands only. Prints `git diff -- PASS5_STATUS.md`.
+"""
+import os
+
+from p5_3_common import REPO, Checks, expected, git, logs_unchanged, pairs, porcelain, sha256, spaced
+
+E = expected()
+C = Checks("C")
+
+status = porcelain()
+print("git status --porcelain --untracked-files=all:")
+for st, p in status:
+    print(f"  {st} {p}")
+C.check(sorted(p for _, p in status) == sorted(spaced(E["COMMIT_FILES"])), "the paths listed are exactly COMMIT_FILES",
+        f"{len(status)} paths")
+want = {"PASS5_STATUS.md": " M", E["P5_2_DEST"]: "??"}
+for st, p in status:
+    C.check(want.get(p) == st, f"{p} is {'modified' if want.get(p) == ' M' else 'untracked'}", repr(st))
+
+for rel, w in pairs(E["UNCHANGED"]):
+    got = sha256(os.path.join(REPO, rel))
+    C.check(got == w, f"UNCHANGED {rel} sha256", got)
+logs_unchanged(C, E)
+
+print("---- git diff -- PASS5_STATUS.md ----")
+print(git("diff", "--", "PASS5_STATUS.md"), end="")
+print("---- end of git diff ----")
+
+C.done()
+----- end of /tmp/p5_3_c.py -----
+
+----- /tmp/p5_3_c.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+git status --porcelain --untracked-files=all:
+   M PASS5_STATUS.md
+  ?? reports/P5_reports/p5_2.txt
+[ok] the paths listed are exactly COMMIT_FILES: 2 paths
+[ok] PASS5_STATUS.md is modified: ' M'
+[ok] reports/P5_reports/p5_2.txt is untracked: '??'
+[ok] UNCHANGED tools/p6_confirm_run.py sha256: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] UNCHANGED docs/PREREG_v1.md sha256: 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+[ok] UNCHANGED tests/tag_state.py sha256: fb8c16309cbdea97675ab294074ee2de2447161002bdeb8f06e089153cc2ccc0
+[ok] UNCHANGED docs/P4_CONFIRM_CONFIG.json sha256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] UNCHANGED spec/analysis_spec_dev_v1.yaml sha256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+---- git diff -- PASS5_STATUS.md ----
+diff --git a/PASS5_STATUS.md b/PASS5_STATUS.md
+index 6b84df4..19f3eb8 100644
+--- a/PASS5_STATUS.md
++++ b/PASS5_STATUS.md
+@@ -9,13 +9,13 @@ Standing prompt: `files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `0398
+ | Pass 5 | in progress | The pre-registration and the tag `prereg-v1` (PLAN §8, row 5). |
+ | P5-boot a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P5_reports/p5_boot.txt`. |
+ | P5-1 P4-7c and P5-boot accepted; Pass 5 opened; P5Q11 to P5Q17; the confirmation script and the tag-state tests | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-1` (`386057a5223d47c7248d913b70eb9774ba6d96c0`), made by its second run; the first stopped before b.1 (Decision log; Deviations). Report `reports/P5_reports/p5_1.txt` (both runs). |
+-| P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done | `checkpoint: P5-2`, the commit Isaiah tags `prereg-v1`. Report `/tmp/p5_2.txt`, copied at P5-3. |
+-| P5-3 the tag verified; the full suite with the tag present; the tag recorded | to do | Full-suite checkpoint. |
++| P5-2 P5-1 accepted; the pre-registration signed off, installed and pinned; P5Q18; the checkpoint Isaiah tags; the tagged-clone rehearsal | done; accepted by Isaiah 2026-10-12 | `checkpoint: P5-2` (`8341ffd930caea6e0327e8fcac90fc2e34652962`), tagged `prereg-v1` by Isaiah. Report `reports/P5_reports/p5_2.txt`. |
++| P5-3 P5-2 accepted; the tag `prereg-v1` verified and recorded; the full suite with the tag present | done | `checkpoint: P5-3`. Report `/tmp/p5_3.txt`, copied at P5-4. |
+ | P5-4 decisions P88 onward, PLAN v2.7, README, DATA_PROVENANCE §4.5, PROJECT_SETUP and the upload list; Pass 5 closed | to do | Records-only commits after the documentation tests. |
+ 
+ ## Next action
+ 
+-Isaiah creates the annotated tag `prereg-v1` in Terminal on P5-2's checkpoint commit, pushes the branch and the tag, and files the OSF registration (P5Q11). Then P5-3 verifies the tag and runs the full suite with it present.
++Isaiah files the embargoed OSF registration (P5Q11; the pre-registration's §7.1 and §10). Then P5-4 records its identifier, writes the Pass 5 documents and closes Pass 5.
+ 
+ ## Decision log
+ 
+@@ -152,12 +152,27 @@ Isaiah creates the annotated tag `prereg-v1` in Terminal on P5-2's checkpoint co
+ >   - After it, the tag-dependent tests are rehearsed in a temporary clone of that commit carrying a local annotated `prereg-v1`, with `OFILT_DATA_DIR` set to an empty folder (P5Q4). The clone is removed, and its tag never reaches REPO or the remote.
+ >   - Then the item stops, and Isaiah tags.
+ >   - Not chosen: a rehearsal before the checkpoint, when the commit to be tagged does not yet exist.
++>
++> - P5-2 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P5-3 paste).
++>   - Checkpoint `8341ffd930caea6e0327e8fcac90fc2e34652962` (`checkpoint: P5-2`, parent `386057a5223d47c7248d913b70eb9774ba6d96c0`), message `cc2050efc89b3003f7f00ccba2f5708f94620ea0239a5bc8da44da3f3239b211`.
++>   - Every verdict True. The focused modules gave 16 tests, OK; the suite gave `Ran 398 tests`, `OK (skipped=6)` (1,488 s). All 40 rows of the pre-registration's Appendix A match REPO.
++>   - The tagged-clone rehearsal ran 25 tests, `OK (skipped=1)`, with an annotated `prereg-v1` on `8341ffd…`, in a clone with no remote and an empty data folder that stayed empty. The clone was removed.
++>   - `PASS5_STATUS.md` was `a092582630de8a98a3bf27d2b7250a15f1498208ebf566502c66e85355bb3129`, recomputed by the supervisor.
++>   - Accepted with it: its readings R1 to R12. R5: the builder read only the pre-registration's outline, Appendix A and §7, so that session has seen no dev value.
++>   - Also accepted: its deviation D1 (Deviations).
++>   - Report `reports/P5_reports/p5_2.txt`.
++> - **The tag `prereg-v1` (Isaiah, in Terminal, after the supervisor's review of P5-2; recorded by the P5-3 paste).**
++>   - It is an annotated tag, object `148b742e097c0ed6945992b7707d928ad21b4d37`, on commit `8341ffd930caea6e0327e8fcac90fc2e34652962`, created with the guarded command the supervisor gave. That command refused unless HEAD was that commit, the tree was clean and no `prereg-v1` existed.
++>   - Its message names `docs/PREREG_v1.md` with SHA-256 `79447ba1…`, and the acting-advisor sign-off. Its tagger line records its date and time.
++>   - Isaiah pushed `main` (`386057a..8341ffd`) and then the tag to `origin`, and the push printed `[new tag] prereg-v1 -> prereg-v1`.
++>   - From the tag on, the guard grants `confirm_real`. Every change to code or tests is a dated, labelled deviation (P13(c)), and the confirmation panel is opened only by Pass 6's sanctioned run (the pre-registration's §7).
+ 
+ ## Test results
+ 
+ - P5-boot: read-only; no suite run.
+ - P5-1 (second run): the new and changed modules passed on their own before the commit (`test_p5_tag_state` 5, `test_p6_confirm_run` 7, `test_docs_d3` 6, `test_docs_d3b` 2, `test_io` 8, `test_p4_confirm_run` 12), and the suite ran inside this item's checkpoint (`checkpoint: P5-1`). Its counts are in the report: `Ran 398 tests`, `OK (skipped=6)`.
+ - P5-2: `test_p5_tag_state`, `test_docs_p2`, `test_docs_d3` and `test_docs_d3b` passed on their own before the commit (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-2`). After it, the tagged-clone rehearsal ran 25 tests (OK, skipped=1) in a clone carrying a local `prereg-v1`. The counts are in the report.
++- P5-3, with `prereg-v1` present in REPO: `test_p5_tag_state`, `test_docs_d3`, `test_docs_d3b` and `test_docs_p2` passed on their own (16 tests, OK), and the suite ran inside this item's checkpoint (`checkpoint: P5-3`; P5Q2, rule 3). The counts are in the report.
+ 
+ ## Test changes
+ 
+@@ -206,9 +221,17 @@ Flags open at the end of Pass 4 stay recorded in `PASS4_STATUS.md`, Flags (close
+   - the tagged-clone rehearsal ran in a temporary clone with `OFILT_DATA_DIR` at an empty folder, which stayed empty, and the clone was removed;
+   - REPO's tags are unchanged: the builder created no tag in REPO, and `prereg-v1` is Isaiah's;
+   - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset.
++- P5-3 (the first item with `prereg-v1` present):
++  - no data file opened and nothing computed on real data by any script of this item;
++  - records only, and the checkpoint's suite reads `panel_dev.csv` and the event files only through its existing tests;
++  - with the tag present, every call of `io.load_confirm` in the suite lies within P5Q3 as clarified: a throwaway guard, or the function replaced, and a temporary data path;
++  - no ACCESS_LOG appeared in REPO, which shows that no call reached REPO's own guard;
++  - `tools/p6_confirm_run.py` was not run except by its tests;
++  - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` unset; no tag created, moved or deleted.
+ 
+ ## Deviations
+ 
++- P5-2 (message `cc2050efc89b3003f7f00ccba2f5708f94620ea0239a5bc8da44da3f3239b211`; recorded at P5-3, from its report). D1: step f's check script parsed only lowercase keys, so its first run failed two checks on values the rehearsal had printed correctly. The script was fixed (one line) and rerun once under the rerun-once rule: F CHECK True. The rehearsal itself ran once. Accepted.
+ - P5-1, its second run (message `c9e28cd149848673233d25e3c692ee53479ba14ddf20aa940ce545f823e58148`; recorded at P5-2, from its report). D1: in step d, the builder typed the module list in place of `<FOCUSED>` rather than reading it by script. The list is exactly FOCUSED, and the run's count equals FOCUSED_RAN. Accepted.
+ - P5-1, its first run (message `299375e6109d1429590475717982c2facbd385943c4dfb69c7820287b2b5e2f8`): stopped before b.1, changing nothing in REPO; the cause was the supervisor's wording of P5Q3 (Decision log). The builder's reading of the kit before b.1, which the message did not ask for (its R4 and N1), wrote nothing and is accepted. Its report is kept in `files/pass5_tmp_keep/p5_1_run1/` and printed in full in the second run's report.
+ - P5-boot (message `d8a26f3e2b2b1bbcdff667e1ecf0bd239dfc20cbc5aaf8b406be9a96f19e6d46`; recorded at P5-1, from its report):
+---- end of git diff ----
+checks: 10; failed: 0
+C CHECK: True
+----- end of /tmp/p5_3_c.out -----
+
+### d
+----- /tmp/p5_3_d.sh -----
+#!/bin/bash
+# P5-3 d: the four tag-dependent documentation modules, with prereg-v1 present in REPO. Runs the P5-2 command form with
+# <FOCUSED> read from the message's "## Expected values" list (not typed); the test output goes to /tmp/p5_3_d.out.
+# Before the run it prints, as text (a record, not a check), every call `load_confirm()` in ofilt/, tools/ and tests/.
+set -u
+MSG=/tmp/p5_3_msg.txt
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+FOCUSED="$(sed -n '/^## Expected values$/,$p' "$MSG" | sed -n 's/^- FOCUSED = //p')"
+if [ -z "$FOCUSED" ] || ! printf '%s' "$FOCUSED" | grep -Eq '^tests\.[A-Za-z0-9_.]+( tests\.[A-Za-z0-9_.]+)*$'; then
+  echo "REFUSED: FOCUSED not found or not a list of test modules: '$FOCUSED'"
+  exit 2
+fi
+echo "---- every call load_confirm() in ofilt/, tools/ and tests/ (text) ----"
+grep -rn --include='*.py' 'load_confirm()' "$REPO/ofilt" "$REPO/tools" "$REPO/tests" | sed "s#^$REPO/##"
+echo "---- end ----"
+CMD='source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && python -B -m unittest '"$FOCUSED"' 2>&1 | tee /tmp/p5_3_d.out'
+echo "FOCUSED (from the message): $FOCUSED"
+echo "command: env -u OFILT_RUN_SEALED bash -c '$CMD'"
+echo "---- output ----"
+env -u OFILT_RUN_SEALED bash -c "$CMD"
+echo "---- end of output ----"
+----- end of /tmp/p5_3_d.sh -----
+
+----- /tmp/p5_3_d_sh.out -----
+---- every call load_confirm() in ofilt/, tools/ and tests/ (text) ----
+ofilt/drift/io.py:6:* load_confirm():  calls the access guard with tag 'prereg-v1' BEFORE touching
+tools/p6_confirm_run.py:46:    confirm = io.load_confirm()
+tests/test_guard_p46.py:60:                IO.load_confirm()
+tests/test_guard_p46.py:107:                    IO.load_confirm()
+tests/test_io.py:105:                    IO.load_confirm()
+tests/test_io.py:107:                    IO.load_confirm()
+tests/test_io.py:126:                    IO.load_confirm()
+tests/test_p4_confirm_run.py:319:                    IO.load_confirm()
+tests/test_p5_tag_state.py:157:                        IO.load_confirm()
+---- end ----
+FOCUSED (from the message): tests.test_p5_tag_state tests.test_docs_d3 tests.test_docs_d3b tests.test_docs_p2
+command: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && python -B -m unittest tests.test_p5_tag_state tests.test_docs_d3 tests.test_docs_d3b tests.test_docs_p2 2>&1 | tee /tmp/p5_3_d.out'
+---- output ----
+................
+----------------------------------------------------------------------
+Ran 16 tests in 6.219s
+
+OK
+---- end of output ----
+----- end of /tmp/p5_3_d_sh.out -----
+
+----- /tmp/p5_3_d.out -----
+................
+----------------------------------------------------------------------
+Ran 16 tests in 6.219s
+
+OK
+----- end of /tmp/p5_3_d.out -----
+
+----- /tmp/p5_3_d_check.py -----
+"""P5-3 d, the check: /tmp/p5_3_d.out holds `Ran FOCUSED_RAN tests` and a line exactly FOCUSED_RESULT, and afterwards
+no name starting ACCESS_LOG exists in REPO (verdict line `D CHECK`).
+
+Imports no module of ofilt; reads files as bytes; read-only git commands only.
+"""
+import re
+
+from p5_3_common import Checks, access_log_hits, expected, git, logs_unchanged, porcelain, read_bytes, spaced
+
+E = expected()
+C = Checks("D")
+
+lines = read_bytes("/tmp/p5_3_d.out").decode("utf-8").splitlines()
+ran = [ln for ln in lines if re.fullmatch(rf"Ran {E['FOCUSED_RAN']} tests in [0-9.]+s", ln)]
+C.check(len(ran) == 1, f"/tmp/p5_3_d.out holds 'Ran {E['FOCUSED_RAN']} tests'", ran[0] if ran else "")
+C.check(E["FOCUSED_RESULT"] in lines, f"/tmp/p5_3_d.out holds a line exactly {E['FOCUSED_RESULT']!r}")
+C.check(not any(ln.startswith(("FAIL:", "ERROR:", "FAILED")) for ln in lines), "no FAIL or ERROR line")
+script_out = read_bytes("/tmp/p5_3_d_sh.out").decode("utf-8").splitlines()
+C.check(f"FOCUSED (from the message): {E['FOCUSED']}" in script_out,
+        "the module list run is FOCUSED, as read from the message by /tmp/p5_3_d.sh")
+hits = access_log_hits()
+C.check(not hits, "afterwards, no name starting ACCESS_LOG in REPO outside .git", ", ".join(hits))
+
+C.check(sorted(p for _, p in porcelain()) == sorted(spaced(E["COMMIT_FILES"])),
+        "the tree still lists exactly COMMIT_FILES")
+C.check(git("tag", "-l").split() == spaced(E["TAG_LIST"]), "git tag -l still TAG_LIST")
+logs_unchanged(C, E)
+
+C.done()
+----- end of /tmp/p5_3_d_check.py -----
+
+----- /tmp/p5_3_d_check.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+[ok] /tmp/p5_3_d.out holds 'Ran 16 tests': Ran 16 tests in 6.219s
+[ok] /tmp/p5_3_d.out holds a line exactly 'OK'
+[ok] no FAIL or ERROR line
+[ok] the module list run is FOCUSED, as read from the message by /tmp/p5_3_d.sh
+[ok] afterwards, no name starting ACCESS_LOG in REPO outside .git
+[ok] the tree still lists exactly COMMIT_FILES
+[ok] git tag -l still TAG_LIST
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+checks: 9; failed: 0
+D CHECK: True
+----- end of /tmp/p5_3_d_check.out -----
+
+### e
+----- /tmp/p5_3_commands.txt -----
+The command of step e, as run (a single Bash tool call, with the command tool's background option; it is not a script
+file). It is the standing prompt's checkpoint command, with the item id "P5-3" and one extra commit-message paragraph
+(the attribution line the earlier checkpoints carry), and the exit status appended to the output:
+
+env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && caffeinate -dimsu bash tools/checkpoint.sh "P5-3" "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" 2>&1 | tee /tmp/p5_3_e.out; echo "checkpoint exit: ${PIPESTATUS[0]}" | tee -a /tmp/p5_3_e.out'
+
+Step d builds its module list by script from the message (/tmp/p5_3_d.sh), and prints the command it ran.
+----- end of /tmp/p5_3_commands.txt -----
+
+----- /tmp/p5_3_e.out -----
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 572de87ff9009aabaadd6b0637a340ca0d9d8ebde43fac24be94556dfa77b0da
+before suite: git status --porcelain
+ M PASS5_STATUS.md
+?? reports/P5_reports/p5_2.txt
+----------------------------------------------------------------------
+Ran 398 tests in 1539.402s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS5_STATUS.md
+?? reports/P5_reports/p5_2.txt
+commit 41f5de3e893fc833bc6a2c5323859ff405c30f14
+checkpoint exit: 0
+----- end of /tmp/p5_3_e.out -----
+
+----- /tmp/p5_3_e_check.py -----
+"""P5-3 e, the check: the checkpoint with prereg-v1 present, and its commit (verdict line `E CHECK`).
+
+Imports no module of ofilt; reads files as bytes; read-only git commands only.
+"""
+import os
+import re
+
+from p5_3_common import (REPO, Checks, access_log_hits, expected, git, item_date, logs_unchanged, pairs, path,
+                         porcelain, read_bytes, sha256, sha256_bytes, spaced, tag_state)
+
+E = expected()
+D = item_date()
+C = Checks("E")
+
+lines = read_bytes("/tmp/p5_3_e.out").decode("utf-8").splitlines()
+ran = [ln for ln in lines if re.fullmatch(rf"Ran {E['SUITE_RAN']} tests in [0-9.]+s", ln)]
+C.check(len(ran) == 1, f"the checkpoint's log shows 'Ran {E['SUITE_RAN']} tests'", ran[0] if ran else "")
+C.check(E["SUITE_RESULT"] in lines, f"the checkpoint's log shows {E['SUITE_RESULT']!r}")
+C.check("checkpoint exit: 0" in lines, "tools/checkpoint.sh exited 0")
+commit_lines = [ln for ln in lines if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+C.check(len(commit_lines) == 1, "the checkpoint printed one commit line", commit_lines[0] if commit_lines else "")
+
+head = git("rev-parse", "HEAD").strip()
+print(f"new HEAD: {head}")
+C.check(bool(commit_lines) and commit_lines[0] == f"commit {head}", "the printed commit is HEAD")
+subject = git("log", "-1", "--format=%s", "HEAD").rstrip("\n")
+C.check(subject == E["COMMIT_SUBJECT"], "HEAD's subject == COMMIT_SUBJECT", subject)
+print("HEAD's message body:")
+for ln in git("log", "-1", "--format=%b", "HEAD").rstrip("\n").splitlines():
+    print(f"  {ln}")
+parents = git("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+C.check(parents == [E["HEAD"]], "HEAD's only parent == HEAD (the message's)", " ".join(parents))
+files = sorted(git("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")[:-1])
+print(f"files of HEAD's commit: {files}")
+C.check(files == sorted(spaced(E["COMMIT_FILES"])), "the files of HEAD's commit == COMMIT_FILES", f"{len(files)} files")
+
+C.check(porcelain() == [], "the tree is clean (git status --porcelain --untracked-files=all prints nothing)")
+logs_unchanged(C, E)
+hits = access_log_hits()
+C.check(not hits, "no name starting ACCESS_LOG in REPO outside .git (no call reached REPO's own guard)",
+        ", ".join(hits))
+
+tags = git("tag", "-l").split()
+C.check(tags == spaced(E["TAG_LIST"]), "git tag -l is still TAG_LIST", " ".join(tags))
+tag_state(C, E)
+
+name = pairs(E["KIT"])[0][0]
+template = read_bytes(os.path.join(path(E["KIT_DIR"]), name))
+want = sha256_bytes(template.replace(b"{DATE}", D.encode("utf-8")))
+got = sha256(os.path.join(REPO, "PASS5_STATUS.md"))
+C.check(got == want, "PASS5_STATUS.md sha256 == the template's with D, recomputed", got)
+got = sha256(os.path.join(REPO, E["P5_2_DEST"]))
+C.check(got == sha256(path(E["P5_2_SRC"])), f"{E['P5_2_DEST']} sha256 == P5_2_SRC's", got)
+for rel, w in pairs(E["UNCHANGED"]):
+    got = sha256(os.path.join(REPO, rel))
+    C.check(got == w, f"UNCHANGED {rel} sha256", got)
+remote = git("branch", "-r", "--contains", "HEAD").strip()
+print(f"git branch -r --contains HEAD: {remote!r} (Isaiah pushes; empty until then)")
+
+C.done()
+----- end of /tmp/p5_3_e_check.py -----
+
+----- /tmp/p5_3_e_check.out -----
+message /tmp/p5_3_msg.txt: sha256 bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82
+expected values read: 29
+D (from /tmp/p5_3_date.out): 2026-10-12
+[ok] the checkpoint's log shows 'Ran 398 tests': Ran 398 tests in 1539.402s
+[ok] the checkpoint's log shows 'OK (skipped=6)'
+[ok] tools/checkpoint.sh exited 0
+[ok] the checkpoint printed one commit line: commit 41f5de3e893fc833bc6a2c5323859ff405c30f14
+new HEAD: 41f5de3e893fc833bc6a2c5323859ff405c30f14
+[ok] the printed commit is HEAD
+[ok] HEAD's subject == COMMIT_SUBJECT: checkpoint: P5-3
+HEAD's message body:
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+[ok] HEAD's only parent == HEAD (the message's): 8341ffd930caea6e0327e8fcac90fc2e34652962
+files of HEAD's commit: ['PASS5_STATUS.md', 'reports/P5_reports/p5_2.txt']
+[ok] the files of HEAD's commit == COMMIT_FILES: 2 files
+[ok] the tree is clean (git status --porcelain --untracked-files=all prints nothing)
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] no name starting ACCESS_LOG in REPO outside .git (no call reached REPO's own guard)
+[ok] git tag -l is still TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] PASS5_STATUS.md sha256 == the template's with D, recomputed: 1d95e250a297108606a59885208731aed75ba1858e1a120fadd7e9f2afe31170
+[ok] reports/P5_reports/p5_2.txt sha256 == P5_2_SRC's: 0bc607f84dc728d48d8f97ab22a021c54908c47229eca6f54a12d744e588e044
+[ok] UNCHANGED tools/p6_confirm_run.py sha256: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] UNCHANGED docs/PREREG_v1.md sha256: 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+[ok] UNCHANGED tests/tag_state.py sha256: fb8c16309cbdea97675ab294074ee2de2447161002bdeb8f06e089153cc2ccc0
+[ok] UNCHANGED docs/P4_CONFIRM_CONFIG.json sha256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] UNCHANGED spec/analysis_spec_dev_v1.yaml sha256: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+git branch -r --contains HEAD: '' (Isaiah pushes; empty until then)
+checks: 23; failed: 0
+E CHECK: True
+----- end of /tmp/p5_3_e_check.out -----
+
+## Verdict lines (in step order)
+
+A2_ENV CHECK: True
+A3 CHECK: True
+A4 CHECK: True
+B1 CHECK: True
+B2 CHECK: True
+C CHECK: True
+D CHECK: True
+E CHECK: True
+
+## Readings
+
+R1. a.1. The first command, `date +%F | tee /tmp/p5_3_date.out`, printed `2026-10-12`: D, this item's date. `shasum -a 256 /tmp/p5_3_msg.txt | tee /tmp/p5_3_msgsha.out` printed `bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82`. I read the file in full with the Read tool. It is the message that was pasted, word for word: the title "P5-3: P5-2 accepted; the tag `prereg-v1` verified and recorded; the full suite with the tag present", steps a.1 to f, and 29 expected values. Every Python script prints the message's SHA-256 again and reads the 29 values from it.
+
+R2. a.3 (A3 CHECK: True; 27 checks). REPO and the tag before any change:
+- REPO:
+  - HEAD is `8341ffd930caea6e0327e8fcac90fc2e34652962`, on `origin/main`, and the tree is clean;
+  - `git tag -l` is exactly `pass1-final prereg-v1 spec-dev-v1`.
+- `prereg-v1`:
+  - `refs/tags/prereg-v1` is the annotated tag object `148b742e097c0ed6945992b7707d928ad21b4d37` (type `tag`) on `8341ffd…`, which is HEAD;
+  - `spec-dev-v1` is still `cee3b49e…` on `f5271c03…`, an ancestor of `8341ffd…`.
+- The tag's text is printed in full in a.3's output:
+  - tagger `ofilt-pass1 <pass1@localhost> 1791833487 -0400`;
+  - its message names `docs/PREREG_v1.md` with SHA-256 `79447ba1…` and the acting-advisor sign-off (P5Q11), "on checkpoint: P5-2".
+- At the tag, read as bytes with `git show`, the frozen spec, the configuration, the pre-registration, `tools/p6_confirm_run.py` and `ofilt/drift/confirm_run.py` have their SHA-256.
+- Both logs are as pinned and no ACCESS_LOG exists. OLD and UNCHANGED have their SHA-256, and `reports/P5_reports/p5_2.txt` was absent.
+
+R3. The ls-remote reading, which is not a verdict:
+- The message's command, `GIT_TERMINAL_PROMPT=0 timeout 30 git … ls-remote --tags origin refs/tags/prereg-v1`, failed at once: macOS has no `timeout` command ("No such file or directory: 'timeout'").
+- So the script ran the same `git ls-remote`, with `GIT_TERMINAL_PROMPT=0`, stdin closed and Python's own 30-s timeout.
+- It returned exit 0 and `148b742e097c0ed6945992b7707d928ad21b4d37	refs/tags/prereg-v1`. So `origin` holds the tag at PREREG_TAG_OBJECT, as the setup script's binding check found.
+
+R4. a.4 (A4 CHECK: True; 4 checks):
+- KIT_DIR holds only `PASS5_STATUS.template.md`, at `7feb365f…`.
+- P5_2_SRC has SHA-256 `0bc607f84dc728d48d8f97ab22a021c54908c47229eca6f54a12d744e588e044` and 1,649 lines, the values of P5-2's report. `/tmp/p5_2.txt` is identical.
+
+R5. Before b.2, I compared the template with the committed `PASS5_STATUS.md` by `diff`; the output went to the session (N3). The changes:
+- the Progress rows for P5-2 and P5-3;
+- Next action (the OSF registration, then P5-4);
+- the Decision-log entries "P5-2 accepted" and "The tag `prereg-v1`" (object `148b742e…` on `8341ffd…`; the push);
+- the P5-3 Test-results line, the P5-3 Blinding attestation, and P5-2's D1 in Deviations.
+
+Its two `{DATE}` are at lines 12 and 156.
+
+R6. b.1 (B1 CHECK: True): `cp -p` copied P5-2's report to `reports/P5_reports/p5_2.txt`, at its source's SHA-256 and mtime.
+
+R7. b.2 (B2 CHECK: True; 5 checks):
+- `PASS5_STATUS.md` had BASE_STATUS_SHA256, P5-2's. The template is at TEMPLATE_SHA256, with two `{DATE}`.
+- The result was written over the file. It has 251 lines and SHA-256 `1d95e250a297108606a59885208731aed75ba1858e1a120fadd7e9f2afe31170`, which E recomputes.
+
+R8. c (C CHECK: True; 10 checks):
+- `git status` lists exactly `PASS5_STATUS.md`, modified, and `reports/P5_reports/p5_2.txt`, untracked.
+- UNCHANGED and both logs are unchanged.
+- c's output prints the full `git diff -- PASS5_STATUS.md`.
+
+R9. d (D CHECK: True; 9 checks). This was the first test run with `prereg-v1` present in REPO:
+- `/tmp/p5_3_d.sh` read FOCUSED from the message and ran the four documentation modules: 16 tests in 6.219 s, `OK`.
+- Before the run, the script printed every `load_confirm()` call in `ofilt/`, `tools/` and `tests/`, as text. They are the calls P5-1 and P5-2 read, at the line numbers of the files as now committed: `test_guard_p46.py:60` and `:107`, `test_io.py:105`, `:107` and `:126`, `test_p4_confirm_run.py:319` and `test_p5_tag_state.py:157`. There is also the script's own call at `tools/p6_confirm_run.py:46`, which no test reaches unreplaced, and `io.py:6`, a docstring.
+- Afterwards no ACCESS_LOG existed, the tree still listed exactly COMMIT_FILES, the tags were unchanged, and both logs were unchanged.
+- The tagged side of the four modules thus passes in REPO itself:
+  - `test_docs_d3`'s and `test_docs_d3b`'s tag tests and `test_p5_tag_state`'s test 5 call `check_prereg_tag` on REPO, and it passes: an annotated tag after `spec-dev-v1`, an ancestor of HEAD, with the pinned spec, configuration and pre-registration at the tag;
+  - `test_docs_d3` checks that `confirm_real` is now granted, by the guard alone, on a one-row synthetic frame.
+
+R10. e (E CHECK: True; 23 checks). The checkpoint with the tag present:
+- It gave `Ran 398 tests in 1539.402s`, `OK (skipped=6)`, the same counts as before the tag (P5-1, P5-2).
+- The suite's rewrite of `reports/B6_coverage.json` (Flag 16) was restored before the commit.
+- The commit is `41f5de3e893fc833bc6a2c5323859ff405c30f14`:
+  - its subject is `checkpoint: P5-3`, its only parent `8341ffd…`, and its body the attribution line;
+  - it holds exactly `PASS5_STATUS.md` and `reports/P5_reports/p5_2.txt`.
+- After the commit:
+  - the tree is clean and both logs are unchanged (7 and 2 lines);
+  - **no ACCESS_LOG exists in REPO, so no call reached REPO's own guard, which now grants;**
+  - the tags are unchanged, and `prereg-v1` is still `148b742e…` on `8341ffd…`;
+  - `PASS5_STATUS.md` has its recomputed SHA-256, and the UNCHANGED files theirs.
+- HEAD is not on a remote-tracking branch until Isaiah pushes.
+
+R11. With the tag present, every call of `io.load_confirm` in d and e lies within P5Q3 as clarified: a throwaway guard repository, or the function replaced by a recorder, with a temporary log and data path. `tools/p6_confirm_run.py` was not run except by its tests, which replace its loaders or point io's guard at a throwaway repository. `OFILT_P6_CONFIRM_RUN` was never set.
+
+## Deviations and notes
+
+Deviations
+
+None. Every script was written with the editor and run in the standing prompt's form. Every expected value, and step d's module list, was read by script from `/tmp/p5_3_msg.txt`.
+
+Notes
+
+N1. a.3's ls-remote reading (R3): the message's command needs a `timeout` command, which macOS does not have. Its failure is printed, as the message allows. The same `git ls-remote` was then run with an equivalent 30-s bound, as an additional reading, labelled as such. It is not a verdict.
+
+N2. As at every earlier checkpoint, the checkpoint's commit message has one paragraph besides its subject: `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. `tools/checkpoint.sh` restored the suite's rewrite of `reports/B6_coverage.json` (Flag 16) before its commit.
+
+N3. One output went to the session, not to a file: the `diff` of the template against the committed `PASS5_STATUS.md` (R5), from a read-only command. R5 summarises it, and c's output prints the resulting `git diff`.
+
+N4. Times: step d took 6.2 s and the full suite 1539.4 s.
+
+N5. Nothing was pushed, and no tag was created, moved or deleted. Isaiah pushes `41f5de3e893fc833bc6a2c5323859ff405c30f14`.
+
+N6. Blinding:
+- no script of this item opens a data file or computes on real data;
+- step e's suite read `panel_dev.csv` and the event files only through `io`, in its existing tests;
+- with the tag present, `io.load_confirm` was called only within P5Q3 as clarified, and no ACCESS_LOG appeared;
+- the confirmation panel was not opened, listed or hashed;
+- nothing under `reports/P4_runs/` was opened, and no dev value was seen;
+- `BLIND_FIT_LOG` has 7 lines and `RUN_REGISTRY.jsonl` 2;
+- `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` were absent from every command.
+
+## SHA-256 of every /tmp/p5_3* file except this report
+
+c185d49143567e9448778b72ae59cf4d8af95411320de066eef3074e9493c429  /tmp/p5_3_a2.out
+86e153e19e05f28d0d16a4c05bf8c9092ec4f49eefe20cdd4953d6f48e97978c  /tmp/p5_3_a2.sh
+8f86d57fb5650eebfb64215b8018f0b8068966dd74b4780c8abbd08f1aa1279c  /tmp/p5_3_a3.out
+48d08057bceb0e2cf9d4405847b50bc2fd6caa51872a6af3c138895b21797e70  /tmp/p5_3_a3.py
+124272bcfa611db49b032afdb9cfd39b984d026223f88486384d10cb74dd147b  /tmp/p5_3_a4.out
+df69e921e8421889d54f6f00135814668285f44fa249d195e3146fcd637ad29e  /tmp/p5_3_a4.py
+c9d34586efae1ee1933a249cdf4a2dcf9ccb68a666b0aeaeb28ee9406c785c2e  /tmp/p5_3_assemble.sh
+d683f52e4bc90a07ad67dc3b6e1b47b39e09942d3dd936807f6691d193c2c9fa  /tmp/p5_3_b1_check.out
+e6c8b03a54780367102ad8554bd3e07ab48863048ec6a864d3496fa90f2167f7  /tmp/p5_3_b1_check.py
+e3ff32d50ad7c9d398b6c3b381d95518cd930f87f91616cfe2eab1c26e809aad  /tmp/p5_3_b1.out
+eaa2a4b02fa2255166fae7574fcead608f4377f52aa13a340d81b5370d27ccd3  /tmp/p5_3_b1.sh
+b26f751fc0e9b26c3b2069cfc93b1a4414babce7ab379db2c64e426a3b3496aa  /tmp/p5_3_b2.out
+d26738a5546dbdb6f0c7ebbc162dcc2afc6f8a3a757bf0928147cb0be572475c  /tmp/p5_3_b2.py
+b8fd30ad97f365cf3b0064ce6c612f7bc59ede24485936ff72ab23aa24fe595f  /tmp/p5_3_c.out
+394d8d03292eefa7ce01350ad8c038127b28df4d999474b6cbb3270389dcb919  /tmp/p5_3_c.py
+f4da34eeb7e75a2d0d3131076781bc04ff12148e0e710ef645bad4d3be41fabb  /tmp/p5_3_commands.txt
+1fb2323f6de4106f63127a1ff1a8110a5a6f027d6b4675d7daf6842e715978c2  /tmp/p5_3_common.py
+0c54fc878ced7e197eeeba279b7cd83e8e45868763cd4842cd807e99db5752e3  /tmp/p5_3_d_check.out
+69f865468239f8e34ef43d49478ce485b8bcbf3a8ea3408cbcfd720ed4496310  /tmp/p5_3_d_check.py
+d44b7d0c63d8f651dda6913c21eb4bf7f3958835583853616ea05172f0197560  /tmp/p5_3_d_sh.out
+9a6da234977508147adfa92ea74ff9f4a1abd6720590eb5e059ac103cc3cc8cb  /tmp/p5_3_d.out
+946ad565e7640705ef68751867687a299054a518aff0a369d240f3424a12f483  /tmp/p5_3_d.sh
+a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  /tmp/p5_3_date.out
+01b7fef7f23cb4471525a39f7725357e71806796476453547fc32148f9861f93  /tmp/p5_3_e_check.out
+083efcb5f314864a24de17c47a561e19285535577039ea601230a70d2b659c20  /tmp/p5_3_e_check.py
+2bc6cad8aa7dec6ef62b88c1fe8cf67d0baa05a511b472bb922ad88a9f0c20a6  /tmp/p5_3_e.out
+bfac654a277340d1cf3bc67f494eab0ed685bebe341c37e4f7802230c21d1d82  /tmp/p5_3_msg.txt
+523bfba80efe0c852759c715e8cbabd3d9bfc25b43df094c8d99fe67627528de  /tmp/p5_3_msgsha.out
+93b06a7c855b65f1206742878e6150a56a4aed454d68380720bd731262638ad7  /tmp/p5_3_notes.txt
+e26792d911299f3206650155cabd8306059b75b2ba6a138b112292cf7b55895d  /tmp/p5_3_readings.txt
+
+## The assembler
+
+----- /tmp/p5_3_assemble.sh -----
+#!/bin/bash
+# P5-3 f: assembles /tmp/p5_3.txt, in the standing prompt's report form, from command output and this item's /tmp
+# files. Runs no Python; reads REPO only through git.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+OUT="/tmp/p5_3.txt"
+
+show() {  # one file in full, between markers
+  echo "----- $1 -----"
+  cat "$1"
+  echo "----- end of $1 -----"
+  echo
+}
+
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 "/tmp/p5_3_msg.txt"
+echo
+echo "# P5-3: P5-2 accepted; the tag prereg-v1 verified and recorded; the full suite with the tag present"
+echo
+echo "Builder report."
+echo
+echo "## Scripts and their outputs"
+echo
+echo "### a.1"
+show /tmp/p5_3_date.out
+show /tmp/p5_3_msgsha.out
+echo "### Shared helper of the Python scripts"
+show /tmp/p5_3_common.py
+echo "### a.2"
+show /tmp/p5_3_a2.sh
+show /tmp/p5_3_a2.out
+echo "### a.3 (with the tag's text, and the ls-remote reading)"
+show /tmp/p5_3_a3.py
+show /tmp/p5_3_a3.out
+echo "### a.4"
+show /tmp/p5_3_a4.py
+show /tmp/p5_3_a4.out
+echo "### b.1: the copy (bash) and its check (Python)"
+show /tmp/p5_3_b1.sh
+show /tmp/p5_3_b1.out
+show /tmp/p5_3_b1_check.py
+show /tmp/p5_3_b1_check.out
+echo "### b.2"
+show /tmp/p5_3_b2.py
+show /tmp/p5_3_b2.out
+echo "### c (with git diff -- PASS5_STATUS.md)"
+show /tmp/p5_3_c.py
+show /tmp/p5_3_c.out
+echo "### d"
+show /tmp/p5_3_d.sh
+show /tmp/p5_3_d_sh.out
+show /tmp/p5_3_d.out
+show /tmp/p5_3_d_check.py
+show /tmp/p5_3_d_check.out
+echo "### e"
+show /tmp/p5_3_commands.txt
+show /tmp/p5_3_e.out
+show /tmp/p5_3_e_check.py
+show /tmp/p5_3_e_check.out
+
+echo "## Verdict lines (in step order)"
+echo
+grep -h ' CHECK: ' /tmp/p5_3_a2.out /tmp/p5_3_a3.out /tmp/p5_3_a4.out /tmp/p5_3_b1_check.out /tmp/p5_3_b2.out \
+  /tmp/p5_3_c.out /tmp/p5_3_d_check.out /tmp/p5_3_e_check.out
+echo
+echo "## Readings"
+echo
+cat /tmp/p5_3_readings.txt
+echo
+echo "## Deviations and notes"
+echo
+cat /tmp/p5_3_notes.txt
+echo
+echo "## SHA-256 of every /tmp/p5_3* file except this report"
+echo
+for f in /tmp/p5_3*; do
+  [ "$f" = "$OUT" ] && continue
+  if [ -d "$f" ]; then echo "(a folder, not hashed: $f)"; continue; fi
+  shasum -a 256 "$f"
+done
+echo
+echo "## The assembler"
+echo
+show /tmp/p5_3_assemble.sh
+echo "STOPPED at P5-3, f: planned; Isaiah pushes and uploads /tmp/p5_3.txt to the supervisor chat."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$OUT" 2>&1
+----- end of /tmp/p5_3_assemble.sh -----
+
+STOPPED at P5-3, f: planned; Isaiah pushes and uploads /tmp/p5_3.txt to the supervisor chat.
+
+2026-10-12T20:32:13Z
+41f5de3e893fc833bc6a2c5323859ff405c30f14
