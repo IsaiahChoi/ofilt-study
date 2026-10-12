@@ -1,0 +1,9 @@
+SANCTION of the confirmation run, ofilt/drift (Pass 6, item P6-1; docs/PREREG_v1.md §7.2)
+Date: 2026-10-12
+By: Isaiah Choi
+HEAD: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+tools/p6_confirm_run.py: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+ofilt/drift/confirm_run.py: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+Criteria: docs/P6_RUN_CRITERIA.md ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+I sanction one run of tools/p6_confirm_run.py, by the command of docs/PREREG_v1.md §7.4, at the gate of the criteria file above. Any further run is a dated, labelled deviation that I decide.

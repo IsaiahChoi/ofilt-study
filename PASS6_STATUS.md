@@ -8,14 +8,13 @@ Standing prompt: `files/pass6/PASS6_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `2dfb
 |---|---|---|
 | Pass 6 | in progress | The confirmation run (PLAN §8, row 6; the pre-registration's §7). |
 | P6-boot: a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P6_reports/p6_boot.txt`. |
-| P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done | `records: P6-0`, a records-only commit after the documentation modules (P6Q2). Report `/tmp/p6_0.txt`, copied at P6-1. |
-| P6-1: the sanction, the gate's checkpoint and the run (part 1); §7.6's test changes and the post-run checkpoint (part 2) | to do | Two full-suite checkpoints, under `docs/P6_RUN_CRITERIA.md`. |
+| P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done; accepted by Isaiah 2026-10-12 | `records: P6-0` (`cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`), a records-only commit after the documentation modules (P6Q2); the commit the sanction names. Report `reports/P6_reports/p6_0.txt`. |
+| P6-1: the sanction, the gate's checkpoint and the run (part 1); §7.6's test changes and the post-run checkpoint (part 2) | in progress | Part 1's checkpoint, `checkpoint: P6-1 part 1`, is the gate's commit G, at which the run is made (`docs/P6_RUN_CRITERIA.md` §3). Part 2 follows only if every post-run check holds. |
 | P6-2: decisions P93 onward; P92's refresh; Pass 6 closed | to do | Records and documentation pins, after the documentation modules. |
 
 ## Next action
 
-1. Isaiah sanctions the run with the command the supervisor gives (P6Q5; `docs/P6_RUN_CRITERIA.md` §2), naming this item's commit.
-2. Then P6-1 runs.
+The gate's checkpoint (`checkpoint: P6-1 part 1`) is the commit at which the confirmation run is made, under `docs/P6_RUN_CRITERIA.md` §3 to §5 and the sanction `docs/P6_SANCTION.txt`. Part 2 follows only if every post-run check holds.
 
 ## Decision log
 
@@ -103,11 +102,28 @@ Standing prompt: `files/pass6/PASS6_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `2dfb
 >   - `docs/P6_RUN_CRITERIA.md`, version 1, SHA-256 `ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0`. The supervisor chat wrote it before the run; this item commits it; no test pins it (P6Q4).
 >   - It fixes the sanction's form, the gate, the post-run checks and part 2.
 >   - Its §6 fixes, by SHA-256, the kit of §7.6's test changes: `tests/run_state.py` (new) and three changed test modules. The kit is placed in `files/pass6/p6_1/tests/` and installed only at P6-1 part 2.
+>
+> - **P6-0 accepted** (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P6-1 paste).
+>   - The commit: `records: P6-0 (P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria)`, `cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`, parent `6775d6ed737a5c57cb686ade28d11f30a99ebfe8`. Message `a2bc44883ce3915f6f7f0cf8017200fe00ffc5419746c02a9e9b9d4c80302109`.
+>   - Every verdict True (A2_ENV, A3, A4, B1, B2, C, D, E). The commit adds exactly `PASS6_STATUS.md`, `docs/P6_RUN_CRITERIA.md`, `reports/P5_reports/p5_4.txt` and `reports/P6_reports/p6_boot.txt`; nothing under `ofilt/`, `tools/`, `tests/`, `spec/` or `build/` changed, and all 40 files of Appendix A are unchanged.
+>   - The documentation modules gave 26 tests, `OK (skipped=1)`. `PASS6_STATUS.md` was `2b6942cd51abe4b69c13967342f7efe2e0b2c9b62dff5d38fa62a942c8d9e1c6`, recomputed by the supervisor.
+>   - Accepted with it: its readings R1 to R16 and notes N1 to N7. N7: the assembler was rerun once under the rerun-once rule; no check and no verdict changed.
+>   - Report `reports/P6_reports/p6_0.txt`, SHA-256 `7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e`, the copy kept in `files/pass6_tmp_keep/p6_0_final/`.
+> - **On P6-0's readings** (Isaiah, 2026-10-12, on the supervisor's recommendation; by the P6-1 paste). P6-1's message states these readings, each within the criteria file's text; none changes a criterion, and no version 2 is made.
+>   - R5: P1's "holds exactly three path lines" means exactly three lines of the path form, in that order. Any other line, such as a library warning, is printed in the report and is not a failure.
+>   - R6: besides the editor's transcription, the check compares it with the command tool's own output file, if the tool reports one, and records that file's path and SHA-256.
+>   - R7: P3's row ids are `ofilt.drift.confirm_inference.ROW_IDS`, read by importing that module in the post-run check (the import reads no data), and checked equal to the configuration's `rows`.
+>   - R13: part 1's order is SANCTION CHECK and PRE CHECK; the three records; the gate's checkpoint; GATE CHECK; the command; POST CHECK.
+> - **The confirmation run sanctioned** (Isaiah; P6Q5; `docs/P6_RUN_CRITERIA.md` §2; recorded by the P6-1 paste).
+>   - `docs/P6_SANCTION.txt`, SHA-256 `123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe`, dated by its `Date:` line. It is a byte-identical copy of the file Isaiah wrote with his own Terminal command, outside REPO.
+>   - It names HEAD `cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe` (P6-0's commit), the SHA-256 of `tools/p6_confirm_run.py`, `ofilt/drift/confirm_run.py` and `docs/P4_CONFIRM_CONFIG.json`, and the criteria file `ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0`.
+>   - It sanctions one run of `tools/p6_confirm_run.py`, by the command of the pre-registration's §7.4, at the gate of the criteria file. Any further run is a dated, labelled deviation that Isaiah decides.
 
 ## Test results
 
 - P6-boot: read-only; no suite run.
 - P6-0: the seven documentation modules (`test_docs_p2`, `test_docs_d3`, `test_docs_d3b`, `test_docs_d4`, `test_docs_d5`, `test_docs_d6`, `test_p5_tag_state`) passed before the records-only commit: 26 tests, `OK (skipped=1)`. No full suite (P6Q2).
+- P6-1 part 1: the suite ran inside the gate's checkpoint (`checkpoint: P6-1 part 1`; P5Q2 rule 2), before the run. Its counts are in P6-1's report.
 
 ## Test changes
 
@@ -135,9 +151,14 @@ Flags open at the end of Pass 5 stay recorded in `PASS5_STATUS.md`, Flags (close
   - No file of code or tests changed, and no file of Appendix A (P6Q4).
   - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) are unchanged.
   - `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` were unset; no tag was created, moved or deleted.
+- P6-1 part 1, up to the command:
+  - records only: the sanction's copy, this file and P6-0's report copied; no file of code or tests and no file of Appendix A changed (P6Q4);
+  - the gate's checkpoint suite read the dev panel and the event files only through its existing tests; every call of `io.load_confirm` in it lay within P5Q3 as clarified, and no `ACCESS_LOG` appeared;
+  - `RUN_REGISTRY.jsonl` (2 lines) and `BLIND_FIT_LOG` (7 lines) unchanged; `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` absent; no tag created, moved or deleted.
 
 ## Deviations
 
+- P6-0 (message `a2bc44883ce3915f6f7f0cf8017200fe00ffc5419746c02a9e9b9d4c80302109`; recorded at P6-1): none. Its N1, two scripts corrected with the editor before their first run, was not a rerun. Its N7, the assembler run a second time under the rerun-once rule, changed no check and no verdict. Accepted.
 - P6-boot (message `b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688`; recorded at P6-0): none. Its N2, a search script corrected with the editor before its first run, was not a rerun.
 
 ## Disclosure list
@@ -155,3 +176,5 @@ For the write-up. It continues `PASS5_STATUS.md`'s Disclosure list, by reference
   - It never ran `test_docs_d6`, and it opened no data file.
 - **The P6-boot builder session.** It saw no dev result. Of the pre-registration it read every section except §3, §4 and §9. Its §2 holds two predictor-only parameters computed on dev (P6-boot R11). Nothing under `reports/P4_runs/` was read as text.
 - **The criteria file.** `docs/P6_RUN_CRITERIA.md`, version 1, was written and committed before the run.
+- **The P6-0 builder session.** Records only; it saw no dev result and opened no data file (P6-0's Blinding attestation).
+- **The sanction.** `docs/P6_SANCTION.txt`, written by Isaiah after the criteria file and before the run.
