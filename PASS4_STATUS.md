@@ -15,11 +15,12 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
 | P4-3 P4-2 accepted; P4Q32 and P4Q33; the full-schema simulator and its tests (T3) | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-3`, made by its fourth run; the first three stopped at a.1, b.1 and c.1 (Deviations). Report `reports/P4_reports/p4_3.txt`. |
 | P4-4p P4-3 accepted; P4Q34 (P4-4 split); a read-only synthetic probe of the inference calls | done; accepted by Isaiah 2026-10-11 | Read-only; no commit. Report `reports/P4_reports/p4_4p.txt`. |
 | P4-4a P4-4p accepted; P4Q35; the confirmation module's inference rows and their tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4a`, made by its second run; the first stopped at b.2 (Deviations). Report `reports/P4_reports/p4_4a.txt`. |
-| P4-4b1 P4-4a accepted; P4Q36; the confirmation module's forecasting rows and their tests | done | `checkpoint: P4-4b1`. Report `/tmp/p4_4b1.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4b2. |
+| P4-4b1 P4-4a accepted; P4Q36; the confirmation module's forecasting rows and their tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4b1`, made by its first run. Report `reports/P4_reports/p4_4b1.txt`. |
+| P4-4b2 P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests | done | `checkpoint: P4-4b2`. Report `/tmp/p4_4b2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-4c. |
 
 ## Next action
 
-The supervisor reviews P4-4b1. Then P4-4b2, the economic evaluation (O45), synthetic only, and its tests; then P4-4c.
+The supervisor reviews P4-4b2. Then P4-4c, the run script and the claims (R10 to R26), synthetic only, and its tests.
 
 ## Decision log
 
@@ -144,6 +145,14 @@ The supervisor reviews P4-4b1. Then P4-4b2, the economic evaluation (O45), synth
 >   - The primary comparison applies AM-09's strict critical value by a helper; the dev run reports both references, as exploratory (P4Q21). Run ids stay out of the entries.
 >   - Tests: the new file `tests/test_p4_confirm_forecast.py`, with exactly the 17 tests the specification lists, on simulator frames only, with M7 reduced to one grid candidate and the run registry patched to a temporary folder. Their seeds are the spec seed plus 8,200,000 plus k, k below 1,000.
 >   - Not chosen: P4-4b as one item (the economic evaluation brings its own cost machinery); a separate call for M4 and M5, so that the primary comparison's sample would not depend on M4's feature; M4 and M5 not estimable whenever such a row exists; dropping such rows from the frame, which would shift the fold geometry.
+> - P4-4b1 accepted (Isaiah, 2026-10-11, on the supervisor's recommendation; recorded by the P4-4b2 paste): checkpoint `ff318775ef05b8266b6d286bd78c4ee0372d2ef0`, made by its first run (message `118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6`), every verdict True, suite `Ran 345 tests`, `OK (skipped=6)`.
+>   - Accepted with it: its sixteen readings, among them the probe's findings (one fold straddles the first confirmation date; Pesaran-Timmermann needs the recounted fold log; M0's directional test is undefined), the test file's run time above the specification's 300-s aim (372.8 s; no test asserts a time), `usdjpy_bars` replaced only when some row is at most 0, a library failure in any part of O41 to O43 making the whole row not estimable, and the provenance check written again in the module; and its deviation (Deviations).
+> - P4Q37 (Isaiah, 2026-10-11, on the supervisor's recommendation): the economic evaluation, row O45, as `docs/P4_CONFIRM_ECON_SPEC.md` specifies it.
+>   - A new module, `ofilt/drift/confirm_economic.py`, takes the main forecasting call of P4Q36 and, on its evaluated rows of M3 and M2, computes the pooled break-even (the mean gross P&L per name-day, in bp, of trading the forecast's sign on the beta-hedged open-to-close return) of M3, of M2 and their difference, the primary, low and high mean round trips, and the mean net P&L per name-day under each case (P4Q24). The round trips use each row's own beta and its own open and close prices, by D2.3 to D2.5 (P4Q25).
+>   - The cost arithmetic re-implements `tools/p3_1_sesoi.costs`, which the module may not import (the tool imports `io`); a test compares the two on the same rows. The cost inputs `docs/P3_COST_INPUTS.json` are pinned by their SHA-256.
+>   - A cost case that cannot be computed (a traded price above its table's last bound) is reported as failed with its reason, and the others stand; a zero forecast takes no position and pays no cost.
+>   - Tests: the new file `tests/test_p4_confirm_economic.py`, with exactly the 14 tests the specification lists, on simulator frames only, with 5706's simulated prices scaled by 0.1 so that its traded prices fall inside the tick tables, and a zero-forecast stand-in for M7 (O45 does not use the M7 call). Seeds: the spec seed plus 8,300,000 plus k, k below 1,000.
+>   - Not chosen: importing the tool (it would bring `io` into the confirmation code); per-ticker P&L and threshold variants (P4Q24; exploratory by D2.8).
 
 ## Test results
 
@@ -152,13 +161,15 @@ The supervisor reviews P4-4b1. Then P4-4b2, the economic evaluation (O45), synth
 - P4-3: the suite ran inside this item's checkpoint (`checkpoint: P4-3`): `Ran 305 tests in 348.129s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. Report `reports/P4_reports/p4_3.txt`.
 - P4-4p: read-only; no suite run.
 - P4-4a: the suite ran inside this item's checkpoint (`checkpoint: P4-4a`): `Ran 328 tests in 741.625s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. Report `reports/P4_reports/p4_4a.txt`.
-- P4-4b1: before this record was written, the new file `tests/test_p4_confirm_forecast.py` passed on its own (`Ran 17 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4b1`); its result is in the report `/tmp/p4_4b1.txt`, copied at the next checkpoint. Expected: `Ran 345 tests`, `OK (skipped=6)`.
+- P4-4b1: the suite ran inside this item's checkpoint (`checkpoint: P4-4b1`): `Ran 345 tests in 1291.179s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 372.8 s. Report `reports/P4_reports/p4_4b1.txt`.
+- P4-4b2: before this record was written, the new file `tests/test_p4_confirm_economic.py` passed on its own (`Ran 14 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4b2`); its result is in the report `/tmp/p4_4b2.txt`, copied at the next checkpoint. Expected: `Ran 359 tests`, `OK (skipped=6)`.
 
 ## Test changes
 
 - P4-3: one new test file, `tests/test_p4_sim_full.py`, with 20 tests (P4Q32, P4Q33). No existing test changed. The suite grows from 285 to 305 tests.
 - P4-4a: one new test file, `tests/test_p4_confirm_inference.py`, with 23 tests (P4Q35). No existing test changed. The suite grows from 305 to 328 tests.
 - P4-4b1: one new test file, `tests/test_p4_confirm_forecast.py`, with 17 tests (P4Q36). No existing test changed. The suite grows from 328 to 345 tests.
+- P4-4b2: one new test file, `tests/test_p4_confirm_economic.py`, with 14 tests (P4Q37). No existing test changed. The suite grows from 345 to 359 tests.
 
 ## Flags
 
@@ -179,6 +190,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-4p: read-only; every Python command ran with `OFILT_DATA_DIR` set to an empty folder, which was still empty at the end; no module of `io` imported and no data file opened; every frame came from the simulator; nothing written in REPO; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-4a: no script of this item opens a data file or computes on the dev panel; the new module reads only the configuration and writes no file; the new test file runs on simulator frames only, never labelled real, with `OFILT_DATA_DIR` set to an empty folder when run on its own; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-4b1: no script of this item opens a data file or computes on the dev panel; the new module reads only the configuration, through `confirm_inference.load_config`, and writes no file itself; its tests run on simulator frames only, never labelled real, with the run registry patched to a temporary folder and `OFILT_DATA_DIR` set to an empty folder when run on their own; `RUN_REGISTRY.jsonl` unchanged; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-4b2: no script of this item opens a data file or computes on the dev panel; the new module reads only the configuration and the cost inputs, each pinned by its SHA-256, and writes no file; its tests run on simulator frames only, never labelled real, with the run registry patched to a temporary folder and `OFILT_DATA_DIR` set to an empty folder when run on their own; `RUN_REGISTRY.jsonl` unchanged; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 
 ## Deviations
 
@@ -203,6 +215,9 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
   - A deviation in e.2: the checkpoint ran longer than the command tool's 600-s limit, and the tool moved it to the background; it completed unchanged (exit 0), and the builder ran nothing in REPO until it had. Accepted; from P4-4b1 the message says how to run it.
   - A deviation in c.1: the builder did not re-read the files of the specification's §1.3 that the first run had read earlier in the same session; they were unchanged (a.2's clean tree and pins). Accepted, as P4-4p's was.
   - Notes: d.3's attempt 1 failed test 19 by one ULP (reading 9), fixed in the module only; the suite took 741.6 s, against 348.1 s at P4-3, and the new file alone about 31 s.
+- P4-4b1 (message `118c98f797b30b7f6a46928cb501ae41ff8f8eca35d69d8dbc615f5f17c947d6`; recorded at P4-4b2, from its report):
+  - A deviation in the step order: the specification was copied to `docs/P4_CONFIRM_FC_SPEC.md` (d.1) after d.2 and d.3's runs, not before them. The copy is byte-identical to the kit, neither new file reads it, and d.3's check, which parses it, ran after the copy. Accepted.
+  - Notes: one attempt of d.3 passed all 17 tests; the probe ran once on synthetic frames with the registry patched; the suite took 1291.2 s.
 
 ## Disclosure list
 
@@ -219,4 +234,5 @@ For the pre-registration (Pass 5; P4Q8):
 - The confirmation module's inference specification `docs/P4_CONFIRM_INF_SPEC.md` (P4Q35), version 2, SHA-256 `a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65`; its version 1, SHA-256 `0605d405be56e901abe1ea4d35102851dfd260bc28c10307629764ef4b76097d`, was never committed.
 - P4-4p's probe of the inference calls (report `reports/P4_reports/p4_4p.txt`): simulator frames only; no data file opened.
 - The confirmation module's forecasting specification `docs/P4_CONFIRM_FC_SPEC.md` (P4Q36), version 1, SHA-256 `a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6`.
+- The confirmation module's economic-evaluation specification `docs/P4_CONFIRM_ECON_SPEC.md` (P4Q37), version 1, SHA-256 `42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785`.
 - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.
