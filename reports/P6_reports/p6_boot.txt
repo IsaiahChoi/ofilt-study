@@ -1,0 +1,1756 @@
+2026-10-12T21:53:16Z
+6775d6ed737a5c57cb686ade28d11f30a99ebfe8
+b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688  /tmp/p6_boot_msg.txt
+
+# P6-boot: a new builder session; the Pass 6 standing prompt adopted; read-only orientation
+
+Builder report. D = 2026-10-12. Read-only: no commit, no test run, no module of ofilt imported.
+
+## Scripts and their outputs
+
+### a.1
+----- /tmp/p6_boot_date.out -----
+2026-10-12
+----- end of /tmp/p6_boot_date.out -----
+
+----- /tmp/p6_boot_msgsha.out -----
+b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688  /tmp/p6_boot_msg.txt
+----- end of /tmp/p6_boot_msgsha.out -----
+
+### Shared helper of the Python scripts
+----- /tmp/p6_boot_common.py -----
+"""P6-boot: shared helpers for the item's Python scripts.
+
+Imports no module of ofilt; reads files as bytes. Expected values are read from /tmp/p6_boot_msg.txt, list
+"## Expected values", one line per name, `- NAME = value`; the item's date D from /tmp/p6_boot_date.out (a.1).
+"""
+import hashlib
+import os
+import re
+import subprocess
+
+MSG = "/tmp/p6_boot_msg.txt"
+DATE_FILE = "/tmp/p6_boot_date.out"
+
+
+def read_bytes(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def sha256_bytes(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256(path):
+    return sha256_bytes(read_bytes(path))
+
+
+def expected():
+    data = read_bytes(MSG)
+    print(f"message {MSG}: sha256 {sha256_bytes(data)}")
+    lines = data.decode("utf-8").split("\n")
+    start = lines.index("## Expected values")
+    E = {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            if m.group(1) in E:
+                raise SystemExit(f"duplicate expected value {m.group(1)}")
+            E[m.group(1)] = m.group(2)
+    print(f"expected values read: {len(E)}")
+    return E
+
+
+def item_date():
+    d = read_bytes(DATE_FILE).decode("utf-8").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        raise SystemExit(f"{DATE_FILE} does not hold a date: {d!r}")
+    print(f"D (from {DATE_FILE}): {d}")
+    return d
+
+
+def path(value):
+    return os.path.expanduser(value)
+
+
+def spaced(value):
+    """Items separated by a space."""
+    return value.split(" ")
+
+
+def pairs(value):
+    """`path:sha256` items separated by ` | `, split at the last colon."""
+    return [tuple(item.rsplit(":", 1)) for item in value.split(" | ")]
+
+
+REPO = path("~/Desktop/FX_Project/ofilt_pass1")
+DATA = path("~/Desktop/FX_Project/data")
+
+
+def git_bytes(*args, repo=REPO, check=True):
+    return subprocess.run(["git", "-C", repo, *args], check=check, capture_output=True).stdout
+
+
+def git(*args, repo=REPO):
+    return git_bytes(*args, repo=repo).decode("utf-8")
+
+
+def git_rc(*args, repo=REPO):
+    """Exit status only."""
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True).returncode
+
+
+def lines_of(data):
+    return data.count(b"\n")
+
+
+def repo_file(rel):
+    """A REPO path, refused if it would leave REPO or reach DATA (nothing in DATA is opened)."""
+    full = os.path.realpath(os.path.join(REPO, rel))
+    if os.path.isabs(rel) or ".." in rel.split("/") or not full.startswith(os.path.realpath(REPO) + os.sep) \
+            or full.startswith(os.path.realpath(DATA) + os.sep):
+        raise SystemExit(f"refused: {rel!r} is not a REPO path")
+    return full
+
+
+def access_log_hits(root=REPO):
+    """Names starting ACCESS_LOG under root outside .git (names only; nothing opened, other names not printed)."""
+    hits = []
+    for r, dirs, files in os.walk(root):
+        if r == root and ".git" in dirs:
+            dirs.remove(".git")
+        hits += [os.path.relpath(os.path.join(r, n), root) for n in dirs + files if n.startswith("ACCESS_LOG")]
+    return hits
+
+
+class Checks:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.n = 0
+        self.fails = []
+
+    def check(self, ok, label, detail=""):
+        self.n += 1
+        if not ok:
+            self.fails.append(label)
+        print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+    def note(self, text):
+        print(f"[note] {text}")
+
+    def done(self):
+        print(f"checks: {self.n}; failed: {len(self.fails)}")
+        for f in self.fails:
+            print(f"FAIL {f}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+----- end of /tmp/p6_boot_common.py -----
+
+### a.2 (and the extra check in the tool's own zsh, R2)
+----- /tmp/p6_boot_a2.sh -----
+#!/bin/bash
+# P6-boot a.2: OFILT_RUN_SEALED and OFILT_P6_CONFIRM_RUN must both be absent from the session's exported
+# environment and unset in this shell. Runs no Python.
+ok=True
+for v in OFILT_RUN_SEALED OFILT_P6_CONFIRM_RUN; do
+  if env | grep -q "^${v}="; then
+    echo "$v in the exported environment: yes"
+    ok=False
+  else
+    echo "$v in the exported environment: no"
+  fi
+  if [ -n "${!v+x}" ]; then
+    echo "$v set in this shell: yes"
+    ok=False
+  else
+    echo "$v set in this shell: no"
+  fi
+done
+echo "A2_ENV CHECK: ${ok}"
+----- end of /tmp/p6_boot_a2.sh -----
+
+----- /tmp/p6_boot_a2.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+OFILT_P6_CONFIRM_RUN in the exported environment: no
+OFILT_P6_CONFIRM_RUN set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p6_boot_a2.out -----
+
+----- /tmp/p6_boot_a2_zsh.out -----
+zsh tool shell: OFILT_RUN_SEALED unset
+zsh tool shell: OFILT_P6_CONFIRM_RUN unset
+----- end of /tmp/p6_boot_a2_zsh.out -----
+
+### a.3
+----- /tmp/p6_boot_a3.py -----
+"""P6-boot a.3: REPO's state, by read-only git commands; files hashed as bytes (no content printed)."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import (REPO, Checks, access_log_hits, expected, git, git_rc, lines_of, read_bytes,  # noqa: E402
+                            repo_file, sha256_bytes, spaced)
+
+E = expected()
+C = Checks("A3")
+
+head = git("rev-parse", "HEAD").strip()
+C.check(head == E["HEAD"], "HEAD == HEAD", head)
+subject = git("log", "-1", "--format=%s", "HEAD").rstrip("\n")
+C.check(subject == E["HEAD_SUBJECT"], "HEAD's subject == HEAD_SUBJECT", subject)
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [E["HEAD_PARENT"]], "HEAD's only parent == HEAD_PARENT", " ".join(parents))
+
+status = git("status", "--porcelain", "--untracked-files=all")
+C.check(status == "", "git status --porcelain --untracked-files=all prints nothing", repr(status))
+
+remote = git("branch", "-r", "--contains", "HEAD")
+C.check(remote.strip() != "", "git branch -r --contains HEAD is not empty", " ".join(remote.split()))
+
+tags = git("tag", "-l").split()
+C.check(tags == spaced(E["TAG_LIST"]), "git tag -l == TAG_LIST", " ".join(tags))
+
+kind = git("cat-file", "-t", "refs/tags/prereg-v1").strip()
+C.check(kind == "tag", "prereg-v1 is of type tag (annotated)", kind)
+obj = git("rev-parse", "refs/tags/prereg-v1").strip()
+C.check(obj == E["PREREG_TAG_OBJECT"], "refs/tags/prereg-v1 == PREREG_TAG_OBJECT", obj)
+commit = git("rev-parse", "refs/tags/prereg-v1^{commit}").strip()
+C.check(commit == E["PREREG_TAG_COMMIT"], "prereg-v1's commit == PREREG_TAG_COMMIT", commit)
+
+skind = git("cat-file", "-t", "refs/tags/spec-dev-v1").strip()
+print(f"(spec-dev-v1 is of type {skind})")
+sobj = git("rev-parse", "refs/tags/spec-dev-v1").strip()
+C.check(sobj == E["SPEC_TAG_OBJECT"], "refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT", sobj)
+scommit = git("rev-parse", "refs/tags/spec-dev-v1^{commit}").strip()
+C.check(scommit == E["SPEC_TAG_COMMIT"], "spec-dev-v1's commit == SPEC_TAG_COMMIT", scommit)
+
+rc = git_rc("merge-base", "--is-ancestor", E["PREREG_TAG_COMMIT"], "HEAD")
+C.check(rc == 0, "git merge-base --is-ancestor PREREG_TAG_COMMIT HEAD", f"exit {rc}")
+rc = git_rc("merge-base", "--is-ancestor", E["SPEC_TAG_COMMIT"], E["PREREG_TAG_COMMIT"])
+C.check(rc == 0, "git merge-base --is-ancestor SPEC_TAG_COMMIT PREREG_TAG_COMMIT", f"exit {rc}")
+
+for rel, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+    data = read_bytes(repo_file(rel))
+    C.check(sha256_bytes(data) == E[f"{key}_SHA256"], f"{rel} sha256 == {key}_SHA256", sha256_bytes(data))
+    C.check(lines_of(data) == int(E[f"{key}_LINES"]), f"{rel} lines == {key}_LINES", f"{lines_of(data)}")
+
+hits = access_log_hits()
+C.check(hits == [], "no name starting ACCESS_LOG in REPO outside .git (names only)", " ".join(hits))
+
+for rel in spaced(E["ABSENT"]):
+    present = os.path.lexists(os.path.join(REPO, rel))
+    C.check(not present, f"ABSENT: {rel} does not exist", "exists" if present else "absent")
+
+C.done()
+----- end of /tmp/p6_boot_a3.py -----
+
+----- /tmp/p6_boot_a3.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+[ok] HEAD == HEAD: 6775d6ed737a5c57cb686ade28d11f30a99ebfe8
+[ok] HEAD's subject == HEAD_SUBJECT: records: P5-4 (P5-3 accepted; the OSF registration; P5Q19; decisions P88 to P92; Pass 5 closed)
+[ok] HEAD's only parent == HEAD_PARENT: 41f5de3e893fc833bc6a2c5323859ff405c30f14
+[ok] git status --porcelain --untracked-files=all prints nothing: ''
+[ok] git branch -r --contains HEAD is not empty: origin/main
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+(spec-dev-v1 is of type tag)
+[ok] refs/tags/spec-dev-v1 == SPEC_TAG_OBJECT: cee3b49e81d16f1f32e546cac9524b209ac1e493
+[ok] spec-dev-v1's commit == SPEC_TAG_COMMIT: f5271c03481b7514a1ec4b7e739fb85fbce8a774
+[ok] git merge-base --is-ancestor PREREG_TAG_COMMIT HEAD: exit 0
+[ok] git merge-base --is-ancestor SPEC_TAG_COMMIT PREREG_TAG_COMMIT: exit 0
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383
+[ok] BLIND_FIT_LOG lines == BLIND_FIT_LOG_LINES: 7
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c
+[ok] RUN_REGISTRY.jsonl lines == RUN_REGISTRY_LINES: 2
+[ok] no name starting ACCESS_LOG in REPO outside .git (names only)
+[ok] ABSENT: PASS6_STATUS.md does not exist: absent
+[ok] ABSENT: docs/P6_RUN_CRITERIA.md does not exist: absent
+[ok] ABSENT: docs/DECISIONS_P93_onward.md does not exist: absent
+[ok] ABSENT: reports/P5_reports/p5_4.txt does not exist: absent
+[ok] ABSENT: reports/P6_reports does not exist: absent
+[ok] ABSENT: reports/P6_runs does not exist: absent
+checks: 24; failed: 0
+A3 CHECK: True
+----- end of /tmp/p6_boot_a3.out -----
+
+### a.4
+----- /tmp/p6_boot_a4.py -----
+"""P6-boot a.4: the standing prompts, the boot kit, P5-4's kept report and its kept /tmp files (as bytes)."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import MSG, Checks, expected, lines_of, path, read_bytes, sha256, sha256_bytes  # noqa: E402
+
+E = expected()
+C = Checks("A4")
+
+for key in ("PROMPT", "RETIRED_PROMPT"):
+    p = path(E[f"{key}_PATH"])
+    h = sha256(p)
+    C.check(h == E[f"{key}_SHA256"], f"{key}_PATH sha256 == {key}_SHA256", f"{p}: {h}")
+
+kit = path(E["BOOT_KIT_DIR"])
+names = sorted(os.listdir(kit))
+C.check(names == sorted(["p6_boot_msg.txt", "REPO_MANIFEST_H11.tsv"]),
+        "BOOT_KIT_DIR holds exactly p6_boot_msg.txt and REPO_MANIFEST_H11.tsv", " ".join(names))
+C.check(all(os.path.isfile(os.path.join(kit, n)) and not os.path.islink(os.path.join(kit, n)) for n in names),
+        "both are regular files")
+kmsg = read_bytes(os.path.join(kit, "p6_boot_msg.txt"))
+C.check(kmsg == read_bytes(MSG), "kit p6_boot_msg.txt identical to /tmp/p6_boot_msg.txt", sha256_bytes(kmsg))
+man = path(E["MANIFEST_PATH"])
+C.check(os.path.dirname(man) == kit, "MANIFEST_PATH lies in BOOT_KIT_DIR", man)
+h = sha256(man)
+C.check(h == E["MANIFEST_SHA256"], "REPO_MANIFEST_H11.tsv sha256 == MANIFEST_SHA256", h)
+
+kept = path(E["P5_4_KEPT"])
+rep = read_bytes(kept)
+C.check(sha256_bytes(rep) == E["P5_4_SHA256"], "P5_4_KEPT sha256 == P5_4_SHA256", sha256_bytes(rep))
+C.check(lines_of(rep) == int(E["P5_4_LINES"]), "P5_4_KEPT lines == P5_4_LINES", f"{lines_of(rep)}")
+if os.path.lexists("/tmp/p5_4.txt"):
+    t = read_bytes("/tmp/p5_4.txt")
+    C.check(t == rep, "/tmp/p5_4.txt exists and is identical to P5_4_KEPT", sha256_bytes(t))
+else:
+    C.note("/tmp/p5_4.txt does not exist")
+
+# The kept report's own list of the /tmp/p5_4* files and their SHA-256.
+lines = rep.decode("utf-8").split("\n")
+head = "## SHA-256 of every /tmp/p5_4* file except this report"
+C.check(lines.count(head) == 1, "P5_4_KEPT has the section heading once", head)
+listed = {}
+other = []
+for ln in lines[lines.index(head) + 1:]:
+    if ln.startswith("## "):
+        break
+    if not ln:
+        continue
+    m = re.fullmatch(r"([0-9a-f]{64})  /tmp/([^/]+)", ln)
+    if m:
+        C.check(m.group(2) not in listed, f"listed once: {m.group(2)}")
+        listed[m.group(2)] = m.group(1)
+    else:
+        other.append(ln)
+print(f"listed in the section: {len(listed)} files")
+for ln in other:
+    print(f"(a line of another form in the section: {ln})")
+C.check(all(n.startswith("p5_4") for n in listed), "every listed name starts p5_4")
+
+keep = path(E["P5_4_TMP_KEEP"])
+held = sorted(os.listdir(keep))
+print(f"P5_4_TMP_KEEP ({keep}) holds {len(held)} entries")
+for n in held:
+    full = os.path.join(keep, n)
+    if not os.path.isfile(full) or os.path.islink(full):
+        C.check(False, f"kept entry is a regular file: {n}")
+        continue
+    h = sha256(full)
+    if n in listed:
+        C.check(h == listed[n], f"kept {n} sha256 == listed", h)
+    elif n == "p5_4.txt":
+        C.check(h == E["P5_4_SHA256"], "kept p5_4.txt sha256 == P5_4_SHA256", h)
+    else:
+        C.check(False, f"kept {n} is neither in the list nor p5_4.txt", h)
+print("kept files: " + " ".join(held))
+missing = sorted(set(listed) - set(held))
+print("listed names not kept: " + (" ".join(missing) if missing else "(none)"))
+for n in missing:
+    C.note(f"listed but not kept: {n}")
+C.note("p5_4.txt kept: " + ("yes" if "p5_4.txt" in held else "no"))
+
+C.done()
+----- end of /tmp/p6_boot_a4.py -----
+
+----- /tmp/p6_boot_a4.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+[ok] PROMPT_PATH sha256 == PROMPT_SHA256: /Users/isaiahchoi/Desktop/FX_Project/files/pass6/PASS6_BUILDER_PROMPT_2026-10-12.md: 2dfbdbb76897a1062a3fbc5fef42225851c6559fcb1548fbc50952a744e39121
+[ok] RETIRED_PROMPT_PATH sha256 == RETIRED_PROMPT_SHA256: /Users/isaiahchoi/Desktop/FX_Project/files/pass5/PASS5_BUILDER_PROMPT_2026-10-12.md: 0398c3c748d5a34d395306b0023ca287d19a6e0890d67c55207562eb496b7a03
+[ok] BOOT_KIT_DIR holds exactly p6_boot_msg.txt and REPO_MANIFEST_H11.tsv: REPO_MANIFEST_H11.tsv p6_boot_msg.txt
+[ok] both are regular files
+[ok] kit p6_boot_msg.txt identical to /tmp/p6_boot_msg.txt: b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+[ok] MANIFEST_PATH lies in BOOT_KIT_DIR: /Users/isaiahchoi/Desktop/FX_Project/files/pass6/p6_boot/REPO_MANIFEST_H11.tsv
+[ok] REPO_MANIFEST_H11.tsv sha256 == MANIFEST_SHA256: d4cd9a4f8b768380ccacf75681d57cb2a6033df66040eebbefa3c87aabc3fa51
+[ok] P5_4_KEPT sha256 == P5_4_SHA256: 8c817e02e3b2f49f78226196b393724a37d1a4be07b0a4705ba45742c84ea0c4
+[ok] P5_4_KEPT lines == P5_4_LINES: 1061
+[ok] /tmp/p5_4.txt exists and is identical to P5_4_KEPT: 8c817e02e3b2f49f78226196b393724a37d1a4be07b0a4705ba45742c84ea0c4
+[ok] P5_4_KEPT has the section heading once: ## SHA-256 of every /tmp/p5_4* file except this report
+[ok] listed once: p5_4_a2.out
+[ok] listed once: p5_4_a2.sh
+[ok] listed once: p5_4_a3.out
+[ok] listed once: p5_4_a3.py
+[ok] listed once: p5_4_a4.out
+[ok] listed once: p5_4_a4.py
+[ok] listed once: p5_4_assemble.sh
+[ok] listed once: p5_4_b1_check.out
+[ok] listed once: p5_4_b1_check.py
+[ok] listed once: p5_4_b1.out
+[ok] listed once: p5_4_b1.sh
+[ok] listed once: p5_4_b2.out
+[ok] listed once: p5_4_b2.py
+[ok] listed once: p5_4_c.out
+[ok] listed once: p5_4_c.py
+[ok] listed once: p5_4_common.py
+[ok] listed once: p5_4_d_check.out
+[ok] listed once: p5_4_d_check.py
+[ok] listed once: p5_4_d_sh.out
+[ok] listed once: p5_4_d.out
+[ok] listed once: p5_4_d.sh
+[ok] listed once: p5_4_date.out
+[ok] listed once: p5_4_e_check.out
+[ok] listed once: p5_4_e_check.py
+[ok] listed once: p5_4_e_sh.out
+[ok] listed once: p5_4_e.sh
+[ok] listed once: p5_4_msg.txt
+[ok] listed once: p5_4_msgsha.out
+[ok] listed once: p5_4_notes.txt
+[ok] listed once: p5_4_readings.txt
+listed in the section: 30 files
+[ok] every listed name starts p5_4
+P5_4_TMP_KEEP (/Users/isaiahchoi/Desktop/FX_Project/files/pass5_tmp_keep/p5_4) holds 31 entries
+[ok] kept p5_4.txt sha256 == P5_4_SHA256: 8c817e02e3b2f49f78226196b393724a37d1a4be07b0a4705ba45742c84ea0c4
+[ok] kept p5_4_a2.out sha256 == listed: e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a
+[ok] kept p5_4_a2.sh sha256 == listed: 27f05747cf1532b2ddabe3e83da6ff5d3c8e9f6b1472f3b5aa4523f582905ab1
+[ok] kept p5_4_a3.out sha256 == listed: 1707fca98b78bb91ed28d9f8daf7b33d2299d7488cc858bf8a875fb18e3b6186
+[ok] kept p5_4_a3.py sha256 == listed: e7d19a94d096b2632ab1a0121f1bf2b5b37950540dfa06dba682d087fc3018ce
+[ok] kept p5_4_a4.out sha256 == listed: 31cb8b21787597fabc66275cdac503243fa88fa7ed324c8b9e762e3742eeabc4
+[ok] kept p5_4_a4.py sha256 == listed: da68b709ea23d6ef6b701e24eba9d4211884467cebb277c344af46185b42479d
+[ok] kept p5_4_assemble.sh sha256 == listed: a00d21eba45e78cf9de90e79e367c43026e66df0c4001f6fef5605a7d24d345d
+[ok] kept p5_4_b1.out sha256 == listed: 7f840f7ef8a8765e123cd267e78438082197c53ab0fe8aa012cf59e41f27cbe0
+[ok] kept p5_4_b1.sh sha256 == listed: 293bfcf9a19601ede84db62f61b5400abdf88feb066230ea585384b10f3e359c
+[ok] kept p5_4_b1_check.out sha256 == listed: 42fcc22d25e1d848a750bb8580a33d9c65c8d5ca97413269baa66b57226bc770
+[ok] kept p5_4_b1_check.py sha256 == listed: 603a2710a6c73fb293e6fd3e986c39ee03b548b8bb68df74bff504e93c632e2b
+[ok] kept p5_4_b2.out sha256 == listed: 6710edb9c31db1bad25f1520e195917921edf2e1a36c5d84eaef4cf2dc9a515d
+[ok] kept p5_4_b2.py sha256 == listed: a54d780e8be76a0698e7182a770386dba49d54886b0207de9072870e9985ba70
+[ok] kept p5_4_c.out sha256 == listed: 3c4504279d7787216178f03679e3f2fa87b3469765e3da3d1dde006f2ac77809
+[ok] kept p5_4_c.py sha256 == listed: 4d30881db3d4c67057ce75dc57bee08671b2b117333a4d4f180f8ee53298fcc6
+[ok] kept p5_4_common.py sha256 == listed: 6f0d38673779923bb8514d5ab4116b3ebabad65460f8c05d7ce8f3c4e5189443
+[ok] kept p5_4_d.out sha256 == listed: 3f8bf67082ea5467de4f069eb2dad47f9a953167db1921f3cd556cfb3fb0fbcb
+[ok] kept p5_4_d.sh sha256 == listed: 87cfb2b43162b188427f622f14f5ba3884e6db526bf67ad9b372b328ef51693e
+[ok] kept p5_4_d_check.out sha256 == listed: d6078fc8b421cc4a602be1c5586c760c388c69fda0a184f774137d054c6ce6ac
+[ok] kept p5_4_d_check.py sha256 == listed: 566c54b3d51788e26e3d69aa3f1192686c5f803a1928170f8c13fcc913930d9b
+[ok] kept p5_4_d_sh.out sha256 == listed: bb772e6d9e3338728daaf4df751249ed1f92400aaf1a366375aa4514857060b9
+[ok] kept p5_4_date.out sha256 == listed: a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9
+[ok] kept p5_4_e.sh sha256 == listed: 94b10234055a128ce99022fc1713209f2dfe9441c934f278bb90d29e1d39e2ab
+[ok] kept p5_4_e_check.out sha256 == listed: e6d1df2de8b0eabbeac409ef32c8c0c272e5b39d52318a8eb19fd478f70d6b59
+[ok] kept p5_4_e_check.py sha256 == listed: 8ddb47c7dfd6d3c01f64eecea0bd53f50dae16bfb02d9b203b1d9ffe4b8cac7b
+[ok] kept p5_4_e_sh.out sha256 == listed: 372bcc13e11b44de53a8fece1a38f37cd0081adef094f9975abe393891055a61
+[ok] kept p5_4_msg.txt sha256 == listed: 07fa7088ba8a99e546f5c21644f4e391366f18d86f2fa1834609959fdfc1506a
+[ok] kept p5_4_msgsha.out sha256 == listed: a9767ff44462cac2aa86af940b1bc0ab956a2496c4306dbc0580c195b89b667e
+[ok] kept p5_4_notes.txt sha256 == listed: fdc867f66bf4c002dbcaac47e191f06f72894cdcb963f7fa974b43bf6730800d
+[ok] kept p5_4_readings.txt sha256 == listed: 07629358416aac3a1ad23d46b231a7982f9170fc928191cc2103ff49deec0674
+kept files: p5_4.txt p5_4_a2.out p5_4_a2.sh p5_4_a3.out p5_4_a3.py p5_4_a4.out p5_4_a4.py p5_4_assemble.sh p5_4_b1.out p5_4_b1.sh p5_4_b1_check.out p5_4_b1_check.py p5_4_b2.out p5_4_b2.py p5_4_c.out p5_4_c.py p5_4_common.py p5_4_d.out p5_4_d.sh p5_4_d_check.out p5_4_d_check.py p5_4_d_sh.out p5_4_date.out p5_4_e.sh p5_4_e_check.out p5_4_e_check.py p5_4_e_sh.out p5_4_msg.txt p5_4_msgsha.out p5_4_notes.txt p5_4_readings.txt
+listed names not kept: (none)
+[note] p5_4.txt kept: yes
+checks: 73; failed: 0
+A4 CHECK: True
+----- end of /tmp/p6_boot_a4.out -----
+
+### a.5
+----- /tmp/p6_boot_a5.py -----
+"""P6-boot a.5: REPO's tracked files against the H11 manifest; every file hashed as bytes (nothing printed of any
+content; a mismatch is printed by path only)."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import Checks, expected, git_bytes, path, read_bytes, repo_file, sha256  # noqa: E402
+
+E = expected()
+C = Checks("A5")
+
+raw = read_bytes(path(E["MANIFEST_PATH"]))
+text = raw.decode("utf-8")
+C.check(text.endswith("\n"), "the manifest ends in a newline")
+lines = text.split("\n")[:-1] if text.endswith("\n") else text.split("\n")
+C.check(len(lines) == int(E["MANIFEST_LINES"]), "manifest lines == MANIFEST_LINES", f"{len(lines)}")
+man = {}
+bad_form = 0
+dups = []
+for ln in lines:
+    m = re.fullmatch(r"([0-9a-f]{64})\t([^\t]+)", ln)
+    if not m:
+        bad_form += 1
+        continue
+    if m.group(2) in man:
+        dups.append(m.group(2))
+    man[m.group(2)] = m.group(1)
+C.check(bad_form == 0, "every manifest line is <sha256><TAB><path>", f"{bad_form} lines of another form")
+C.check(not dups, "no manifest path twice", " ".join(dups))
+
+tracked = [p.decode("utf-8") for p in git_bytes("ls-files", "-z").split(b"\0") if p]
+C.check(len(tracked) == len(set(tracked)), "git ls-files -z lists no path twice")
+C.check(len(tracked) == int(E["TRACKED_COUNT"]), "tracked files == TRACKED_COUNT", f"{len(tracked)}")
+only_git = sorted(set(tracked) - set(man))
+only_man = sorted(set(man) - set(tracked))
+C.check(not only_git and not only_man, "git ls-files -z lists exactly the manifest's paths",
+        f"tracked only: {len(only_git)}; manifest only: {len(only_man)}")
+for p in only_git:
+    print(f"  tracked, not in the manifest: {p}")
+for p in only_man:
+    print(f"  in the manifest, not tracked: {p}")
+
+links = [p for p in tracked if os.path.islink(os.path.join(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"), p))]
+C.check(not links, "no tracked path is a symlink", " ".join(links))
+
+matched = 0
+mismatched = []
+for p in sorted(set(tracked) & set(man)):
+    if sha256(repo_file(p)) == man[p]:
+        matched += 1
+    else:
+        mismatched.append(p)
+print(f"hashed: {matched + len(mismatched)}; matching the manifest: {matched}; mismatched: {len(mismatched)}")
+for p in mismatched:
+    print(f"  mismatch: {p}")
+C.check(not mismatched and matched == int(E["TRACKED_COUNT"]),
+        "every tracked file's working-tree bytes have the manifest's sha256", f"{matched} of {len(tracked)}")
+
+C.done()
+----- end of /tmp/p6_boot_a5.py -----
+
+----- /tmp/p6_boot_a5.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+[ok] the manifest ends in a newline
+[ok] manifest lines == MANIFEST_LINES: 253
+[ok] every manifest line is <sha256><TAB><path>: 0 lines of another form
+[ok] no manifest path twice
+[ok] git ls-files -z lists no path twice
+[ok] tracked files == TRACKED_COUNT: 253
+[ok] git ls-files -z lists exactly the manifest's paths: tracked only: 0; manifest only: 0
+[ok] no tracked path is a symlink
+hashed: 253; matching the manifest: 253; mismatched: 0
+[ok] every tracked file's working-tree bytes have the manifest's sha256: 253 of 253
+checks: 9; failed: 0
+A5 CHECK: True
+----- end of /tmp/p6_boot_a5.out -----
+
+### a.6
+----- /tmp/p6_boot_a6.py -----
+"""P6-boot a.6: Appendix A's table, each row's file in REPO and at the tag; the sanctioned files; the run command in
+the pre-registration and in the standing prompt. Hashes nothing in DATA; prints no content of any row's file."""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import Checks, expected, git_bytes, pairs, path, read_bytes, repo_file, sha256, sha256_bytes  # noqa: E402
+
+E = expected()
+C = Checks("A6")
+
+PREREG = "docs/PREREG_v1.md"
+HEAD_LINE = "## Appendix A: the files that fix the confirmation (SHA-256 at the tag)"
+CMD_MARK = "OFILT_P6_CONFIRM_RUN=P6-1 caffeinate"
+
+doc = read_bytes(repo_file(PREREG)).decode("utf-8")
+lines = doc.split("\n")
+C.check(lines.count(HEAD_LINE) == 1, "the Appendix A heading occurs once", HEAD_LINE)
+appx = lines[lines.index(HEAD_LINE):]
+row_re = re.compile(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|.*\|$")
+rows = []
+near = []
+for ln in appx:
+    m = row_re.match(ln)
+    if m:
+        rows.append((m.group(1), m.group(2)))
+    elif ln.startswith("| `"):
+        near.append(ln)
+C.check(not near, "no table line of Appendix A starts '| `' without the row form", f"{len(near)}")
+C.check(len(rows) == int(E["APPX_ROWS"]), "Appendix A rows == APPX_ROWS", f"{len(rows)}")
+paths = [p for p, _ in rows]
+C.check(len(paths) == len(set(paths)), "no Appendix A path twice")
+
+
+def at_tag(rel):
+    shown = git_bytes("show", f"prereg-v1:{rel}")
+    blob = git_bytes("cat-file", "blob", f"prereg-v1:{rel}")
+    if shown != blob:
+        raise SystemExit(f"git show and git cat-file blob differ for {rel}")
+    return shown
+
+
+ok_repo = ok_tag = 0
+for rel, want in rows:
+    h_repo = sha256(repo_file(rel))
+    h_tag = sha256_bytes(at_tag(rel))
+    ok_repo += h_repo == want
+    ok_tag += h_tag == want
+    print(f"  {'ok' if h_repo == want else 'MISMATCH'} in REPO, {'ok' if h_tag == want else 'MISMATCH'} at the tag: {rel}")
+C.check(ok_repo == len(rows), "every row's file in REPO has the row's sha256", f"{ok_repo} of {len(rows)}")
+C.check(ok_tag == len(rows), "every row's file at prereg-v1 has the row's sha256", f"{ok_tag} of {len(rows)}")
+
+appx_sha = dict(rows)
+for rel, want in pairs(E["SANCTIONED"]):
+    h_repo = sha256(repo_file(rel))
+    h_tag = sha256_bytes(at_tag(rel))
+    C.check(h_repo == want, f"SANCTIONED {rel} in REPO", h_repo)
+    C.check(h_tag == want, f"SANCTIONED {rel} at prereg-v1", h_tag)
+    C.check(appx_sha.get(rel) == want, f"SANCTIONED {rel}: Appendix A's row has the same sha256", appx_sha.get(rel, "no row"))
+
+
+def run_cmds(text, label):
+    hits = [ln for ln in text.split("\n") if CMD_MARK in ln]
+    C.check(len(hits) == 1, f"{label}: exactly one line contains '{CMD_MARK}'", f"{len(hits)}")
+    out = []
+    for ln in hits:
+        cmd = ln[ln.index("`") + 1:ln.rindex("`")]
+        h = sha256_bytes(cmd.encode("utf-8"))
+        C.check(h == E["RUN_CMD_SHA256"], f"{label}: the text between the line's first and last backtick has "
+                "RUN_CMD_SHA256", h)
+        out.append(cmd)
+    return out
+
+
+c_doc = run_cmds(doc, PREREG)
+c_prompt = run_cmds(read_bytes(path(E["PROMPT_PATH"])).decode("utf-8"), "the standing prompt")
+C.check(c_doc == c_prompt, "the two commands are identical")
+print("the command: " + (c_doc[0] if c_doc else "(none)"))
+
+C.done()
+----- end of /tmp/p6_boot_a6.py -----
+
+----- /tmp/p6_boot_a6.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+[ok] the Appendix A heading occurs once: ## Appendix A: the files that fix the confirmation (SHA-256 at the tag)
+[ok] no table line of Appendix A starts '| `' without the row form: 0
+[ok] Appendix A rows == APPX_ROWS: 40
+[ok] no Appendix A path twice
+  ok in REPO, ok at the tag: spec/analysis_spec_dev_v1.yaml
+  ok in REPO, ok at the tag: spec/SPEC_AMENDMENTS.md
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_CONFIG.json
+  ok in REPO, ok at the tag: docs/P3_COST_INPUTS.json
+  ok in REPO, ok at the tag: tools/p6_confirm_run.py
+  ok in REPO, ok at the tag: tests/test_p6_confirm_run.py
+  ok in REPO, ok at the tag: docs/P5_CONFIRM_SCRIPT_SPEC.md
+  ok in REPO, ok at the tag: ofilt/drift/confirm_run.py
+  ok in REPO, ok at the tag: ofilt/drift/confirm_inference.py
+  ok in REPO, ok at the tag: ofilt/drift/confirm_forecast.py
+  ok in REPO, ok at the tag: ofilt/drift/confirm_economic.py
+  ok in REPO, ok at the tag: ofilt/drift/confirm_claims.py
+  ok in REPO, ok at the tag: ofilt/drift/confirm_allowlist.py
+  ok in REPO, ok at the tag: ofilt/drift/inference.py
+  ok in REPO, ok at the tag: ofilt/drift/forecast.py
+  ok in REPO, ok at the tag: ofilt/drift/fctests.py
+  ok in REPO, ok at the tag: ofilt/drift/targets.py
+  ok in REPO, ok at the tag: ofilt/drift/io.py
+  ok in REPO, ok at the tag: ofilt/drift/blind.py
+  ok in REPO, ok at the tag: tools/p4_confirm_run.py
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_INF_SPEC.md
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_FC_SPEC.md
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_ECON_SPEC.md
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_CLAIMS_SPEC.md
+  ok in REPO, ok at the tag: docs/P4_CONFIRM_RUN_SPEC.md
+  ok in REPO, ok at the tag: docs/P4_DRYRUN_CRITERIA.md
+  ok in REPO, ok at the tag: reports/P4_reports/p4_1_audit.md
+  ok in REPO, ok at the tag: docs/P4_M2_note.md
+  ok in REPO, ok at the tag: docs/replacements/PLAN.md
+  ok in REPO, ok at the tag: docs/DECISIONS_ADDENDUM.md
+  ok in REPO, ok at the tag: docs/DECISIONS_P14_onward.md
+  ok in REPO, ok at the tag: docs/DECISIONS_P37_onward.md
+  ok in REPO, ok at the tag: docs/DECISIONS_P58_onward.md
+  ok in REPO, ok at the tag: docs/DECISIONS_P71_onward.md
+  ok in REPO, ok at the tag: docs/DECISIONS_P82_onward.md
+  ok in REPO, ok at the tag: PASS4_STATUS.md
+  ok in REPO, ok at the tag: docs/DATA_PROVENANCE.md
+  ok in REPO, ok at the tag: reports/P4_runs/dev/document.json
+  ok in REPO, ok at the tag: BLIND_FIT_LOG
+  ok in REPO, ok at the tag: RUN_REGISTRY.jsonl
+[ok] every row's file in REPO has the row's sha256: 40 of 40
+[ok] every row's file at prereg-v1 has the row's sha256: 40 of 40
+[ok] SANCTIONED tools/p6_confirm_run.py in REPO: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] SANCTIONED tools/p6_confirm_run.py at prereg-v1: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] SANCTIONED tools/p6_confirm_run.py: Appendix A's row has the same sha256: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] SANCTIONED ofilt/drift/confirm_run.py in REPO: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] SANCTIONED ofilt/drift/confirm_run.py at prereg-v1: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] SANCTIONED ofilt/drift/confirm_run.py: Appendix A's row has the same sha256: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] SANCTIONED docs/P4_CONFIRM_CONFIG.json in REPO: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] SANCTIONED docs/P4_CONFIRM_CONFIG.json at prereg-v1: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] SANCTIONED docs/P4_CONFIRM_CONFIG.json: Appendix A's row has the same sha256: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] docs/PREREG_v1.md: exactly one line contains 'OFILT_P6_CONFIRM_RUN=P6-1 caffeinate': 1
+[ok] docs/PREREG_v1.md: the text between the line's first and last backtick has RUN_CMD_SHA256: 1b34bf5c0a8d1f55245963329eaa3ec00bb927801187bbcca5cf6b25c45d2aa9
+[ok] the standing prompt: exactly one line contains 'OFILT_P6_CONFIRM_RUN=P6-1 caffeinate': 1
+[ok] the standing prompt: the text between the line's first and last backtick has RUN_CMD_SHA256: 1b34bf5c0a8d1f55245963329eaa3ec00bb927801187bbcca5cf6b25c45d2aa9
+[ok] the two commands are identical
+the command: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && OFILT_P6_CONFIRM_RUN=P6-1 caffeinate -dimsu python -B tools/p6_confirm_run.py --out reports/P6_runs/confirm'
+checks: 20; failed: 0
+A6 CHECK: True
+----- end of /tmp/p6_boot_a6.out -----
+
+### b (a reading aid: the records' cited hashes)
+----- /tmp/p6_boot_b.py -----
+"""P6-boot b (a reading aid, not a verdict): the records' hashes the message and PASS5_STATUS.md cite, recomputed as
+bytes. The cited values are read by script from their texts: PASS5_STATUS.md's prefix from the message's step 0.2,
+DECISIONS_P88_onward.md's SHA-256 from PASS5_STATUS.md's P5Q19 entry."""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import MSG, expected, read_bytes, repo_file, sha256  # noqa: E402
+
+expected()
+msg = read_bytes(MSG).decode("utf-8")
+m = re.search(r"`PASS5_STATUS\.md` at `([0-9a-f]+)…`", msg)
+p5 = sha256(repo_file("PASS5_STATUS.md"))
+print(f"PASS5_STATUS.md sha256 {p5}; the message cites {m.group(1)}…: {'agrees' if p5.startswith(m.group(1)) else 'DIFFERS'}")
+status = read_bytes(repo_file("PASS5_STATUS.md")).decode("utf-8")
+m = re.search(r"`docs/DECISIONS_P88_onward\.md` \(P88 to P92; SHA-256 `([0-9a-f]{64})`\)", status)
+d88 = sha256(repo_file("docs/DECISIONS_P88_onward.md"))
+print(f"docs/DECISIONS_P88_onward.md sha256 {d88}; PASS5_STATUS.md cites {m.group(1)}: "
+      f"{'agrees' if d88 == m.group(1) else 'DIFFERS'}")
+----- end of /tmp/p6_boot_b.py -----
+
+----- /tmp/p6_boot_b.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+PASS5_STATUS.md sha256 7941a9a21574620e3d4fe58f1a13e6dd49f235da460545c936e6806cb5b07f88; the message cites 7941a9a2…: agrees
+docs/DECISIONS_P88_onward.md sha256 30c3bedf838e21f321f4006cccfae48071e1621750d6ddb2dd7b945814757f54; PASS5_STATUS.md cites 30c3bedf838e21f321f4006cccfae48071e1621750d6ddb2dd7b945814757f54: agrees
+----- end of /tmp/p6_boot_b.out -----
+
+### c.1: the searches (scripts, and the one-line commands of N3), the list, and the comparison
+----- /tmp/p6_boot_c1_search.sh -----
+#!/bin/bash
+# P6-boot c.1: searches tests/ (read, never run) for the lines through which a test could see the run's effects:
+# ACCESS_LOG (1), RUN_REGISTRY.jsonl / registry reads (2), reports/P6_runs or any walk / listing of REPO or reports/
+# (3), and git working-tree state (the registry's append is a tracked change until P6-1 part 2's commit).
+# Runs no Python; prints file:line matches only.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+cd "$REPO/tests" || exit 2
+echo "test modules: $(ls test_*.py | wc -l | tr -d ' '); other .py files: $(ls *.py | grep -v '^test_' | tr '\n' ' ')"
+for pat in 'ACCESS_LOG' 'RUN_REGISTRY' 'REAL_PATH' 'read_registry' 'registry_path' 'P6_runs' 'P4_runs' \
+           'rglob' 'os.walk' 'iterdir' 'listdir' 'glob(' 'scandir' 'ls-files' 'porcelain' 'git_state' 'git_dirty' \
+           '"status"' 'diff' '.gitignore' 'confirm_real' 'CONFIRM_REAL' 'run_ids' 'GRANTED'; do
+  echo "== $pat"
+  grep -n -F -- "$pat" *.py 2>/dev/null | sed 's/^/  /' || true
+done
+----- end of /tmp/p6_boot_c1_search.sh -----
+
+----- /tmp/p6_boot_c1_search.out -----
+test modules: 47; other .py files: p2_synth.py tag_state.py 
+== ACCESS_LOG
+  tag_state.py:94:    io.load_confirm refuses whatever REPO's tags are. It does not patch io.ACCESS_LOG_PATH or io.DATA_DIR; the
+  test_guard_p46.py:32:        self.log = self.tmp / "ACCESS_LOG"
+  test_guard_p46.py:41:                                    (IO, "ACCESS_LOG_PATH", self.log), (IO, "DATA_DIR", self.tmp / "empty"),
+  test_io.py:99:            log = Path(t) / "ACCESS_LOG"
+  test_io.py:101:            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), \
+  test_io.py:121:            log = Path(t) / "ACCESS_LOG"
+  test_io.py:122:            with mock.patch.object(IO, "_GUARD_REPO", repo), mock.patch.object(IO, "ACCESS_LOG_PATH", log), \
+  test_p4_confirm_run.py:5:in test 8, with ACCESS_LOG and the data folder patched to temporary paths. setUpModule patches the run registry to a
+  test_p4_confirm_run.py:6:temporary folder and io.ACCESS_LOG_PATH to a file in it; every output folder lies in a temporary directory. M7 is the
+  test_p4_confirm_run.py:73:                            (IO, "ACCESS_LOG_PATH", "ACCESS_LOG")):
+  test_p4_confirm_run.py:140:        found += [n for n in dirs + names if n.startswith("ACCESS_LOG")]
+  test_p4_confirm_run.py:271:        access = IO.ACCESS_LOG_PATH
+  test_p4_confirm_run.py:311:            log = Path(t) / "logs" / "ACCESS_LOG"
+  test_p4_confirm_run.py:317:            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), mock.patch.object(IO, "DATA_DIR", empty), TS.io_blinded():
+  test_p5_tag_state.py:143:            access = Path(t) / "ACCESS_LOG"
+  test_p5_tag_state.py:149:                    mock.patch.object(IO, "ACCESS_LOG_PATH", access), mock.patch.object(IO, "DATA_DIR", empty):
+  test_p6_confirm_run.py:5:setUpModule patches the run registry to a temporary folder and io.ACCESS_LOG_PATH to a file in it that does not exist;
+  test_p6_confirm_run.py:60:                            (IO, "ACCESS_LOG_PATH", "ACCESS_LOG")):
+  test_p6_confirm_run.py:128:        self.assertFalse(IO.ACCESS_LOG_PATH.exists())
+  test_p6_confirm_run.py:135:                access = Path(t) / "ACCESS_LOG"
+  test_p6_confirm_run.py:139:                with sanction(), loaders(log), mock.patch.object(IO, "ACCESS_LOG_PATH", access), \
+  test_p6_confirm_run.py:166:            access = Path(t) / "logs" / "ACCESS_LOG"
+  test_p6_confirm_run.py:173:                    mock.patch.object(IO, "ACCESS_LOG_PATH", access), mock.patch.object(IO, "DATA_DIR", empty), \
+  test_p6_confirm_run.py:204:        self.assertFalse(IO.ACCESS_LOG_PATH.exists())
+  test_p6_confirm_run.py:243:                              (body[1], ("ACCESS_LOG_PATH", "exists"))):
+== RUN_REGISTRY
+  test_docs_d3b.py:46:        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").read_text() == ""`.
+  test_docs_d3b.py:48:        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  test_docs_d6.py:37:                  "RUN_REGISTRY.jsonl", "PASS1_STATUS.md", "docs/DECISIONS_P14_onward.md"):
+  test_importance_registry_c6.py:189:        real = ROOT / "RUN_REGISTRY.jsonl"
+  test_p4_confirm_claims.py:52:BANNED_STRINGS = ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY")
+  test_p4_confirm_economic.py:408:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+  test_p4_confirm_forecast.py:358:        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+  test_p4_confirm_forecast.py:360:        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  test_p4_confirm_forecast.py:435:        for s in ("load_dev", "load_confirm", "load_events", "OFILT_DATA_DIR", "RUN_REGISTRY"):
+  test_p4_confirm_run.py:241:            # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+  test_p4_confirm_run.py:243:            reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  test_p4_confirm_run.py:344:        self.assertEqual((type(v.right), getattr(v.right, "value", None)), (ast.Constant, "RUN_REGISTRY.jsonl"))
+  test_p4_confirm_run.py:346:        self.assertTrue((ROOT / "RUN_REGISTRY.jsonl").is_file())
+== REAL_PATH
+  test_importance_registry_c6.py:54:                      mock.patch.object(R, "REAL_PATH", Path(cls._tmp.name) / "real.jsonl")]
+  test_importance_registry_c6.py:139:        self.assertFalse(R.REAL_PATH.exists())
+  test_importance_registry_c6.py:178:        self.assertEqual(R.registry_path(B.DEV_REAL), R.REAL_PATH)
+  test_importance_registry_c6.py:179:        self.assertEqual(R.registry_path(B.CONFIRM_REAL), R.REAL_PATH)
+  test_p4_confirm_claims.py:73:    for attr, name in (("SYNTHETIC_PATH", "synthetic.jsonl"), ("REAL_PATH", "real.jsonl")):
+  test_p4_confirm_economic.py:61:    for attr, name in (("SYNTHETIC_PATH", "synthetic.jsonl"), ("REAL_PATH", "real.jsonl")):
+  test_p4_confirm_forecast.py:58:    for attr, name in (("SYNTHETIC_PATH", "synthetic.jsonl"), ("REAL_PATH", "real.jsonl")):
+  test_p4_confirm_forecast.py:357:        self.assertFalse(RG.REAL_PATH.exists())
+  test_p4_confirm_run.py:72:    for obj, attr, name in ((RG, "SYNTHETIC_PATH", "synthetic.jsonl"), (RG, "REAL_PATH", "real.jsonl"),
+  test_p4_confirm_run.py:240:            self.assertFalse(RG.REAL_PATH.exists())
+  test_p4_confirm_run.py:332:            self.assertEqual(RG.registry_path(prov), RG.REAL_PATH, prov)
+  test_p4_confirm_run.py:338:                   and any(isinstance(t, ast.Name) and t.id == "REAL_PATH" for t in n.targets)]
+  test_p6_confirm_run.py:59:    for obj, attr, name in ((RG, "SYNTHETIC_PATH", "synthetic.jsonl"), (RG, "REAL_PATH", "real.jsonl"),
+  test_p6_confirm_run.py:203:        self.assertFalse(RG.REAL_PATH.exists())
+== read_registry
+  test_importance_registry_c6.py:137:        lines = R.read_registry(R.SYNTHETIC_PATH)
+  test_importance_registry_c6.py:170:        before = len(R.read_registry(R.SYNTHETIC_PATH))
+  test_importance_registry_c6.py:173:        self.assertEqual(len(R.read_registry(R.SYNTHETIC_PATH)), before)
+== registry_path
+  test_importance_registry_c6.py:177:        self.assertEqual(R.registry_path(B.SYNTHETIC), R.SYNTHETIC_PATH)
+  test_importance_registry_c6.py:178:        self.assertEqual(R.registry_path(B.DEV_REAL), R.REAL_PATH)
+  test_importance_registry_c6.py:179:        self.assertEqual(R.registry_path(B.CONFIRM_REAL), R.REAL_PATH)
+  test_importance_registry_c6.py:181:            R.registry_path("other")
+  test_p4_confirm_run.py:330:        self.assertEqual(RG.registry_path(B.SYNTHETIC), RG.SYNTHETIC_PATH)
+  test_p4_confirm_run.py:332:            self.assertEqual(RG.registry_path(prov), RG.REAL_PATH, prov)
+  test_p4_confirm_run.py:335:                RG.registry_path(prov)
+== P6_runs
+== P4_runs
+  test_docs_d3b.py:47:        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  test_docs_d3b.py:49:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  test_p4_confirm_forecast.py:359:        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  test_p4_confirm_forecast.py:361:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  test_p4_confirm_run.py:242:            # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  test_p4_confirm_run.py:244:            dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+== rglob
+  test_docs_d3b.py:33:        naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
+  test_docs_d6.py:42:        self.assertEqual(sorted(p.name for p in ROOT.rglob("*") if "confirm" in p.name.lower() and
+  test_schema.py:140:        for py in pkg.rglob("*.py"):
+  test_sim_b5.py:77:        for py in sorted((ROOT / "ofilt").rglob("*.py")):
+== os.walk
+  test_p4_confirm_run.py:138:    for root, dirs, names in os.walk(ROOT):
+== iterdir
+  test_build_pass1_pin.py:23:        present = sorted(p.name for p in (ROOT / "build" / "pass1").iterdir()
+  test_docs_d6.py:47:        names = {p.name for p in PROJECT.iterdir()}
+  test_p2_build.py:130:        self.assertEqual(sorted(p.name for p in self.out.iterdir()), ["MANIFEST.json", B.SEALED_FILE, B.DEV_FILE])
+  test_p2_build.py:231:            panels = sorted(p.name for p in out.iterdir()) if out.exists() else []
+  test_p3_sealed_run.py:161:            self.assertEqual(list(tmp.iterdir()), [])                      # the run's directory removed
+  test_p3_sealed_run.py:178:            self.assertEqual(list(tm.iterdir()), [])               # the run's own directory removed
+  test_p4_confirm_run.py:194:            self.assertEqual(sorted(p.name for p in out.iterdir()), sorted(CR.OUTPUT_FILES))
+  test_p4_confirm_run.py:326:            self.assertEqual(list(empty.iterdir()), [])
+  test_p5_tag_state.py:160:            self.assertEqual(list(empty.iterdir()), [])
+  test_p6_confirm_run.py:159:            self.assertEqual(list(D.iterdir()), [])
+  test_p6_confirm_run.py:182:            self.assertEqual(list(empty.iterdir()), [])
+  test_p6_confirm_run.py:200:            self.assertEqual(sorted(p.name for p in b.iterdir()), sorted(CR.OUTPUT_FILES))
+== listdir
+== glob(
+  test_docs_d3b.py:33:        naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
+  test_docs_d6.py:42:        self.assertEqual(sorted(p.name for p in ROOT.rglob("*") if "confirm" in p.name.lower() and
+  test_schema.py:140:        for py in pkg.rglob("*.py"):
+  test_sim_b5.py:77:        for py in sorted((ROOT / "ofilt").rglob("*.py")):
+== scandir
+== ls-files
+== porcelain
+== git_state
+  test_p2_build.py:271:        with mock.patch.object(B, "git_state", return_value={"head": "x", "build_and_inputs_registry_clean": False}), \
+  test_p2_build.py:278:        with mock.patch.object(B, "git_state", return_value={"head": "x", "build_and_inputs_registry_clean": True}), \
+  test_p2_build.py:283:    def test_git_state_reports_this_repo(self):
+  test_p2_build.py:284:        g = B.git_state()
+== git_dirty
+== "status"
+  test_p4_confirm_claims.py:40:ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+  test_p4_confirm_claims.py:164:        self.assertEqual(e["status"], "not_estimable")
+  test_p4_confirm_claims.py:213:            self.assertIn(e["status"], CI.STATUSES)
+  test_p4_confirm_claims.py:214:            self.assertNotEqual(e["status"], "pending", rid)
+  test_p4_confirm_claims.py:216:        self.assertEqual([rid for rid, e in filled["rows"].items() if e["status"] == "pending"], [])
+  test_p4_confirm_claims.py:237:                self.assertEqual(e["status"], "estimated")
+  test_p4_confirm_claims.py:270:            self.assertEqual(e["status"], "estimated", name)
+  test_p4_confirm_claims.py:295:        self.assertEqual(e["status"], "fixed")
+  test_p4_confirm_claims.py:330:                self.assertEqual(e["status"], "estimated")
+  test_p4_confirm_claims.py:349:            self.assertEqual(e["status"], "estimated")
+  test_p4_confirm_claims.py:384:                    "not_estimable_rows": [rid for rid in outside if D1["rows"][rid]["status"] == "not_estimable"]},
+  test_p4_confirm_claims.py:388:            self.assertEqual(e["status"], "fixed", rid)
+  test_p4_confirm_claims.py:406:            self.assertEqual(e["status"], "fixed")
+  test_p4_confirm_claims.py:421:        self.assertEqual((e["status"], e["values"], e["reason"]),
+  test_p4_confirm_claims.py:424:        self.assertEqual(e["status"], "fixed")
+  test_p4_confirm_claims.py:429:        self.assertEqual(e["status"], "not_applicable")
+  test_p4_confirm_economic.py:39:ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+  test_p4_confirm_economic.py:256:        self.assertEqual((e["id"], e["item"], e["status"]), ("O45", "P4-4b", "estimated"))
+  test_p4_confirm_economic.py:260:        self.assertEqual([r for r, x in d2["rows"].items() if x["item"] == "P4-4b" and x["status"] == "pending"], [])
+  test_p4_confirm_economic.py:317:        self.assertEqual(e["status"], "estimated")
+  test_p4_confirm_economic.py:326:        self.assertEqual((e["status"], e["reason"]), ("not_estimable", calls.main.reason))
+  test_p4_confirm_economic.py:341:        self.assertEqual(e["status"], "estimated")
+  test_p4_confirm_forecast.py:43:ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+  test_p4_confirm_forecast.py:182:            self.assertIn(e["status"], CI.STATUSES)
+  test_p4_confirm_forecast.py:183:            self.assertNotEqual(e["status"], "pending", rid)
+  test_p4_confirm_forecast.py:318:            self.assertEqual(rows[rid]["status"], "estimated", rid)
+  test_p4_confirm_forecast.py:345:            self.assertEqual(rows[rid]["status"], "not_estimable", rid)
+  test_p4_confirm_forecast.py:347:        self.assertEqual(rows["R9"]["status"], "fixed")
+  test_p4_confirm_forecast.py:348:        self.assertEqual([rows["R9"]["values"]["calls"][n]["status"] for n in ("main", "m7")], ["failed", "failed"])
+  test_p4_confirm_forecast.py:372:        self.assertEqual(filled["rows"]["O45"]["status"], "pending")
+  test_p4_confirm_forecast.py:375:        bad_doc["rows"]["O29"]["status"] = "estimated"
+  test_p4_confirm_inference.py:41:ENTRY_KEYS = ["id", "item", "status", "values", "reason", "n_rows", "n_dates", "lag"]
+  test_p4_confirm_inference.py:157:            self.assertIn(e["status"], CI.STATUSES)
+  test_p4_confirm_inference.py:159:                self.assertNotEqual(e["status"], "pending", rid)
+  test_p4_confirm_inference.py:161:                self.assertEqual(e["status"], "pending", rid)
+  test_p4_confirm_inference.py:226:            self.assertEqual(rows[rid]["status"], "fixed", rid)
+  test_p4_confirm_inference.py:243:        self.assertEqual(rows["O5"]["status"], "not_estimable")
+  test_p4_confirm_inference.py:246:            self.assertEqual(rows[rid]["status"], "estimated", rid)
+  test_p4_confirm_inference.py:261:                self.assertEqual((P["status"], P["f_defined"]), ("estimated", True), (k, part))
+  test_p4_confirm_inference.py:273:            self.assertEqual(rows["O8"]["status"], "fixed")
+  test_p4_confirm_inference.py:280:        self.assertEqual(e["status"], "not_estimable")
+  test_p4_confirm_inference.py:282:        self.assertEqual(conf["status"], "not_estimable")
+  test_p4_confirm_inference.py:285:        self.assertEqual(desc["status"], "estimated")
+  test_p4_confirm_inference.py:424:        self.assertEqual((rows["O20"]["status"], rows["O20"]["reason"]), ("not_estimable", "no rows"))
+  test_p4_confirm_inference.py:425:        self.assertEqual((rows["O22"]["status"], rows["O22"]["reason"]), ("not_estimable", "rank-deficient design"))
+  test_p4_confirm_inference.py:428:                self.assertIn(rows[rid]["status"], ("estimated", "fixed"), rid)
+  test_p4_confirm_inference.py:439:        self.assertEqual((rows["O8"]["status"], rows["O8"]["reason"]), ("not_applicable", CFG["f"]["dev"]["periods"]))
+  test_p4_confirm_inference.py:441:        self.assertEqual((rows["O27"]["status"], rows["O27"]["reason"]), ("not_applicable", on_dev))
+  test_p4_confirm_run.py:166:            self.assertNotEqual(e["status"], "pending", rid)
+  test_p4_confirm_run.py:250:        self.assertEqual(o45["status"], "estimated")
+  test_p4_confirm_run.py:354:        self.assertEqual([rid for rid, e in rows.items() if e["status"] == "pending"], [])
+  test_p4_confirm_run.py:356:            self.assertEqual(rows[rid]["status"], "not_applicable", rid)
+== diff
+  test_b6_identities.py:67:        # First-order theory: Fieller and delta endpoints differ by ~ q/t_d delta half-widths.
+  test_docs_d2.py:3:are asserted here; the ones that differ are listed in docs/REBUILD_VERIFICATION.md (D2) and
+  test_docs_d4.py:82:        self.assertIn("171 tests, 5 skipped by default", s8)    # ORIGINAL repo; the rebuild differs (D4 difference 1)
+  test_fctests_c5.py:48:    """Plain-Python reference: per-row differential, date means in date order, NW with the
+  test_fctests_c5.py:131:        # CW differential == 2 (y - yhat_r)(yhat_u - yhat_r)
+  test_fctests_c5.py:149:            "y differs": df.assign(y=np.where(df.index == i2[4], df.y + 1e-12, df.y)),
+  test_fctests_c5.py:150:            "fold differs": df.assign(fold=np.where(df.index == i2[4], 5, df.fold)),
+  test_fctests_c5.py:151:            "train_end differs": df.assign(train_end=df.train_end.where(df.index != i2[4], pd.Timestamp("2029-12-31"))),
+  test_fctests_c5.py:272:        df2.loc[(df2.date >= late) & (df2.ticker == "5711"), "copx_oc"] = np.nan   # a different sample
+  test_forecast_c1.py:146:        self.assertTrue((folds.n_train_dates.diff().dropna() > 0).all())          # expanding
+  test_inference_b1.py:56:        self.assertTrue((np.diff(d.date_codes[np.argsort(d.dates, kind="stable")]) >= 0).all())
+  test_inference_b2.py:76:        self.assertTrue((np.diff(inf.abs_delta_b.to_numpy()) <= 0).all())
+  test_inference_b3.py:138:            self.assertTrue((np.diff(a[o]) >= -1e-15).all())                # monotone in p order
+  test_p2_build.py:110:        # the "original" dev panel differs from this platform's frozen output in one log-derived cell (Flag 16)
+  test_p2_columns.py:91:        r = np.diff(np.log([p[x] for x in lab]))
+  test_p3_sealed_run.py:114:        # P3-6 (switch): the configuration is the sealed run's, bound to the pre-switch spec; a rebuild differs only there
+  test_p3_sealed_run.py:119:        self.assertEqual(P.validate_config(CFG), ["key 'spec_sha256' differs from the registry"])
+  test_p3_sealed_run.py:160:            self.assertIn("REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]", r.stdout)   # P3-6 (switch)
+  test_p3_sealed_run.py:165:    """P3-6 (switch): the configuration now differs from a rebuild by its spec_sha256, so every synthetic run is refused
+  test_p3_sealed_run.py:176:            self.assertEqual(r.stdout.strip(), "REFUSED: configuration: [\"key 'spec_sha256' differs from the registry\"]")
+  test_p4_confirm_claims.py:313:                    "difference": float(rr.param(h3)["estimate"]) - float(ra.param(h3)["estimate"]),
+  test_p4_confirm_claims.py:317:        self.assertEqual(G["difference"], G["a2_raw"]["estimate"] - G["a2_abn"]["estimate"])
+  test_p4_confirm_economic.py:275:    def test_break_even_and_difference(self):
+  test_p4_confirm_economic.py:285:        self.assertLessEqual(abs(v["break_even_bp"]["difference"] - (be["M3"] - be["M2"])), 1e-12)
+  test_p4_confirm_economic.py:286:        self.assertEqual(v["break_even_bp"]["difference"], v["break_even_bp"]["M3"] - v["break_even_bp"]["M2"])
+  test_p4_sim_full.py:170:            self.assertTrue((np.diff(d[::3]) > np.timedelta64(0)).all())
+  test_spec.py:40:    def test_live_file_differs_from_verbatim_only_on_to_fill_or_amended_lines(self):
+== .gitignore
+== confirm_real
+  test_blind.py:184:                c.attrs["provenance"] = "confirm_real"
+  test_blind.py:188:                self.assertEqual(B.require_unblinded(c), "confirm_real")
+  test_docs_d3.py:67:        if dev_open and not prereg_open:  # P3-8b: with the tag, confirm_real is refused for prereg-v1 alone; P5-1: was `if dev_open:`
+  test_p4_confirm_claims.py:4:confirm_real appear only in test 14's refused pairs. The document D1 is built once, as §5.1 says, with the run registry
+  test_p4_confirm_claims.py:132:    """A deep copy of D1; licensed True or False sets mode confirmation and provenance confirm_real or synthetic."""
+  test_p4_confirm_economic.py:4:tick tables (§6.1); frames labelled dev_real or confirm_real appear only in test 13's refused pairs. Every run_calls
+  test_p4_confirm_forecast.py:3:frame is synthetic; frames labelled dev_real or confirm_real appear only in test 4's refused pairs. The run registry is
+  test_p4_confirm_inference.py:3:frame is synthetic; frames labelled dev_real or confirm_real appear only in test 5's refused pairs, so no synthetic
+  test_p4_confirm_run.py:3:every earlier block. Every frame is synthetic; frames labelled dev_real or confirm_real appear only in test 11's refused
+  test_sim_b5.py:172:        for prov in ("confirm_real", None, "weird"):
+== CONFIRM_REAL
+  test_docs_d3.py:52:        for prov, ok in ((B.SYNTHETIC, True), (B.DEV_REAL, dev_open), (B.CONFIRM_REAL, dev_open and prereg_open), ("other", False)):  # P3-8b: was (B.DEV_REAL, False); P5-1: was (B.CONFIRM_REAL, False)
+  test_docs_d3.py:69:            c.attrs = {"provenance": B.CONFIRM_REAL}  # P3-8b
+  test_docs_d3b.py:27:                                           B.CONFIRM_REAL: ("spec-dev-v1", "prereg-v1")})
+  test_guard_p46.py:58:                B.require_unblinded(provenance=B.CONFIRM_REAL)
+  test_guard_p46.py:105:                self.assertEqual(B.require_unblinded(provenance=B.CONFIRM_REAL), B.CONFIRM_REAL)
+  test_importance_registry_c6.py:179:        self.assertEqual(R.registry_path(B.CONFIRM_REAL), R.REAL_PATH)
+  test_p4_confirm_claims.py:135:        doc["mode"], doc["provenance"] = "confirmation", (B.CONFIRM_REAL if licensed else B.SYNTHETIC)
+  test_p4_confirm_claims.py:242:        doc["provenance"] = B.CONFIRM_REAL
+  test_p4_confirm_claims.py:439:        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+  test_p4_confirm_claims.py:440:                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+  test_p4_confirm_economic.py:369:        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+  test_p4_confirm_economic.py:370:                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+  test_p4_confirm_forecast.py:134:        cases = [(o.dev, relabel(o.confirm, B.DEV_REAL)), (o.dev, relabel(o.confirm, B.CONFIRM_REAL)),
+  test_p4_confirm_forecast.py:136:                 (relabel(o.dev, B.CONFIRM_REAL), None)]
+  test_p4_confirm_inference.py:191:        cases = [(o.dev, relabel(o.confirm, B.DEV_REAL)), (o.dev, relabel(o.confirm, B.CONFIRM_REAL)),
+  test_p4_confirm_inference.py:193:                 (relabel(o.dev, B.CONFIRM_REAL), None)]
+  test_p4_confirm_run.py:331:        for prov in (B.DEV_REAL, B.CONFIRM_REAL):
+  test_p4_confirm_run.py:363:        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+  test_p4_confirm_run.py:364:                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+== run_ids
+  test_docs_d3b.py:50:        self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+  test_p4_confirm_forecast.py:362:        self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+  test_p4_confirm_run.py:182:            self.assertIsNotNone(a.runtime["run_ids"][name])
+  test_p4_confirm_run.py:183:            self.assertNotEqual(a.runtime["run_ids"][name], b.runtime["run_ids"][name], name)
+  test_p4_confirm_run.py:184:        self.assertEqual(set(a.runtime), {"utc_start", "utc_end", "wall_seconds", "run_ids"})
+  test_p4_confirm_run.py:199:            self.assertEqual(json.loads((out / "runtime.json").read_text(encoding="utf-8"))["run_ids"],
+  test_p4_confirm_run.py:200:                             a.runtime["run_ids"])
+  test_p4_confirm_run.py:245:            self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+== GRANTED
+  test_guard_p46.py:108:                self.assertEqual(self.last_access(), "GRANTED")
+  test_io.py:127:            self.assertEqual(json.loads(log.read_text().splitlines()[0])["result"], "GRANTED")
+  test_p6_confirm_run.py:132:        for content in (b"", b'{"result": "DENIED"}\n', b'{"result": "GRANTED"}\n'):
+----- end of /tmp/p6_boot_c1_search.out -----
+
+----- /tmp/p6_boot_c1_search2.sh -----
+#!/bin/bash
+# P6-boot c.1, second search: tests that read the reports/ tree or REPO's root by name, that run a tool in a
+# subprocess (which no mock patch reaches), and the build's and sealed run's git-state checks they rely on.
+# Runs no Python; prints file:line matches only.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+cd "$REPO" || exit 2
+for pat in '"reports"' 'reports/' 'P5_reports' 'P6_reports' 'sys.executable' 'subprocess.run' 'check_output' \
+           'Popen' 'status' 'ROOT.glob' 'ROOT /' 'exists()'; do
+  echo "== tests: $pat"
+  grep -n -F -- "$pat" tests/*.py 2>/dev/null | grep -v -E '"status"|\["status"\]|\.status\b' | sed 's/^/  /' || true
+done
+echo "== tools/ and ofilt/: git status / porcelain / diff / dirty / clean"
+grep -n -E 'porcelain|git_state|"diff"|dirty|_clean|ls-files' tools/*.py tools/*.sh ofilt/drift/*.py build/*/*.py 2>/dev/null \
+  | sed 's/^/  /' || true
+----- end of /tmp/p6_boot_c1_search2.sh -----
+
+----- /tmp/p6_boot_c1_search2.out -----
+== tests: "reports"
+  tests/test_b6_identities.py:155:        (ROOT / "reports").mkdir(exist_ok=True)
+  tests/test_b6_identities.py:156:        (ROOT / "reports" / "B6_coverage.json").write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
+  tests/test_docs_d1.py:30:    text = (ROOT / "reports" / "A_hedge_efficiency.md").read_text()
+  tests/test_docs_d1.py:90:        text = (ROOT / "reports" / "A_hedge_efficiency.md").read_text()
+  tests/test_docs_d2.py:110:        mc = json.loads((ROOT / "reports" / "C7_mc.json").read_text())
+  tests/test_docs_d2.py:111:        h1 = json.loads((ROOT / "reports" / "C7_h1_same_dgp.json").read_text())
+  tests/test_docs_d3.py:100:        d = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text())
+  tests/test_docs_d3.py:114:        pilot = json.loads((ROOT / "reports" / "B_sim_pilot.json").read_text())
+  tests/test_docs_d3b.py:49:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  tests/test_docs_d6.py:36:        for p in ("ofilt/drift", "spec", "tests", "tools", "docs", "reports", "BLIND_FIT_LOG",
+  tests/test_fctests_c5.py:330:        b7b = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text())["cells"][0]["reject_H1"]
+  tests/test_lookahead.py:147:        md = (ROOT / "reports" / "A_hedge_efficiency.md").read_text(encoding="utf-8")
+  tests/test_p3_calib.py:112:        d = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text(encoding="utf-8"))
+  tests/test_p3_launch.py:60:        log = (ROOT / "reports" / "P3_3_rehearsal2.log").read_text(encoding="utf-8")
+  tests/test_p3_launch.py:70:                        (ROOT / "reports" / "P3_0_report.txt").read_text(encoding="utf-8"), re.M).group(1)
+  tests/test_p3_sealed_run.py:115:        run = json.loads((ROOT / "reports" / f"{P.REAL_STEM}.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_forecast.py:361:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_run.py:244:            dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+== tests: reports/
+  tests/test_docs_d1.py:29:    """{window: [(value, n) for 5706, 5711, 5713]} from a table of reports/A_hedge_efficiency.md."""
+  tests/test_docs_d3b.py:47:        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  tests/test_importance_registry_c6.py:135:        p, f = F.walk_forward(df, {"M1": M1, "M5": M5}, self.spec, output_path="reports/x.json")
+  tests/test_importance_registry_c6.py:150:        self.assertEqual((a["output_path"], a["importance"], lines[1]["output_path"]), ("reports/x.json", [], None))
+  tests/test_p3_calib.py:2:(test 5 reads B7b's committed aggregates in reports/B7b_size_preview.json).
+  tests/test_p3_launch.py:81:            self.assertTrue(re.search(r"\[ !? ?-[ef] reports/P3_4_sealed_run\.(json|md) \]", l), l)
+  tests/test_p3_launch.py:82:            rest = re.sub(r"\[ !? ?-[ef] reports/P3_4_sealed_run\.(json|md) \]|shasum -a 256 reports/P3_4_sealed_run\.(json|md)"
+  tests/test_p3_launch.py:83:                          r"|\"reports/P3_4_sealed_run\.(json|md) [^\"$]*", "", l)
+  tests/test_p4_confirm_forecast.py:359:        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  tests/test_p4_confirm_run.py:242:            # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+  tests/test_validation_c7.py:2:Default suite: re-assert the slow-tier bands from reports/C7_mc.json (and fail if the code it
+  tests/test_validation_c7.py:31:            out=["reports/mc.json", "reports/h1.json"], partial="reports/partial.json")
+== tests: P5_reports
+== tests: P6_reports
+== tests: sys.executable
+  tests/p2_synth.py:130:    subprocess.run([sys.executable, str(FROZEN), str(raw), str(out)], cwd=work, check=True, capture_output=True)
+  tests/test_p3_sealed_run.py:48:    return subprocess.run([sys.executable, str(TOOL), "--synthetic", "--smoke", str(smoke), "--out-dir", str(out_dir)],
+  tests/test_p3_sealed_run.py:157:            r = subprocess.run([sys.executable, str(TOOL), "--real", "--expect-config-sha256", sha], cwd=str(ROOT),
+== tests: subprocess.run
+  tests/p2_synth.py:130:    subprocess.run([sys.executable, str(FROZEN), str(raw), str(out)], cwd=work, check=True, capture_output=True)
+  tests/tag_state.py:35:    return subprocess.run(["git", "-C", str(root), *args], capture_output=True, text=text)
+  tests/tag_state.py:85:        subprocess.run(["git", "-C", str(repo), "init", "-q", "-b", "main"], check=True)
+  tests/tag_state.py:86:        subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "blinded"], check=True)
+  tests/test_blind.py:177:                subprocess.run(g + ["tag", "spec-dev-v1", "side"], check=True)  # not an ancestor
+  tests/test_blind.py:180:                subprocess.run(g + ["tag", "-d", "spec-dev-v1"], check=True, capture_output=True)
+  tests/test_blind.py:181:                subprocess.run(g + ["tag", "spec-dev-v1", "HEAD"], check=True)
+  tests/test_blind.py:187:                subprocess.run(g + ["tag", "prereg-v1", "HEAD"], check=True)
+  tests/test_docs_d3.py:43:        tags = subprocess.run(["git", "-C", str(ROOT), "tag"], capture_output=True, text=True).stdout.split()
+  tests/test_guard_p46.py:36:            subprocess.run(["git", "-C", str(self.repo), "tag", t, at], check=True)
+  tests/test_importance_registry_c6.py:143:        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+  tests/test_io.py:23:    subprocess.run(["git", "-C", str(repo), "init", "-q", "-b", "main"], check=True)
+  tests/test_io.py:24:    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "c1"], check=True)
+  tests/test_io.py:25:    subprocess.run(g + ["tag", "early"], check=True)
+  tests/test_io.py:26:    subprocess.run(g + ["checkout", "-q", "-b", "side"], check=True)
+  tests/test_io.py:27:    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "side"], check=True)
+  tests/test_io.py:28:    subprocess.run(g + ["tag", "sidetag"], check=True)
+  tests/test_io.py:29:    subprocess.run(g + ["checkout", "-q", "main"], check=True)
+  tests/test_io.py:30:    subprocess.run(g + ["commit", "-q", "--allow-empty", "-m", "c2"], check=True)
+  tests/test_io.py:31:    subprocess.run(g + ["tag", "-a", "annotated", "-m", "a"], check=True)
+  tests/test_io.py:120:            subprocess.run(["git", "-C", str(repo), "tag", "prereg-v1"], check=True)
+  tests/test_p2_build.py:150:        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+  tests/test_p2_build.py:285:        head = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
+  tests/test_p3_launch.py:93:        return subprocess.run(["bash", str(LAUNCH), *args], cwd=str(ROOT), env=env, capture_output=True, text=True,
+  tests/test_p3_sealed_run.py:48:    return subprocess.run([sys.executable, str(TOOL), "--synthetic", "--smoke", str(smoke), "--out-dir", str(out_dir)],
+  tests/test_p3_sealed_run.py:157:            r = subprocess.run([sys.executable, str(TOOL), "--real", "--expect-config-sha256", sha], cwd=str(ROOT),
+  tests/test_p5_tag_state.py:53:        return subprocess.run(["git", "-C", str(self.root), "-c", "user.name=t", "-c", "user.email=t@t", *args],
+== tests: check_output
+== tests: Popen
+== tests: status
+  tests/test_docs_d2.py:52:        self.assertIn("2022", status)
+  tests/test_lookahead.py:85:                                 "date": tau + pd.Timedelta(days=1), "note": "", "check_status": "",
+  tests/test_p4_confirm_claims.py:140:    doc["rows"][rid].update(status="not_estimable", values=None, reason="set by the test")
+  tests/test_p4_confirm_claims.py:395:        doc["rows"]["O45"].update(status="pending", values=None, reason=None)
+  tests/test_p4_sim_full.py:342:        for c in ("note", "check_status", "check_note"):
+== tests: ROOT.glob
+== tests: ROOT /
+  tests/test_b6_identities.py:155:        (ROOT / "reports").mkdir(exist_ok=True)
+  tests/test_b6_identities.py:156:        (ROOT / "reports" / "B6_coverage.json").write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
+  tests/test_build_pass1_pin.py:16:        code = json.loads((ROOT / "docs" / "PASS2_INPUTS.json").read_text(encoding="utf-8"))["code"]
+  tests/test_build_pass1_pin.py:19:                digest = hashlib.sha256((ROOT / "build" / "pass1" / name).read_bytes()).hexdigest()
+  tests/test_build_pass1_pin.py:23:        present = sorted(p.name for p in (ROOT / "build" / "pass1").iterdir()
+  tests/test_calendar.py:54:        src = (ROOT / "ofilt" / "drift" / "calendar.py").read_text(encoding="utf-8")
+  tests/test_docs_d1.py:23:DOC = ROOT / "docs" / "DECISIONS_P14_onward.md"
+  tests/test_docs_d1.py:30:    text = (ROOT / "reports" / "A_hedge_efficiency.md").read_text()
+  tests/test_docs_d1.py:72:        rec = (ROOT / "PASS1_STATUS.md").read_text()                            # B6 record == P16's numbers
+  tests/test_docs_d1.py:90:        text = (ROOT / "reports" / "A_hedge_efficiency.md").read_text()
+  tests/test_docs_d1.py:94:        c7 = (ROOT / "tests" / "test_validation_c7.py").read_text()             # "C7 for predictions"
+  tests/test_docs_d2.py:12:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_docs_d2.py:22:SPEC_TEXT = (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text()
+  tests/test_docs_d2.py:41:        primary = json.loads((ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))["sesoi"]["primary"]
+  tests/test_docs_d2.py:110:        mc = json.loads((ROOT / "reports" / "C7_mc.json").read_text())
+  tests/test_docs_d2.py:111:        h1 = json.loads((ROOT / "reports" / "C7_h1_same_dgp.json").read_text())
+  tests/test_docs_d3.py:66:        self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())
+  tests/test_docs_d3.py:75:        ck = (ROOT / "tools" / "checkpoint.sh").read_text()
+  tests/test_docs_d3.py:78:        raw = (ROOT / "BLIND_FIT_LOG").read_bytes()
+  tests/test_docs_d3.py:100:        d = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text())
+  tests/test_docs_d3.py:114:        pilot = json.loads((ROOT / "reports" / "B_sim_pilot.json").read_text())
+  tests/test_docs_d3.py:133:        self.assertNotIn("post_2024_11_05", (ROOT / "ofilt" / "drift" / "inference.py").read_text())   # "not yet"
+  tests/test_docs_d3b.py:33:        naming = sorted(str(p.relative_to(ROOT)) for d in ("ofilt", "tools") for p in (ROOT / d).rglob("*.py")
+  tests/test_docs_d3b.py:40:        self.assertIn("frozen at the Pass 3 switch (AM-10)", (ROOT / "spec" / "analysis_spec_dev_v1.yaml").read_text())
+  tests/test_docs_d3b.py:42:        heads = re.findall(r"^## (AM-\d\d) ", (ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(), re.M)
+  tests/test_docs_d3b.py:44:        log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
+  tests/test_docs_d3b.py:46:        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").read_text() == ""`.
+  tests/test_docs_d3b.py:48:        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  tests/test_docs_d3b.py:49:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  tests/test_docs_d4.py:17:    return (ROOT / "docs" / "replacements" / name).read_text(encoding="utf-8")
+  tests/test_docs_d4.py:28:            data = (ROOT / "docs" / "replacements" / name).read_bytes()
+  tests/test_docs_d5.py:14:DOC = ROOT / "docs" / "replacements" / "DATA_DICTIONARY.md"
+  tests/test_docs_d6.py:18:DOC = ROOT / "docs" / "replacements" / "PROJECT_SETUP.md"
+  tests/test_docs_d6.py:38:            self.assertTrue((ROOT / p).exists(), p)                              # the repo it describes
+  tests/test_docs_d6.py:40:            self.assertTrue((ROOT / "docs" / "replacements" / name).exists(), name)
+  tests/test_docs_p2.py:34:                self.assertEqual(hashlib.sha256((ROOT / rel).read_bytes()).hexdigest(), digest)
+  tests/test_docs_p2.py:44:                self.assertEqual(hashlib.sha256((ROOT / rel).read_bytes()).hexdigest(), digest)
+  tests/test_fctests_c5.py:10:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_fctests_c5.py:330:        b7b = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text())["cells"][0]["reject_H1"]
+  tests/test_fill_A6.py:10:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_importance_registry_c6.py:189:        real = ROOT / "RUN_REGISTRY.jsonl"
+  tests/test_lookahead.py:9:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_lookahead.py:147:        md = (ROOT / "reports" / "A_hedge_efficiency.md").read_text(encoding="utf-8")
+  tests/test_p2_build.py:24:sys.path.insert(0, str(ROOT / "build" / "pass2"))
+  tests/test_p2_columns.py:12:sys.path.insert(0, str(ROOT / "build" / "pass2"))
+  tests/test_p2_columns.py:39:        self.assertEqual(Path(C.pass1.__file__).resolve(), (ROOT / "build" / "pass1" / "build_panel.py").resolve())
+  tests/test_p2_columns.py:43:        self.assertFalse((ROOT / "build" / "pass1" / "__pycache__").exists())   # build/pass1/ untouched
+  tests/test_p3_0b_preflight.py:18:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p3_1_sesoi.py:23:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p3_2d_structural.py:15:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p3_calib.py:112:        d = json.loads((ROOT / "reports" / "B7b_size_preview.json").read_text(encoding="utf-8"))
+  tests/test_p3_calib.py:147:        src = (ROOT / "ofilt" / "drift" / "calib.py").read_text(encoding="utf-8")
+  tests/test_p3_launch.py:13:LAUNCH = ROOT / "tools" / "p3_4_launch.sh"
+  tests/test_p3_launch.py:60:        log = (ROOT / "reports" / "P3_3_rehearsal2.log").read_text(encoding="utf-8")
+  tests/test_p3_launch.py:65:        cfg = json.loads((ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+  tests/test_p3_launch.py:67:        raw = (ROOT / "BLIND_FIT_LOG").read_bytes()
+  tests/test_p3_launch.py:70:                        (ROOT / "reports" / "P3_0_report.txt").read_text(encoding="utf-8"), re.M).group(1)
+  tests/test_p3_launch.py:72:        dev = re.search(r'^DEV_FILE = "([^"]+)"$', (ROOT / "ofilt" / "drift" / "io.py").read_text(encoding="utf-8"), re.M)
+  tests/test_p3_sealed_run.py:34:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p3_sealed_run.py:41:TOOL = ROOT / "tools" / "p3_sealed_run.py"
+  tests/test_p3_sealed_run.py:115:        run = json.loads((ROOT / "reports" / f"{P.REAL_STEM}.json").read_text(encoding="utf-8"))
+  tests/test_p3_sealed_run.py:117:        line7 = json.loads((ROOT / "BLIND_FIT_LOG").read_text(encoding="utf-8").splitlines()[6])
+  tests/test_p3_sealed_run.py:282:        sh = (ROOT / "tools" / "p3_3_rehearse.sh").read_text(encoding="utf-8")
+  tests/test_p4_confirm_claims.py:37:CFG = json.loads((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_claims.py:42:ALLOWLIST = ROOT / "ofilt" / "drift" / "confirm_allowlist.py"
+  tests/test_p4_confirm_claims.py:43:CLAIMS = ROOT / "ofilt" / "drift" / "confirm_claims.py"
+  tests/test_p4_confirm_claims.py:185:            self.assertTrue((ROOT / rel).is_file(), rel)
+  tests/test_p4_confirm_claims.py:190:            path = ROOT / rel
+  tests/test_p4_confirm_claims.py:199:        inf = string_constants(ROOT / "ofilt" / "drift" / "confirm_inference.py")
+  tests/test_p4_confirm_claims.py:201:        econ = string_constants(ROOT / "ofilt" / "drift" / "confirm_economic.py")
+  tests/test_p4_confirm_economic.py:19:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p4_confirm_economic.py:35:MODULE = ROOT / "ofilt" / "drift" / "confirm_economic.py"
+  tests/test_p4_confirm_forecast.py:35:MODULE = ROOT / "ofilt" / "drift" / "confirm_forecast.py"
+  tests/test_p4_confirm_forecast.py:36:CFG = json.loads((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_forecast.py:358:        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+  tests/test_p4_confirm_forecast.py:360:        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  tests/test_p4_confirm_forecast.py:361:        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_inference.py:32:MODULE = ROOT / "ofilt" / "drift" / "confirm_inference.py"
+  tests/test_p4_confirm_inference.py:33:CFG = json.loads((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_run.py:23:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p4_confirm_run.py:46:MODULE = ROOT / "ofilt" / "drift" / "confirm_run.py"
+  tests/test_p4_confirm_run.py:47:SCRIPT_PATH = ROOT / "tools" / "p4_confirm_run.py"
+  tests/test_p4_confirm_run.py:212:            data = (ROOT / path).read_bytes()
+  tests/test_p4_confirm_run.py:218:        self.assertEqual(m["config_sha256"], sha((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_bytes()))
+  tests/test_p4_confirm_run.py:219:        self.assertEqual(m["cost_inputs_sha256"], sha((ROOT / "docs" / "P3_COST_INPUTS.json").read_bytes()))
+  tests/test_p4_confirm_run.py:241:            # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+  tests/test_p4_confirm_run.py:243:            reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+  tests/test_p4_confirm_run.py:244:            dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_run.py:255:        inputs = json.loads((ROOT / "docs" / "P3_COST_INPUTS.json").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_run.py:336:        tree = ast.parse((ROOT / "ofilt" / "drift" / "registry.py").read_text(encoding="utf-8"))
+  tests/test_p4_confirm_run.py:346:        self.assertTrue((ROOT / "RUN_REGISTRY.jsonl").is_file())
+  tests/test_p4_sim_full.py:31:MODULE = ROOT / "ofilt" / "drift" / "sim_full.py"
+  tests/test_p5_tag_state.py:38:            (root / rel).write_bytes((ROOT / rel).read_bytes())
+  tests/test_p5_tag_state.py:73:        self.assertEqual(sha((ROOT / TS.SPEC_PATH).read_bytes()), TS.FROZEN_SPEC_SHA256)
+  tests/test_p5_tag_state.py:74:        self.assertEqual(sha((ROOT / TS.CONFIG_PATH).read_bytes()), TS.CONFIG_SHA256)
+  tests/test_p5_tag_state.py:75:        self.assertEqual(json.loads((ROOT / TS.CONFIG_PATH).read_text(encoding="utf-8"))["version"], 1)
+  tests/test_p5_tag_state.py:77:        self.assertEqual(TS.PREREG_SHA256, sha((ROOT / TS.PREREG_PATH).read_bytes()))  # P5-2 (P5Q18, documentation pin): was self.assertIsNone(TS.PREREG_SHA256) (P5-1)
+  tests/test_p5_tag_state.py:169:        self.assertEqual((ROOT / TS.PREREG_PATH).exists(), TS.PREREG_SHA256 is not None)
+  tests/test_p6_confirm_run.py:21:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_p6_confirm_run.py:37:SCRIPT_PATH = ROOT / "tools" / "p6_confirm_run.py"
+  tests/test_schema.py:139:        pkg = REPO_ROOT / "ofilt"
+  tests/test_sim_b5.py:77:        for py in sorted((ROOT / "ofilt").rglob("*.py")):
+  tests/test_sim_b5.py:90:        tree = ast.parse((ROOT / "ofilt" / "drift" / "sim.py").read_text(encoding="utf-8"))
+  tests/test_sim_b5.py:167:        sh = (ROOT / "tools" / "checkpoint.sh").read_text(encoding="utf-8")
+  tests/test_spec.py:12:VERBATIM = S.REPO_ROOT / "spec" / "analysis_spec_dev_v1.VERBATIM.yaml"
+  tests/test_spec.py:45:        md = (S.REPO_ROOT / "spec" / "SPEC_AMENDMENTS.md").read_text(encoding="utf-8")
+  tests/test_spec.py:139:        cfg = json.loads((S.REPO_ROOT / "docs" / "P3_RUN_CONFIG.json").read_text(encoding="utf-8"))
+  tests/test_validation_c7.py:16:sys.path.insert(0, str(ROOT / "tools"))
+  tests/test_validation_c7.py:35:    return json.loads((ROOT / C.FULL["out"][0]).read_text()), json.loads((ROOT / C.FULL["out"][1]).read_text())
+== tests: exists()
+  tests/test_docs_d1.py:46:        if PROJECT_COPY.exists():
+  tests/test_docs_d3.py:66:        self.assertTrue((ROOT / "ofilt" / "drift" / "_guards_fallback.py").exists())
+  tests/test_docs_d4.py:31:            if src.exists():
+  tests/test_docs_d5.py:28:        if src.exists():
+  tests/test_docs_d6.py:26:        if (PROJECT / "PROJECT_SETUP.md").exists():
+  tests/test_docs_d6.py:38:            self.assertTrue((ROOT / p).exists(), p)                              # the repo it describes
+  tests/test_docs_d6.py:40:            self.assertTrue((ROOT / "docs" / "replacements" / name).exists(), name)
+  tests/test_docs_d6.py:45:    @unittest.skipUnless(PROJECT.exists(), "Claude Project not mounted")
+  tests/test_importance_registry_c6.py:139:        self.assertFalse(R.REAL_PATH.exists())
+  tests/test_importance_registry_c6.py:190:        self.assertTrue(real.exists())
+  tests/test_p2_build.py:231:            panels = sorted(p.name for p in out.iterdir()) if out.exists() else []
+  tests/test_p2_columns.py:43:        self.assertFalse((ROOT / "build" / "pass1" / "__pycache__").exists())   # build/pass1/ untouched
+  tests/test_p3_0b_preflight.py:98:            self.assertFalse(out.exists())
+  tests/test_p3_1_sesoi.py:177:            self.assertFalse(out.exists())
+  tests/test_p3_sealed_run.py:177:            self.assertFalse(o.exists())                           # nothing written to --out-dir
+  tests/test_p4_confirm_forecast.py:72:    if not p.exists():
+  tests/test_p4_confirm_forecast.py:357:        self.assertFalse(RG.REAL_PATH.exists())
+  tests/test_p4_confirm_run.py:91:    if not p.exists():
+  tests/test_p4_confirm_run.py:240:            self.assertFalse(RG.REAL_PATH.exists())
+  tests/test_p4_confirm_run.py:272:        size = access.stat().st_size if access.exists() else None
+  tests/test_p4_confirm_run.py:282:            self.assertFalse(D.exists())
+  tests/test_p4_confirm_run.py:283:        self.assertEqual(access.stat().st_size if access.exists() else None, size)
+  tests/test_p4_confirm_run.py:303:                self.assertFalse(D.exists(), value)
+  tests/test_p5_tag_state.py:169:        self.assertEqual((ROOT / TS.PREREG_PATH).exists(), TS.PREREG_SHA256 is not None)
+  tests/test_p6_confirm_run.py:126:                self.assertFalse(D.exists(), value)
+  tests/test_p6_confirm_run.py:128:        self.assertFalse(IO.ACCESS_LOG_PATH.exists())
+  tests/test_p6_confirm_run.py:144:                self.assertFalse(D.exists())
+  tests/test_p6_confirm_run.py:181:            self.assertFalse(D.exists())
+  tests/test_p6_confirm_run.py:203:        self.assertFalse(RG.REAL_PATH.exists())
+  tests/test_p6_confirm_run.py:204:        self.assertFalse(IO.ACCESS_LOG_PATH.exists())
+  tests/test_p6_confirm_run.py:256:        out_check = next(i for i, s in enumerate(order) if s.startswith("if a.out.exists()"))
+  tests/test_sim_b5.py:160:        self.assertFalse(self.log.exists())        # refused attempts compute nothing and log nothing
+  tests/test_sim_b5.py:246:        cls.n_before = len(log.read_text().splitlines()) if log.exists() else 0
+  tests/test_validation_c7.py:77:            self.assertFalse((Path(b) / TINY["partial"]).exists())
+== tools/ and ofilt/: git status / porcelain / diff / dirty / clean
+  tools/p2_4_accept.py:69:    same = subprocess.run(["git", "-C", str(ROOT), "diff", "--quiet", mh, "HEAD", "--", "build/",
+  tools/p2_4_accept.py:72:    ok.append(item("MANIFEST records build/ and docs/PASS2_INPUTS.json clean", m["git"]["build_and_inputs_registry_clean"]))
+  tools/p3_sealed_run.py:231:def mode_refusal(*, real: bool, smoke, rehearsal: bool, sealed_value, config_sha: str, expected_sha, dirty) -> str | None:
+  tools/p3_sealed_run.py:241:    if dirty:
+  tools/p3_sealed_run.py:242:        return "the working tree is dirty"
+  tools/p3_sealed_run.py:389:    head, dirty = R.git_state()
+  tools/p3_sealed_run.py:393:                              expected_sha=a.expect_config_sha256, dirty=dirty)
+  tools/checkpoint.sh:27:status_before="$(git status --porcelain)"
+  tools/checkpoint.sh:30:echo "before suite: git status --porcelain"
+  tools/checkpoint.sh:38:status_after="$(git status --porcelain)"
+  tools/checkpoint.sh:48:        status_after="$(git status --porcelain)"
+  tools/checkpoint.sh:53:        git status --porcelain
+  tools/p3_3_rehearse.sh:33:[ -z "$(git status --porcelain)" ] || refuse "git status --porcelain is not empty"
+  tools/p3_3_rehearse.sh:134:[ -z "$(git status --porcelain)" ] || fail "git status --porcelain is not empty after the runs"
+  tools/p3_4_launch.sh:62:[ -z "$(git status --porcelain --untracked-files=all)" ] || refuse "git status --porcelain --untracked-files=all is not empty"
+  tools/p3_4_launch.sh:112:echo "check 4, git status --porcelain --untracked-files=all empty: True"
+  tools/p3_4_launch.sh:146:echo "git status --porcelain:"
+  tools/p3_4_launch.sh:147:git status --porcelain
+  ofilt/drift/registry.py:5:Line keys (exactly KEYS): run_id (uuid4 hex), utc, git_commit, git_dirty, spec_sha256,
+  ofilt/drift/registry.py:35:KEYS = frozenset({"run_id", "utc", "git_commit", "git_dirty", "spec_sha256", "data_sha256", "provenance",
+  ofilt/drift/registry.py:87:def git_state(repo: Path = REPO_ROOT) -> tuple[str, bool]:
+  ofilt/drift/registry.py:88:    """(HEAD commit, working tree dirty). Raises if the repo cannot be read."""
+  ofilt/drift/registry.py:90:    return run("rev-parse", "HEAD").strip(), bool(run("status", "--porcelain", "--untracked-files=no").strip())
+  ofilt/drift/registry.py:96:    commit, dirty = git_state()
+  ofilt/drift/registry.py:101:        git_commit=commit, git_dirty=dirty, spec_sha256=spec.sha256, data_sha256=frame_sha256(df),
+  build/pass2/build_panel_p2.py:14:   `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty; the command line refuses to
+  build/pass2/build_panel_p2.py:163:def git_state() -> dict:
+  build/pass2/build_panel_p2.py:164:    """HEAD and whether `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is empty."""
+  build/pass2/build_panel_p2.py:166:    st = subprocess.run(["git", "-C", str(REPO), "status", "--porcelain", "--", "build/", "docs/PASS2_INPUTS.json"],
+  build/pass2/build_panel_p2.py:169:            "build_and_inputs_registry_clean": st.returncode == 0 and st.stdout.strip() == ""}
+  build/pass2/build_panel_p2.py:201:    git = git_state()
+  build/pass2/build_panel_p2.py:377:    if not git_state()["build_and_inputs_registry_clean"]:
+  build/pass2/build_panel_p2.py:378:        raise SystemExit("refusing to run: `git status --porcelain -- build/ docs/PASS2_INPUTS.json` is not empty")
+----- end of /tmp/p6_boot_c1_search2.out -----
+
+----- /tmp/p6_boot_c1_search3.out -----
+ofilt/drift/registry.py:12:Paths: real provenance (dev_real, confirm_real) -> RUN_REGISTRY.jsonl at the repo root
+ofilt/drift/registry.py:33:REAL_PATH = REPO_ROOT / "RUN_REGISTRY.jsonl"
+ofilt/drift/registry.py:34:SYNTHETIC_PATH = Path(tempfile.gettempdir()) / "ofilt_RUN_REGISTRY_synthetic.jsonl"
+ofilt/drift/registry.py:45:        return REAL_PATH
+ofilt/drift/registry.py:87:def git_state(repo: Path = REPO_ROOT) -> tuple[str, bool]:
+ofilt/drift/registry.py:96:    commit, dirty = git_state()
+ofilt/drift/registry.py:117:def read_registry(path: Path | None = None) -> list[dict]:
+ofilt/drift/registry.py:118:    p = Path(path) if path is not None else REAL_PATH
+ofilt/drift/io.py:7:                   any path, appends one JSON line to ACCESS_LOG per attempt
+ofilt/drift/io.py:41:ACCESS_LOG_PATH = REPO_ROOT / "ACCESS_LOG"
+ofilt/drift/io.py:152:    with open(ACCESS_LOG_PATH, "a", encoding="utf-8") as fh:
+tools/p4_confirm_run.py:10:      RUN_REGISTRY.jsonl (P4Q6). Not run in P4-4c2.
+tools/p6_confirm_run.py:9:  3. if io.ACCESS_LOG_PATH exists (any earlier request of the confirmation panel, granted or denied: a second run is a
+tools/p6_confirm_run.py:41:    if Path(io.ACCESS_LOG_PATH).exists():
+tools/p6_confirm_run.py:42:        print(ONE_SHOT_REFUSAL.format(path=io.ACCESS_LOG_PATH))
+tools/p3_sealed_run.py:389:    head, dirty = R.git_state()
+3:ofilt/drift/_guards_fallback.py
+----- end of /tmp/p6_boot_c1_search3.out -----
+
+----- /tmp/p6_boot_c1_search4.out -----
+tests/tag_state.py:30:PREREG_PATH = "docs/PREREG_v1.md"                                                           # P5-1 (P5Q6)
+tests/test_docs_p2.py:24:    "docs/PREREG_v1.md": "79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6",  # P5-2 (P5Q18): the pre-registration (P5Q6)
+tests/test_docs_p2.py:25:    "docs/PREREG_v1_REVIEW.md": "74d149f5e5d8a5c28a0ea794831eac65dfc867fa9447fe740ad64be20ce989e9",  # P5-2 (P5Q18): its advisor-style review (P5Q11)
+tests/test_docs_d6.py:42:        self.assertEqual(sorted(p.name for p in ROOT.rglob("*") if "confirm" in p.name.lower() and
+tests/test_p4_confirm_run.py:276:            with mock.patch.object(IO, "load_confirm", recorder(log, "confirm")), \
+tests/test_p4_confirm_run.py:279:                rc = SCRIPT.main(["--source", "confirm", "--out", str(D)])
+tests/test_p6_confirm_run.py:98:            mock.patch.object(IO, "load_confirm", recorder(log, "confirm", confirm)):
+tests/test_p6_confirm_run.py:198:            self.assertEqual(log, ["dev", "events", "confirm"])
+tests/test_p5_tag_state.py:76:        self.assertEqual(TS.PREREG_PATH, "docs/PREREG_v1.md")
+----- end of /tmp/p6_boot_c1_search4.out -----
+
+----- /tmp/p6_boot_c1_write.py -----
+"""P6-boot c.1: writes the builder's own list (from the reading, R-lines of c.1) to /tmp/p6_boot_accessdep.txt, one
+method per line, sorted bytewise, each line ending in a newline. It does not read ACCESSDEP_SHA256 (that is c1_check)."""
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import expected, sha256  # noqa: E402
+
+expected()   # prints the message's SHA-256 (the list itself is the builder's, not an expected value)
+OUT = "/tmp/p6_boot_accessdep.txt"
+MINE = [
+    "tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged",       # 1: ACCESS_LOG
+    "tests.test_p4_confirm_run.TestConfirmRun.test_script_synthetic_twice",                # 2: the registry
+    "tests.test_p4_confirm_forecast.TestConfirmForecast.test_registry_routing",            # 2: the registry
+    "tests.test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag",    # 2: the registry
+]
+lines = sorted(m.encode("utf-8") for m in MINE)
+assert len(set(lines)) == len(lines)
+with open(OUT, "wb") as fh:
+    fh.write(b"".join(m + b"\n" for m in lines))
+print(f"wrote {OUT}: {len(lines)} lines")
+for m in lines:
+    print(f"  {m.decode('utf-8')}")
+print(f"{OUT} sha256 {sha256(OUT)}")
+----- end of /tmp/p6_boot_c1_write.py -----
+
+----- /tmp/p6_boot_c1_write.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+wrote /tmp/p6_boot_accessdep.txt: 4 lines
+  tests.test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag
+  tests.test_p4_confirm_forecast.TestConfirmForecast.test_registry_routing
+  tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged
+  tests.test_p4_confirm_run.TestConfirmRun.test_script_synthetic_twice
+/tmp/p6_boot_accessdep.txt sha256 e98d8eef2bc6b62df601f988965bd8062388fdeae4bf35e012693b22d9bf58b1
+----- end of /tmp/p6_boot_c1_write.out -----
+
+----- /tmp/p6_boot_accessdep.txt -----
+tests.test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag
+tests.test_p4_confirm_forecast.TestConfirmForecast.test_registry_routing
+tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged
+tests.test_p4_confirm_run.TestConfirmRun.test_script_synthetic_twice
+----- end of /tmp/p6_boot_accessdep.txt -----
+
+----- /tmp/p6_boot_c1_check.py -----
+"""P6-boot c.1: the builder's list (/tmp/p6_boot_accessdep.txt, written by c1_write before the readings) against
+ACCESSDEP_SHA256, the supervisor's list in the same form. Run after the readings R17 to R19 were written."""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_boot_common import Checks, expected, read_bytes, sha256_bytes  # noqa: E402
+
+E = expected()
+C = Checks("ACCESSDEP MATCH")
+data = read_bytes("/tmp/p6_boot_accessdep.txt")
+lines = data.split(b"\n")
+C.check(data.endswith(b"\n") and lines[-1] == b"", "every line ends in a newline, and nothing follows the last")
+body = lines[:-1]
+C.check(all(re.fullmatch(rb"tests\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+\.[A-Za-z0-9_]+", x) for x in body),
+        "every line is tests.<module>.<Class>.<method>", f"{len(body)} lines")
+C.check(body == sorted(body) and len(body) == len(set(body)), "sorted bytewise, no line twice")
+h = sha256_bytes(data)
+C.check(h == E["ACCESSDEP_SHA256"], "/tmp/p6_boot_accessdep.txt sha256 == ACCESSDEP_SHA256", h)
+C.done()
+----- end of /tmp/p6_boot_c1_check.py -----
+
+----- /tmp/p6_boot_c1_check.out -----
+message /tmp/p6_boot_msg.txt: sha256 b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688
+expected values read: 30
+[ok] every line ends in a newline, and nothing follows the last
+[ok] every line is tests.<module>.<Class>.<method>: 4 lines
+[ok] sorted bytewise, no line twice
+[ok] /tmp/p6_boot_accessdep.txt sha256 == ACCESSDEP_SHA256: e98d8eef2bc6b62df601f988965bd8062388fdeae4bf35e012693b22d9bf58b1
+checks: 4; failed: 0
+ACCESSDEP MATCH CHECK: True
+----- end of /tmp/p6_boot_c1_check.out -----
+
+### c.2: the search (the one-line command of N3)
+----- /tmp/p6_boot_c2_search.out -----
+tests/test_docs_d1.py:1:"""D1 (rebuild): docs/DECISIONS_P14_onward.md is the adopted text, restored byte for byte from
+tests/test_docs_d1.py:23:DOC = ROOT / "docs" / "DECISIONS_P14_onward.md"
+tests/test_docs_d1.py:25:PROJECT_COPY = Path("/mnt/project/DECISIONS_P14_onward.md")
+tests/test_docs_d3.py:1:"""D3 (rebuild): machine-checkable claims of P29-P35 (docs/DECISIONS_P14_onward.md, adopted,
+tests/test_docs_d2.py:1:"""D2 (rebuild): machine-checkable claims of P22-P28 (docs/DECISIONS_P14_onward.md, adopted,
+tests/test_docs_d3b.py:2:docs/DECISIONS_P14_onward.md, adopted, never edited) against the rebuilt repo. Steps 1-7 are a
+tests/test_docs_d4.py:1:"""D4 (rebuild): README and PLAN. The Project holds the CURRENT adopted versions (README of
+tests/test_docs_d4.py:4:assigns to README or PLAN is present. Superseded Pass 1 text is not reconstructed.
+tests/test_docs_d4.py:5:P57 (2026-10-05): the pins follow the 2026-10-05 refresh (README of 2026-10-05; PLAN v2.3, which
+tests/test_docs_d4.py:13:DOCS = {"README.md": ("README.md", "12d56d1270f41d38"), "PLAN.md": ("PLAN.md", "b1f34c1a60e2f2e0")}  # P87 (P4-7b): PLAN was cba8471919635f9c; P81 (P3-7b): was 4896b40905f4426c / 641fb05f4ec6958a; P70: was 9596fe7d2de098c1 / 8030770119338ad8; P57: was dc7983326fc4964e / 220fc762a511b13a; Project name README__2_.md -> README.md (Isaiah 2026-10-05, row 21)
+tests/test_docs_d4.py:17:    return (ROOT / "docs" / "replacements" / name).read_text(encoding="utf-8")
+tests/test_docs_d4.py:28:            data = (ROOT / "docs" / "replacements" / name).read_bytes()
+tests/test_docs_d4.py:33:        self.assertTrue(text("PLAN.md").startswith("# Research Plan v2.6"))      # P87 (P4-7b): was v2.5; P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
+tests/test_docs_d4.py:34:        # P57: was "Supersedes:** v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)"
+tests/test_docs_d4.py:35:        # P70: was "Supersedes:** v2.2 (2026-10-04), which superseded v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`)"
+tests/test_docs_d4.py:36:        # P81 (P3-7b): was "Supersedes:** v2.3 (2026-10-05), which superseded v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0"
+tests/test_docs_d4.py:37:        # P87 (P4-7b): was "Supersedes:** v2.4 (2026-10-06), which superseded v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0"
+tests/test_docs_d4.py:39:                      "v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0", text("PLAN.md"))
+tests/test_docs_d4.py:44:        r = text("README.md")
+tests/test_docs_d4.py:55:        p = text("PLAN.md")
+tests/test_docs_d4.py:75:        s8 = section(text("PLAN.md"), "## 8. Passes and milestones (P36 order; P44 naming)", "**Pass 2 is done when:**")
+tests/test_docs_d6.py:1:"""D6 (rebuild): PROJECT_SETUP ('after Pass 1'), restored byte for byte to docs/replacements/ and
+tests/test_docs_d6.py:4:P57 (2026-10-05): the pins follow the PROJECT_SETUP refresh of 2026-10-05 (PLAN v2.3); the
+tests/test_docs_d6.py:18:DOC = ROOT / "docs" / "replacements" / "PROJECT_SETUP.md"
+tests/test_docs_d6.py:26:        if (PROJECT / "PROJECT_SETUP.md").exists():
+tests/test_docs_d6.py:27:            self.assertEqual(data, (PROJECT / "PROJECT_SETUP.md").read_bytes())
+tests/test_docs_d6.py:37:                  "RUN_REGISTRY.jsonl", "PASS1_STATUS.md", "docs/DECISIONS_P14_onward.md"):
+tests/test_docs_d6.py:39:        for name in ("README.md", "PLAN.md", "DATA_DICTIONARY.md", "PROJECT_SETUP.md"):
+tests/test_docs_d6.py:40:            self.assertTrue((ROOT / "docs" / "replacements" / name).exists(), name)
+tests/test_docs_d6.py:51:                   "MASTER_README__1_.md")
+tests/test_docs_d6.py:53:        for n in ("PROJECT_SETUP.md", "DATA_PROVENANCE.md", "DATA_DICTIONARY.md", "MANIFEST.json",
+tests/test_docs_d6.py:54:                  "DECISIONS_ADDENDUM.md", "DECISIONS_P14_onward.md", "panel_dev.csv", "build_panel.py",
+tests/test_docs_d6.py:55:                  "make_events.py", "events.py", "events_firm.csv", "events_boj.csv", "pull_dukascopy.py", "PLAN.md"):
+tests/test_docs_d6.py:60:        self.assertIn("`PLAN.md` (v2.6)", DOC.read_text(encoding="utf-8"))                     # P87 (P4-7c): was (v2.5); P81 (P3-7b): was (v2.4); P70: was (v2.3); P57: was (v2.1)
+tests/test_docs_d6.py:61:        self.assertTrue((PROJECT / "PLAN.md").read_text(encoding="utf-8").startswith("# Research Plan v2.6"))  # P87 (P4-7c): was v2.5; P81 (P3-7b): was v2.4; P70: was v2.3; P57: was v2.2
+tests/test_docs_p2.py:3:README and PROJECT_SETUP replace the Pass 1 copies in docs/replacements/; the other five are new in
+tests/test_docs_p2.py:11:    "docs/DATA_PROVENANCE.md": "6af072591e2eff9cf83de9e78286b6545b3063c42d7a555073b45b3f26c561c6",  # P87 (P4-7c): was 48f39045bea417fbe0d4370f545986854e0c7f9ae51734cdb50c0b9b548795dd; P81 (P3-7b): was 0efa0121cbd4f2d074b18eab3f776c3e7f58381c3db9623aaf662ba6d5f36aed; P70 (row 22): was c9a6293bf7e965a0c0232e2c2317e3456b1014e87b406d321ce3040d2d081ae5
+tests/test_docs_p2.py:12:    "docs/DECISIONS_P37_onward.md": "b22bdc15ba5cae086738d7639ca8b95069bbb668b8d386de1a5c3a9a7e0175f1",
+tests/test_docs_p2.py:16:    "docs/replacements/PLAN.md": "b1f34c1a60e2f2e0edf96fab7240fb777bf8e84c4eb9002b8820ad0fc8d097ca",  # P87 (P4-7b): was cba8471919635f9c823078e5956398ddf84505a8e5e6eb3e70324b611acd7772; P81 (P3-7b): was 641fb05f4ec6958a4e55672af00453b73da8f1388fd539c22d9d67c0f272e6c5; P70 (row 22): was 8030770119338ad852cbd6b9b0d132ac6b815e7c16438a21dfd4485798473fcb
+tests/test_docs_p2.py:17:    "docs/replacements/PROJECT_SETUP.md": "f0991f036078707994bbec7311416d10763ae19b00a06a55c4eb0435373eb61f",  # P87 (P4-7c): was 267c3aa8f22724cc5378d99bb0104122f7eb1f2fc198f4d701bbc7a407ef013f; P81 (P3-7b): was 8b342d1ec69d6069476d4e8ec3478456298ca4d9c34a6b1f1f100143edc9d091; P70 (row 22): was c137831848fb39566eec6441979af9172b188c01e5e5499174896b8ea9881078
+tests/test_docs_p2.py:18:    "docs/replacements/README.md": "12d56d1270f41d385977bcb9d3622a5a3410eceab4483711298e469be8130cd0",  # P81 (P3-7b): was 4896b40905f4426c618085ea589a2dab9596f1f0187010aa879c653a08f6b48f; P70 (row 22): was 9596fe7d2de098c17b5be2b54ba249cafde9359b872e7e81ff29e9d95db4b9f6
+tests/test_docs_p2.py:21:    "docs/DECISIONS_P58_onward.md": "e7874506706198850c9c680bf052859d6fcf453f511f6bc3ba5403dbef119131",
+tests/test_docs_p2.py:22:    "docs/DECISIONS_P71_onward.md": "c3eadc756e8d9754bb6ef289e7b7ba5d30a53ecec9182d53bd69fc5eb9fa1b83",  # P81 (P3-7b): the Pass 3 decision file
+tests/test_docs_p2.py:23:    "docs/DECISIONS_P82_onward.md": "0b31d97349f8e0fc1d48882923ed042e1268b59fa6cf68d7e87e383fbb696890",  # P87 (P4-7b): the Pass 4 decision file
+tests/test_docs_p2.py:26:    "docs/DECISIONS_ADDENDUM.md": "09ad0d1114c46b2987eb981c47dd9967089e47f0965946d318b1b3124a9bec22",  # P5-2 (P5Q18): P01 to P13, byte-identical to the Project copy
+tests/test_docs_p2.py:38:                         ["DATA_PROVENANCE.md", "DECISIONS_P37_onward.md", "PASS2_ADDENDUM.md", "PASS2_HANDOFF.md",
+tests/test_docs_p2.py:39:                          "PASS2_INPUTS.json", "PLAN.md", "PROJECT_SETUP.md", "README.md"])
+tests/test_docs_d5.py:14:DOC = ROOT / "docs" / "replacements" / "DATA_DICTIONARY.md"
+----- end of /tmp/p6_boot_c2_search.out -----
+
+## Verdict lines (in step order)
+
+A2_ENV CHECK: True
+A3 CHECK: True
+A4 CHECK: True
+A5 CHECK: True
+A6 CHECK: True
+ACCESSDEP MATCH CHECK: True
+
+## Readings
+
+### a.1
+
+R1. The first command printed D = 2026-10-12 (`/tmp/p6_boot_date.out`). `/tmp/p6_boot_msg.txt` (SHA-256 `b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688`, `/tmp/p6_boot_msgsha.out`) was read in full with the Read tool. It is the message I was given, "P6-boot: a new builder session; the Pass 6 standing prompt adopted; read-only orientation", word for word, with its 30 expected values. The standing prompt (PROMPT_PATH, SHA-256 checked in a.4) was read in full before any check script was written. This paste adopts it with P6Q1 to P6Q13 and retires the Pass 5 prompt.
+
+R2. a.2: a bash script sees only the variables its parent exported, so its "set in this shell" line covers the script's own shell. To cover the session's shell as well, I also ran one line in the command tool's own zsh (`/tmp/p6_boot_a2_zsh.out`, shown with a.2): both variables unset there too. That check is extra to the message, and it wrote only a `/tmp/p6_boot*` file.
+
+### b. The run path, from §7 and the script (reading only)
+
+R3. Preconditions (§7.1; P6Q4). These must hold:
+- `prereg-v1` is annotated on the commit that holds `docs/PREREG_v1.md`, and HEAD descends from it;
+- the tree is clean;
+- all 40 files of Appendix A have their SHA-256;
+- the OSF registration is filed and recorded (`osf.io/3mr5h`, P91).
+
+Until the run, nothing under `ofilt/`, `tools/`, `tests/`, `spec/` or `build/` changes, and no file of Appendix A changes. a.3 and a.6 found every one of these true at `6775d6ed…`.
+
+R4. The sanction (§7.2; P6Q5). Isaiah writes and dates a separate text. It names P6-0's commit and the SHA-256 of `tools/p6_confirm_run.py` (`5b3922d7…`), `ofilt/drift/confirm_run.py` (`998912c5…`) and `docs/P4_CONFIRM_CONFIG.json` (`5962c44c…`). He saves it outside REPO with his own command. The builder never writes it: the gate reads it by script, and P6-1 copies it into REPO byte for byte.
+
+R5. The gate (§7.3; P6Q6).
+- `tools/checkpoint.sh "P6-1 part 1"` runs the full suite and commits only the criteria file's list (the sanction's copy, `PASS6_STATUS.md` and P6-0's report copy). That commit is the run's commit.
+- Then a script checks:
+  - the commit's only parent is the sanctioned HEAD, and its diff is exactly the listed files;
+  - the 3 sanctioned files and the 40 Appendix A files have their SHA-256 at that commit;
+  - the tag is as recorded and an ancestor;
+  - the tree is clean;
+  - the suite counts are the message's;
+  - no `ACCESS_LOG*` name exists;
+  - `reports/P6_runs/confirm` does not exist;
+  - `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` are absent.
+- Any failure stops the item before the panel is requested.
+
+R6. The command (§7.4; hard rule 3). The command is §7.4's, verbatim: SHA-256 `1b34bf5c…`, which a.6 found identical in the pre-registration and the prompt. It runs once, with the command tool's own background option, and with no `&`, `nohup`, redirect or pipe. Nothing else runs in REPO until its completion notice. Inside `bash -c`, `OFILT_DATA_DIR` is exported before Python starts, so `io.DATA_DIR` (set at import, `io.py:36`) is DATA. `OFILT_P6_CONFIRM_RUN=P6-1` is set for that one process only.
+
+R7. The script (`tools/p6_confirm_run.py`, 68 lines, read in full):
+- `main` refuses with exit 2, writing nothing, if `--out` exists (`:54-56`).
+- `_confirm_frames` then refuses unless `OFILT_P6_CONFIRM_RUN == "P6-1"` (`:38-40`), and then if `io.ACCESS_LOG_PATH` (= REPO`/ACCESS_LOG`, `io.py:41`) exists (`:41-43`). These are the one-shot rule in code.
+- Then, in order:
+  - `io.load_dev()`: the SHA-256 is checked against the spec's `dev_panel`; all dates must be before 2022-01-01; provenance is set to `dev_real`; the real targets are registered with `blind`.
+  - `io.load_events_firm()`: the SHA-256 is checked, and so are the categories.
+  - `io.load_confirm()`.
+
+  Because the dev files load first, a failure there comes before the confirmation panel is requested.
+
+R8. `io.load_confirm` (`io.py:156-169`):
+- `_check_access("prereg-v1")` runs `_guards_fallback.check_access` against `_GUARD_REPO` = REPO. It grants only if `refs/tags/prereg-v1^{commit}` is an ancestor of HEAD. The external guard runs only if `ofilt.guards` imports. REPO tracks no `ofilt/guards*` file (`/tmp/p6_boot_c1_search3.out`), so I expect the fallback alone, and a log line with `"guard": "fallback"`.
+- Granted, it appends one GRANTED line to `ACCESS_LOG` with the fields `utc`, `tag`, `result`, `head` (the run's commit), `guard`, `caller` and `reason`. From that moment the opening counts (§7.5).
+- Only then does it verify the sealed panel against the spec's `sealed_panel` SHA-256 (AM-04, `b575272a…`), read it, and set provenance `confirm_real`. A hash mismatch at this point raises after GRANTED.
+
+R9. Assembly and outputs. This is from the script, `test_p4_confirm_run`, `test_p4_confirm_forecast` and §2. `confirm_run.py` itself is not on the reading list, and I did not read it.
+- `confirm_run.build_document(dev, events, confirm)` checks the provenance pair; confirm_real needs both tags, through `blind._tag_ok` on REPO.
+- It computes the 71 rows and makes two `walk_forward` calls: the main ladder M0 to M5, then M7. Each call appends one strict-JSON `confirm_real` line to REPO's `RUN_REGISTRY.jsonl` (`registry.record_run`, opened with `"a"`).
+- `registry.git_state` runs `git status --porcelain --untracked-files=no` (`registry.py:90`), so the untracked `ACCESS_LOG` does not count. I expect `git_dirty` False on the main call, and True on the M7 call because of the main call's append to the tracked registry (P86, P6Q8, §7.6).
+- `confirm_run.write_outputs` writes `reports/P6_runs/confirm/` (`document.json`, `manifest.json`, `runtime.json`, whose `run_ids` hold the two calls' ids). It refuses an existing folder. The script prints each file's path and SHA-256 and returns 0.
+
+R10. After the run (§7.5 and §7.6; P6Q7 to P6Q9).
+- If anything fails after GRANTED, no result exists. The item reports the failure and deletes, moves or edits nothing the run wrote. A second attempt is only by Isaiah's dated, labelled deviation, and the script refuses one while `ACCESS_LOG` exists.
+- If the post-run checks hold, P6-1 part 2 installs §7.6's test changes from the kit by `cp -p`. Then `tools/checkpoint.sh "P6-1 part 2"` runs the full suite and its `git add -A` commits the outputs, `ACCESS_LOG` (not in `.gitignore`, F5-1, P6Q9), the registry's 2 + 2 lines, the tests and the records.
+- P6-2 follows: decisions P93 onward, and P92's refresh.
+
+### b. Points unclear or in tension with the records (reported; not stopped for)
+
+R11. §2 of `docs/PREREG_v1.md` contains values derived from dev:
+- the high-RV moderator's threshold, "the dev median 1.2950114214e-08" (line 59);
+- a reference to "the dev 0.5%/99.5% quantiles" for FX winsorisation (line 76).
+
+Item 4 of the reading list names only §3, §4 and §9 as stating or referring to dev values, and hard rule 1 says the builder reads no dev value before the run. Both are frozen-spec parameters computed on predictors alone. They relate no predictor to a target and are not dev first-look results, so I read them as outside hard rule 1's sense, and they enter nothing this item does. §2's other numbers come from simulations (5.82% size, TOST 5,000 of 5,000 and 5.92%), from costs (the SESOI), or are structural counts (T_conf = 1,013). Reported so that the supervisor can confirm the reading, or add §2 to the excluded sections in later sessions.
+
+R12. P6Q7 records §7.6's test changes "as such, not as deviations". Three records point the other way:
+- §7.1 says "any change to code or tests after the tag is a deviation";
+- P5Q19 and P92 treat a test change after the tag as a labelled deviation (P13(c));
+- P6Q11 does the same for P6-2's pins.
+
+§7.6 itself says only that the tests "are changed by decision under the test-change protocol". So the records can be read as making these changes pre-stated deviations. The prompt says the records govern, so the classification is for the supervisor and Isaiah to settle at P6-0 or P6-1. Nothing at P6-boot depends on it.
+
+R13. §7.2 says the sanction names "HEAD", but at the command HEAD is the gate's checkpoint, which is a child of the sanctioned commit (P6Q6). I read §7.2's HEAD as HEAD when the sanction is written (P6-0's commit), as P6Q5 and P6Q6 state, with the gate checking the one-parent link and the listed diff. Consistent; noted only because the words differ.
+
+R14. §7.3 places the gate's criteria in "the Pass 6 item's message", while P6Q6 and P6-0 place them in `docs/P6_RUN_CRITERIA.md`, fixed before the run. I read the two as compatible if P6-1's message cites the criteria file by SHA-256. Noted for the P6-1 message.
+
+R15. P6Q3 says the run's `io.load_confirm` call "is the only one that reaches REPO's guard". That is true of `io`'s guard: every test call of `io.load_confirm` uses a throwaway `_GUARD_REPO` or a recorder. `blind`'s tag gate (`blind._GUARD_REPO` = REPO) is a separate path, and the suite reaches it on REPO's tags (`test_docs_d3`, `test_docs_d3b`, `test_p5_tag_state` test 5), as does the run's `require_unblinded`. No conflict; noted so that the wording is not read more broadly.
+
+R16. Other things I did in reading, outside the letter of the steps:
+- To find §7, Appendix A and the sections to skip, I printed `docs/PREREG_v1.md`'s `## ` heading lines (numbers and titles only). In b, I read lines 1 to 111, 192 to 245 and 293 to 346, which skips §3 (112 to 125), §4 (126 to 191) and §9 (246 to 292).
+- To find PLAN's §8 and §10 and PASS2_ADDENDUM's §5, I printed their `## ` headings the same way.
+- Nothing under `reports/P4_runs/` was opened as text. a.5 and a.6 hashed `reports/P4_runs/dev/document.json` and the folder's other tracked files as bytes. a.3's `ACCESS_LOG` check listed names only.
+- `RUN_REGISTRY.jsonl` was hashed and counted only.
+
+### c.1 The tests whose outcome the run's effects change
+
+R17. My list, written to `/tmp/p6_boot_accessdep.txt` by `/tmp/p6_boot_c1_write.py` before the comparison, has 4 methods. The lines that make each one depend on effect 1, 2 or 3:
+- `tests.test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag` (2). Lines 48 to 51 parse REPO's `RUN_REGISTRY.jsonl` and assert that its sorted `run_id`s equal the sorted `run_ids` of `reports/P4_runs/dev/runtime.json` (the dev run's two), and that `{provenance} == {"dev_real"}`. With the two `confirm_real` lines appended, both assertions fail.
+- `tests.test_p4_confirm_forecast.TestConfirmForecast.test_registry_routing` (2). Lines 360 to 363: the same two assertions on REPO's registry. Line 357 reads the patched temporary `RG.REAL_PATH` and does not change.
+- `tests.test_p4_confirm_run.TestConfirmRun.test_script_synthetic_twice` (2). Lines 243 to 246: the same two assertions. Line 240 reads the patched temporary `RG.REAL_PATH`.
+- `tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged` (1). Line 325 asserts `no_access_log_in_repo()`, which at lines 136 to 141 walks REPO outside `.git` for any name starting `ACCESS_LOG`. The run's `ACCESS_LOG` at REPO's root makes it False. The rest of the test uses temporary paths and `TS.io_blinded()`.
+
+No test reads `reports/P6_runs/`. So effect 3 changes no outcome on its own; the rewritten tests will read its `runtime.json` for the new `run_ids` (P6Q7). The 4 match §7.6's description: one test asserts the absence of `ACCESS_LOG`, and three assert the registry's former content.
+
+R18. "The state a successful run leaves" has `RUN_REGISTRY.jsonl` as a tracked, uncommitted change until P6-1 part 2's commit, and `ACCESS_LOG` and `reports/P6_runs/` untracked. So I also searched for tests whose outcome depends on git state (`/tmp/p6_boot_c1_search*.out`). None changes, before or after that commit:
+- no test runs `git status`;
+- no test asserts a registry line's `git_dirty`;
+- the dirty checks in tools are never reached by their tests (R19).
+
+R19. Tests considered and set aside, each with its reason:
+- `test_p4_confirm_run`:
+  - `test_script_refuses_confirm` (6): `io.ACCESS_LOG_PATH` is setUpModule's temporary path (lines 72 to 76), and the test compares that path's size.
+  - `test_registry_routing` (9): asserts only that REPO's `RUN_REGISTRY.jsonl` `is_file()`, which holds on both sides.
+  - Tests 1 to 4, 7, 10, 11 and 12: in-memory or temporary outputs, and AST checks.
+- `test_p6_confirm_run`, all 7. setUpModule patches `IO.ACCESS_LOG_PATH` and `RG.REAL_PATH` to a temporary folder (lines 59 to 63). Lines 128 and 204 check that temporary path. Test 3 uses its own temporary `ACCESS_LOG`, and test 5 uses a temporary log and `io_blinded`. Test 1 reads `os.environ`, not REPO.
+- `test_p4_confirm_forecast`, the other 16: the registry is temporary (lines 54 to 61).
+- `test_importance_registry_c6`:
+  - `test_committed_registry_empty_while_draft`: asserts that REPO's registry exists (both sides). Its emptiness is asserted only while the spec is DRAFT, and it is FROZEN.
+  - `test_one_strict_line_per_call`: a temporary registry. It asserts `git_commit == HEAD`, which the run does not move, and not `git_dirty`.
+  - `test_refusals_and_paths`: routing only.
+- `test_io`:
+  - `TestLoadConfirm` (3): throwaway repositories and temporary logs.
+  - `test_main_repo_has_no_unblinding_tags_while_draft`: skips, because the spec is FROZEN.
+  - `TestLoadDev`: DATA through `io`, unchanged.
+- `test_guard_p46` (4): a temporary repository and a temporary log (lines 32 and 40 to 42).
+- `test_p5_tag_state` (5): throwaway repositories. Test 5 reads REPO's tags and the pre-registration, and the run changes neither.
+- `test_docs_d3`:
+  - `test_tag_gates`: tags only.
+  - `test_sealed_fit_opt_in_and_record`: `BLIND_FIT_LOG`, which stays at 7 lines.
+- `test_docs_d3b.test_tag_semantics_as_implemented`: tags, and `rglob("*.py")` of `ofilt/` and `tools/` only.
+- `test_docs_d6.test_repo_claims`: `ROOT.rglob("*")` for names containing "confirm" with suffix `.csv`. The run writes `.json` files in a folder named `confirm` (no suffix), so the list stays `[]`. `RUN_REGISTRY.jsonl` exists on both sides.
+- `test_p3_sealed_run`, tests 4 and 17: they run `tools/p3_sealed_run.py` in a subprocess, which no mock reaches. The tool refuses at configuration validation (`p3_sealed_run.py:387-388`) before `R.git_state()` (`:389`) and its "working tree is dirty" refusal. The pure `mode_refusal` checks pass `dirty` explicitly.
+- `test_p3_launch`, tests 7 and 8: `tools/p3_4_launch.sh` refuses at its argument and variable checks, before its clean-tree check (its section 4).
+- `test_p2_build.test_git_state_reports_this_repo`: the build's `git_state` covers only `build/` and `docs/PASS2_INPUTS.json`, and the test asserts `head` and `isinstance(..., bool)`.
+- `test_sim_b5` and `test_schema`: `rglob` of `ofilt/` only.
+- `test_docs_p2`, `test_docs_d4` and `test_docs_d6`: pins of documents the run does not touch.
+- Appendix A: no test hashes REPO's `RUN_REGISTRY.jsonl`. `tag_state.check_prereg_tag` reads three blobs at the tag (the spec, the configuration and the pre-registration).
+
+### c.2 The documentation tests P92's refresh touches (a reading, not a verdict)
+
+R20. The tests that read the bytes or text of `docs/replacements/PLAN.md`, `docs/DATA_PROVENANCE.md`, `docs/replacements/README.md` or `docs/replacements/PROJECT_SETUP.md`, or that list the pinned decision files (`/tmp/p6_boot_c2_search.out`):
+- `tests.test_docs_p2.TestKitDocsPinned.test_byte_for_byte`: the SHA-256 of each of `PINNED`'s 8 files. Among them are `docs/DATA_PROVENANCE.md` `6af07259…`, `docs/replacements/PLAN.md` `b1f34c1a…`, `docs/replacements/PROJECT_SETUP.md` `f0991f03…` and `docs/replacements/README.md` `12d56d12…`; the other four are `DECISIONS_P37_onward.md`, `PASS2_ADDENDUM.md`, `PASS2_HANDOFF.md` and `PASS2_INPUTS.json`. The refresh moves those four pins. This is the only test that reads `DATA_PROVENANCE.md`.
+- `tests.test_docs_p2.TestKitDocsPinned.test_the_eight_kit_docs`: the sorted file names of `PINNED` equal the eight. It lists them and reads no bytes. It is unchanged if the two decision files go into `NEW_PINNED`.
+- `tests.test_docs_p2.TestKitDocsPinned.test_p70_new_docs_pinned`: the SHA-256 of `NEW_PINNED`, the decision-file list: `DECISIONS_P58_onward.md`, `DECISIONS_P71_onward.md`, `DECISIONS_P82_onward.md`, `PREREG_v1.md`, `PREREG_v1_REVIEW.md` and `DECISIONS_ADDENDUM.md`. P6Q11 adds `docs/DECISIONS_P88_onward.md` (`30c3bedf…`, recomputed in `/tmp/p6_boot_b.out`) and `docs/DECISIONS_P93_onward.md` here.
+- `tests.test_docs_d4.TestRestored.test_byte_for_byte`:
+  - README's SHA-256 starts `12d56d1270f41d38`, and PLAN's starts `b1f34c1a60e2f2e0`;
+  - each equals its `/mnt/project` copy where one exists;
+  - PLAN starts `# Research Plan v2.6`;
+  - PLAN contains "Supersedes:** v2.5 (2026-10-07), which superseded v2.4 (2026-10-06), v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0".
+
+  With v2.7, the prefixes, the title and the Supersedes line all move.
+- `tests.test_docs_d4.TestReadme.test_p14_p16_p20_edits`: README's text has no "two-spec" or "never mix" (P14, P16). It contains the P16 retirement sentence, the P20 allowlist sentence and the forbidden-features sentence. The refreshed status block must keep them.
+- `tests.test_docs_d4.TestPlan.test_content_edits`: PLAN's text contains 12 fixed fragments (P14 to P33), and "EWJ:** it is USD-denominated" within §3.3.
+- `tests.test_docs_d4.TestPlan.test_p36_milestone_order`: PLAN's §8 is cut from "## 8. Passes and milestones (P36 order; P44 naming)" to "**Pass 2 is done when:**". Its table's Contents column must be exactly the seven labels, from "Analysis machine" to "Confirmation". The section must contain "**tag `prereg-v1`**" and "171 tests, 5 skipped by default". v2.7's §8 must keep both cut strings, the seven Contents labels and those two phrases. Only the Done-when and Stop-point columns are free.
+- `tests.test_docs_d6.TestProjectSetup.test_restored_byte_for_byte`: PROJECT_SETUP's SHA-256 starts `f0991f0360787079`, and it equals the `/mnt/project` copy where one exists. Its title is "# What goes in the Claude Project, and why (October 2026, after Pass 1; refreshed 2026-10-12)". The refresh moves the prefix, and the title too if the date differs.
+- `tests.test_docs_d6.TestProjectSetup.test_project_claims` (skipped on the Mac; it runs only where `/mnt/project` exists): PROJECT_SETUP's text contains "`PLAN.md` (v2.6)", and the Project's `PLAN.md` starts "# Research Plan v2.6". With v2.7 both strings move, so the change list should cover this test although the Mac skips it.
+- `tests.test_docs_d1.TestAdoptedText.test_restored_byte_for_byte`: pins `docs/DECISIONS_P14_onward.md` (`3d132016…`), a decision file outside `test_docs_p2`. P92 does not touch it.
+
+Set aside: `tests.test_docs_d6.TestProjectSetup.test_repo_claims`. It only checks that `docs/replacements/{README,PLAN,DATA_DICTIONARY,PROJECT_SETUP}.md` and `docs/DECISIONS_P14_onward.md` exist, and reads none of their bytes.
+
+R21. For P6-2's plan: three tests compare with the `/mnt/project` copies wherever `/mnt/project` exists, as it may in the supervisor's sandbox. They are `test_docs_d4`'s and `test_docs_d6`'s byte-for-byte tests, and `test_docs_d6.test_project_claims`. There the refreshed PLAN, README and PROJECT_SETUP must equal the Project's copies, so the Project upload (PROJECT_SETUP's list) and the kit must move together. On the Mac these comparisons do not run.
+
+## Deviations and notes
+
+Deviations: none. Every check script ran once and passed, so the rerun-once rule was not used. No commit, no test run, no import of a module of `ofilt`, no tag created, moved or deleted. Nothing under DATA was opened, listed or hashed, and nothing was written outside `/tmp/p6_boot*`.
+
+N1. c.1's order. `/tmp/p6_boot_c1_write.py` wrote my list and, as it did so, printed the file's SHA-256 (its output, above). The comparison with ACCESSDEP_SHA256 was made afterwards by `/tmp/p6_boot_c1_check.py`, once readings R17 to R19 were in `/tmp/p6_boot_readings.txt`. The list was not changed after it was written: the SHA-256 printed at c1_write equals the one checked at c1_check.
+
+N2. `/tmp/p6_boot_c1_search.sh` was corrected with the editor before its first run: two `grep -F` patterns had held a regex backslash. It then ran once. This was not a rerun under the rerun-once rule.
+
+N3. Read-only commands run directly in the command tool, not as script files. Each was one line, and none touched DATA or opened anything under `reports/P4_runs/` as text. The working directory was REPO.
+- `ls -la /tmp/ | grep -E 'p6_boot|p5_4'` and `ls -la ~/venvs/ofilt_p2/bin/python`.
+- `ls -la` of KIT6, KIT6`/p6_boot`, KEEP5, KEEP5`/p5_4` and KEEP5`/p5_4_final`: names only, to see the kit before writing a.4.
+- `cat` of the memory notes, and of `/tmp/p5_4_common.py`, `/tmp/p5_4_assemble.sh`, `/tmp/p5_4_a2.sh` and `/tmp/p5_4_a2.out`, as models for this item's helper, assembler and a.2 script.
+- `wc -l` of the reading-list files.
+- `grep -n '^## '` of `docs/PREREG_v1.md`, `docs/replacements/PLAN.md` and `docs/PASS2_ADDENDUM.md`: heading lines only (R16).
+- For c.1's set-aside reasons:
+  - `sed -n 225,260p` and `sed -n 375,400p` of `tools/p3_sealed_run.py`;
+  - `sed -n 1,20p` and `sed -n 85,200p` of `tests/test_p3_launch.py`, and `sed -n 1,70p` of `tools/p3_4_launch.sh`;
+  - `sed -n 140,160p` and `sed -n 262,300p` of `tests/test_p2_build.py`;
+  - `sed -n 1,27p` of `tests/test_docs_d1.py`, with `grep -n -E 'def test_|sha256|hexdigest'` of it;
+  - `grep -n -E '^class '` of `test_docs_d1`, `test_docs_p2`, `test_docs_d4` and `test_docs_d6`.
+- Three searches, whose outputs were kept with `tee` and are printed above:
+  - `grep -n -E 'ACCESS_LOG|RUN_REGISTRY|REAL_PATH|read_registry|git_state|P6_runs|P4_runs' ofilt/drift/*.py ofilt/drift/*/*.py tools/*.py 2>/dev/null | tee /tmp/p6_boot_c1_search3.out; echo '-----'; git ls-files ofilt | grep -n -E 'guards' | tee -a /tmp/p6_boot_c1_search3.out; ls ofilt`. The last part printed `__init__.py __pycache__ drift`, which is not in the file.
+  - `grep -n -E 'Appendix|9c6cb9c6|PREREG_v1|0cdedae9|confirm/|"confirm"' tests/*.py | tee /tmp/p6_boot_c1_search4.out`
+  - `grep -n -E 'DATA_PROVENANCE|PLAN\.md|README|PROJECT_SETUP|DECISIONS_|"replacements"|text\("PLAN|text\("README' tests/*.py | tee /tmp/p6_boot_c2_search.out`
+- a.2's extra check in the tool's zsh (R2): `{ [ -z "${OFILT_RUN_SEALED+x}" ] && echo "zsh tool shell: OFILT_RUN_SEALED unset" || echo "zsh tool shell: OFILT_RUN_SEALED SET"; [ -z "${OFILT_P6_CONFIRM_RUN+x}" ] && echo "zsh tool shell: OFILT_P6_CONFIRM_RUN unset" || echo "zsh tool shell: OFILT_P6_CONFIRM_RUN SET"; } | tee /tmp/p6_boot_a2_zsh.out`
+
+N4. Files read beyond the reading list, for c.1's and c.2's reasons:
+- `tests/test_p3_sealed_run.py`, in full;
+- the parts of `tests/test_p3_launch.py`, `tools/p3_4_launch.sh`, `tools/p3_sealed_run.py`, `tests/test_p2_build.py` and `tests/test_docs_d1.py` listed in N3.
+
+The message allows searching `tests/` by script; reading the tools was needed to settle whether a dirty tree reaches those tests. They hold refusal logic, hashes and structural counts, and no dev outcome value.
+
+N5. Blinding attestation for this item:
+- I read files as text only from the reading list and N4, through `git`, and as bytes for hashing.
+- All 253 tracked files were hashed as bytes (a.5), `reports/P4_runs/dev/document.json` among them, and nothing under `reports/P4_runs/` was read as text.
+- `RUN_REGISTRY.jsonl` was only hashed and counted.
+- No module of `ofilt` was imported, no test was run, and no data file was opened, listed or hashed.
+- `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` were absent from every command.
+- No tag was created, moved or deleted.
+- Apart from the two predictor-only parameters of the pre-registration's §2 (R11), I saw no dev value.
+
+N6. `/tmp/p5_4*`: P5-4's 31 files are still in `/tmp`. `/tmp/p5_4.txt` is identical to P5_4_KEPT (a.4). They are left in place, and so are all of this item's `/tmp/p6_boot*` files, for the next setup script to keep.
+
+## SHA-256 of every /tmp/p6_boot* file except this report
+
+82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd  /tmp/p6_boot_a2_zsh.out
+e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a  /tmp/p6_boot_a2.out
+3233f159a249dfad7beb3a3be6fd8e6804d92b3dffd53f62849dab0aa1fa67e5  /tmp/p6_boot_a2.sh
+b39d4a95964d5b3129b5540c34dd093091d05b461d5a892b9a972e00395f1ba2  /tmp/p6_boot_a3.out
+abb26b1b2d14bfd801bb30d7dd4bc5871e1acf6fe72239491ca07f2630cc4f4c  /tmp/p6_boot_a3.py
+4c4aefc74955ff56daa0543bb585081e6ec078da6e9de718c113f534419e018c  /tmp/p6_boot_a4.out
+6a00be880aa28109450ae96191a32eae7886d74526d96852088646be6423384f  /tmp/p6_boot_a4.py
+b306fc05ada180fe24ccbec10b4682f0ddff35872dad954387a3deba0fedaf41  /tmp/p6_boot_a5.out
+1bf0e176240f6ad61bbcaca084132bc03b9ebda50c4b01e6937a319ced428241  /tmp/p6_boot_a5.py
+988da8939c843df19533a802c76672a14e642e6fe3b2fca14cb762bfb7a4b48a  /tmp/p6_boot_a6.out
+c6577493e5e5fa7090259d04f1bd6634549848567a5bedad7a75b7870599eb0f  /tmp/p6_boot_a6.py
+e98d8eef2bc6b62df601f988965bd8062388fdeae4bf35e012693b22d9bf58b1  /tmp/p6_boot_accessdep.txt
+d9de12ffb067ba036bf7cbb58a7b737d1ad9add4e2832aab2f605b8a8effa160  /tmp/p6_boot_assemble.sh
+c8ade4ca9360a1e727f5d225a95990fd2f8dcb57e51906c5445b256684e126b7  /tmp/p6_boot_b.out
+d5e85756b739d732a552ca5d5d2037b4c058c0efee08ffb4474460128b3f3edc  /tmp/p6_boot_b.py
+0ded57b3fbccbfe5e72f21aac6c2afd6c9a0884638dc6ef2cc7fa58dfcb59ad6  /tmp/p6_boot_c1_check.out
+cc4d06f9905529b957bcf390c0607d1704dbf72fce075f46082e301bb3e64117  /tmp/p6_boot_c1_check.py
+7adf6136233b694f15781b86e3e1415fcd84d1e9e4a256b66e8eaf0d6f89624e  /tmp/p6_boot_c1_search.out
+d39ad0100909f06882a5aaa59237596844a944633482f8d3ad6fc81dec3d58c2  /tmp/p6_boot_c1_search.sh
+08fd6f6c1a69be3639c43371b718aceeb2902d70b64b69b2dbf87ab43aca373c  /tmp/p6_boot_c1_search2.out
+e11585b2bf5a29cf0ff09f0c77bf6e575afa9fea7670744d8de8e6da6c3865df  /tmp/p6_boot_c1_search2.sh
+e1b8f397e439b72f38160ad0467131f407b3fe1a8c5e4d3748dd4f7cd26798f5  /tmp/p6_boot_c1_search3.out
+bce00723ae7323c95c158e32ee0ae3b6c7e47c75bca58344ca51b24b045d7136  /tmp/p6_boot_c1_search4.out
+4b0f17748cddb8cf551968d15132ce6d2c66eb0f3362c3bdbefb26702e62d6ed  /tmp/p6_boot_c1_write.out
+e40d2c8d3f23afe8894517d5d8301fa7fb26c10f5edc721d41600907bf8076d1  /tmp/p6_boot_c1_write.py
+8e14bd24ec8fd258ceda3d0a734495ff7481104d25da72838580b1c04fe31f5c  /tmp/p6_boot_c2_search.out
+87277299d6cd0e1db64fc0e9b1aae1e4f710939e3283d41b6e18fe019346a037  /tmp/p6_boot_common.py
+a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  /tmp/p6_boot_date.out
+b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688  /tmp/p6_boot_msg.txt
+90991af0447c5774c875a3037473d4bea4031134241ac737e5ca1e405bd90be4  /tmp/p6_boot_msgsha.out
+f79412642092d80f3d673ccf04098ad729353b37f38c9ade7f529104f489492f  /tmp/p6_boot_notes.txt
+3f6ebac5597e0b6bd49e01ca7bf060303aeb7270621bfb24276084b8ab0d718c  /tmp/p6_boot_readings.txt
+
+## The assembler
+
+----- /tmp/p6_boot_assemble.sh -----
+#!/bin/bash
+# P6-boot d: assembles /tmp/p6_boot.txt, in the standing prompt's report form, from command output and this item's
+# /tmp files. Runs no Python; reads REPO only through git.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+OUT="/tmp/p6_boot.txt"
+
+show() {  # one file in full, between markers
+  echo "----- $1 -----"
+  cat "$1"
+  echo "----- end of $1 -----"
+  echo
+}
+
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 "/tmp/p6_boot_msg.txt"
+echo
+echo "# P6-boot: a new builder session; the Pass 6 standing prompt adopted; read-only orientation"
+echo
+echo "Builder report. D = $(cat /tmp/p6_boot_date.out). Read-only: no commit, no test run, no module of ofilt imported."
+echo
+echo "## Scripts and their outputs"
+echo
+echo "### a.1"
+show /tmp/p6_boot_date.out
+show /tmp/p6_boot_msgsha.out
+echo "### Shared helper of the Python scripts"
+show /tmp/p6_boot_common.py
+echo "### a.2 (and the extra check in the tool's own zsh, R2)"
+show /tmp/p6_boot_a2.sh
+show /tmp/p6_boot_a2.out
+show /tmp/p6_boot_a2_zsh.out
+echo "### a.3"
+show /tmp/p6_boot_a3.py
+show /tmp/p6_boot_a3.out
+echo "### a.4"
+show /tmp/p6_boot_a4.py
+show /tmp/p6_boot_a4.out
+echo "### a.5"
+show /tmp/p6_boot_a5.py
+show /tmp/p6_boot_a5.out
+echo "### a.6"
+show /tmp/p6_boot_a6.py
+show /tmp/p6_boot_a6.out
+echo "### b (a reading aid: the records' cited hashes)"
+show /tmp/p6_boot_b.py
+show /tmp/p6_boot_b.out
+echo "### c.1: the searches (scripts, and the one-line commands of N3), the list, and the comparison"
+show /tmp/p6_boot_c1_search.sh
+show /tmp/p6_boot_c1_search.out
+show /tmp/p6_boot_c1_search2.sh
+show /tmp/p6_boot_c1_search2.out
+show /tmp/p6_boot_c1_search3.out
+show /tmp/p6_boot_c1_search4.out
+show /tmp/p6_boot_c1_write.py
+show /tmp/p6_boot_c1_write.out
+show /tmp/p6_boot_accessdep.txt
+show /tmp/p6_boot_c1_check.py
+show /tmp/p6_boot_c1_check.out
+echo "### c.2: the search (the one-line command of N3)"
+show /tmp/p6_boot_c2_search.out
+
+echo "## Verdict lines (in step order)"
+echo
+grep -h ' CHECK: ' /tmp/p6_boot_a2.out /tmp/p6_boot_a3.out /tmp/p6_boot_a4.out /tmp/p6_boot_a5.out /tmp/p6_boot_a6.out \
+  /tmp/p6_boot_c1_check.out
+echo
+echo "## Readings"
+echo
+cat /tmp/p6_boot_readings.txt
+echo
+echo "## Deviations and notes"
+echo
+cat /tmp/p6_boot_notes.txt
+echo
+echo "## SHA-256 of every /tmp/p6_boot* file except this report"
+echo
+for f in /tmp/p6_boot*; do
+  [ "$f" = "$OUT" ] && continue
+  if [ -d "$f" ]; then echo "(a folder, not hashed: $f)"; continue; fi
+  shasum -a 256 "$f"
+done
+echo
+echo "## The assembler"
+echo
+show /tmp/p6_boot_assemble.sh
+echo "STOPPED at P6-boot, d: planned; read-only; Isaiah uploads /tmp/p6_boot.txt to the supervisor chat."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$OUT" 2>&1
+----- end of /tmp/p6_boot_assemble.sh -----
+
+STOPPED at P6-boot, d: planned; read-only; Isaiah uploads /tmp/p6_boot.txt to the supervisor chat.
+
+2026-10-12T21:53:16Z
+6775d6ed737a5c57cb686ade28d11f30a99ebfe8
