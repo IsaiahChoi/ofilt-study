@@ -1,0 +1,43 @@
+{
+  "output": "the confirmation document of Pass 4 (P4Q35 to P4Q39)",
+  "files": [
+    "document.json",
+    "manifest.json",
+    "runtime.json"
+  ],
+  "document_schema_version": 1,
+  "document_schema_version_meaning": "the version of the document's schema, docs/P4_CONFIRM_INF_SPEC.md section 4.1; the specifications' own versions are under specifications",
+  "specifications": [
+    {
+      "path": "docs/P4_CONFIRM_INF_SPEC.md",
+      "version": 2,
+      "sha256": "a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65"
+    },
+    {
+      "path": "docs/P4_CONFIRM_FC_SPEC.md",
+      "version": 1,
+      "sha256": "a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6"
+    },
+    {
+      "path": "docs/P4_CONFIRM_ECON_SPEC.md",
+      "version": 1,
+      "sha256": "42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785"
+    },
+    {
+      "path": "docs/P4_CONFIRM_CLAIMS_SPEC.md",
+      "version": 1,
+      "sha256": "b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2"
+    }
+  ],
+  "config_sha256": "5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd",
+  "cost_inputs_sha256": "a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6",
+  "analysis_spec_sha256": "feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26",
+  "mode": "dev",
+  "provenance": "dev_real",
+  "dates": {
+    "first": "2015-01-06",
+    "last": "2021-12-30",
+    "n": 1708
+  },
+  "runtime_fields": "runtime.json only: utc_start, utc_end, wall_seconds and the registry's run ids; document.json and manifest.json are identical across runs on the same inputs (P4Q5)"
+}

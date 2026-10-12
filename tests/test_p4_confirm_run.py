@@ -236,7 +236,12 @@ class TestConfirmRun(unittest.TestCase):
             self.assertNotEqual((a / "runtime.json").read_bytes(), (b / "runtime.json").read_bytes())
             self.assertEqual(gained, 4)
             self.assertFalse(RG.REAL_PATH.exists())
-            self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").stat().st_size, 0)
+            # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+            # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+            reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+            dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+            self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+            self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
             printed = out.getvalue().splitlines()
             self.assertEqual(printed, [f"{d / n} {sha((d / n).read_bytes())}" for d in (a, b) for n in CR.OUTPUT_FILES])
             o45 = json.loads((a / "document.json").read_text(encoding="utf-8"))["rows"]["O45"]

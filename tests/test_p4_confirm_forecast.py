@@ -355,7 +355,12 @@ class TestConfirmForecast(unittest.TestCase):
                          {"R1": 2, "R1b": 2, "R2": 2, "R3": 2, "R4": 0})
         self.assertEqual([lines for _, _, lines in refusals()], [0] * 5)
         self.assertFalse(RG.REAL_PATH.exists())
-        self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").stat().st_size, 0)
+        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").stat().st_size == 0`.
+        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+        self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
 
     # 15
     def test_fill_refuses_non_pending(self):

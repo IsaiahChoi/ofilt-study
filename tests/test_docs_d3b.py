@@ -41,7 +41,12 @@ class TestP36(unittest.TestCase):
         self.assertEqual(heads, ["AM-01", "AM-02", "AM-03", "AM-04", "AM-05", "AM-07", "AM-09", "AM-10"])   # + the switch (P3-6)
         log = [json.loads(x) for x in (ROOT / "BLIND_FIT_LOG").read_text().splitlines() if x.strip()]
         self.assertEqual(len(log), 7)                                           # only the sealed fits (P29): Pass 1's six and P3-4's line 7 (DQ5)
-        self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").read_text(), "")         # no real forecast run
+        # P4Q6, P4Q40 (P4-6, test-change protocol): was `(ROOT / "RUN_REGISTRY.jsonl").read_text() == ""`.
+        # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
+        reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+        self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
 
 
 if __name__ == "__main__":
