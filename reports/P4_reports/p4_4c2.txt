@@ -1,0 +1,2405 @@
+2026-10-12T02:40:24Z
+b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+55396f2bdb0c37f67da0128ab6e69ad063a096f97bafc6695e64a0acc97ba333  /tmp/p4_4c2_msg.txt
+date +%F (a.1, captured by tee in /tmp/p4_4c2_date.out): 2026-10-11
+
+== a.2: the state check
+--- /tmp/p4_4c2_a2.py (sha256 f59fc4112f36d17e43661d6a6c6d2d496192fb372306c16ea99f6c10f63b9b24)
+"""P4-4c2 a.2: read-only state check (verdict line `A CHECK`).
+
+Imports no module of ofilt; reads files as bytes and calls git. Expected values are read from /tmp/p4_4c2_msg.txt,
+list "Expected values". Argument 1: the number of OFILT_RUN_SEALED= lines in the session's environment, counted by the
+calling shell before `env -u` (this process runs with the variable removed in any case).
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+PROMPT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+MSG = "/tmp/p4_4c2_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def gtext(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout.decode().rstrip("\n")
+
+
+def expected_values():
+    lines = open(MSG, encoding="utf-8").read().split("\n")
+    vals, counts = {}, {}
+    for ln in lines[lines.index("## Expected values") + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+            vals[m.group(1)] = m.group(2)
+    bad = [k for k, c in counts.items() if c != 1]
+    check(not bad, f"each label begins exactly one line ({len(vals)} labels; repeated: {bad})")
+    return vals
+
+
+def sha(path):
+    with open(path, "rb") as fh:
+        return hashlib.sha256(fh.read()).hexdigest()
+
+
+E = expected_values()
+
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+check(head == E["HEAD_BEFORE"], "HEAD == HEAD_BEFORE")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+print(f"parents: {parents}")
+check(parents == [E["PARENT_BEFORE"]], "HEAD's only parent == PARENT_BEFORE")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+print(f"git status --porcelain --untracked-files=all: {status!r}")
+check(status == "", "working tree clean")
+
+tags = gtext("tag", "-l").split("\n")
+print(f"git tag -l: {tags}")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), "tags == TAG_LIST")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+print(f"BLIND_FIT_LOG: sha256 {hashlib.sha256(b).hexdigest()}; lines {len(b.decode('utf-8').splitlines())}")
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"], "BLIND_FIT_LOG sha256")
+check(len(b.decode("utf-8").splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+print(f"RUN_REGISTRY.jsonl: {rr} bytes")
+check(rr == int(E["RUN_REGISTRY_BYTES"]), "RUN_REGISTRY.jsonl bytes")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.relpath(os.path.join(root, n), REPO) for n in dirs + names if n.startswith("ACCESS_LOG")]
+print(f"names starting ACCESS_LOG outside .git: {access}")
+check(access == [], "no ACCESS_LOG name")
+session = sys.argv[1] if len(sys.argv) > 1 else None
+print(f"OFILT_RUN_SEALED= lines in the session's environment: {session}; in this process: "
+      f"{'OFILT_RUN_SEALED' in os.environ}")
+check(session == "0" and "OFILT_RUN_SEALED" not in os.environ, "OFILT_RUN_SEALED absent")
+
+print(f"standing prompt: {sha(PROMPT)}")
+check(sha(PROMPT) == E["PROMPT_SHA256"], "standing prompt sha256 == PROMPT_SHA256")
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"), ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("PASS4_STATUS.md", "STATUS_BEFORE_SHA256"), ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"),
+    ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"), ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"),
+    ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"), ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"),
+    ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"), ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"), ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"),
+    ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"), ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"),
+    ("ofilt/drift/confirm_economic.py", "ECON_MODULE_SHA256"), ("tests/test_p4_confirm_economic.py", "ECON_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"), ("ofilt/drift/confirm_claims.py", "CLAIMS_MODULE_SHA256"),
+    ("ofilt/drift/confirm_allowlist.py", "ALLOWLIST_MODULE_SHA256"),
+    ("tests/test_p4_confirm_claims.py", "CLAIMS_TESTS_SHA256"), ("docs/P4_CONFIRM_CLAIMS_SPEC.md", "CLAIMS_SPEC_SHA256"),
+]
+for path, name in pinned:
+    h = sha(os.path.join(REPO, path))
+    print(f"{path}: {h}")
+    check(h == E[name], f"{path} == {name}")
+
+on_disk = sorted(os.listdir(os.path.join(REPO, "reports", "P4_reports")))
+print(f"reports/P4_reports/: {on_disk}")
+check(on_disk == sorted(E["REPORTS_BEFORE"].split(" ")), "reports/P4_reports/ == REPORTS_BEFORE")
+present = [p for p in E["NEW_FILES"].split(" ") if os.path.lexists(os.path.join(REPO, p))]
+print(f"files of NEW_FILES present: {present}")
+check(present == [], "no file of NEW_FILES exists")
+for name in ("NODATA", "REGDIR"):
+    d = E[name]
+    ok = os.path.isdir(d) and os.listdir(d) == []
+    print(f"{name} {d}: exists and empty: {ok}")
+    check(ok, f"{name} exists and is empty")
+
+print(f"failed checks: {len(fails)}")
+print(f"A CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c2_a2.out (sha256 5ef318a9acd2ec4f303d827c939416c90d8d421dce7671a50c9d064c174159d3)
+ok   each label begins exactly one line (54 labels; repeated: [])
+HEAD: b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+ok   HEAD == HEAD_BEFORE
+parents: ['d4253b87594c234ea6147e0fe0fa55c47b52eb6d']
+ok   HEAD's only parent == PARENT_BEFORE
+git status --porcelain --untracked-files=all: ''
+ok   working tree clean
+git tag -l: ['pass1-final', 'spec-dev-v1']
+ok   tags == TAG_LIST
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+BLIND_FIT_LOG: sha256 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383; lines 7
+ok   BLIND_FIT_LOG sha256
+ok   BLIND_FIT_LOG lines
+RUN_REGISTRY.jsonl: 0 bytes
+ok   RUN_REGISTRY.jsonl bytes
+names starting ACCESS_LOG outside .git: []
+ok   no ACCESS_LOG name
+OFILT_RUN_SEALED= lines in the session's environment: 0; in this process: False
+ok   OFILT_RUN_SEALED absent
+standing prompt: 96327904ec55a1de5ad4f51b1cc27fc9b447b9b124a05243400523835e47984d
+ok   standing prompt sha256 == PROMPT_SHA256
+spec/analysis_spec_dev_v1.yaml: feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26
+ok   spec/analysis_spec_dev_v1.yaml == SPEC_SHA256
+PASS3_STATUS.md: b4583f81f708d23d599261b6f0080897a87a6963b6fed6c6b54e680e4ac59fb9
+ok   PASS3_STATUS.md == PASS3_STATUS_SHA256
+PASS4_STATUS.md: d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148
+ok   PASS4_STATUS.md == STATUS_BEFORE_SHA256
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+ok   docs/P4_CONFIRM_CONFIG.json == CONFIG_SHA256
+docs/P3_COST_INPUTS.json: a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6
+ok   docs/P3_COST_INPUTS.json == COST_INPUTS_SHA256
+ofilt/drift/sim_full.py: ffe370fdc1f7c6fb06cbf5850e835401b2d842364d953239d10284708788b769
+ok   ofilt/drift/sim_full.py == SIM_MODULE_SHA256
+tests/test_p4_sim_full.py: 50c8bb60d155b0787a0baac7b0bb58ae18bbe1878e412edfe4bc08132631ee9a
+ok   tests/test_p4_sim_full.py == SIM_TESTS_SHA256
+docs/P4_SIM_SPEC.md: 972b7fd69fcfabbad8ec46347d36ad89ac7d370b55074424174f51d5f688acc4
+ok   docs/P4_SIM_SPEC.md == SIM_SPEC_SHA256
+ofilt/drift/confirm_inference.py: 77e9233732448cd814cefe6ee408a2ab2b1edaf3a47d9118e0e2790dbc0f7de1
+ok   ofilt/drift/confirm_inference.py == INF_MODULE_SHA256
+tests/test_p4_confirm_inference.py: bb7ac9ae5eed0ed414ecea9ba66c7ac4191b6d820a29c5504b6cca106f55d026
+ok   tests/test_p4_confirm_inference.py == INF_TESTS_SHA256
+docs/P4_CONFIRM_INF_SPEC.md: a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65
+ok   docs/P4_CONFIRM_INF_SPEC.md == INF_SPEC_SHA256
+ofilt/drift/confirm_forecast.py: b0dbb0aa7147be06a10fa374c5d342c580597b50c8ef0ce5cecda452139a87ff
+ok   ofilt/drift/confirm_forecast.py == FC_MODULE_SHA256
+tests/test_p4_confirm_forecast.py: 723e26237d78451baf641eb97794d5d032ec212c857ee16731fd20b9f1948b0a
+ok   tests/test_p4_confirm_forecast.py == FC_TESTS_SHA256
+docs/P4_CONFIRM_FC_SPEC.md: a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6
+ok   docs/P4_CONFIRM_FC_SPEC.md == FC_SPEC_SHA256
+ofilt/drift/confirm_economic.py: caa065454cc229b6cf192a36795d6536557510e5a6a4a6112ccfa08ce4d01f73
+ok   ofilt/drift/confirm_economic.py == ECON_MODULE_SHA256
+tests/test_p4_confirm_economic.py: 7ff0ebe7393f0cf998583f617eb773300413e77f27fbb4575ce1e127282169da
+ok   tests/test_p4_confirm_economic.py == ECON_TESTS_SHA256
+docs/P4_CONFIRM_ECON_SPEC.md: 42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785
+ok   docs/P4_CONFIRM_ECON_SPEC.md == ECON_SPEC_SHA256
+ofilt/drift/confirm_claims.py: ac91c49f529d108f4ff62f40d8584cf329c10a0320862878b4bef66447d07ed8
+ok   ofilt/drift/confirm_claims.py == CLAIMS_MODULE_SHA256
+ofilt/drift/confirm_allowlist.py: 2fd60f4e8f4e6bf9c21db3863854be89abf70f0d239abbd001f62a8468a154c1
+ok   ofilt/drift/confirm_allowlist.py == ALLOWLIST_MODULE_SHA256
+tests/test_p4_confirm_claims.py: b6f53d16ced4ac6edfb123abd6ea7eac82351755eaa6a71145219da701a7a7d3
+ok   tests/test_p4_confirm_claims.py == CLAIMS_TESTS_SHA256
+docs/P4_CONFIRM_CLAIMS_SPEC.md: b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2
+ok   docs/P4_CONFIRM_CLAIMS_SPEC.md == CLAIMS_SPEC_SHA256
+reports/P4_reports/: ['p4_0a.txt', 'p4_0b.txt', 'p4_1.txt', 'p4_1_audit.md', 'p4_2.txt', 'p4_3.txt', 'p4_4a.txt', 'p4_4b1.txt', 'p4_4b2.txt', 'p4_4p.txt', 'p4_boot.txt', 'p4_boot2.txt']
+ok   reports/P4_reports/ == REPORTS_BEFORE
+files of NEW_FILES present: []
+ok   no file of NEW_FILES exists
+NODATA /tmp/p4_4c2_nodata: exists and empty: True
+ok   NODATA exists and is empty
+REGDIR /tmp/p4_4c2_registry: exists and empty: True
+ok   REGDIR exists and is empty
+failed checks: 0
+A CHECK: True
+exit 0
+
+== b.1: the kit
+--- /tmp/p4_4c2_b1.py (sha256 90bb8d5fd9125f50ec9d5cd8486a69a8cd7a8fb027b886542ddcc9f188742c17)
+"""P4-4c2 b.1: the kit (verdict line `B CHECK`). Reads files as bytes; imports no module of ofilt."""
+import hashlib
+import os
+import re
+import sys
+
+KIT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c2_kit")
+MSG = "/tmp/p4_4c2_msg.txt"
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+fails = []
+names = sorted(os.listdir(KIT))          # hidden files included
+print(f"KIT {KIT}: {names}")
+if names != sorted(E["KIT_FILES"].split(" ")):
+    fails.append("KIT holds exactly KIT_FILES")
+for name, key in (("p4_4c2_P4_CONFIRM_RUN_SPEC.md", "KIT_SPEC_SHA256"), ("p4_4c2_STATUS_EDITS.txt", "KIT_EDITS_SHA256")):
+    p = os.path.join(KIT, name)
+    if not os.path.isfile(p):
+        fails.append(f"{name} missing")
+        continue
+    data = open(p, "rb").read()
+    h = hashlib.sha256(data).hexdigest()
+    print(f"{name}: sha256 {h}; bytes {len(data)}; lines {len(data.decode('utf-8').splitlines())}; == {key}: {h == E[key]}")
+    if h != E[key]:
+        fails.append(f"{name} sha256")
+print(f"failed checks: {len(fails)} {fails if fails else ''}".rstrip())
+print(f"B CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c2_b1.out (sha256 ad1babd0749842f0a09a775233c98af93bd6d6f29fc569e9ecf8456ebb7bbfae)
+KIT /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4c2_kit: ['p4_4c2_P4_CONFIRM_RUN_SPEC.md', 'p4_4c2_STATUS_EDITS.txt']
+p4_4c2_P4_CONFIRM_RUN_SPEC.md: sha256 4fe3712f0f3ffdcc6b87b6443e383c1d840c3d5d7fdcce210c5bf6322d916ab3; bytes 13825; lines 80; == KIT_SPEC_SHA256: True
+p4_4c2_STATUS_EDITS.txt: sha256 1bfb5adbb07b3962381c781dec01a54ee1a91be32d58c2e3c1280370cb62f937; bytes 9142; lines 54; == KIT_EDITS_SHA256: True
+failed checks: 0
+B CHECK: True
+exit 0
+
+== c.2: the probe (synthetic; registry patched to REGDIR; OFILT_DATA_DIR = NODATA)
+--- /tmp/p4_4c2_probe.py (sha256 eb67544bca3edebf9c9e32af8cb21cab8a6c43cd7edd55a336a6973df5919317)
+"""P4-4c2 c.2: the probe (no verdict line; it asserts nothing). Synthetic data only; run under NODATA.
+
+On the frames of docs/P4_CONFIRM_RUN_SPEC.md §5.1 (seed + 8,600,001; SHORT dev calendar; 5706's open, close and
+prev_close scaled by 0.1), runs the steps of §3.1 one by one with the zero-forecast M7 stand-in of P4-4b2's tests, and
+prints each step's wall time, the statuses of the 71 entries after the last fill, the manifest of §3.2 (built here
+from its text, as confirm_run does not exist yet) and the runtime dict, and the byte length and SHA-256 of to_json(doc)
+for two builds on the same frames. The run registry is patched to REGDIR before any walk_forward call.
+"""
+import datetime
+import hashlib
+import json
+import os
+import sys
+import time
+from pathlib import Path
+from unittest import mock
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+REGDIR = Path("/tmp/p4_4c2_registry")
+sys.path.insert(0, str(REPO))
+import numpy as np  # noqa: E402
+
+from ofilt.drift import confirm_claims as CC  # noqa: E402
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import confirm_inference as CI  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+print(f"OFILT_DATA_DIR = {os.environ.get('OFILT_DATA_DIR')}; contents: {sorted(os.listdir(os.environ['OFILT_DATA_DIR']))}")
+patches = [mock.patch.object(RG, "SYNTHETIC_PATH", REGDIR / "synthetic.jsonl"),
+           mock.patch.object(RG, "REAL_PATH", REGDIR / "real.jsonl")]
+for p in patches:
+    p.start()
+print(f"registry patched: SYNTHETIC_PATH {RG.SYNTHETIC_PATH}; REAL_PATH {RG.REAL_PATH}")
+
+
+class ZeroM7(FC.ForecastModel):
+    """The M7 stand-in of P4-4b2's tests: no feature, a zero forecast, no noise column."""
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def scaled(df):
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def utc():
+    return datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def timed(label, fn):
+    t0 = time.perf_counter()
+    r = fn()
+    print(f"[time] {label}: {time.perf_counter() - t0:.2f} s")
+    return r
+
+
+SPEC = Spec.load()
+seed = SPEC.seed + 8_600_001
+print(f"seed: {seed}")
+o = timed("simulate", lambda: SF.simulate(seed, SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5),
+                                          dev_dates=SF.dev_calendar()[-900:]))
+dev, events, conf = scaled(o.dev), o.events, scaled(o.confirm)
+
+
+def build(k):
+    print(f"\n--- build {k}")
+    start, t0 = utc(), time.perf_counter()
+    doc = timed("infer", lambda: CI.infer(dev, events, conf, spec=SPEC))
+    calls = timed("run_calls", lambda: CF.run_calls(dev, events, conf, spec=SPEC, factories={"M7": ZeroM7}))
+    doc = timed("forecast_rows + fill", lambda: CF.fill(doc, CF.forecast_rows(calls)))
+    doc = timed("economic_row + fill", lambda: CE.fill(doc, CE.economic_row(calls, dev, events, conf, spec=SPEC)))
+    doc = timed("claim_rows + fill", lambda: CC.fill(doc, CC.claim_rows(doc, dev, events, conf, spec=SPEC)))
+    runtime = {"utc_start": start, "utc_end": utc(), "wall_seconds": time.perf_counter() - t0,
+               "run_ids": {"main": calls.main.run_id, "m7": calls.m7.run_id}}
+    text = CI.to_json(doc)
+    b = text.encode("utf-8")
+    print(f"to_json(doc): {len(b)} bytes; sha256 {hashlib.sha256(b).hexdigest()}")
+    return doc, runtime
+
+
+doc1, rt1 = build(1)
+doc2, rt2 = build(2)
+
+print("\n--- statuses of the 71 entries after the last fill (build 1)")
+print(f"ids in order == ROW_IDS: {list(doc1['rows']) == list(CI.ROW_IDS)}")
+counts = {}
+for rid, e in doc1["rows"].items():
+    counts[e["status"]] = counts.get(e["status"], 0) + 1
+    print(f"{rid} {e['item']} {e['status']}" + (f" ({e['reason']})" if e["reason"] else ""))
+print(f"status counts: {counts}")
+
+specs = [("docs/P4_CONFIRM_INF_SPEC.md", 2), ("docs/P4_CONFIRM_FC_SPEC.md", 1), ("docs/P4_CONFIRM_ECON_SPEC.md", 1),
+         ("docs/P4_CONFIRM_CLAIMS_SPEC.md", 1)]
+manifest = {
+    "output": "the confirmation document of Pass 4 (P4Q35 to P4Q39)",
+    "files": ["document.json", "manifest.json", "runtime.json"],
+    "document_schema_version": doc1["spec_version"],
+    "document_schema_version_meaning": "the version of the document's schema, docs/P4_CONFIRM_INF_SPEC.md section "
+                                       "4.1; the specifications' own versions are under specifications",
+    "specifications": [{"path": p, "version": v, "sha256": hashlib.sha256((REPO / p).read_bytes()).hexdigest()}
+                       for p, v in specs],
+    "config_sha256": CI.CONFIG_SHA256,
+    "cost_inputs_sha256": CE.COST_INPUTS_SHA256,
+    "analysis_spec_sha256": SPEC.sha256,
+    "mode": doc1["mode"],
+    "provenance": doc1["provenance"],
+    "dates": doc1["dates"],
+    "runtime_fields": "runtime.json only: utc_start, utc_end, wall_seconds and the registry's run ids; document.json "
+                      "and manifest.json are identical across runs on the same inputs (P4Q5)",
+}
+print("\n--- the manifest of §3.2 (built here from its text)")
+print(json.dumps(manifest, indent=2, ensure_ascii=False, allow_nan=False))
+print("\n--- the runtime dicts")
+print(json.dumps(rt1, indent=2))
+print(json.dumps(rt2, indent=2))
+print(f"\nthe two documents' to_json identical: {CI.to_json(doc1) == CI.to_json(doc2)}")
+print(f"run ids differ: main {rt1['run_ids']['main'] != rt2['run_ids']['main']}, "
+      f"m7 {rt1['run_ids']['m7'] != rt2['run_ids']['m7']}")
+
+for p in patches:
+    p.stop()
+syn = REGDIR / "synthetic.jsonl"
+print(f"\nregistry lines written under REGDIR: synthetic {sum(1 for _ in open(syn)) if syn.exists() else 0}; "
+      f"real file exists: {(REGDIR / 'real.jsonl').exists()}")
+print(f"NODATA contents at the end: {sorted(os.listdir(os.environ['OFILT_DATA_DIR']))}")
+--- /tmp/p4_4c2_probe.out (sha256 e0d43d713fa7f0e9f04c6a3a4d5a4fb809fc82b094755e7679a0fd02cf542932)
+OFILT_DATA_DIR = /tmp/p4_4c2_nodata; contents: []
+registry patched: SYNTHETIC_PATH /tmp/p4_4c2_registry/synthetic.jsonl; REAL_PATH /tmp/p4_4c2_registry/real.jsonl
+seed: 28861002
+[time] simulate: 0.21 s
+
+--- build 1
+[time] infer: 2.31 s
+[time] run_calls: 3.41 s
+[time] forecast_rows + fill: 1.10 s
+[time] economic_row + fill: 0.26 s
+[time] claim_rows + fill: 0.38 s
+to_json(doc): 78170 bytes; sha256 9749cb7d0389e8412a6fda3b93824164a1ca20a8f8217ff88fa7417b4aa50d3b
+
+--- build 2
+[time] infer: 2.27 s
+[time] run_calls: 3.40 s
+[time] forecast_rows + fill: 1.08 s
+[time] economic_row + fill: 0.24 s
+[time] claim_rows + fill: 0.39 s
+to_json(doc): 78170 bytes; sha256 9749cb7d0389e8412a6fda3b93824164a1ca20a8f8217ff88fa7417b4aa50d3b
+
+--- statuses of the 71 entries after the last fill (build 1)
+ids in order == ROW_IDS: True
+O1 P4-4a estimated
+R1 P4-4a fixed
+R2 P4-4a estimated
+R3 P4-4a fixed
+R4 P4-4a estimated
+R5 P4-4a fixed
+O2 P4-4a estimated
+O3 P4-4a estimated
+O4 P4-4a estimated
+O5 P4-4a estimated
+O6 P4-4a estimated
+R6 P4-4a estimated
+O7 P4-4a estimated
+O8 P4-4a fixed
+O9 P4-4a estimated
+O10 P4-4a estimated
+O11 P4-4a estimated
+O12 P4-4a estimated
+O13 P4-4a estimated
+O14 P4-4a estimated
+O15 P4-4a estimated
+O16 P4-4a estimated
+O17 P4-4a estimated
+O18 P4-4a estimated
+O19 P4-4a estimated
+O20 P4-4a estimated
+O21 P4-4a estimated
+O22 P4-4a estimated
+O23 P4-4a estimated
+O24 P4-4a estimated
+O25 P4-4a estimated
+O26 P4-4a estimated
+O27 P4-4a estimated
+O28 P4-4a estimated
+R7 P4-4a estimated
+R8 P4-4a fixed
+O29 P4-4b estimated
+O30 P4-4b estimated
+O31 P4-4b estimated
+O32 P4-4b estimated
+O33 P4-4b estimated
+O34 P4-4b estimated
+O35 P4-4b estimated
+R9 P4-4b fixed
+O36 P4-4b estimated
+O37 P4-4b estimated
+O38 P4-4b estimated
+O39 P4-4b estimated
+O40 P4-4b estimated
+O41 P4-4b estimated
+O42 P4-4b estimated
+O43 P4-4b estimated
+O44 P4-4b estimated
+O45 P4-4b estimated
+R10 P4-4c estimated
+R11 P4-4c estimated
+R12 P4-4c fixed
+R13 P4-4c fixed
+R14 P4-4c estimated
+R15 P4-4c fixed
+R16 P4-4c fixed
+R17 P4-4c fixed
+R18 P4-4c fixed
+R19 P4-4c fixed
+R20 P4-4c fixed
+R21 P4-4c estimated
+R22 P4-4c fixed
+R23 P4-4c not_applicable (the one-shot rule applies to the confirmation panel only)
+R24 P4-4c fixed
+R25 P4-4c not_applicable (what it evaluates is fixed in the pre-registration (Pass 5) (P4Q30); outside Pass 4)
+R26 P4-4c fixed
+status counts: {'estimated': 52, 'fixed': 17, 'not_applicable': 2}
+
+--- the manifest of §3.2 (built here from its text)
+{
+  "output": "the confirmation document of Pass 4 (P4Q35 to P4Q39)",
+  "files": [
+    "document.json",
+    "manifest.json",
+    "runtime.json"
+  ],
+  "document_schema_version": 1,
+  "document_schema_version_meaning": "the version of the document's schema, docs/P4_CONFIRM_INF_SPEC.md section 4.1; the specifications' own versions are under specifications",
+  "specifications": [
+    {
+      "path": "docs/P4_CONFIRM_INF_SPEC.md",
+      "version": 2,
+      "sha256": "a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65"
+    },
+    {
+      "path": "docs/P4_CONFIRM_FC_SPEC.md",
+      "version": 1,
+      "sha256": "a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6"
+    },
+    {
+      "path": "docs/P4_CONFIRM_ECON_SPEC.md",
+      "version": 1,
+      "sha256": "42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785"
+    },
+    {
+      "path": "docs/P4_CONFIRM_CLAIMS_SPEC.md",
+      "version": 1,
+      "sha256": "b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2"
+    }
+  ],
+  "config_sha256": "5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd",
+  "cost_inputs_sha256": "a2bbca432e5398a732c9c1bfb7a12106c5474a10b027d4aa1757f5a27c2f8dc6",
+  "analysis_spec_sha256": "feb6005d62665f88fc8a6af883dab783c7f36f15e00df17f79f5b64627f29c26",
+  "mode": "confirmation",
+  "provenance": "synthetic",
+  "dates": {
+    "first": "2022-01-04",
+    "last": "2026-03-05",
+    "n": 1019
+  },
+  "runtime_fields": "runtime.json only: utc_start, utc_end, wall_seconds and the registry's run ids; document.json and manifest.json are identical across runs on the same inputs (P4Q5)"
+}
+
+--- the runtime dicts
+{
+  "utc_start": "2026-10-12T02:43:39Z",
+  "utc_end": "2026-10-12T02:43:46Z",
+  "wall_seconds": 7.459400875028223,
+  "run_ids": {
+    "main": "9f238b85ed034eac93c7ec77456e79b4",
+    "m7": "60df10b68e904d8f9525fc85ba3ca379"
+  }
+}
+{
+  "utc_start": "2026-10-12T02:43:46Z",
+  "utc_end": "2026-10-12T02:43:54Z",
+  "wall_seconds": 7.385402959072962,
+  "run_ids": {
+    "main": "1130f48e5b5c4e7bacd9e783e25727c7",
+    "m7": "edc047f3df7f43eca9ad61b7e005b18c"
+  }
+}
+
+the two documents' to_json identical: True
+run ids differ: main True, m7 True
+
+registry lines written under REGDIR: synthetic 4; real file exists: False
+NODATA contents at the end: []
+exit 0
+
+== d.1: the specification copied
+--- /tmp/p4_4c2_d1.py (sha256 5776ef9b1904ad9f5c12713582500fad0022cf4c2fb4eb2a5f09de32b510453b)
+"""P4-4c2 d.1: the specification copied to docs/ (verdict line `D1 CHECK`). Reads files as bytes."""
+import hashlib
+import os
+import re
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+KIT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c2_kit")
+MSG = "/tmp/p4_4c2_msg.txt"
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+src = os.path.join(KIT, "p4_4c2_P4_CONFIRM_RUN_SPEC.md")
+dst = os.path.join(REPO, "docs", "P4_CONFIRM_RUN_SPEC.md")
+hs = hashlib.sha256(open(src, "rb").read()).hexdigest()
+hd = hashlib.sha256(open(dst, "rb").read()).hexdigest()
+print(f"source {src}: {hs}")
+print(f"copy   {dst}: {hd}")
+ok = hs == hd == E["KIT_SPEC_SHA256"]
+print(f"copy == source == KIT_SPEC_SHA256: {ok}")
+print(f"D1 CHECK: {ok}")
+sys.exit(0 if ok else 1)
+--- /tmp/p4_4c2_d1.out (sha256 db33c5f93d424b3ba20ac3cd663fde89836bc178a6f2051fd86c484ae39086fb)
+source /Users/isaiahchoi/Desktop/FX_Project/files/pass4/p4_4c2_kit/p4_4c2_P4_CONFIRM_RUN_SPEC.md: 4fe3712f0f3ffdcc6b87b6443e383c1d840c3d5d7fdcce210c5bf6322d916ab3
+copy   /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/docs/P4_CONFIRM_RUN_SPEC.md: 4fe3712f0f3ffdcc6b87b6443e383c1d840c3d5d7fdcce210c5bf6322d916ab3
+copy == source == KIT_SPEC_SHA256: True
+D1 CHECK: True
+exit 0
+
+== d.2: the module, the script and the test file, as git show HEAD:<path> prints them
+--- HEAD:ofilt/drift/confirm_run.py
+"""The confirmation run (P4-4c2; P4Q39), as docs/P4_CONFIRM_RUN_SPEC.md (version 1) specifies.
+
+`build_document` assembles the whole confirmation document, in order: P4-4a's inference rows
+(confirm_inference.infer, which checks the provenance pair and runs the guard first), P4-4b1's forecasting rows and
+P4-4b2's economic row (one confirm_forecast.run_calls), and P4-4c1's claim and rule rows; it refuses a document with a
+missing or pending row. `manifest` describes the document from its own fields and pinned constants; `write_outputs`
+writes document.json, manifest.json and runtime.json into a new folder; `documents_equal` compares two such folders
+without their runtime files (P4Q5: two runs on the same inputs give byte-identical documents and manifests). The
+runtime fields (UTC times, wall time, the registry's run ids) live in runtime.json only. Each forecasting call records
+to the registry its provenance selects (P4Q6). The module reads no file itself, except in documents_equal, and writes
+files only in write_outputs.
+"""
+from __future__ import annotations
+
+import dataclasses
+import datetime
+import json
+import time
+from pathlib import Path
+from typing import Any
+
+from . import confirm_claims, confirm_economic, confirm_forecast, confirm_inference
+from .spec import Spec
+
+SPEC_FILES = (
+    ("docs/P4_CONFIRM_INF_SPEC.md", 2, "a7ebb94f003c3b893e96b222b796ea9fda09c849217c526bfdfc8d2b6be51f65"),
+    ("docs/P4_CONFIRM_FC_SPEC.md", 1, "a8d3a9c91ca7a3d6bf551f95a56e3e4cf43ec14ed6b4f0d450c751589f795bd6"),
+    ("docs/P4_CONFIRM_ECON_SPEC.md", 1, "42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785"),
+    ("docs/P4_CONFIRM_CLAIMS_SPEC.md", 1, "b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2"),
+)
+OUTPUT_FILES = ("document.json", "manifest.json", "runtime.json")
+COMPARED_FILES = ("document.json", "manifest.json")
+DEV_RUN_SANCTION_VAR = "OFILT_P4_DEV_RUN"
+DEV_RUN_SANCTION_VALUE = "P4-6"
+MANIFEST_OUTPUT = "the confirmation document of Pass 4 (P4Q35 to P4Q39)"
+SCHEMA_VERSION_MEANING = ("the version of the document's schema, docs/P4_CONFIRM_INF_SPEC.md section 4.1; the "
+                          "specifications' own versions are under specifications")
+RUNTIME_FIELDS = ("runtime.json only: utc_start, utc_end, wall_seconds and the registry's run ids; document.json and "
+                  "manifest.json are identical across runs on the same inputs (P4Q5)")
+
+
+@dataclasses.dataclass
+class Assembled:
+    doc: dict
+    calls: Any
+    runtime: dict
+
+
+def _utc() -> str:
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+
+
+def _sha256(data: bytes) -> str:
+    """The SHA-256 of bytes. Section 1.1's import list holds no hashlib, so the hash function is reached through
+    confirm_inference, which imports it to pin the configuration (a reading recorded at P4-4c2)."""
+    return confirm_inference.hashlib.sha256(data).hexdigest()
+
+
+def _dumps(obj) -> str:
+    return json.dumps(obj, indent=2, ensure_ascii=False, allow_nan=False) + "\n"
+
+
+# ------------------------------------------------------------------ section 3.1
+def build_document(dev, events, confirm=None, *, spec: Spec | None = None, factories=None) -> Assembled:
+    """The whole document for the dev frame alone (dev mode) or with the confirmation frame, and its runtime."""
+    start, t0 = _utc(), time.perf_counter()
+    doc = confirm_inference.infer(dev, events, confirm, spec=spec)
+    calls = confirm_forecast.run_calls(dev, events, confirm, spec=spec, factories=factories)
+    doc = confirm_forecast.fill(doc, confirm_forecast.forecast_rows(calls))
+    doc = confirm_economic.fill(doc, confirm_economic.economic_row(calls, dev, events, confirm, spec=spec))
+    doc = confirm_claims.fill(doc, confirm_claims.claim_rows(doc, dev, events, confirm, spec=spec))
+    if list(doc["rows"]) != list(confirm_inference.ROW_IDS):
+        raise ValueError("the document does not hold exactly the 71 IDs of ROW_IDS, in order")
+    pending = [rid for rid, e in doc["rows"].items() if e["status"] == "pending"]
+    if pending:
+        raise ValueError(f"the document has pending rows: {pending}")
+    runtime = {"utc_start": start, "utc_end": _utc(), "wall_seconds": time.perf_counter() - t0,
+               "run_ids": {"main": calls.main.run_id, "m7": calls.m7.run_id}}
+    return Assembled(doc, calls, runtime)
+
+
+# ------------------------------------------------------------------ section 3.2
+def manifest(doc: dict, *, spec: Spec | None = None) -> dict:
+    """The manifest, from the document and constants only (deterministic)."""
+    spec = spec or Spec.load()
+    return {"output": MANIFEST_OUTPUT, "files": list(OUTPUT_FILES),
+            "document_schema_version": doc["spec_version"], "document_schema_version_meaning": SCHEMA_VERSION_MEANING,
+            "specifications": [{"path": p, "version": v, "sha256": h} for p, v, h in SPEC_FILES],
+            "config_sha256": confirm_inference.CONFIG_SHA256, "cost_inputs_sha256": confirm_economic.COST_INPUTS_SHA256,
+            "analysis_spec_sha256": spec.sha256, "mode": doc["mode"], "provenance": doc["provenance"],
+            "dates": doc["dates"], "runtime_fields": RUNTIME_FIELDS}
+
+
+# ------------------------------------------------------------------ sections 3.3 and 3.4
+def write_outputs(out_dir, assembled: Assembled, *, spec: Spec | None = None) -> dict:
+    """Writes the three files into a new folder; returns {name: SHA-256 of the bytes written}."""
+    out = Path(out_dir)
+    if out.exists():
+        raise FileExistsError(f"{out} exists")
+    out.mkdir(parents=True)
+    texts = {"document.json": confirm_inference.to_json(assembled.doc),
+             "manifest.json": _dumps(manifest(assembled.doc, spec=spec)),
+             "runtime.json": _dumps(assembled.runtime)}
+    hashes = {}
+    for name in OUTPUT_FILES:
+        data = texts[name].encode("utf-8")
+        (out / name).write_bytes(data)
+        hashes[name] = _sha256(data)
+    return hashes
+
+
+def documents_equal(a_dir, b_dir) -> bool:
+    """True when document.json and manifest.json are byte-identical in the two folders."""
+    a, b = Path(a_dir), Path(b_dir)
+    return all((a / name).read_bytes() == (b / name).read_bytes() for name in COMPARED_FILES)
+--- HEAD:tools/p4_confirm_run.py
+"""P4-4c2 (P4Q39): the confirmation run script, as docs/P4_CONFIRM_RUN_SPEC.md (version 1), section 4, specifies.
+
+  --source synthetic --seed INT [--scenario JSON] [--dev-dates N] --out DIR
+      a simulated panel (ofilt.drift.sim_full, the absolute seed given; the scenario's keyword arguments as a JSON
+      object, lists becoming tuples; the last N dates of its dev calendar); the forecasting calls record to the
+      temporary synthetic registry.
+  --source dev --out DIR
+      the dev run of P4-6, only under its sanction (OFILT_P4_DEV_RUN=P4-6 in the environment): the dev panel and the
+      firm events through their loaders, each verified by its hash; the forecasting calls record to
+      RUN_REGISTRY.jsonl (P4Q6). Not run in P4-4c2.
+  --source confirm --out DIR
+      refused: the confirmation panel is not opened in Pass 4 (P4Q3; P13(c)).
+
+Each branch is decided before anything is loaded or simulated. --out must not exist. The whole document is built by
+confirm_run.build_document and written by confirm_run.write_outputs (document.json, manifest.json, runtime.json); the
+script prints each file's path and SHA-256 and returns 0. A refusal prints one REFUSED line, writes nothing and
+returns 2.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from ofilt.drift import confirm_run, io, sim_full  # noqa: E402
+
+EXIT_REFUSED = 2
+CONFIRM_REFUSAL = ("REFUSED: the confirmation panel is not opened in Pass 4 (P4Q3; P13(c)); the confirmation run is "
+                   "Pass 6's")
+DEV_REFUSAL = "REFUSED: the dev run needs its sanction (P4-6): set OFILT_P4_DEV_RUN=P4-6"
+
+
+def _dev_frames():
+    # The sanction is checked first; without it nothing is called. Returns (dev, events, None) or None if refused.
+    if os.environ.get(confirm_run.DEV_RUN_SANCTION_VAR) != confirm_run.DEV_RUN_SANCTION_VALUE:
+        print(DEV_REFUSAL)
+        return None
+    dev = io.load_dev()
+    events = io.load_events_firm()
+    return dev, events, None
+
+
+def _synthetic_frames(seed: int, scenario: dict, dev_dates: int | None):
+    """(dev, events, confirm) of one simulation."""
+    sc = sim_full.Scenario(**{k: tuple(v) if isinstance(v, list) else v for k, v in scenario.items()})
+    dates = None if dev_dates is None else sim_full.dev_calendar()[-dev_dates:]
+    out = sim_full.simulate(seed, sc, dev_dates=dates)
+    return out.dev, out.events, out.confirm
+
+
+def main(argv: list | None = None) -> int:
+    ap = argparse.ArgumentParser(description="The confirmation run (P4Q39).")
+    ap.add_argument("--source", required=True, choices=("synthetic", "dev", "confirm"))
+    ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--scenario", default=None)
+    ap.add_argument("--dev-dates", type=int, default=None)
+    a = ap.parse_args(argv)
+    if a.source == "confirm":
+        print(CONFIRM_REFUSAL)
+        return EXIT_REFUSED
+    if a.source == "synthetic":
+        if a.seed is None:
+            ap.error("--seed is required with --source synthetic")
+    elif a.seed is not None or a.scenario is not None or a.dev_dates is not None:
+        ap.error("--seed, --scenario and --dev-dates are for --source synthetic only")
+    if a.out.exists():
+        print(f"REFUSED: --out {a.out} exists")
+        return EXIT_REFUSED
+    if a.source == "dev":
+        frames = _dev_frames()
+        if frames is None:
+            return EXIT_REFUSED
+    else:
+        scenario = json.loads(a.scenario) if a.scenario is not None else {}
+        if not isinstance(scenario, dict):
+            ap.error("--scenario must be a JSON object")
+        frames = _synthetic_frames(a.seed, scenario, a.dev_dates)
+    assembled = confirm_run.build_document(*frames)
+    hashes = confirm_run.write_outputs(a.out, assembled)
+    for name in confirm_run.OUTPUT_FILES:
+        print(f"{a.out / name} {hashes[name]}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+--- HEAD:tests/test_p4_confirm_run.py
+"""P4-4c2 (P4Q39): ofilt/drift/confirm_run.py and tools/p4_confirm_run.py against docs/P4_CONFIRM_RUN_SPEC.md
+(version 1). Exactly the 12 test methods of its §5.2. Seeds are the spec seed + 8,600,000 + k (§5.1), disjoint from
+every earlier block. Every frame is synthetic; frames labelled dev_real or confirm_real appear only in test 11's refused
+pairs. The script's dev branch is never run (only its refusals are tested), and the confirmation loader is called only
+in test 8, with ACCESS_LOG and the data folder patched to temporary paths. setUpModule patches the run registry to a
+temporary folder and io.ACCESS_LOG_PATH to a file in it; every output folder lies in a temporary directory. M7 is the
+zero-forecast stand-in of P4-4b2's tests: through factories in build_document, patched into models.REGISTRY for the
+script."""
+import ast
+import contextlib
+import hashlib
+import io as stdio
+import json
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+import p4_confirm_run as SCRIPT  # noqa: E402
+from ofilt.drift import blind as B  # noqa: E402
+from ofilt.drift import confirm_claims as CC  # noqa: E402
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import confirm_inference as CI  # noqa: E402
+from ofilt.drift import confirm_run as CR  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import io as IO  # noqa: E402
+from ofilt.drift import models as MD  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift.spec import REPO_ROOT, Spec  # noqa: E402
+
+SPEC = Spec.load()
+SA = SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5)
+SHORT = SF.dev_calendar()[-900:]
+MODULE = ROOT / "ofilt" / "drift" / "confirm_run.py"
+SCRIPT_PATH = ROOT / "tools" / "p4_confirm_run.py"
+MANIFEST_KEYS = ["output", "files", "document_schema_version", "document_schema_version_meaning", "specifications",
+                 "config_sha256", "cost_inputs_sha256", "analysis_spec_sha256", "mode", "provenance", "dates",
+                 "runtime_fields"]
+BOUND = 30000.0   # the last bound of the tick tables in force for 5706 (§5.2, test 5)
+_PATCHES: list = []
+_TMP = None
+_CACHE: dict = {}
+
+
+class ZeroM7(FC.ForecastModel):
+    """The M7 stand-in of P4-4b2's tests: no feature, a zero forecast, no noise column."""
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+def setUpModule():
+    global _TMP
+    _TMP = tempfile.TemporaryDirectory()
+    folder = Path(_TMP.name)
+    for obj, attr, name in ((RG, "SYNTHETIC_PATH", "synthetic.jsonl"), (RG, "REAL_PATH", "real.jsonl"),
+                            (IO, "ACCESS_LOG_PATH", "ACCESS_LOG")):
+        p = mock.patch.object(obj, attr, folder / name)
+        p.start()
+        _PATCHES.append(p)
+
+
+def tearDownModule():
+    for p in reversed(_PATCHES):
+        p.stop()
+    _TMP.cleanup()
+
+
+def seed(k):
+    return SPEC.seed + 8_600_000 + k
+
+
+def reg_lines():
+    p = RG.SYNTHETIC_PATH
+    if not p.exists():
+        return 0
+    with open(p, encoding="utf-8") as fh:
+        return sum(1 for _ in fh)
+
+
+def scaled(df):
+    """A copy with 5706's open, close and prev_close multiplied by 0.1, attrs kept (as P4-4c1's tests)."""
+    out = df.copy()
+    m = (out["ticker"].astype(str) == "5706").to_numpy()
+    for c in ("open", "close", "prev_close"):
+        out[c] = np.where(m, out[c].to_numpy(dtype=float) * 0.1, out[c].to_numpy(dtype=float))
+    out.attrs = dict(df.attrs)
+    return out
+
+
+def frames(k):
+    """S_k's frames (dev, events, confirm), on the last 900 dev dates, 5706's prices scaled."""
+    if ("frames", k) not in _CACHE:
+        o = SF.simulate(seed(k), SA, dev_dates=SHORT)
+        _CACHE[("frames", k)] = (scaled(o.dev), o.events, scaled(o.confirm))
+    return _CACHE[("frames", k)]
+
+
+def built(label):
+    """build_document on S1's frames; labels "a" and "b" are two builds on the same frames."""
+    if ("built", label) not in _CACHE:
+        dev, events, conf = frames(1)
+        _CACHE[("built", label)] = CR.build_document(dev, events, conf, spec=SPEC, factories={"M7": ZeroM7})
+    return _CACHE[("built", label)]
+
+
+def relabel(df, provenance):
+    r = df.copy()
+    attrs = {k: v for k, v in df.attrs.items() if k != "provenance"}
+    if provenance is not None:
+        attrs["provenance"] = provenance
+    r.attrs = attrs
+    return r
+
+
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def no_access_log_in_repo():
+    found = []
+    for root, dirs, names in os.walk(ROOT):
+        dirs[:] = [d for d in dirs if not (Path(root) == ROOT and d == ".git")]
+        found += [n for n in dirs + names if n.startswith("ACCESS_LOG")]
+    return found == []
+
+
+def segment(segments, date, field):
+    """The value of the last segment whose start (None = the panel's start) is on or before date."""
+    val = None
+    for s in segments:
+        if s["start"] is None or pd.Timestamp(s["start"]) <= date:
+            val = s[field]
+    return val
+
+
+def recorder(log, name):
+    def rec(*args, **kwargs):
+        log.append(name)
+    return rec
+
+
+class TestConfirmRun(unittest.TestCase):
+    # 1
+    def test_build_document_complete(self):
+        doc = built("a").doc
+        self.assertEqual(list(doc["rows"]), list(CI.ROW_IDS))
+        self.assertEqual(len(doc["rows"]), 71)
+        for rid, e in doc["rows"].items():
+            self.assertNotEqual(e["status"], "pending", rid)
+            self.assertEqual((e["id"], e["item"]), (rid, CI.ITEM_OF[rid]))
+        text = CI.to_json(doc)
+        self.assertNotIn("NaN", text)
+        self.assertNotIn("Infinity", text)
+        self.assertEqual(json.loads(text), doc)
+        self.assertIs(CC.licensed(doc), False)
+        self.assertEqual((doc["mode"], doc["provenance"]), ("confirmation", B.SYNTHETIC))
+
+    # 2
+    def test_two_builds_identical(self):
+        a, b = built("a"), built("b")
+        self.assertEqual(CI.to_json(a.doc).encode("utf-8"), CI.to_json(b.doc).encode("utf-8"))
+        ma, mb = CR.manifest(a.doc, spec=SPEC), CR.manifest(b.doc, spec=SPEC)
+        self.assertEqual(json.dumps(ma, indent=2), json.dumps(mb, indent=2))
+        for name in ("main", "m7"):
+            self.assertIsNotNone(a.runtime["run_ids"][name])
+            self.assertNotEqual(a.runtime["run_ids"][name], b.runtime["run_ids"][name], name)
+        self.assertEqual(set(a.runtime), {"utc_start", "utc_end", "wall_seconds", "run_ids"})
+        for key in ("utc_start", "utc_end"):
+            self.assertTrue(a.runtime[key].endswith("Z"), a.runtime[key])
+
+    # 3
+    def test_write_outputs(self):
+        a = built("a")
+        with tempfile.TemporaryDirectory() as t:
+            out = Path(t) / "nested" / "out"
+            hashes = CR.write_outputs(out, a, spec=SPEC)
+            self.assertEqual(sorted(p.name for p in out.iterdir()), sorted(CR.OUTPUT_FILES))
+            self.assertEqual((out / "document.json").read_bytes(), CI.to_json(a.doc).encode("utf-8"))
+            self.assertEqual(hashes, {n: sha((out / n).read_bytes()) for n in CR.OUTPUT_FILES})
+            self.assertEqual(json.loads((out / "manifest.json").read_text(encoding="utf-8")),
+                             CR.manifest(a.doc, spec=SPEC))
+            self.assertEqual(json.loads((out / "runtime.json").read_text(encoding="utf-8"))["run_ids"],
+                             a.runtime["run_ids"])
+            for n in CR.OUTPUT_FILES:
+                self.assertNotIn(b"\r", (out / n).read_bytes(), n)
+            with self.assertRaises(FileExistsError):
+                CR.write_outputs(out, a, spec=SPEC)
+
+    # 4
+    def test_manifest_pins(self):
+        self.assertEqual([p for p, _, _ in CR.SPEC_FILES], ["docs/P4_CONFIRM_INF_SPEC.md", "docs/P4_CONFIRM_FC_SPEC.md",
+                                                             "docs/P4_CONFIRM_ECON_SPEC.md",
+                                                             "docs/P4_CONFIRM_CLAIMS_SPEC.md"])
+        for path, version, digest in CR.SPEC_FILES:
+            data = (ROOT / path).read_bytes()
+            self.assertEqual(sha(data), digest, path)
+            first = data.decode("utf-8").split("\n## ", 1)[0]
+            self.assertIn(f"Version {version},", first, path)
+        m = CR.manifest(built("a").doc, spec=SPEC)
+        self.assertEqual(list(m), MANIFEST_KEYS)
+        self.assertEqual(m["config_sha256"], sha((ROOT / "docs" / "P4_CONFIRM_CONFIG.json").read_bytes()))
+        self.assertEqual(m["cost_inputs_sha256"], sha((ROOT / "docs" / "P3_COST_INPUTS.json").read_bytes()))
+        self.assertEqual(m["analysis_spec_sha256"], Spec.load().sha256)
+        self.assertEqual(m["specifications"], [{"path": p, "version": v, "sha256": h} for p, v, h in CR.SPEC_FILES])
+        self.assertEqual(m["files"], list(CR.OUTPUT_FILES))
+        self.assertEqual(m["document_schema_version"], built("a").doc["spec_version"])
+
+    # 5
+    def test_script_synthetic_twice(self):
+        argv = ["--source", "synthetic", "--seed", str(seed(2)), "--scenario", '{"b": 1.0, "a2": 0.6, "delta_cc": 1.5}',
+                "--dev-dates", "900"]
+        with tempfile.TemporaryDirectory() as t:
+            a, b = Path(t) / "a", Path(t) / "b"
+            before = reg_lines()
+            out = stdio.StringIO()
+            with mock.patch.dict(MD.REGISTRY, {"M7": ZeroM7}), contextlib.redirect_stdout(out):
+                rc = [SCRIPT.main(argv + ["--out", str(a)]), SCRIPT.main(argv + ["--out", str(b)])]
+            gained = reg_lines() - before
+            self.assertEqual(rc, [0, 0])
+            self.assertTrue(CR.documents_equal(a, b))
+            self.assertNotEqual((a / "runtime.json").read_bytes(), (b / "runtime.json").read_bytes())
+            self.assertEqual(gained, 4)
+            self.assertFalse(RG.REAL_PATH.exists())
+            self.assertEqual((ROOT / "RUN_REGISTRY.jsonl").stat().st_size, 0)
+            printed = out.getvalue().splitlines()
+            self.assertEqual(printed, [f"{d / n} {sha((d / n).read_bytes())}" for d in (a, b) for n in CR.OUTPUT_FILES])
+            o45 = json.loads((a / "document.json").read_text(encoding="utf-8"))["rows"]["O45"]
+        self.assertEqual(o45["status"], "estimated")
+        # the evaluated rows' traded prices, recomputed: the same simulation (unscaled), its main call, its prices
+        o = SF.simulate(seed(2), SA, dev_dates=SHORT)
+        calls = CF.run_calls(o.dev, o.events, o.confirm, spec=SPEC, factories={"M7": ZeroM7})
+        _, _, px = CE.economic_px(calls, o.dev, o.events, o.confirm, spec=SPEC)
+        inputs = json.loads((ROOT / "docs" / "P3_COST_INPUTS.json").read_text(encoding="utf-8"))
+        tables = inputs["tick_tables"]
+        above_5706, primary_fails, high_fails = False, False, False
+        for d, tk, op, cl in zip(px["date"], px["ticker"].astype(str), px["open"], px["close"]):
+            f = float(factor_value(segment(inputs["price_factor"][tk], d, "f")))
+            for traded in (op / f, cl / f):
+                above_5706 |= tk == "5706" and traded > BOUND
+                primary_fails |= traded > tables[inputs["primary_table"][tk]]["rows"][-1][0]
+                high_fails |= traded > tables[segment(inputs["dev_table"][tk], d, "table")]["rows"][-1][0]
+        expected = {c for c, failed in (("primary", primary_fails), ("high", high_fails)) if failed}
+        self.assertEqual(expected, {"primary", "high"} if above_5706 else set())
+        self.assertEqual(set(o45["values"]["cases_failed"]), expected)
+
+    # 6
+    def test_script_refuses_confirm(self):
+        log = []
+        access = IO.ACCESS_LOG_PATH
+        size = access.stat().st_size if access.exists() else None
+        with tempfile.TemporaryDirectory() as t:
+            D = Path(t) / "out"
+            out = stdio.StringIO()
+            with mock.patch.object(IO, "load_confirm", recorder(log, "confirm")), \
+                    mock.patch.object(IO, "load_dev", recorder(log, "dev")), \
+                    mock.patch.object(SF, "simulate", recorder(log, "simulate")), contextlib.redirect_stdout(out):
+                rc = SCRIPT.main(["--source", "confirm", "--out", str(D)])
+            self.assertEqual(rc, 2)
+            self.assertEqual(log, [])
+            self.assertFalse(D.exists())
+        self.assertEqual(access.stat().st_size if access.exists() else None, size)
+        self.assertEqual(out.getvalue(), "REFUSED: the confirmation panel is not opened in Pass 4 (P4Q3; P13(c)); "
+                                         "the confirmation run is Pass 6's\n")
+
+    # 7
+    def test_script_refuses_dev_without_sanction(self):
+        for value in (None, "P4-5"):
+            log = []
+            with tempfile.TemporaryDirectory() as t:
+                D = Path(t) / "out"
+                out = stdio.StringIO()
+                with mock.patch.dict(os.environ), mock.patch.object(IO, "load_dev", recorder(log, "dev")), \
+                        mock.patch.object(IO, "load_events_firm", recorder(log, "events")), \
+                        contextlib.redirect_stdout(out):
+                    os.environ.pop(CR.DEV_RUN_SANCTION_VAR, None)
+                    if value is not None:
+                        os.environ[CR.DEV_RUN_SANCTION_VAR] = value
+                    rc = SCRIPT.main(["--source", "dev", "--out", str(D)])
+                self.assertEqual(rc, 2, value)
+                self.assertEqual(log, [], value)
+                self.assertFalse(D.exists(), value)
+                self.assertEqual(out.getvalue(), "REFUSED: the dev run needs its sanction (P4-6): set "
+                                                 "OFILT_P4_DEV_RUN=P4-6\n")
+        self.assertNotIn(CR.DEV_RUN_SANCTION_VAR, os.environ)
+
+    # 8
+    def test_load_confirm_refused_and_logged(self):
+        with tempfile.TemporaryDirectory() as t:
+            log = Path(t) / "logs" / "ACCESS_LOG"
+            log.parent.mkdir()
+            empty = Path(t) / "empty"
+            empty.mkdir()
+            with mock.patch.object(IO, "ACCESS_LOG_PATH", log), mock.patch.object(IO, "DATA_DIR", empty):
+                with self.assertRaises(IO.AccessDenied):
+                    IO.load_confirm()
+            lines = log.read_text(encoding="utf-8").splitlines()
+            self.assertEqual(len(lines), 1)
+            rec = json.loads(lines[0])
+            self.assertEqual((rec["result"], rec["tag"]), ("DENIED", "prereg-v1"))
+            self.assertEqual(IO.CONFIRM_TAG, "prereg-v1")
+            self.assertTrue(no_access_log_in_repo())
+            self.assertEqual(list(empty.iterdir()), [])
+
+    # 9
+    def test_registry_routing(self):
+        self.assertEqual(RG.registry_path(B.SYNTHETIC), RG.SYNTHETIC_PATH)
+        for prov in (B.DEV_REAL, B.CONFIRM_REAL):
+            self.assertEqual(RG.registry_path(prov), RG.REAL_PATH, prov)
+        for prov in ("", "real", "dev", None, "unknown"):
+            with self.assertRaises(B.BlindingError):
+                RG.registry_path(prov)
+        tree = ast.parse((ROOT / "ofilt" / "drift" / "registry.py").read_text(encoding="utf-8"))
+        assigns = [n for n in tree.body if isinstance(n, ast.Assign)
+                   and any(isinstance(t, ast.Name) and t.id == "REAL_PATH" for t in n.targets)]
+        self.assertEqual(len(assigns), 1)
+        v = assigns[0].value
+        self.assertIsInstance(v, ast.BinOp)
+        self.assertIsInstance(v.op, ast.Div)
+        self.assertEqual((type(v.left), getattr(v.left, "id", None)), (ast.Name, "REPO_ROOT"))
+        self.assertEqual((type(v.right), getattr(v.right, "value", None)), (ast.Constant, "RUN_REGISTRY.jsonl"))
+        self.assertEqual(REPO_ROOT.resolve(), ROOT)
+        self.assertTrue((ROOT / "RUN_REGISTRY.jsonl").is_file())
+
+    # 10
+    def test_dev_mode_document(self):
+        o = SF.simulate(seed(3), SA)
+        a = CR.build_document(scaled(o.dev), o.events, spec=SPEC, factories={"M7": ZeroM7})
+        rows = a.doc["rows"]
+        self.assertEqual(a.doc["mode"], "dev")
+        self.assertEqual([rid for rid, e in rows.items() if e["status"] == "pending"], [])
+        for rid in ("O8", "O27", "R23", "R25"):
+            self.assertEqual(rows[rid]["status"], "not_applicable", rid)
+        self.assertIs(rows["R10"]["values"]["claimed"], False)
+        self.assertLess(a.doc["dates"]["last"], "2022-01-01")
+
+    # 11
+    def test_refused_pairs_before_anything(self):
+        dev, events, conf = frames(1)
+        cases = [(dev, relabel(conf, B.DEV_REAL)), (dev, relabel(conf, B.CONFIRM_REAL)),
+                 (relabel(dev, B.DEV_REAL), conf), (relabel(dev, None), conf), (relabel(dev, B.CONFIRM_REAL), None)]
+        for d, c in cases:
+            labels, lines = B.registered_labels(), reg_lines()
+            with self.assertRaises(ValueError):
+                CR.build_document(d, events, c, spec=SPEC, factories={"M7": ZeroM7})
+            self.assertEqual(B.registered_labels(), labels)
+            self.assertEqual(reg_lines(), lines)
+
+    # 12
+    def test_sources(self):
+        tree = ast.parse(MODULE.read_text(encoding="utf-8"))
+        absolute = {"__future__", "dataclasses", "datetime", "json", "math", "pathlib", "time", "typing"}
+        package = {"blind", "confirm_inference", "confirm_forecast", "confirm_economic", "confirm_claims"}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                for a in node.names:
+                    self.assertIn(a.name, absolute)
+            elif isinstance(node, ast.ImportFrom):
+                names = {a.name for a in node.names}
+                if node.level == 0:
+                    self.assertIn(node.module, absolute)
+                elif node.module is None:
+                    self.assertEqual(node.level, 1)
+                    self.assertLessEqual(names, package)
+                else:
+                    self.assertEqual((node.level, node.module), (1, "spec"))
+                    self.assertLessEqual(names, {"Spec"})
+        where = {}                      # call name -> the top-level functions (None: module level) that call it
+        for top in tree.body:
+            owner = top.name if isinstance(top, (ast.FunctionDef, ast.ClassDef)) else None
+            for node in ast.walk(top):
+                if isinstance(node, ast.Call):
+                    f = node.func
+                    name = f.id if isinstance(f, ast.Name) else f.attr if isinstance(f, ast.Attribute) else None
+                    where.setdefault(name, set()).add(owner)
+                    if name == "open" and owner == "write_outputs":
+                        modes = [a.value for a in node.args[1:2] + [k.value for k in node.keywords if k.arg == "mode"]
+                                 if isinstance(a, ast.Constant)]
+                        self.assertTrue(modes and "r" not in modes[0], "open for reading in write_outputs")
+        for name in ("open", "write_text", "write_bytes"):
+            self.assertLessEqual(where.get(name, set()), {"write_outputs", "documents_equal"}, name)
+        for name in ("read_bytes", "read_text"):
+            self.assertLessEqual(where.get(name, set()), {"documents_equal"}, name)
+        script_src = SCRIPT_PATH.read_text(encoding="utf-8")
+        for path, src in ((MODULE, MODULE.read_text(encoding="utf-8")), (SCRIPT_PATH, script_src)):
+            self.assertNotIn("load_confirm", src, path.name)
+        st = ast.parse(script_src)
+        parents = {}
+        for node in ast.walk(st):
+            for child in ast.iter_child_nodes(node):
+                parents[child] = node
+
+        def enclosing_function(node):
+            while node in parents:
+                node = parents[node]
+                if isinstance(node, ast.FunctionDef):
+                    return node.name
+            return None
+
+        loader_calls = [(n.func.attr, enclosing_function(n)) for n in ast.walk(st) if isinstance(n, ast.Call)
+                        and isinstance(n.func, ast.Attribute) and n.func.attr in ("load_dev", "load_events_firm")]
+        self.assertEqual(sorted(a for a, _ in loader_calls), ["load_dev", "load_events_firm"])
+        self.assertEqual({f for _, f in loader_calls}, {"_dev_frames"})
+        fn = next(n for n in st.body if isinstance(n, ast.FunctionDef) and n.name == "_dev_frames")
+        body = fn.body[1:] if (isinstance(fn.body[0], ast.Expr) and isinstance(fn.body[0].value, ast.Constant)) \
+            else fn.body
+        first = body[0]
+        self.assertIsInstance(first, ast.If)
+        test_src = ast.unparse(first.test)
+        self.assertIn("DEV_RUN_SANCTION_VAR", test_src)
+        self.assertIn("DEV_RUN_SANCTION_VALUE", test_src)
+        self.assertIsInstance(first.body[-1], ast.Return)
+        self.assertFalse([n for n in ast.walk(first) if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute)
+                          and n.func.attr in ("load_dev", "load_events_firm")])
+        dev_calls = [n for n in ast.walk(st) if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                     and n.func.id == "_dev_frames"]
+        self.assertTrue(dev_calls)
+        for call in dev_calls:
+            node, guarded = call, False
+            while node in parents:
+                child, node = node, parents[node]
+                if isinstance(node, ast.If) and child in node.body:
+                    t = node.test
+                    if (isinstance(t, ast.Compare) and isinstance(t.left, ast.Attribute) and t.left.attr == "source"
+                            and len(t.ops) == 1 and isinstance(t.ops[0], ast.Eq)
+                            and isinstance(t.comparators[0], ast.Constant) and t.comparators[0].value == "dev"):
+                        guarded = True
+            self.assertTrue(guarded, ast.dump(call))
+
+
+def factor_value(text):
+    """A price factor as a float: "10", "1", "2" or "1/10" (docs/P3_COST_INPUTS.json, price_factor)."""
+    num, _, den = str(text).partition("/")
+    return float(num) / float(den or 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
+
+== d.2: the scratch script (synthetic; registry patched to REGDIR; OFILT_DATA_DIR = NODATA)
+--- /tmp/p4_4c2_scratch_1.py (sha256 d0f1e61fdf9b14170126ec2617992662ca4bc2f4fa21e9c30faa1ca5c15eaee3)
+"""P4-4c2 scratch 1 (synthetic only; registry patched to REGDIR; run under NODATA): which branch test 5's
+recomputation takes. On S2's frames unscaled (seed + 8,600,002; the SHORT dev calendar; the scenario of the script
+test), runs the main and M7 calls with the zero-forecast M7, takes O45's price frame, and prints the largest traded
+price per ticker and side, whether any 5706 price is above 30,000 yen, and O45's cases_failed. Asserts nothing."""
+import json
+import os
+import sys
+from pathlib import Path
+from unittest import mock
+
+REPO = Path(os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1"))
+REGDIR = Path("/tmp/p4_4c2_registry")
+sys.path.insert(0, str(REPO))
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+
+from ofilt.drift import confirm_economic as CE  # noqa: E402
+from ofilt.drift import confirm_forecast as CF  # noqa: E402
+from ofilt.drift import forecast as FC  # noqa: E402
+from ofilt.drift import registry as RG  # noqa: E402
+from ofilt.drift import sim_full as SF  # noqa: E402
+from ofilt.drift.spec import Spec  # noqa: E402
+
+patches = [mock.patch.object(RG, "SYNTHETIC_PATH", REGDIR / "synthetic.jsonl"),
+           mock.patch.object(RG, "REAL_PATH", REGDIR / "real.jsonl")]
+for p in patches:
+    p.start()
+
+
+class ZeroM7(FC.ForecastModel):
+    name, features = "M7", ()
+
+    def fit(self, X, y, ctx):
+        pass
+
+    def predict(self, X, ctx):
+        return np.zeros(len(X))
+
+
+SPEC = Spec.load()
+o = SF.simulate(SPEC.seed + 8_600_002, SF.Scenario(b=1.0, a2=0.6, delta_cc=1.5), dev_dates=SF.dev_calendar()[-900:])
+calls = CF.run_calls(o.dev, o.events, o.confirm, spec=SPEC, factories={"M7": ZeroM7})
+_, _, px = CE.economic_px(calls, o.dev, o.events, o.confirm, spec=SPEC)
+inputs = json.loads((REPO / "docs" / "P3_COST_INPUTS.json").read_text(encoding="utf-8"))
+
+
+def factor(tk, d):
+    val = None
+    for s in inputs["price_factor"][tk]:
+        if s["start"] is None or pd.Timestamp(s["start"]) <= d:
+            val = s["f"]
+    num, _, den = val.partition("/")
+    return float(num) / float(den or 1)
+
+
+f = np.array([factor(t, d) for t, d in zip(px["ticker"].astype(str), px["date"])])
+print(f"evaluated M3 rows: {len(px)}; dates {px['date'].min().date()} to {px['date'].max().date()}")
+for tk in ("5706", "5711", "5713"):
+    m = (px["ticker"].astype(str) == tk).to_numpy()
+    for side in ("open", "close"):
+        tr = px[side].to_numpy(dtype=float)[m] / f[m]
+        print(f"{tk} {side}: rows {int(m.sum())}; traded max {tr.max():.2f}; above 30,000: {int((tr > 30000).sum())}")
+entry = CE.economic_row(calls, o.dev, o.events, o.confirm, spec=SPEC)
+print(f"O45 status: {entry['status']}; cases_failed: {entry['values']['cases_failed']}")
+for p in patches:
+    p.stop()
+print(f"NODATA contents: {sorted(os.listdir(os.environ['OFILT_DATA_DIR']))}")
+--- /tmp/p4_4c2_scratch_1.out (sha256 52c92496e907756011dfc8261b7ce3fa87c2d2b47c671621b0bd32794e9e6dcd)
+evaluated M3 rows: 2913; dates 2022-01-04 to 2026-03-05
+5706 open: rows 971; traded max 51319.04; above 30,000: 724
+5706 close: rows 971; traded max 51309.98; above 30,000: 716
+5711 open: rows 971; traded max 3313.82; above 30,000: 0
+5711 close: rows 971; traded max 3306.05; above 30,000: 0
+5713 open: rows 971; traded max 8066.99; above 30,000: 0
+5713 close: rows 971; traded max 8161.24; above 30,000: 0
+O45 status: estimated; cases_failed: {'primary': "ValueError: traded price 32139.31975471779 exceeds the table's last bound 30000", 'high': "ValueError: a traded price exceeds its dev table's last bound"}
+NODATA contents: []
+exit 0
+
+== d.3: the attempts of the new test file
+--- /tmp/p4_4c2_d3_run1.out (sha256 d97a22fad5059f03023745feb77c7c93f9680392e420ebb99a78169a236d41f5)
+test_build_document_complete (test_p4_confirm_run.TestConfirmRun.test_build_document_complete) ... ok
+test_dev_mode_document (test_p4_confirm_run.TestConfirmRun.test_dev_mode_document) ... ok
+test_load_confirm_refused_and_logged (test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged) ... ok
+test_manifest_pins (test_p4_confirm_run.TestConfirmRun.test_manifest_pins) ... ok
+test_refused_pairs_before_anything (test_p4_confirm_run.TestConfirmRun.test_refused_pairs_before_anything) ... ok
+test_registry_routing (test_p4_confirm_run.TestConfirmRun.test_registry_routing) ... ok
+test_script_refuses_confirm (test_p4_confirm_run.TestConfirmRun.test_script_refuses_confirm) ... ok
+test_script_refuses_dev_without_sanction (test_p4_confirm_run.TestConfirmRun.test_script_refuses_dev_without_sanction) ... ok
+test_script_synthetic_twice (test_p4_confirm_run.TestConfirmRun.test_script_synthetic_twice) ... ok
+test_sources (test_p4_confirm_run.TestConfirmRun.test_sources) ... ok
+test_two_builds_identical (test_p4_confirm_run.TestConfirmRun.test_two_builds_identical) ... ok
+test_write_outputs (test_p4_confirm_run.TestConfirmRun.test_write_outputs) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 42.896s
+
+OK
+
+== d.3: the four static modules
+--- /tmp/p4_4c2_d3_static.out (sha256 75f3a80a5778e717a223eeab37dd24b67c2722ccb6715f3bde0eac1c9208912f)
+=== test_schema
+test_allowed (test_schema.TestAllowlist.test_allowed) ... ok
+test_derived_sources (test_schema.TestAllowlist.test_derived_sources) ... ok
+test_every_non_feature_group_member_refused (test_schema.TestAllowlist.test_every_non_feature_group_member_refused) ... ok
+test_unknown_refused (test_schema.TestAllowlist.test_unknown_refused) ... ok
+test_every_panel_column_in_exactly_one_group (test_schema.TestGroups.test_every_panel_column_in_exactly_one_group) ... ok
+test_pairwise_disjoint (test_schema.TestGroups.test_pairwise_disjoint) ... ok
+test_sizes (test_schema.TestGroups.test_sizes) ... ok
+test_unknown_columns_fail_closed (test_schema.TestGroups.test_unknown_columns_fail_closed) ... ok
+test_package_source (test_schema.TestNoPatternColumnSelection.test_package_source) ... ok
+test_pre_open_features_and_m7_unchanged (test_schema.TestP50FeaturePins.test_pre_open_features_and_m7_unchanged) ... ok
+test_derived_values (test_schema.TestSelectFeatures.test_derived_values) ... ok
+test_forbidden_in_production_path (test_schema.TestSelectFeatures.test_forbidden_in_production_path) ... ok
+test_synthetic_column_must_be_supplied (test_schema.TestSelectFeatures.test_synthetic_column_must_be_supplied) ... ok
+test_secondary_family_strings_match_implementation (test_schema.TestSpecConsistency.test_secondary_family_strings_match_implementation) ... ok
+test_spec_columns_are_in_the_right_groups (test_schema.TestSpecConsistency.test_spec_columns_are_in_the_right_groups) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 0.891s
+
+OK
+=== test_sim_b5
+test_identity_map_returns_b_sim_exactly (test_sim_b5.TestDevCalibrated.test_identity_map_returns_b_sim_exactly) ... ok
+test_no_leak_and_recovery_under_bootstrap (test_sim_b5.TestDevCalibrated.test_no_leak_and_recovery_under_bootstrap) ... ok
+test_output_contract (test_sim_b5.TestDevCalibrated.test_output_contract) ... ok
+test_stationary_bootstrap (test_sim_b5.TestDevCalibrated.test_stationary_bootstrap) ... ok
+test_draw_passes_guard_and_contract (test_sim_b5.TestRealDev.test_draw_passes_guard_and_contract) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_logged_and_silent (test_sim_b5.TestRealDev.test_logged_and_silent) ... skipped 'real-data sealed fit is opt-in (OFILT_RUN_SEALED=1)'
+test_keys_orthogonality_span_silence_and_log (test_sim_b5.TestSealedFitMechanics.test_keys_orthogonality_span_silence_and_log) ... ok
+test_real_fit_is_opt_in (test_sim_b5.TestSealedFitMechanics.test_real_fit_is_opt_in) ... ok
+test_refusals_and_guard_intact (test_sim_b5.TestSealedFitMechanics.test_refusals_and_guard_intact) ... ok
+test_design_core_called_from_exactly_two_places (test_sim_b5.TestStatic.test_design_core_called_from_exactly_two_places) ... ok
+test_scanner_catches_bypasses (test_sim_b5.TestStatic.test_scanner_catches_bypasses) ... ok
+test_sealed_fit_ast_containment (test_sim_b5.TestStatic.test_sealed_fit_ast_containment) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 1.824s
+
+OK (skipped=2)
+=== test_docs_d3b
+test_lock_amendments_and_nothing_real_before_the_tag (test_docs_d3b.TestP36.test_lock_amendments_and_nothing_real_before_the_tag) ... ok
+test_tag_semantics_as_implemented (test_docs_d3b.TestP36.test_tag_semantics_as_implemented) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.150s
+
+OK
+=== test_docs_d6
+test_project_claims (test_docs_d6.TestProjectSetup.test_project_claims) ... skipped 'Claude Project not mounted'
+test_repo_claims (test_docs_d6.TestProjectSetup.test_repo_claims) ... ok
+test_restored_byte_for_byte (test_docs_d6.TestProjectSetup.test_restored_byte_for_byte) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.034s
+
+OK (skipped=1)
+
+== d.3: the check
+--- /tmp/p4_4c2_d3.py (sha256 a9457815cd73f6e1bc8ad361aab8a6a9c4b053dc4dfc7cac2322e24e62641ed4)
+"""P4-4c2 d.3: the new test file's attempts, the static runs and the state (verdict line `D3 CHECK`).
+
+Imports no module of ofilt; reads files as text or bytes and calls git. Expected values are read from
+/tmp/p4_4c2_msg.txt. Argument 1: the number of OFILT_RUN_SEALED= lines in the session's environment (as in a.2).
+"""
+import ast
+import glob
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c2_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def gtext(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout.decode().rstrip("\n")
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+# --- the attempts
+runs = {}
+for p in glob.glob("/tmp/p4_4c2_d3_run*.out"):
+    m = re.fullmatch(r"/tmp/p4_4c2_d3_run(\d+)\.out", p)
+    if m:
+        runs[int(m.group(1))] = p
+ks = sorted(runs)
+print(f"attempts: {ks}")
+check(bool(ks) and ks == list(range(1, len(ks) + 1)), "attempts numbered 1, 2, ... without a gap")
+check(bool(ks) and max(ks) <= int(E["MAX_ATTEMPTS"]), "no attempt beyond MAX_ATTEMPTS")
+last = open(runs[max(ks)], encoding="utf-8").read().splitlines() if ks else []
+ran = [ln for ln in last if ln.startswith(E["NEW_RAN"])]
+print(f"last attempt ({max(ks) if ks else None}): {ran}; result lines equal to NEW_OK: "
+      f"{sum(1 for ln in last if ln == E['NEW_OK'])}")
+check(bool(ran), "the last attempt has a line starting with NEW_RAN")
+check(E["NEW_OK"] in last, "the last attempt has a line equal to NEW_OK")
+t = re.search(r" in ([0-9.]+)s$", ran[0]) if ran else None
+print(f"last attempt's run time: {t.group(1) if t else None} s")
+
+# --- the static runs
+static = open("/tmp/p4_4c2_d3_static.out", encoding="utf-8").read()
+sections = re.split(r"^=== (\S+)\n", static, flags=re.M)[1:]
+mods = dict(zip(sections[0::2], sections[1::2]))
+print(f"static modules: {list(mods)}")
+check(list(mods) == ["test_schema", "test_sim_b5", "test_docs_d3b", "test_docs_d6"], "the four static modules ran")
+for name, text in mods.items():
+    body = [ln for ln in text.splitlines() if ln.strip()]
+    print(f"  {name}: {body[-2] if len(body) > 1 else ''} | {body[-1] if body else ''}")
+    check(bool(body) and body[-1].startswith("OK"), f"{name} ends with a result line starting OK")
+    check("FAILED" not in text, f"{name} shows no FAILED")
+
+# --- the test methods, by ast, against the specification's §5.2
+spec_text = open(os.path.join(REPO, "docs", "P4_CONFIRM_RUN_SPEC.md"), encoding="utf-8").read()
+sec = spec_text.split("### 5.2 The 12 tests", 1)[1].split("\n## ", 1)[0]
+listed = re.findall(r"^\d+\. `(test_\w+)`", sec, flags=re.M)
+tree = ast.parse(open(os.path.join(REPO, "tests", "test_p4_confirm_run.py"), encoding="utf-8").read())
+methods = [f.name for c in tree.body if isinstance(c, ast.ClassDef) for f in c.body
+           if isinstance(f, ast.FunctionDef) and f.name.startswith("test")]
+module_tests = [f.name for f in tree.body if isinstance(f, ast.FunctionDef) and f.name.startswith("test")]
+print(f"§5.2 lists {len(listed)}: {listed}")
+print(f"test methods in the file ({len(methods)}): {methods}; module-level test functions: {module_tests}")
+check(len(listed) == 12 and sorted(methods) == sorted(listed) and len(methods) == len(set(methods)),
+      "the test methods are exactly the 12 names of §5.2")
+check(module_tests == [], "no module-level function named test*")
+
+# --- tripwires
+tags = gtext("tag", "-l").split("\n")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), f"tags == TAG_LIST ({tags})")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+check(gtext("rev-parse", "HEAD") == E["HEAD_BEFORE"], "HEAD == HEAD_BEFORE")
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"]
+      and len(b.decode().splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG sha256 and lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+check(rr == int(E["RUN_REGISTRY_BYTES"]), f"RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES ({rr})")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.join(root, n) for n in dirs + names if n.startswith("ACCESS_LOG")]
+check(access == [], f"no ACCESS_LOG name ({access})")
+check(len(sys.argv) > 1 and sys.argv[1] == "0" and "OFILT_RUN_SEALED" not in os.environ, "OFILT_RUN_SEALED absent")
+nodata = os.listdir(E["NODATA"])
+check(nodata == [], f"NODATA still empty ({nodata})")
+
+# --- git status
+status = gtext("status", "--porcelain", "--untracked-files=all").split("\n")
+print("git status --porcelain --untracked-files=all:")
+for ln in status:
+    print(f"  {ln}")
+check(sorted(status) == sorted(f"?? {p}" for p in E["NEW_CODE"].split(" ")), "status == NEW_CODE as ?? lines")
+
+# --- the reviewed versions
+for p in ("ofilt/drift/confirm_run.py", "tools/p4_confirm_run.py", "tests/test_p4_confirm_run.py"):
+    data = open(os.path.join(REPO, p), "rb").read()
+    print(f"reviewed {p}: sha256 {hashlib.sha256(data).hexdigest()}; lines {len(data.decode().splitlines())}")
+
+print(f"failed checks: {len(fails)}")
+print(f"D3 CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c2_d3.out (sha256 e3d480d6b2cbcece1b27a543392c2985d9addcc1adc74b18f160d3055faf4e45)
+attempts: [1]
+ok   attempts numbered 1, 2, ... without a gap
+ok   no attempt beyond MAX_ATTEMPTS
+last attempt (1): ['Ran 12 tests in 42.896s']; result lines equal to NEW_OK: 1
+ok   the last attempt has a line starting with NEW_RAN
+ok   the last attempt has a line equal to NEW_OK
+last attempt's run time: 42.896 s
+static modules: ['test_schema', 'test_sim_b5', 'test_docs_d3b', 'test_docs_d6']
+ok   the four static modules ran
+  test_schema: Ran 15 tests in 0.891s | OK
+ok   test_schema ends with a result line starting OK
+ok   test_schema shows no FAILED
+  test_sim_b5: Ran 12 tests in 1.824s | OK (skipped=2)
+ok   test_sim_b5 ends with a result line starting OK
+ok   test_sim_b5 shows no FAILED
+  test_docs_d3b: Ran 2 tests in 0.150s | OK
+ok   test_docs_d3b ends with a result line starting OK
+ok   test_docs_d3b shows no FAILED
+  test_docs_d6: Ran 3 tests in 0.034s | OK (skipped=1)
+ok   test_docs_d6 ends with a result line starting OK
+ok   test_docs_d6 shows no FAILED
+§5.2 lists 12: ['test_build_document_complete', 'test_two_builds_identical', 'test_write_outputs', 'test_manifest_pins', 'test_script_synthetic_twice', 'test_script_refuses_confirm', 'test_script_refuses_dev_without_sanction', 'test_load_confirm_refused_and_logged', 'test_registry_routing', 'test_dev_mode_document', 'test_refused_pairs_before_anything', 'test_sources']
+test methods in the file (12): ['test_build_document_complete', 'test_two_builds_identical', 'test_write_outputs', 'test_manifest_pins', 'test_script_synthetic_twice', 'test_script_refuses_confirm', 'test_script_refuses_dev_without_sanction', 'test_load_confirm_refused_and_logged', 'test_registry_routing', 'test_dev_mode_document', 'test_refused_pairs_before_anything', 'test_sources']; module-level test functions: []
+ok   the test methods are exactly the 12 names of §5.2
+ok   no module-level function named test*
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+ok   HEAD == HEAD_BEFORE
+ok   BLIND_FIT_LOG sha256 and lines
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES (0)
+ok   no ACCESS_LOG name ([])
+ok   OFILT_RUN_SEALED absent
+ok   NODATA still empty ([])
+git status --porcelain --untracked-files=all:
+  ?? docs/P4_CONFIRM_RUN_SPEC.md
+  ?? ofilt/drift/confirm_run.py
+  ?? tests/test_p4_confirm_run.py
+  ?? tools/p4_confirm_run.py
+ok   status == NEW_CODE as ?? lines
+reviewed ofilt/drift/confirm_run.py: sha256 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3; lines 115
+reviewed tools/p4_confirm_run.py: sha256 d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d; lines 91
+reviewed tests/test_p4_confirm_run.py: sha256 ad9f553acfe13465ad3a3ea20ff3e4c03c7dc36bf355e72076ee569a286834f1; lines 452
+failed checks: 0
+D3 CHECK: True
+exit 0
+
+== d.4: P4-4c1's report (the source checked first, then the copy)
+--- /tmp/p4_4c2_d4.py (sha256 514073fe9f15aa30f02dbd9d1a22f7a42c2ecf2263f61b56b55746c5a152aff1)
+"""P4-4c2 d.4: P4-4c1's report (verdict line `D4 CHECK`). Reads files as bytes and text.
+
+Run with `sources` before the copy (verdict line `D4 SOURCES`), and with `all` after it (the copy checked too).
+Expected values are read from /tmp/p4_4c2_msg.txt.
+"""
+import hashlib
+import os
+import re
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c2_msg.txt"
+mode = sys.argv[1]
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+src, dst, P = "/tmp/p4_4c1.txt", "reports/P4_reports/p4_4c1.txt", "P4_4C1"
+print(f"--- {src}")
+if not os.path.isfile(src):
+    check(False, f"{src} exists")
+else:
+    data = open(src, "rb").read()
+    h = hashlib.sha256(data).hexdigest()
+    text = data.decode("utf-8")
+    ls = text.split("\n")
+    body = [ln for ln in ls if ln.strip()]
+    print(f"sha256 {h}; bytes {len(data)}; lines {len(text.splitlines())}")
+    print(f"line 1: {ls[0]}\nline 2: {ls[1]}\nline 3: {ls[2]}")
+    print(f"last-but-one non-empty: {body[-2]}\nlast non-empty: {body[-1]}")
+    check(ls[0] == E[f"{P}_LINE1"], f"line 1 == {P}_LINE1")
+    check(ls[1] == E[f"{P}_LINE2"], f"line 2 == {P}_LINE2")
+    check(ls[2] == E[f"{P}_LINE3"], f"line 3 == {P}_LINE3")
+    check(body[-1] == E["HEAD_BEFORE"], "last non-empty line == HEAD_BEFORE")
+    check(body[-2] == E[f"{P}_LAST"], f"last-but-one non-empty line == {P}_LAST")
+    for name in E[f"{P}_VERDICTS"].split(" "):
+        n = sum(1 for ln in ls if ln == f"{name} CHECK: True")
+        check(n >= 1, f"the whole line '{name} CHECK: True' occurs ({n} times)")
+    print(f"line 3 occurs {sum(1 for ln in ls if ln == ls[2])} times as a whole line; "
+          f"{text.count(ls[2])} times as a substring")
+    if mode == "all":
+        d = os.path.join(REPO, dst)
+        hd = hashlib.sha256(open(d, "rb").read()).hexdigest() if os.path.isfile(d) else None
+        print(f"copy {dst}: sha256 {hd}")
+        check(hd == h, f"{dst} has its source's SHA-256")
+
+print(f"failed checks: {len(fails)}")
+print(f"{'D4 SOURCES' if mode == 'sources' else 'D4 CHECK'}: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c2_d4_sources.out (sha256 2f74dd96b313a2f3e5dd51405769a97c36e05c014b030648e3cf66fc65666f67)
+--- /tmp/p4_4c1.txt
+sha256 ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a; bytes 132932; lines 2812
+line 1: 2026-10-12T01:59:46Z
+line 2: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+line 3: 5a3c6d1f4e09783e8b2c891382a020d9041500354b37f10033bcd187ddddd211  /tmp/p4_4c1_msg.txt
+last-but-one non-empty: 2026-10-12T02:31:47Z
+last non-empty: b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+ok   line 1 == P4_4C1_LINE1
+ok   line 2 == P4_4C1_LINE2
+ok   line 3 == P4_4C1_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_4C1_LAST
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'D1 CHECK: True' occurs (1 times)
+ok   the whole line 'D3 CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'D5 CHECK: True' occurs (1 times)
+ok   the whole line 'E1 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 2 times as a whole line; 2 times as a substring
+failed checks: 0
+D4 SOURCES: True
+exit 0
+--- /tmp/p4_4c2_d4.out (sha256 67817f573df72db1f5a4113636a2be9231ea243ff1700a771b63c8089685420f)
+--- /tmp/p4_4c1.txt
+sha256 ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a; bytes 132932; lines 2812
+line 1: 2026-10-12T01:59:46Z
+line 2: d4253b87594c234ea6147e0fe0fa55c47b52eb6d
+line 3: 5a3c6d1f4e09783e8b2c891382a020d9041500354b37f10033bcd187ddddd211  /tmp/p4_4c1_msg.txt
+last-but-one non-empty: 2026-10-12T02:31:47Z
+last non-empty: b4f3066e9c80745c26cdecce1cf3b5800d0398e9
+ok   line 1 == P4_4C1_LINE1
+ok   line 2 == P4_4C1_LINE2
+ok   line 3 == P4_4C1_LINE3
+ok   last non-empty line == HEAD_BEFORE
+ok   last-but-one non-empty line == P4_4C1_LAST
+ok   the whole line 'A CHECK: True' occurs (1 times)
+ok   the whole line 'B CHECK: True' occurs (1 times)
+ok   the whole line 'D1 CHECK: True' occurs (1 times)
+ok   the whole line 'D3 CHECK: True' occurs (1 times)
+ok   the whole line 'D4 CHECK: True' occurs (1 times)
+ok   the whole line 'D5 CHECK: True' occurs (1 times)
+ok   the whole line 'E1 CHECK: True' occurs (1 times)
+ok   the whole line 'E CHECK: True' occurs (1 times)
+line 3 occurs 2 times as a whole line; 2 times as a substring
+copy reports/P4_reports/p4_4c1.txt: sha256 ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a
+ok   reports/P4_reports/p4_4c1.txt has its source's SHA-256
+failed checks: 0
+D4 CHECK: True
+exit 0
+
+== d.5 and e.1: the records script, and stages 1 and 2
+--- /tmp/p4_4c2_records.py (sha256 b11f5220fc163616f8a7d3e6006493351f70870b75c923f8f168d45739b432ec)
+"""P4-4c2 d.5 and e.1: the records edits of the kit's p4_4c2_STATUS_EDITS.txt applied to PASS4_STATUS.md.
+
+Usage: `records.py stage1` (d.5; verdict line `D5 CHECK`) or `records.py stage2` (e.1; verdict line `E1 CHECK`).
+The edits file is read by the rules of its header, after its SHA-256 is checked. Stage 1 applies EDIT 01 to EDIT 07 in
+order, twice, each time from PASS4_STATUS.md as it is: once with each NEW span as written (the undated result) and
+once with the date of step a.1 in place of the placeholder (the dated result); each OLD span must occur exactly once
+when its edit is applied, in both passes. Stage 2 applies FINAL the same way, to stage 1's undated result and to
+PASS4_STATUS.md. Both results are written to temporary files first; PASS4_STATUS.md is replaced by the dated result
+only if every check holds (as steps d.5 and e.1 direct). Expected values come from /tmp/p4_4c2_msg.txt; the nine section
+headings from the standing prompt's records rule; the date from /tmp/p4_4c2_date.out.
+"""
+import hashlib
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+STATUS = os.path.join(REPO, "PASS4_STATUS.md")
+EDITS = os.path.expanduser("~/Desktop/FX_Project/files/pass4/p4_4c2_kit/p4_4c2_STATUS_EDITS.txt")
+PROMPT = os.path.expanduser("~/Desktop/FX_Project/files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md")
+MSG = "/tmp/p4_4c2_msg.txt"
+PLACEHOLDER = "@@DATE@@"
+S1_UNDATED, S1_DATED = "/tmp/p4_4c2_status_s1_undated.md", "/tmp/p4_4c2_status_s1_dated.md"
+S2_UNDATED, S2_DATED = "/tmp/p4_4c2_status_s2_undated.md", "/tmp/p4_4c2_status_s2_dated.md"
+stage = sys.argv[1]
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def sha(b: bytes) -> str:
+    return hashlib.sha256(b).hexdigest()
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+date = open("/tmp/p4_4c2_date.out", encoding="utf-8").read().strip()
+print(f"date (step a.1): {date}")
+check(re.fullmatch(r"\d{4}-\d{2}-\d{2}", date) is not None, "the date has the form YYYY-MM-DD")
+
+prompt = open(PROMPT, encoding="utf-8").read()
+check(sha(prompt.encode("utf-8")) == E["PROMPT_SHA256"], "standing prompt == PROMPT_SHA256")
+m = re.search(r"has these sections: (.*?)\. After it", prompt)
+HEADINGS = [f"## {s}" for s in m.group(1).split(", ")] if m else []
+print(f"headings (standing prompt): {HEADINGS}")
+check(len(HEADINGS) == 9, "nine headings read from the standing prompt")
+
+# ---- the edits file, by the rules of its header
+raw = open(EDITS, "rb").read()
+print(f"edits file sha256 {sha(raw)}")
+check(sha(raw) == E["KIT_EDITS_SHA256"], "edits file == KIT_EDITS_SHA256")
+check(b"\r" not in raw, "edits file has LF line endings only")
+el = raw.decode("utf-8").split("\n")
+if el and el[-1] == "":
+    el = el[:-1]
+marker = re.compile(r"^@@@ (EDIT \d\d|FINAL) (OLD|NEW|END)$")
+first = next(i for i, ln in enumerate(el) if marker.match(ln))
+print(f"header: lines 1 to {first}")
+edits, order, i = {}, [], first
+while i < len(el):
+    mo = marker.match(el[i])
+    if not mo or mo.group(2) != "OLD":
+        check(False, f"line {i + 1}: expected an OLD marker, got {el[i]!r}")
+        break
+    name = mo.group(1)
+    j = next(k for k in range(i + 1, len(el)) if marker.match(el[k]))
+    check(el[j] == f"@@@ {name} NEW", f"{name}: NEW marker after OLD")
+    k = next(q for q in range(j + 1, len(el)) if marker.match(el[q]))
+    check(el[k] == f"@@@ {name} END", f"{name}: END marker after NEW")
+    edits[name] = ("\n".join(el[i + 1:j]), "\n".join(el[j + 1:k]))
+    order.append(name)
+    i = k + 1
+want = [f"EDIT {n:02d}" for n in range(1, int(E["STAGE1_EDITS"]) + 1)] + ["FINAL"]
+print(f"edits found: {order}")
+check(order == want, "the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL")
+
+
+def finish():
+    print(f"failed checks: {len(fails)}")
+    print(f"{'D5' if stage == 'stage1' else 'E1'} CHECK: {not fails}")
+    return 1 if fails else 0
+
+
+def apply(text: str, names, dated: bool) -> str:
+    for name in names:
+        old, new = edits[name]
+        n = text.count(old)
+        check(n == 1, f"{'dated' if dated else 'undated'} pass, {name}: OLD occurs exactly once ({n})")
+        if n != 1:
+            raise SystemExit(finish())
+        text = text.replace(old, new.replace(PLACEHOLDER, date) if dated else new, 1)
+    return text
+
+
+def results_ok(undated: str, dated: str, template_key: str) -> None:
+    hu = sha(undated.encode("utf-8"))
+    print(f"undated result sha256 {hu}")
+    check(hu == E[template_key], f"undated result == {template_key}")
+    check(undated.replace(PLACEHOLDER, date) == dated, "the undated result with the date in place of each "
+                                                       "placeholder == the dated result")
+    print(f"placeholders in the undated result: {undated.count(PLACEHOLDER)}; in the dated result: "
+          f"{dated.count(PLACEHOLDER)}")
+    check(PLACEHOLDER not in dated, "no placeholder left in the dated result")
+    n = len(dated.splitlines())
+    print(f"dated result: lines {n}; sha256 {sha(dated.encode('utf-8'))}")
+    check(n == int(E["STATUS_LINES"]), "dated result has STATUS_LINES lines")
+    heads = [ln for ln in dated.splitlines() if ln.startswith("## ")]
+    print(f"dated result's '## ' headings: {heads}")
+    check(heads == HEADINGS, "the nine headings, in order")
+
+
+def status_lines():
+    out = subprocess.run(["git", "-C", REPO, "status", "--porcelain", "--untracked-files=all"], check=True,
+                         capture_output=True, text=True).stdout.rstrip("\n").split("\n")
+    print("git status --porcelain --untracked-files=all:")
+    for ln in out:
+        print(f"  {ln}")
+    return out
+
+
+expected_status = sorted([" M PASS4_STATUS.md"] + [f"?? {p}" for p in E["NEW_FILES"].split(" ")])
+if stage == "stage1":
+    base = open(STATUS, encoding="utf-8").read()
+    print(f"PASS4_STATUS.md before: sha256 {sha(base.encode('utf-8'))}; lines {len(base.splitlines())}")
+    check(sha(base.encode("utf-8")) == E["STATUS_BEFORE_SHA256"], "PASS4_STATUS.md before == STATUS_BEFORE_SHA256")
+    stage1 = want[:-1]
+    undated, dated = apply(base, stage1, False), apply(base, stage1, True)
+    out_u, out_d = S1_UNDATED, S1_DATED
+    template = "STATUS_S1_TEMPLATE"
+else:
+    base_u = open(S1_UNDATED, encoding="utf-8").read()
+    base_d = open(STATUS, encoding="utf-8").read()
+    print(f"stage 1 undated result: sha256 {sha(base_u.encode('utf-8'))}; PASS4_STATUS.md: "
+          f"sha256 {sha(base_d.encode('utf-8'))}")
+    check(sha(base_u.encode("utf-8")) == E["STATUS_S1_TEMPLATE"], "stage 1's undated result == STATUS_S1_TEMPLATE")
+    check(sha(base_d.encode("utf-8")) == sha(open(S1_DATED, "rb").read()), "PASS4_STATUS.md == stage 1's dated result")
+    undated, dated = apply(base_u, ["FINAL"], False), apply(base_d, ["FINAL"], True)
+    out_u, out_d = S2_UNDATED, S2_DATED
+    template = "STATUS_S2_TEMPLATE"
+
+with open(out_u, "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(undated)
+with open(out_d, "w", encoding="utf-8", newline="\n") as fh:
+    fh.write(dated)
+print(f"written: {out_u}, {out_d}")
+results_ok(undated, dated, template)
+if fails:
+    print("PASS4_STATUS.md NOT replaced")
+    sys.exit(finish())
+shutil.copyfile(out_d, STATUS)
+now = open(STATUS, "rb").read()
+print(f"PASS4_STATUS.md replaced by the dated result: sha256 {sha(now)}")
+check(now == dated.encode("utf-8"), "PASS4_STATUS.md == the dated result")
+check(sorted(status_lines()) == expected_status, "status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines")
+sys.exit(finish())
+--- /tmp/p4_4c2_d5.out (sha256 02a3d3e1c9a7a339385611c2479a4c3a7675299fe6671b18acb5e97817417391)
+date (step a.1): 2026-10-11
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+headings (standing prompt): ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   nine headings read from the standing prompt
+edits file sha256 1bfb5adbb07b3962381c781dec01a54ee1a91be32d58c2e3c1280370cb62f937
+ok   edits file == KIT_EDITS_SHA256
+ok   edits file has LF line endings only
+header: lines 1 to 2
+ok   EDIT 01: NEW marker after OLD
+ok   EDIT 01: END marker after NEW
+ok   EDIT 02: NEW marker after OLD
+ok   EDIT 02: END marker after NEW
+ok   EDIT 03: NEW marker after OLD
+ok   EDIT 03: END marker after NEW
+ok   EDIT 04: NEW marker after OLD
+ok   EDIT 04: END marker after NEW
+ok   EDIT 05: NEW marker after OLD
+ok   EDIT 05: END marker after NEW
+ok   EDIT 06: NEW marker after OLD
+ok   EDIT 06: END marker after NEW
+ok   EDIT 07: NEW marker after OLD
+ok   EDIT 07: END marker after NEW
+ok   FINAL: NEW marker after OLD
+ok   FINAL: END marker after NEW
+edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+PASS4_STATUS.md before: sha256 d0209468da545aadc710578b3048d5da1a4c7dfbc6f40753031fd03ae40fb148; lines 260
+ok   PASS4_STATUS.md before == STATUS_BEFORE_SHA256
+ok   undated pass, EDIT 01: OLD occurs exactly once (1)
+ok   undated pass, EDIT 02: OLD occurs exactly once (1)
+ok   undated pass, EDIT 03: OLD occurs exactly once (1)
+ok   undated pass, EDIT 04: OLD occurs exactly once (1)
+ok   undated pass, EDIT 05: OLD occurs exactly once (1)
+ok   undated pass, EDIT 06: OLD occurs exactly once (1)
+ok   undated pass, EDIT 07: OLD occurs exactly once (1)
+ok   dated pass, EDIT 01: OLD occurs exactly once (1)
+ok   dated pass, EDIT 02: OLD occurs exactly once (1)
+ok   dated pass, EDIT 03: OLD occurs exactly once (1)
+ok   dated pass, EDIT 04: OLD occurs exactly once (1)
+ok   dated pass, EDIT 05: OLD occurs exactly once (1)
+ok   dated pass, EDIT 06: OLD occurs exactly once (1)
+ok   dated pass, EDIT 07: OLD occurs exactly once (1)
+written: /tmp/p4_4c2_status_s1_undated.md, /tmp/p4_4c2_status_s1_dated.md
+undated result sha256 453c8ca34ccad46934ebb58478da0d4a14f5b359251a915edcb312b97cd97fbb
+ok   undated result == STATUS_S1_TEMPLATE
+ok   the undated result with the date in place of each placeholder == the dated result
+placeholders in the undated result: 3; in the dated result: 0
+ok   no placeholder left in the dated result
+dated result: lines 272; sha256 68dbf4a347d9a42cfac5fb69da783fa937a3b6357d30665c82ae5a219dc9201e
+ok   dated result has STATUS_LINES lines
+dated result's '## ' headings: ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   the nine headings, in order
+PASS4_STATUS.md replaced by the dated result: sha256 68dbf4a347d9a42cfac5fb69da783fa937a3b6357d30665c82ae5a219dc9201e
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_RUN_SPEC.md
+  ?? ofilt/drift/confirm_run.py
+  ?? reports/P4_reports/p4_4c1.txt
+  ?? tests/test_p4_confirm_run.py
+  ?? tools/p4_confirm_run.py
+ok   status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines
+failed checks: 0
+D5 CHECK: True
+exit 0
+--- /tmp/p4_4c2_e1.out (sha256 02e99c5ecee8ca80186020d3da506b8c4b86bb469e5b68df961ea9b2997e41a6)
+date (step a.1): 2026-10-11
+ok   the date has the form YYYY-MM-DD
+ok   standing prompt == PROMPT_SHA256
+headings (standing prompt): ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   nine headings read from the standing prompt
+edits file sha256 1bfb5adbb07b3962381c781dec01a54ee1a91be32d58c2e3c1280370cb62f937
+ok   edits file == KIT_EDITS_SHA256
+ok   edits file has LF line endings only
+header: lines 1 to 2
+ok   EDIT 01: NEW marker after OLD
+ok   EDIT 01: END marker after NEW
+ok   EDIT 02: NEW marker after OLD
+ok   EDIT 02: END marker after NEW
+ok   EDIT 03: NEW marker after OLD
+ok   EDIT 03: END marker after NEW
+ok   EDIT 04: NEW marker after OLD
+ok   EDIT 04: END marker after NEW
+ok   EDIT 05: NEW marker after OLD
+ok   EDIT 05: END marker after NEW
+ok   EDIT 06: NEW marker after OLD
+ok   EDIT 06: END marker after NEW
+ok   EDIT 07: NEW marker after OLD
+ok   EDIT 07: END marker after NEW
+ok   FINAL: NEW marker after OLD
+ok   FINAL: END marker after NEW
+edits found: ['EDIT 01', 'EDIT 02', 'EDIT 03', 'EDIT 04', 'EDIT 05', 'EDIT 06', 'EDIT 07', 'FINAL']
+ok   the edits are EDIT 01 to EDIT STAGE1_EDITS, then FINAL
+stage 1 undated result: sha256 453c8ca34ccad46934ebb58478da0d4a14f5b359251a915edcb312b97cd97fbb; PASS4_STATUS.md: sha256 68dbf4a347d9a42cfac5fb69da783fa937a3b6357d30665c82ae5a219dc9201e
+ok   stage 1's undated result == STATUS_S1_TEMPLATE
+ok   PASS4_STATUS.md == stage 1's dated result
+ok   undated pass, FINAL: OLD occurs exactly once (1)
+ok   dated pass, FINAL: OLD occurs exactly once (1)
+written: /tmp/p4_4c2_status_s2_undated.md, /tmp/p4_4c2_status_s2_dated.md
+undated result sha256 c530222542fddc41a7e4ae11d6fb5c83717aae96bc84b65e383f70f29deb4832
+ok   undated result == STATUS_S2_TEMPLATE
+ok   the undated result with the date in place of each placeholder == the dated result
+placeholders in the undated result: 3; in the dated result: 0
+ok   no placeholder left in the dated result
+dated result: lines 272; sha256 1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1
+ok   dated result has STATUS_LINES lines
+dated result's '## ' headings: ['## Progress', '## Next action', '## Decision log', '## Test results', '## Test changes', '## Flags', '## Blinding attestation', '## Deviations', '## Disclosure list']
+ok   the nine headings, in order
+PASS4_STATUS.md replaced by the dated result: sha256 1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1
+ok   PASS4_STATUS.md == the dated result
+git status --porcelain --untracked-files=all:
+   M PASS4_STATUS.md
+  ?? docs/P4_CONFIRM_RUN_SPEC.md
+  ?? ofilt/drift/confirm_run.py
+  ?? reports/P4_reports/p4_4c1.txt
+  ?? tests/test_p4_confirm_run.py
+  ?? tools/p4_confirm_run.py
+ok   status == ' M PASS4_STATUS.md' and NEW_FILES as ?? lines
+failed checks: 0
+E1 CHECK: True
+exit 0
+$ diff /tmp/p4_4c2_status_s1_undated.md /tmp/p4_4c2_status_s2_undated.md
+22c22
+< | P4-4c2 P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests | in progress | `checkpoint: P4-4c2`. Report `/tmp/p4_4c2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-5. |
+---
+> | P4-4c2 P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests | done | `checkpoint: P4-4c2`. Report `/tmp/p4_4c2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-5. |
+
+== e.2: the checkpoint
+--- /tmp/p4_4c2_e2.sh (sha256 2719291d77a328cee4112aaed000466373ad1a38acaf7348f90a173f1db62c9b)
+#!/bin/bash
+# P4-4c2 e.2: the checkpoint, as P4-4c1's e.2. COMMIT_ITEM is read from the saved message, not typed.
+set -u
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG=/tmp/p4_4c2_msg.txt
+item="$(sed -n 's/^- COMMIT_ITEM = //p' "$MSG")"
+trailer="Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+cd "$REPO" || exit 2
+{
+    echo "start utc: $(date -u +%FT%TZ)"
+    echo "item: $item"
+    echo "trailer: $trailer"
+    source "$HOME/venvs/ofilt_p2/bin/activate"
+    env -u OFILT_RUN_SEALED OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" bash tools/checkpoint.sh "$item" "$trailer"
+    rc=$?
+    echo "checkpoint exit: $rc"
+    echo "end utc: $(date -u +%FT%TZ)"
+    echo "suite log: $(ls -t "${TMPDIR:-/tmp}"/ckpt_tests.* 2>/dev/null | head -n 1)"
+} 2>&1 | tee /tmp/p4_4c2_e2.out
+--- /tmp/p4_4c2_e2.out (sha256 378bcd73f48451de2210c4bd9fa9282f4ddd8ac528aab1d8452fd4cad52f9cce)
+start utc: 2026-10-12T02:50:19Z
+item: P4-4c2 (P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests)
+trailer: Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 62dc8cd096b6059f97a6eb0baedc07bd4377f4a4e85aae3253dea98c2ccc6a97
+before suite: git status --porcelain
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_RUN_SPEC.md
+?? ofilt/drift/confirm_run.py
+?? reports/P4_reports/p4_4c1.txt
+?? tests/test_p4_confirm_run.py
+?? tools/p4_confirm_run.py
+----------------------------------------------------------------------
+Ran 386 tests in 1520.541s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS4_STATUS.md
+?? docs/P4_CONFIRM_RUN_SPEC.md
+?? ofilt/drift/confirm_run.py
+?? reports/P4_reports/p4_4c1.txt
+?? tests/test_p4_confirm_run.py
+?? tools/p4_confirm_run.py
+commit 383cce639887871bc52f36c624cf3c3405769650
+checkpoint exit: 0
+end utc: 2026-10-12T03:15:42Z
+suite log: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.RIGLAI
+
+== e.3: the commit
+--- /tmp/p4_4c2_e3.py (sha256 cd2c1f39848d7ed7475ecf0183bcd0ad2b19d96852a77bbbda65889e7fc4e4fb)
+"""P4-4c2 e.3: the commit (verdict line `E CHECK`). Imports no module of ofilt; reads files and calls git.
+
+Expected values come from /tmp/p4_4c2_msg.txt; the values printed by earlier steps are read from their outputs:
+e.2's (/tmp/p4_4c2_e2.out: the commit, the trailer, the suite lines), e.1's (PASS4_STATUS.md's SHA-256), d.4's (the
+copy's SHA-256) and D3's (the reviewed module's, script's and test file's SHA-256).
+"""
+import hashlib
+import os
+import re
+import subprocess
+import sys
+
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+MSG = "/tmp/p4_4c2_msg.txt"
+fails = []
+
+
+def check(ok, label):
+    print(("ok   " if ok else "FAIL ") + label)
+    if not ok:
+        fails.append(label)
+
+
+def git(*args):
+    return subprocess.run(["git", "-C", REPO, *args], check=True, capture_output=True).stdout
+
+
+def gtext(*args):
+    return git(*args).decode("utf-8").rstrip("\n")
+
+
+def head_sha(path):
+    return hashlib.sha256(git("show", f"HEAD:{path}")).hexdigest()
+
+
+def grab(path, pattern):
+    m = re.search(pattern, open(path, encoding="utf-8").read(), flags=re.M)
+    return m.group(1) if m else None
+
+
+lines = open(MSG, encoding="utf-8").read().split("\n")
+E = {}
+for ln in lines[lines.index("## Expected values") + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+    if m:
+        E[m.group(1)] = m.group(2)
+
+# --- the checkpoint's output
+e2 = open("/tmp/p4_4c2_e2.out", encoding="utf-8").read()
+e2l = e2.splitlines()
+print("checkpoint output, selected lines:")
+for ln in e2l:
+    if re.match(r"(start utc|end utc|checkpoint exit|commit |Ran |OK|FAILED|TESTS FAILED|suite log|restored|the suite)", ln):
+        print(f"  {ln}")
+check("checkpoint exit: 0" in e2l, "checkpoint exit 0")
+check(any(ln.startswith(E["SUITE_RAN"]) for ln in e2l), "a line starting with SUITE_RAN")
+check(E["SUITE_OK"] in e2l, "the line SUITE_OK")
+check("TESTS FAILED" not in e2, "no TESTS FAILED")
+commit = grab("/tmp/p4_4c2_e2.out", r"^commit ([0-9a-f]{40})$")
+trailer = grab("/tmp/p4_4c2_e2.out", r"^trailer: (.*)$")
+print(f"commit printed: {commit}; trailer: {trailer}")
+
+# --- HEAD and its commit
+head = gtext("rev-parse", "HEAD")
+print(f"HEAD: {head}")
+check(head == commit, "HEAD == the commit checkpoint.sh printed")
+parents = gtext("rev-list", "--parents", "-n", "1", "HEAD").split()[1:]
+check(parents == [E["HEAD_BEFORE"]], f"HEAD's only parent == HEAD_BEFORE ({parents})")
+subject = gtext("log", "-1", "--format=%s", "HEAD")
+print(f"subject: {subject}")
+check(subject == "checkpoint: " + E["COMMIT_ITEM"], "subject == 'checkpoint: ' + COMMIT_ITEM")
+body = gtext("log", "-1", "--format=%B", "HEAD").split("\n")
+check(trailer is not None and trailer.startswith("Co-Authored-By: ") and trailer in body, "the message holds the trailer")
+files = gtext("diff-tree", "--no-commit-id", "--name-only", "-r", "HEAD").split("\n")
+print(f"files of the commit ({len(files)}): {files}")
+want = sorted(["PASS4_STATUS.md"] + E["NEW_FILES"].split(" "))
+check(len(files) == int(E["COMMIT_FILE_COUNT"]) and sorted(files) == want,
+      "the commit holds exactly COMMIT_FILE_COUNT files: PASS4_STATUS.md and NEW_FILES")
+status = gtext("status", "--porcelain", "--untracked-files=all")
+check(status == "", f"working tree clean ({status!r})")
+
+# --- the new files at HEAD
+s_e1 = grab("/tmp/p4_4c2_e1.out", r"^PASS4_STATUS\.md replaced by the dated result: sha256 ([0-9a-f]{64})$")
+h = head_sha("PASS4_STATUS.md")
+print(f"PASS4_STATUS.md at HEAD: {h}; e.1 printed {s_e1}")
+check(h == s_e1, "PASS4_STATUS.md == e.1's SHA-256")
+check(head_sha("docs/P4_CONFIRM_RUN_SPEC.md") == E["KIT_SPEC_SHA256"], "the specification == KIT_SPEC_SHA256")
+p = "reports/P4_reports/p4_4c1.txt"
+s_d4 = grab("/tmp/p4_4c2_d4.out", rf"^copy {re.escape(p)}: sha256 ([0-9a-f]{{64}})$")
+h = head_sha(p)
+print(f"{p} at HEAD: {h}; d.4 printed {s_d4}")
+check(h == s_d4, f"{p} == d.4's SHA-256")
+for p in ("ofilt/drift/confirm_run.py", "tools/p4_confirm_run.py", "tests/test_p4_confirm_run.py"):
+    s_d3 = grab("/tmp/p4_4c2_d3.out", rf"^reviewed {re.escape(p)}: sha256 ([0-9a-f]{{64}});")
+    h = head_sha(p)
+    print(f"{p} at HEAD: {h}; D3 printed {s_d3}")
+    check(h == s_d3, f"{p} == D3's SHA-256")
+
+# --- everything else as in step a.2
+tags = gtext("tag", "-l").split("\n")
+check(sorted(tags) == sorted(E["TAG_LIST"].split(" ")), f"tags == TAG_LIST ({tags})")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1") == E["TAG_OBJECT"], "spec-dev-v1 object == TAG_OBJECT")
+check(gtext("rev-parse", "refs/tags/spec-dev-v1^{commit}") == E["TAG_COMMIT"], "spec-dev-v1 commit == TAG_COMMIT")
+b = open(os.path.join(REPO, "BLIND_FIT_LOG"), "rb").read()
+check(hashlib.sha256(b).hexdigest() == E["BLIND_FIT_LOG_SHA256"]
+      and len(b.decode().splitlines()) == int(E["BLIND_FIT_LOG_LINES"]), "BLIND_FIT_LOG sha256 and lines")
+rr = os.path.getsize(os.path.join(REPO, "RUN_REGISTRY.jsonl"))
+check(rr == int(E["RUN_REGISTRY_BYTES"]), f"RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES ({rr})")
+access = []
+for root, dirs, names in os.walk(REPO):
+    dirs[:] = [d for d in dirs if not (root == REPO and d == ".git")]
+    access += [os.path.join(root, n) for n in dirs + names if n.startswith("ACCESS_LOG")]
+check(access == [], f"no ACCESS_LOG name ({access})")
+pinned = [
+    ("spec/analysis_spec_dev_v1.yaml", "SPEC_SHA256"), ("PASS3_STATUS.md", "PASS3_STATUS_SHA256"),
+    ("docs/P4_CONFIRM_CONFIG.json", "CONFIG_SHA256"), ("docs/P3_COST_INPUTS.json", "COST_INPUTS_SHA256"),
+    ("ofilt/drift/sim_full.py", "SIM_MODULE_SHA256"), ("tests/test_p4_sim_full.py", "SIM_TESTS_SHA256"),
+    ("docs/P4_SIM_SPEC.md", "SIM_SPEC_SHA256"), ("ofilt/drift/confirm_inference.py", "INF_MODULE_SHA256"),
+    ("tests/test_p4_confirm_inference.py", "INF_TESTS_SHA256"), ("docs/P4_CONFIRM_INF_SPEC.md", "INF_SPEC_SHA256"),
+    ("ofilt/drift/confirm_forecast.py", "FC_MODULE_SHA256"), ("tests/test_p4_confirm_forecast.py", "FC_TESTS_SHA256"),
+    ("docs/P4_CONFIRM_FC_SPEC.md", "FC_SPEC_SHA256"), ("ofilt/drift/confirm_economic.py", "ECON_MODULE_SHA256"),
+    ("tests/test_p4_confirm_economic.py", "ECON_TESTS_SHA256"), ("docs/P4_CONFIRM_ECON_SPEC.md", "ECON_SPEC_SHA256"),
+    ("ofilt/drift/confirm_claims.py", "CLAIMS_MODULE_SHA256"), ("ofilt/drift/confirm_allowlist.py", "ALLOWLIST_MODULE_SHA256"),
+    ("tests/test_p4_confirm_claims.py", "CLAIMS_TESTS_SHA256"), ("docs/P4_CONFIRM_CLAIMS_SPEC.md", "CLAIMS_SPEC_SHA256"),
+]
+for path, name in pinned:
+    check(head_sha(path) == E[name], f"{path} at HEAD == {name}")
+
+print(f"failed checks: {len(fails)}")
+print(f"E CHECK: {not fails}")
+sys.exit(1 if fails else 0)
+--- /tmp/p4_4c2_e3.out (sha256 e387b12c819208d94375452d24d7f4e2a04bff7da7f7e1a2c5cc8609cd2768f8)
+checkpoint output, selected lines:
+  start utc: 2026-10-12T02:50:19Z
+  Ran 386 tests in 1520.541s
+  OK (skipped=6)
+  the suite rewrote reports/B6_coverage.json; its diff:
+  restored reports/B6_coverage.json
+  commit 383cce639887871bc52f36c624cf3c3405769650
+  checkpoint exit: 0
+  end utc: 2026-10-12T03:15:42Z
+  suite log: /var/folders/8y/j_cfd0q14gzbf_m_rylpx4zh0000gp/T//ckpt_tests.RIGLAI
+ok   checkpoint exit 0
+ok   a line starting with SUITE_RAN
+ok   the line SUITE_OK
+ok   no TESTS FAILED
+commit printed: 383cce639887871bc52f36c624cf3c3405769650; trailer: Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+HEAD: 383cce639887871bc52f36c624cf3c3405769650
+ok   HEAD == the commit checkpoint.sh printed
+ok   HEAD's only parent == HEAD_BEFORE (['b4f3066e9c80745c26cdecce1cf3b5800d0398e9'])
+subject: checkpoint: P4-4c2 (P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests)
+ok   subject == 'checkpoint: ' + COMMIT_ITEM
+ok   the message holds the trailer
+files of the commit (6): ['PASS4_STATUS.md', 'docs/P4_CONFIRM_RUN_SPEC.md', 'ofilt/drift/confirm_run.py', 'reports/P4_reports/p4_4c1.txt', 'tests/test_p4_confirm_run.py', 'tools/p4_confirm_run.py']
+ok   the commit holds exactly COMMIT_FILE_COUNT files: PASS4_STATUS.md and NEW_FILES
+ok   working tree clean ('')
+PASS4_STATUS.md at HEAD: 1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1; e.1 printed 1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1
+ok   PASS4_STATUS.md == e.1's SHA-256
+ok   the specification == KIT_SPEC_SHA256
+reports/P4_reports/p4_4c1.txt at HEAD: ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a; d.4 printed ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a
+ok   reports/P4_reports/p4_4c1.txt == d.4's SHA-256
+ofilt/drift/confirm_run.py at HEAD: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3; D3 printed 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+ok   ofilt/drift/confirm_run.py == D3's SHA-256
+tools/p4_confirm_run.py at HEAD: d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d; D3 printed d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d
+ok   tools/p4_confirm_run.py == D3's SHA-256
+tests/test_p4_confirm_run.py at HEAD: ad9f553acfe13465ad3a3ea20ff3e4c03c7dc36bf355e72076ee569a286834f1; D3 printed ad9f553acfe13465ad3a3ea20ff3e4c03c7dc36bf355e72076ee569a286834f1
+ok   tests/test_p4_confirm_run.py == D3's SHA-256
+ok   tags == TAG_LIST (['pass1-final', 'spec-dev-v1'])
+ok   spec-dev-v1 object == TAG_OBJECT
+ok   spec-dev-v1 commit == TAG_COMMIT
+ok   BLIND_FIT_LOG sha256 and lines
+ok   RUN_REGISTRY.jsonl bytes == RUN_REGISTRY_BYTES (0)
+ok   no ACCESS_LOG name ([])
+ok   spec/analysis_spec_dev_v1.yaml at HEAD == SPEC_SHA256
+ok   PASS3_STATUS.md at HEAD == PASS3_STATUS_SHA256
+ok   docs/P4_CONFIRM_CONFIG.json at HEAD == CONFIG_SHA256
+ok   docs/P3_COST_INPUTS.json at HEAD == COST_INPUTS_SHA256
+ok   ofilt/drift/sim_full.py at HEAD == SIM_MODULE_SHA256
+ok   tests/test_p4_sim_full.py at HEAD == SIM_TESTS_SHA256
+ok   docs/P4_SIM_SPEC.md at HEAD == SIM_SPEC_SHA256
+ok   ofilt/drift/confirm_inference.py at HEAD == INF_MODULE_SHA256
+ok   tests/test_p4_confirm_inference.py at HEAD == INF_TESTS_SHA256
+ok   docs/P4_CONFIRM_INF_SPEC.md at HEAD == INF_SPEC_SHA256
+ok   ofilt/drift/confirm_forecast.py at HEAD == FC_MODULE_SHA256
+ok   tests/test_p4_confirm_forecast.py at HEAD == FC_TESTS_SHA256
+ok   docs/P4_CONFIRM_FC_SPEC.md at HEAD == FC_SPEC_SHA256
+ok   ofilt/drift/confirm_economic.py at HEAD == ECON_MODULE_SHA256
+ok   tests/test_p4_confirm_economic.py at HEAD == ECON_TESTS_SHA256
+ok   docs/P4_CONFIRM_ECON_SPEC.md at HEAD == ECON_SPEC_SHA256
+ok   ofilt/drift/confirm_claims.py at HEAD == CLAIMS_MODULE_SHA256
+ok   ofilt/drift/confirm_allowlist.py at HEAD == ALLOWLIST_MODULE_SHA256
+ok   tests/test_p4_confirm_claims.py at HEAD == CLAIMS_TESTS_SHA256
+ok   docs/P4_CONFIRM_CLAIMS_SPEC.md at HEAD == CLAIMS_SPEC_SHA256
+failed checks: 0
+E CHECK: True
+exit 0
+
+== git show --stat HEAD
+commit 383cce639887871bc52f36c624cf3c3405769650
+Author: ofilt-pass1 <pass1@localhost>
+Date:   Sun Oct 11 23:15:42 2026 -0400
+
+    checkpoint: P4-4c2 (P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests)
+    
+    Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+ PASS4_STATUS.md               |   18 +-
+ docs/P4_CONFIRM_RUN_SPEC.md   |   80 ++
+ ofilt/drift/confirm_run.py    |  115 ++
+ reports/P4_reports/p4_4c1.txt | 2812 +++++++++++++++++++++++++++++++++++++++++
+ tests/test_p4_confirm_run.py  |  452 +++++++
+ tools/p4_confirm_run.py       |   91 ++
+ 6 files changed, 3565 insertions(+), 3 deletions(-)
+
+== readings
+
+R1. SHA-256 in `write_outputs`, for the supervisor.
+- §3.3 requires `write_outputs` to return the SHA-256 of the bytes it writes, computed from those bytes. §1.1's import list for `confirm_run.py` holds no `hashlib`, and test 12 checks that list.
+- The module reaches the hash function through `confirm_inference`, which already imports `hashlib` to pin the configuration: `confirm_inference.hashlib.sha256` (`confirm_run._sha256`, whose docstring says so).
+- This adds no import to `confirm_run.py`. §1.1's list and test 12 are as written; no test of §5.2 and no quantity changes.
+- The other resolution, adding `hashlib` to §1.1's list and to test 12, would change what test 12 asserts. Under the message's rule that is a STOP, so I did not take it.
+- If the supervisor prefers a direct import, it is a one-line change to the module and to test 12's allowed set, in a new version of the specification.
+
+R2. c.1, what was read in this item.
+- Read: `ofilt/drift/_guards_fallback.py`, `tests/test_io.py`, `tests/test_docs_d3b.py` and `tests/test_docs_d6.py`, in full; and `tools/p3_sealed_run.py` L1-60, L300-345 and L860-872 (its docstring, imports, argparse form and `main`).
+- Not read again: `io.py`, `registry.py`, the INF, FC and ECON specifications and their modules. P4-boot2 read them in this session, and `git diff d4253b8 HEAD` shows them unchanged.
+- The CLAIMS specification and module were written or read in this session, at P4-4c1.
+- Also read, because test 5 depends on the tick tables' last bounds: `docs/P3_COST_INPUTS.json`, through a read-only inline Python command that printed its price factors, tables, bounds and windows. It wrote nothing. Both tables in force for 5706, the dev table "standard" and the primary table "fine", end at 30,000 yen.
+
+R3. The probe (c.2), settled before the code.
+- Each build takes about 7.4 s.
+- Two builds on the same frames give byte-identical `to_json` (78,170 bytes, SHA-256 `9749cb7d…`), and their run ids differ.
+- All 71 IDs are in order and none is pending: 52 estimated, 17 fixed, 2 not applicable (R23 and R25 on a synthetic document).
+- The manifest of §3.2, built from its text, serialises with `allow_nan=False`.
+
+R4. `build_document` passes its `spec` argument unchanged to each of the five calls (None loads the spec in each), exactly as §3.1 writes them; `infer` is called first. The runtime's UTC times have microseconds and end with `Z`.
+
+R5. `write_outputs` checks that `out_dir` does not exist, then creates it with `mkdir(parents=True)` (no `exist_ok`), and writes each file with `write_bytes` from its encoded text (UTF-8, LF).
+
+R6. The script.
+- The refusal of `--source confirm` comes first, before any other check.
+- `--seed` is required for `synthetic`; `--seed`, `--scenario` and `--dev-dates` with another source are an argparse error (exit 2).
+- An existing `--out` is refused before anything is loaded or simulated (`REFUSED: --out ... exists`, exit 2). §4 says only that it must not exist; refusing late, inside `write_outputs`, would come after a full run.
+- `_dev_frames` returns `(dev, events, None)` or None when refused. Its first statement (after a comment; it has no docstring) is the sanction check. `main` calls it only in the `if a.source == "dev":` branch, and `main` calls `build_document` for both branches.
+- The script imports `ofilt.drift.io` as `io` (the standard library's `io` is not used there).
+
+R7. Test choices within the purposes of §5.2:
+- test 2 also checks the runtime's keys and the `Z`;
+- test 3 also checks that the outputs hold no CR, and that `runtime.json` holds the run ids;
+- test 4 checks each version against the specification's "Version N," line;
+- test 5 also checks the script's printed lines against the files. It recomputes the evaluated rows' traded prices from `confirm_forecast.run_calls` and `confirm_economic.economic_px` on the same simulation (unscaled), after the registry-line count is taken. Besides the 30,000-yen rule of §5.2, it computes the failing cases from each table's own last bound and checks that the two agree;
+- tests 6 and 7 also check the exact REFUSED line printed;
+- test 9 also checks that `spec.REPO_ROOT` resolves to the repository;
+- test 10 also checks that the last date is before 2022;
+- test 12 identifies the sanction check by its test naming both `DEV_RUN_SANCTION_VAR` and `DEV_RUN_SANCTION_VALUE`, ending in a `return`, and calling neither loader.
+- The test file names the confirmation loader only where §5.2 does (tests 6 and 8). It is under `tests/`, which `test_docs_d3b` does not scan for tag names.
+
+R8. Which branch test 5 takes on its seed, shown by `/tmp/p4_4c2_scratch_1.py`: 724 of 971 evaluated 5706 opens are above 30,000 yen (maximum 51,319), so O45 fails exactly its primary and high cases. The scratch script ran under NODATA with the registry patched to REGDIR; its two registry lines went there.
+
+R9. Before attempt 1, one helper of the test file was renamed (`eval_fraction` to `factor_value`); no attempt had run. Attempt 1 passed all 12 tests in 42.9 s.
+
+R10. The records script follows P4-4c1's: it writes the two temporary results and replaces PASS4_STATUS.md with the dated one, as d.5 and e.1 direct. The date is the one a.1 printed, 2026-10-11 (local); UTC was already 2026-10-12.
+
+R11. The four static modules ran in bash (`bash -c` with a `for` over a literal list), teed to `/tmp/p4_4c2_d3_static.out`.
+
+== deviations and notes
+
+Deviations: none that I know of. Every step ran in the message's order, a.1 to e.3, with d.1 (the copy of the specification) before d.2 (the module, the script and the tests). The readings above record the points the specification or the message left open, among them R1, the SHA-256 in `write_outputs`.
+
+Notes:
+- The new test file passed on its first attempt: `Ran 12 tests in 42.896s`, `OK`.
+- The static modules ran with the data folder, as the message says:
+  - `test_schema`: 15 tests, OK;
+  - `test_sim_b5`: 12 tests, OK (skipped=2);
+  - `test_docs_d3b`: 2 tests, OK;
+  - `test_docs_d6`: 3 tests, OK (skipped=1).
+- The checkpoint's suite: `Ran 386 tests in 1520.541s`, `OK (skipped=6)`. It rewrote `reports/B6_coverage.json` (the same float noise as at P4-4c1); checkpoint.sh restored it. Commit `383cce639887871bc52f36c624cf3c3405769650`.
+- The suite took 278 s longer than at P4-4c1 (1242.1 s). The new file accounts for about 43 s of that; the rest is run-to-run variation.
+- One scratch script ran, `/tmp/p4_4c2_scratch_1.py`, on synthetic frames (readings R8).
+- The probe and the scratch script wrote their six registry lines to `/tmp/p4_4c2_registry/synthetic.jsonl`; no real-registry file was created there. Every test's registry lines went to its own patched temporary folder.
+- The script's `--source dev` branch never ran; tests 7 and 12 cover only its refusal and its structure. The confirmation loader ran only in test 8, with ACCESS_LOG and the data folder patched to temporary paths, and refused.
+- NODATA stayed empty (the probe's end and D3).
+- `RUN_REGISTRY.jsonl` stayed at 0 bytes; `BLIND_FIT_LOG` at 7 lines. No ACCESS_LOG appeared in REPO, and no tag was created, moved or deleted.
+- For the supervisor's check after the commit: `/tmp/p4_4c1.txt` is 132,932 bytes, 2,812 lines, SHA-256 `ec540f952d8116c09a8adf1182b2146469bf9d80267708df4be9800849a2265a`; its line 3 occurs 2 times as a whole line.
+- The date step a.1 printed, which dates every record edit, is the local date 2026-10-11. UTC was 2026-10-12 throughout the item.
+- `PASS4_STATUS.md`:
+  - after stage 1: SHA-256 `68dbf4a347d9a42cfac5fb69da783fa937a3b6357d30665c82ae5a219dc9201e`;
+  - after stage 2: `1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1`, the committed file;
+  - both 272 lines with the nine headings. Three placeholders were replaced: one in EDIT 01 and two in EDIT 03.
+
+== the files written under /tmp (this report and its temporary file excluded)
+5ef318a9acd2ec4f303d827c939416c90d8d421dce7671a50c9d064c174159d3  /tmp/p4_4c2_a2.out
+f59fc4112f36d17e43661d6a6c6d2d496192fb372306c16ea99f6c10f63b9b24  /tmp/p4_4c2_a2.py
+7fe79b605e6993742051e2de14bcf8481be7463977efebf817a55e36a41e134d  /tmp/p4_4c2_assemble.sh
+ad1babd0749842f0a09a775233c98af93bd6d6f29fc569e9ecf8456ebb7bbfae  /tmp/p4_4c2_b1.out
+90bb8d5fd9125f50ec9d5cd8486a69a8cd7a8fb027b886542ddcc9f188742c17  /tmp/p4_4c2_b1.py
+db33c5f93d424b3ba20ac3cd663fde89836bc178a6f2051fd86c484ae39086fb  /tmp/p4_4c2_d1.out
+5776ef9b1904ad9f5c12713582500fad0022cf4c2fb4eb2a5f09de32b510453b  /tmp/p4_4c2_d1.py
+d97a22fad5059f03023745feb77c7c93f9680392e420ebb99a78169a236d41f5  /tmp/p4_4c2_d3_run1.out
+75f3a80a5778e717a223eeab37dd24b67c2722ccb6715f3bde0eac1c9208912f  /tmp/p4_4c2_d3_static.out
+e3d480d6b2cbcece1b27a543392c2985d9addcc1adc74b18f160d3055faf4e45  /tmp/p4_4c2_d3.out
+a9457815cd73f6e1bc8ad361aab8a6a9c4b053dc4dfc7cac2322e24e62641ed4  /tmp/p4_4c2_d3.py
+2f74dd96b313a2f3e5dd51405769a97c36e05c014b030648e3cf66fc65666f67  /tmp/p4_4c2_d4_sources.out
+67817f573df72db1f5a4113636a2be9231ea243ff1700a771b63c8089685420f  /tmp/p4_4c2_d4.out
+514073fe9f15aa30f02dbd9d1a22f7a42c2ecf2263f61b56b55746c5a152aff1  /tmp/p4_4c2_d4.py
+02a3d3e1c9a7a339385611c2479a4c3a7675299fe6671b18acb5e97817417391  /tmp/p4_4c2_d5.out
+4e28bb068dec06f80575ad6124dfd5a7e43f29cf2d81835506c608732638fb32  /tmp/p4_4c2_date.out
+02e99c5ecee8ca80186020d3da506b8c4b86bb469e5b68df961ea9b2997e41a6  /tmp/p4_4c2_e1.out
+378bcd73f48451de2210c4bd9fa9282f4ddd8ac528aab1d8452fd4cad52f9cce  /tmp/p4_4c2_e2.out
+2719291d77a328cee4112aaed000466373ad1a38acaf7348f90a173f1db62c9b  /tmp/p4_4c2_e2.sh
+e387b12c819208d94375452d24d7f4e2a04bff7da7f7e1a2c5cc8609cd2768f8  /tmp/p4_4c2_e3.out
+cd2c1f39848d7ed7475ecf0183bcd0ad2b19d96852a77bbbda65889e7fc4e4fb  /tmp/p4_4c2_e3.py
+0920669ff7c6ff31edabe3885d1ead7a4314726cac56908f6fff76cec18c5729  /tmp/p4_4c2_first.txt
+55396f2bdb0c37f67da0128ab6e69ad063a096f97bafc6695e64a0acc97ba333  /tmp/p4_4c2_msg.txt
+3ace3e861297ea427b1c9922a072319ca4335cd3abce613de8cc2171c4d23213  /tmp/p4_4c2_notes.txt
+e0d43d713fa7f0e9f04c6a3a4d5a4fb809fc82b094755e7679a0fd02cf542932  /tmp/p4_4c2_probe.out
+eb67544bca3edebf9c9e32af8cb21cab8a6c43cd7edd55a336a6973df5919317  /tmp/p4_4c2_probe.py
+f7fc54ce607cf129bbeb45e3e9ac2c6e02e8d8e8fa2a2679808120cf3328194a  /tmp/p4_4c2_readings.txt
+b11f5220fc163616f8a7d3e6006493351f70870b75c923f8f168d45739b432ec  /tmp/p4_4c2_records.py
+52c92496e907756011dfc8261b7ce3fa87c2d2b47c671621b0bd32794e9e6dcd  /tmp/p4_4c2_scratch_1.out
+d0f1e61fdf9b14170126ec2617992662ca4bc2f4fa21e9c30faa1ca5c15eaee3  /tmp/p4_4c2_scratch_1.py
+68dbf4a347d9a42cfac5fb69da783fa937a3b6357d30665c82ae5a219dc9201e  /tmp/p4_4c2_status_s1_dated.md
+453c8ca34ccad46934ebb58478da0d4a14f5b359251a915edcb312b97cd97fbb  /tmp/p4_4c2_status_s1_undated.md
+1ad624ecaac9983a81bac1fd681fee1685f772b66fe40abd7973ec3ef32607c1  /tmp/p4_4c2_status_s2_dated.md
+c530222542fddc41a7e4ae11d6fb5c83717aae96bc84b65e383f70f29deb4832  /tmp/p4_4c2_status_s2_undated.md
+559ab3835f416c56b8a64c5fcb537b9d9c44404ca7d1956325a7f44e359bab7d  /tmp/p4_4c2_registry/synthetic.jsonl
+NODATA (/tmp/p4_4c2_nodata) entries: 0
+
+== end: the time and HEAD, then git status --porcelain (empty: nothing follows the HEAD line)
+2026-10-12T03:16:04Z
+383cce639887871bc52f36c624cf3c3405769650

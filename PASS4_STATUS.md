@@ -19,11 +19,12 @@ Standing prompt: `files/pass4/PASS4_BUILDER_PROMPT_2026-10-08.md` (SHA-256 `9632
 | P4-4b2 P4-4b1 accepted; P4Q37; the confirmation module's economic evaluation and its tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4b2`, made by its first run. Report `reports/P4_reports/p4_4b2.txt`. |
 | P4-boot2 a new builder session; the standing prompt found by its hash; read-only orientation after P4-4b2 | done; accepted by Isaiah 2026-10-11 | Read-only; no commit. Report `reports/P4_reports/p4_boot2.txt`. |
 | P4-4c1 P4-4b2 and P4-boot2 accepted; P4Q38; the claim and rule rows and the inference-only allowlist, and their tests | done; accepted by Isaiah 2026-10-11 | `checkpoint: P4-4c1`, made by its first run. Report `reports/P4_reports/p4_4c1.txt`. |
-| P4-4c2 P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests | done | `checkpoint: P4-4c2`. Report `/tmp/p4_4c2.txt`, copied at the next checkpoint; planned STOP: the supervisor reviews the report, then P4-5. |
+| P4-4c2 P4-4c1 accepted; P4Q39; the run script, the whole document and its rules, and their tests | done; accepted by Isaiah 2026-10-12 | `checkpoint: P4-4c2`, made by its first run. Report `reports/P4_reports/p4_4c2.txt`. |
+| P4-5 the synthetic dry run (P4Q5, P4Q28, P4Q29), in the combined item P4-5/6 | done | `checkpoint: P4-5/6 part 1`. Criteria `docs/P4_DRYRUN_CRITERIA.md`; outputs `reports/P4_runs/dryrun/`. Report `/tmp/p4_56.txt`, copied at the next checkpoint. |
 
 ## Next action
 
-The supervisor reviews P4-4c2. Then P4-5, the synthetic dry run against criteria stated in its message (P4Q28, P4Q29), with the script and the configuration frozen by hash.
+P4-6, the dev run, follows in the same item, under its sanction and only if every criterion of `docs/P4_DRYRUN_CRITERIA.md` holds (P4Q40).
 
 ## Decision log
 
@@ -174,6 +175,14 @@ The supervisor reviews P4-4c2. Then P4-5, the synthetic dry run against criteria
 >   - A new script, `tools/p4_confirm_run.py`, runs it on synthetic frames (`--source synthetic`), on the dev panel (`--source dev`, which refuses unless `OFILT_P4_DEV_RUN=P4-6` is set: the dev run's sanction, used only at P4-6), and refuses `--source confirm` outright, calling nothing (P4Q3, P13(c)). The forecasting calls route their registry lines by provenance (P4Q6).
 >   - Tests: the new file `tests/test_p4_confirm_run.py`, with exactly the 12 tests the specification lists, among them the refusal of `io.load_confirm` with ACCESS_LOG and the data folder patched to temporary paths (P4Q3), on simulator frames only; seeds the spec seed plus 8,600,000 plus k, k below 1,000.
 >   - Not chosen: a run id or time inside `document.json`; a factories argument on the script (the tests replace M7 through the registry of models instead).
+> - P4-4c2 accepted (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P4-5/6 paste): checkpoint `383cce639887871bc52f36c624cf3c3405769650`, made by its first run (message `55396f2bdb0c37f67da0128ab6e69ad063a096f97bafc6695e64a0acc97ba333`), every verdict True, suite `Ran 386 tests`, `OK (skipped=6)`, no deviation.
+>   - Accepted with it: its eleven readings, among them the SHA-256 in `write_outputs` reached through `confirm_inference.hashlib`, because the specification's import list for `confirm_run.py` omitted `hashlib` (the supervisor's omission; Deviations), the refusal of an existing `--out` before anything is loaded, and test 5's recomputation of the failing cost cases from each table's own bound.
+> - P4Q40 (Isaiah, 2026-10-12, on the supervisor's recommendation): P4-5 and P4-6 run as one item, P4-5/6, in two parts with a checkpoint each.
+>   - Part 1, the synthetic dry run (P4Q5, P4Q28, P4Q29): four plain runs of the committed script on simulated panels at the confirmation's length (b = 0; b = 0.5, twice; b = 0.5 with a break to 0 at 2024-11-05), seeds the spec seed plus 9,000,000 plus k, against the criteria of `docs/P4_DRYRUN_CRITERIA.md`, written and committed before any run: every output present and finite or not applicable by design, no claim, two runs byte-identical, b-hat and b_post within 4 standard errors of the known values, the registry untouched. The simulator's 5706 price level, which makes O45's primary and high cost cases fail, is stated there in advance as the one allowed failure.
+>   - The gate: part 2 starts only if every criterion holds and part 1's checkpoint succeeds; otherwise the item stops before any real data is read.
+>   - Part 2, the dev run (P4Q6): one run of the same committed script on the dev panel, launched by the builder (P4Q6's open point, decided here); then the three tests that assert an empty `RUN_REGISTRY.jsonl` (`test_docs_d3b`, and the registry tests of P4-4b1 and P4-4c2) rewritten by decision to assert that it holds exactly the dev run's two lines, under the test-change protocol; `test_docs_d3` asserts only `BLIND_FIT_LOG` and needs no change.
+>   - Not chosen: P4-5 and P4-6 as two items with a supervisor review between them (Isaiah preferred one long run, with the gate scripted and the criteria fixed in advance).
+> - The dev run sanctioned (Isaiah, 2026-10-12; P4Q1, P4Q6, P4Q40): one run, by the builder, of `tools/p4_confirm_run.py` (SHA-256 `d4cd6edd3c341cfed8ecfb608cd17062254512a436463b688a8913a6e0455a5d`) with `ofilt/drift/confirm_run.py` (`998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3`) and the configuration `docs/P4_CONFIRM_CONFIG.json` (`5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd`), all as committed at `383cce639887871bc52f36c624cf3c3405769650`, on the dev panel (SHA-256 `36f7dd6965034ce92fdc7d2d0444ae7d4e037782a7f05054abc34c77f7c42b68`), conditional on every criterion of `docs/P4_DRYRUN_CRITERIA.md` holding and on part 1's checkpoint succeeding; nothing else on real data (P4Q7).
 
 ## Test results
 
@@ -186,7 +195,8 @@ The supervisor reviews P4-4c2. Then P4-5, the synthetic dry run against criteria
 - P4-4b2: the suite ran inside this item's checkpoint (`checkpoint: P4-4b2`): `Ran 359 tests in 1212.043s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 12.3 s. Report `reports/P4_reports/p4_4b2.txt`.
 - P4-boot2: read-only; no suite run.
 - P4-4c1: the suite ran inside this item's checkpoint (`checkpoint: P4-4c1`): `Ran 374 tests in 1242.123s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 8.3 s. Report `reports/P4_reports/p4_4c1.txt`.
-- P4-4c2: before this record was written, the new file `tests/test_p4_confirm_run.py` passed on its own (`Ran 12 tests`, `OK`), and so did the static test modules `test_schema`, `test_sim_b5`, `test_docs_d3b` and `test_docs_d6`. The suite runs inside this item's checkpoint (`checkpoint: P4-4c2`); its result is in the report `/tmp/p4_4c2.txt`, copied at the next checkpoint. Expected: `Ran 386 tests`, `OK (skipped=6)`.
+- P4-4c2: the suite ran inside this item's checkpoint (`checkpoint: P4-4c2`): `Ran 386 tests in 1520.541s`, `OK (skipped=6)`; it rewrote `reports/B6_coverage.json`, and checkpoint.sh restored it. The new file alone took 42.9 s. Report `reports/P4_reports/p4_4c2.txt`.
+- P4-5: the dry run runs outside the suite (P4Q6's pattern); the suite runs inside part 1's checkpoint (`checkpoint: P4-5/6 part 1`). Expected: `Ran 386 tests`, `OK (skipped=6)`.
 
 ## Test changes
 
@@ -196,6 +206,7 @@ The supervisor reviews P4-4c2. Then P4-5, the synthetic dry run against criteria
 - P4-4b2: one new test file, `tests/test_p4_confirm_economic.py`, with 14 tests (P4Q37). No existing test changed. The suite grows from 345 to 359 tests.
 - P4-4c1: one new test file, `tests/test_p4_confirm_claims.py`, with 15 tests (P4Q38). No existing test changed. The suite grows from 359 to 374 tests.
 - P4-4c2: one new test file, `tests/test_p4_confirm_run.py`, with 12 tests (P4Q39). No existing test changed. The suite grows from 374 to 386 tests.
+- P4-5: no test changed.
 
 ## Flags
 
@@ -220,6 +231,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-boot2: read-only; no module of `ofilt` imported, no test run, no data file opened, listed or hashed; files read as text and through `git`; only paths starting `/tmp/p4_boot2` written; `OFILT_RUN_SEALED` unset in every Python command.
 - P4-4c1: no script of this item opens a data file or computes on the dev panel; the new modules read only the configuration, through `confirm_inference.load_config`, and write no file; the tests run on simulator frames only, never labelled real, with the run registry patched to a temporary folder and `OFILT_DATA_DIR` set to an empty folder when run on their own; `RUN_REGISTRY.jsonl` unchanged; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 - P4-4c2: no script of this item opens a data file or computes on the dev panel; the script's dev branch is written and tested only for its refusal, never run; `io.load_confirm` is called only in its refusal test, with ACCESS_LOG and the data folder patched to temporary paths, and refuses; every other test runs on simulator frames only, never labelled real, with the run registry patched to a temporary folder; `RUN_REGISTRY.jsonl` unchanged and no ACCESS_LOG in REPO; the checkpoint's suite reads `panel_dev.csv` only through its structural and target-only tests and P4-3's `test_dev_panel_kinds_and_guard`; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
+- P4-5: the dry run's four runs and its check run on simulator frames only, with `OFILT_DATA_DIR` set to an empty folder; their forecasting calls append to the temporary synthetic registry; `RUN_REGISTRY.jsonl` unchanged; no data file opened; the dev panel's SHA-256 is computed once, as a hash, before part 2; `OFILT_RUN_SEALED` unset in every command; no tag created, moved or deleted.
 
 ## Deviations
 
@@ -250,6 +262,7 @@ Flags open at the end of Pass 3 stay recorded in `PASS3_STATUS.md`, Flags (close
 - P4-4b2 (message `5566f5a0f010d7365592616355765cb6b891305a9c7eeee6379d24ef31ac713c`; recorded at P4-4c1, from its report): a deviation in the step order, as at P4-4b1: the module was written before the specification was copied to `docs/P4_CONFIRM_ECON_SPEC.md`; the copy came before the test file, the test run and every check, and the module does not read it. Accepted; from P4-4c1 the message requires the order d.1 then d.2.
 - P4-boot2 (message `76bcb4a1aaa07ef66878f5defa2b266f3d5f366624483fa1e8e2442d38c34d62`; recorded at P4-4c1, from its report): its first run printed the verdicts as PASS rather than True; under the rerun-once rule the scripts were fixed and rerun, with both runs recorded and their outputs equal apart from the verdict lines; run 1 also called the venv's interpreter without activating the venv. A zsh slip (`=== not found`) split one command block in two. Accepted.
 - The records of P4-4b1 (recorded at P4-4c1): the supervisor's EDIT 09 of P4-4b1 dropped the separator before the last chat named in F4-2 (P4-boot2's note N10); corrected by this item.
+- P4-4c2 (message `55396f2bdb0c37f67da0128ab6e69ad063a096f97bafc6695e64a0acc97ba333`; recorded at P4-5/6): no deviation by the builder. The supervisor's specification omitted `hashlib` from `confirm_run.py`'s import list; the builder reached the hash function through `confirm_inference.hashlib` rather than change what test 12 asserts (reading R1). Accepted; the code is left as committed.
 
 ## Disclosure list
 
@@ -269,4 +282,5 @@ For the pre-registration (Pass 5; P4Q8):
 - The confirmation module's economic-evaluation specification `docs/P4_CONFIRM_ECON_SPEC.md` (P4Q37), version 1, SHA-256 `42e1488330ae7bb3c947fb92a6958c851197aaad6d9e545a5e3ef81511432785`.
 - The claim and rule rows' specification `docs/P4_CONFIRM_CLAIMS_SPEC.md` (P4Q38), version 1, SHA-256 `b499e820c62961b79bfc0ec839d6014e918657f79071182104fbdc1f4d4dbbf2`.
 - The run script's specification `docs/P4_CONFIRM_RUN_SPEC.md` (P4Q39), version 1, SHA-256 `4fe3712f0f3ffdcc6b87b6443e383c1d840c3d5d7fdcce210c5bf6322d916ab3`.
+- The dry run's criteria and the dev run's gate `docs/P4_DRYRUN_CRITERIA.md` (P4Q40), version 1, SHA-256 `3590035edb366eb46c1d076a3d7c4c2fdc60d9c43994b5a305181982ea071877`, committed before any run; the dry run's outputs, `reports/P4_runs/dryrun/` (synthetic).
 - The two supervisor chats that began on 2026-10-08 received P4-0a's snapshot, which includes the committed reports of earlier steps that read the dev panel (aggregates and counts only, as committed); their DATA_PROVENANCE §4.5 entries are F4-2.
