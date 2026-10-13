@@ -17,6 +17,7 @@ from ofilt.drift import io  # noqa: E402
 from ofilt.drift.spec import SIZE_RULE, Spec  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # P3-8b: the tests folder, for tag_state
 import tag_state as TS  # noqa: E402  (P3-8b)
+import run_state as RS  # noqa: E402  (P6-1c, D2)
 
 TAGS = ("spec-dev-v1", "prereg-v1")
 
@@ -47,8 +48,14 @@ class TestP36(unittest.TestCase):
         # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
         reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
         dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
-        self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
-        self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
+        # P6-1c (D2, condition 4; P6Q7; the pre-registration's §7.6; test-change protocol): the dev run's two assertions now
+        # hold until the second request of the confirmation panel (the first added no registry line), which appends its two
+        # confirm_real lines (tests/run_state.py). Was: the two, unconditionally.
+        if RS.confirm_run_made():
+            RS.check_registry_after(self, reg, dev_run)
+        else:
+            self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+            self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
 
 
 if __name__ == "__main__":

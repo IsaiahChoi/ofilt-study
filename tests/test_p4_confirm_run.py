@@ -27,6 +27,7 @@ import pandas as pd  # noqa: E402
 import p4_confirm_run as SCRIPT  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # P5-1: the tests folder, for tag_state
 import tag_state as TS  # noqa: E402  (P5-1)
+import run_state as RS  # noqa: E402  (P6-1c, D2)
 from ofilt.drift import blind as B  # noqa: E402
 from ofilt.drift import confirm_claims as CC  # noqa: E402
 from ofilt.drift import confirm_economic as CE  # noqa: E402
@@ -242,8 +243,14 @@ class TestConfirmRun(unittest.TestCase):
             # After the dev run the registry holds exactly its two forecasting calls, both dev_real (reports/P4_runs/dev).
             reg = [json.loads(x) for x in (ROOT / "RUN_REGISTRY.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
             dev_run = json.loads((ROOT / "reports" / "P4_runs" / "dev" / "runtime.json").read_text(encoding="utf-8"))
-            self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
-            self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
+            # P6-1c (D2, condition 4; P6Q7; the pre-registration's §7.6; test-change protocol): the dev run's two assertions now
+            # hold until the second request of the confirmation panel (the first added no registry line), which appends its two
+            # confirm_real lines (tests/run_state.py). Was: the two, unconditionally.
+            if RS.confirm_run_made():
+                RS.check_registry_after(self, reg, dev_run)
+            else:
+                self.assertEqual(sorted(r["run_id"] for r in reg), sorted(dev_run["run_ids"].values()))
+                self.assertEqual({r["provenance"] for r in reg}, {"dev_real"})
             printed = out.getvalue().splitlines()
             self.assertEqual(printed, [f"{d / n} {sha((d / n).read_bytes())}" for d in (a, b) for n in CR.OUTPUT_FILES])
             o45 = json.loads((a / "document.json").read_text(encoding="utf-8"))["rows"]["O45"]
@@ -322,7 +329,15 @@ class TestConfirmRun(unittest.TestCase):
             rec = json.loads(lines[0])
             self.assertEqual((rec["result"], rec["tag"]), ("DENIED", "prereg-v1"))
             self.assertEqual(IO.CONFIRM_TAG, "prereg-v1")
-            self.assertTrue(no_access_log_in_repo())
+            # P6-1c (D2, conditions 3 and 4; P6Q7; the pre-registration's §7.6; test-change protocol): was
+            # `self.assertTrue(no_access_log_in_repo())`, unconditionally. The first request's ACCESS_LOG (GRANTED at
+            # 221507d0..., no byte of the sealed panel read) is kept at reports/P6_runs/attempt1/ACCESS_LOG. Until the
+            # second request it is the only ACCESS_LOG in REPO; after it, REPO's root also holds the second request's,
+            # one GRANTED line for prereg-v1 at the run's commit (tests/run_state.py).
+            if RS.confirm_run_made():
+                RS.check_access_log_after(self)
+            else:
+                RS.check_access_log_before(self)
             self.assertEqual(list(empty.iterdir()), [])
 
     # 9

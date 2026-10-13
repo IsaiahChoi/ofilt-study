@@ -1,0 +1,1215 @@
+2026-10-13T00:49:23Z
+3251106ab31b05c14540bd55e195bb8fff912134
+4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e  /tmp/p6_1b2_msg.txt
+
+# P6-1b, second message: P6-1's stop recorded; the first request's ACCESS_LOG preserved; the second attempt decided (D2)
+
+Builder report. D = 2026-10-12. The records-only commit: 3251106ab31b05c14540bd55e195bb8fff912134.
+
+## Scripts and their outputs
+
+### a.1
+----- /tmp/p6_1b2_date.out -----
+2026-10-12
+----- end of /tmp/p6_1b2_date.out -----
+
+----- /tmp/p6_1b2_msgsha.out -----
+4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e  /tmp/p6_1b2_msg.txt
+----- end of /tmp/p6_1b2_msgsha.out -----
+
+### Shared helper of the Python scripts
+----- /tmp/p6_1b2_common.py -----
+"""P6-1b (second message): shared helpers for the item's Python scripts.
+
+Imports no module of ofilt; reads files as bytes. Expected values are read from /tmp/p6_1b2_msg.txt, list
+"## Expected values", one line per name, `- NAME = value` (a value keeps any leading space after "= ", as POST_STATUS's
+first item does); the item's date D from /tmp/p6_1b2_date.out (a.1); D1, P6-1's date, from P6_1_TMP_KEEP/p6_1_date.out.
+"""
+import hashlib
+import json
+import os
+import re
+import subprocess
+
+MSG = "/tmp/p6_1b2_msg.txt"
+DATE_FILE = "/tmp/p6_1b2_date.out"
+PLACEHOLDER = re.compile(rb"\{[A-Z0-9_]+\}")
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+DATA = os.path.expanduser("~/Desktop/FX_Project/data")
+VERDICT = re.compile(r"[A-Z0-9_]+( [A-Z0-9_]+)* CHECK: (True|False)")
+STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
+
+
+def read_bytes(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def sha256_bytes(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256(path):
+    return sha256_bytes(read_bytes(path))
+
+
+def expected():
+    data = read_bytes(MSG)
+    print(f"message {MSG}: sha256 {sha256_bytes(data)}")
+    lines = data.decode("utf-8").split("\n")
+    start = lines.index("## Expected values")
+    E = {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            if m.group(1) in E:
+                raise SystemExit(f"duplicate expected value {m.group(1)}")
+            E[m.group(1)] = m.group(2)
+    print(f"expected values read: {len(E)}")
+    return E
+
+
+def a_date(path_):
+    d = read_bytes(path_).decode("utf-8")
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}\n", d):
+        raise SystemExit(f"{path_} does not hold one date line: {d!r}")
+    return d.strip()
+
+
+def item_date():
+    d = a_date(DATE_FILE)
+    print(f"D (from {DATE_FILE}): {d}")
+    return d
+
+
+def d1_date(E):
+    p = os.path.join(path(E["P6_1_TMP_KEEP"]), "p6_1_date.out")
+    d = a_date(p)
+    print(f"D1 (from {p}): {d}")
+    return d
+
+
+def path(value):
+    return os.path.expanduser(value)
+
+
+def spaced(value):
+    return value.split(" ")
+
+
+def barred(value):
+    """Items separated by ` | ` (each kept as written, leading spaces included)."""
+    return value.split(" | ")
+
+
+def pairs(value):
+    return [tuple(item.rsplit(":", 1)) for item in barred(value)]
+
+
+def git_bytes(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True).stdout
+
+
+def git(*args, repo=REPO):
+    return git_bytes(*args, repo=repo).decode("utf-8")
+
+
+def git_rc(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True).returncode
+
+
+def lines_of(data):
+    return data.count(b"\n")
+
+
+def repo_file(rel):
+    """A REPO path, refused if it would leave REPO or reach DATA (nothing in DATA is opened)."""
+    full = os.path.realpath(os.path.join(REPO, rel))
+    if os.path.isabs(rel) or ".." in rel.split("/") or not full.startswith(os.path.realpath(REPO) + os.sep) \
+            or full.startswith(os.path.realpath(DATA) + os.sep):
+        raise SystemExit(f"refused: {rel!r} is not a REPO path")
+    return full
+
+
+def access_log_hits(root=REPO):
+    """Names starting ACCESS_LOG under root outside .git (names only), relative to root, sorted."""
+    hits = []
+    for r, dirs, files in os.walk(root):
+        if r == root and ".git" in dirs:
+            dirs.remove(".git")
+        hits += [os.path.relpath(os.path.join(r, n), root) for n in dirs + files if n.startswith("ACCESS_LOG")]
+    return sorted(hits)
+
+
+def porcelain_lines(untracked="all"):
+    return [ln for ln in git("status", "--porcelain", f"--untracked-files={untracked}").split("\n") if ln]
+
+
+APPX_HEAD = "## Appendix A: the files that fix the confirmation (SHA-256 at the tag)"
+APPX_ROW = re.compile(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|.*\|$")
+
+
+def appendix_rows():
+    lines = read_bytes(repo_file("docs/PREREG_v1.md")).decode("utf-8").split("\n")
+    if lines.count(APPX_HEAD) != 1:
+        raise SystemExit("the Appendix A heading does not occur exactly once")
+    rows, near = [], []
+    for ln in lines[lines.index(APPX_HEAD):]:
+        m = APPX_ROW.match(ln)
+        if m:
+            rows.append((m.group(1), m.group(2)))
+        elif ln.startswith("| `"):
+            near.append(ln)
+    if near:
+        raise SystemExit(f"{len(near)} Appendix A lines start '| `' without the row form")
+    return rows
+
+
+def appendix_check(C, E):
+    rows = appendix_rows()
+    C.check(len(rows) == int(E["APPX_ROWS"]) and len({p for p, _ in rows}) == len(rows),
+            "Appendix A: APPX_ROWS rows, no path twice", f"{len(rows)}")
+    bad = [p for p, h in rows if sha256(repo_file(p)) != h]
+    C.check(not bad, "every Appendix A file has the row's sha256 (working tree)",
+            f"{len(rows) - len(bad)} of {len(rows)}" + ("; mismatch: " + " ".join(bad) if bad else ""))
+
+
+def logs_check(C, E):
+    for rel, key in (("BLIND_FIT_LOG", "BLIND_FIT_LOG"), ("RUN_REGISTRY.jsonl", "RUN_REGISTRY")):
+        data = read_bytes(repo_file(rel))
+        C.check(sha256_bytes(data) == E[f"{key}_SHA256"] and lines_of(data) == int(E[f"{key}_LINES"]),
+                f"{rel} sha256 == {key}_SHA256 and lines == {key}_LINES", f"{sha256_bytes(data)}, {lines_of(data)} lines")
+
+
+def tags_check(C, E):
+    tags = git("tag", "-l").split()
+    C.check(tags == spaced(E["TAG_LIST"]), "git tag -l == TAG_LIST", " ".join(tags))
+    kind = git("cat-file", "-t", "refs/tags/prereg-v1").strip()
+    C.check(kind == "tag", "prereg-v1 is of type tag (annotated)", kind)
+    obj = git("rev-parse", "refs/tags/prereg-v1").strip()
+    C.check(obj == E["PREREG_TAG_OBJECT"], "refs/tags/prereg-v1 == PREREG_TAG_OBJECT", obj)
+    commit = git("rev-parse", "refs/tags/prereg-v1^{commit}").strip()
+    C.check(commit == E["PREREG_TAG_COMMIT"], "prereg-v1's commit == PREREG_TAG_COMMIT", commit)
+
+
+def access_log_check(C, E):
+    """ACCESS_LOG: a regular file at REPO's root, the only ACCESS_LOG* name; one newline-ended JSON line, GRANTED,
+    prereg-v1, head G; SHA-256 ACCESS_LOG_SHA256. Returns its line."""
+    p = repo_file("ACCESS_LOG")
+    C.check(os.path.isfile(p) and not os.path.islink(p), "ACCESS_LOG is a regular file at REPO's root")
+    hits = access_log_hits()
+    C.check(hits == ["ACCESS_LOG"], "no other ACCESS_LOG* name exists in REPO outside .git", " ".join(hits))
+    data = read_bytes(p)
+    lines = data.split(b"\n")
+    C.check(data.endswith(b"\n") and len(lines) == 2, "ACCESS_LOG holds exactly one line, ending in a newline",
+            f"{lines_of(data)} lines")
+    try:
+        rec = json.loads(lines[0].decode("utf-8"))
+    except ValueError:
+        rec = {}
+        C.check(False, "the line parses as JSON")
+    C.check((rec.get("result"), rec.get("tag"), rec.get("head")) == ("GRANTED", "prereg-v1", E["G"]),
+            "result GRANTED, tag prereg-v1, head G", f"{rec.get('result')}, {rec.get('tag')}, {rec.get('head')}")
+    C.check(sha256_bytes(data) == E["ACCESS_LOG_SHA256"], "ACCESS_LOG sha256 == ACCESS_LOG_SHA256", sha256_bytes(data))
+    return lines[0].decode("utf-8")
+
+
+def ending_check(C, label, lines, stop_prefix, E):
+    """The last four non-empty lines: a line starting with stop_prefix, a date stamp, G, PRE_STATUS's line."""
+    ne = [x for x in lines if x.strip()]
+    last4 = ne[-4:]
+    ok = (len(last4) == 4 and last4[0].startswith(stop_prefix) and STAMP.fullmatch(last4[1]) is not None
+          and last4[2] == E["G"] and last4[3] == E["PRE_STATUS"])
+    C.check(ok, f"{label}'s last four non-empty lines: a STOP line ({stop_prefix}), a date, G, PRE_STATUS's line",
+            " / ".join(last4))
+
+
+def kept_hashes(C, report_lines, section, keep_dir, report_name, report_bytes):
+    """Each kept file named in the report's hash section has the listed SHA-256; a kept report equals the report.
+    Returns (listed, held, missing)."""
+    listed = {}
+    if section in report_lines:
+        for ln in report_lines[report_lines.index(section) + 1:]:
+            if ln.startswith("## "):
+                break
+            m = re.fullmatch(r"([0-9a-f]{64})  /tmp/([^/]+)", ln)
+            if m:
+                listed[m.group(2)] = m.group(1)
+    print(f"listed in the hash section: {len(listed)} files")
+    held = sorted(os.listdir(keep_dir)) if os.path.isdir(keep_dir) else []
+    print(f"{keep_dir} holds {len(held)} entries")
+    for n in held:
+        full = os.path.join(keep_dir, n)
+        reg = os.path.isfile(full) and not os.path.islink(full)
+        if n in listed:
+            C.check(reg and sha256(full) == listed[n], f"kept {n} sha256 == listed", sha256(full) if reg else "")
+        elif n == report_name:
+            C.check(reg and read_bytes(full) == report_bytes, f"kept {n} equals the kept report")
+        else:
+            C.note(f"kept {n} is neither in the list nor {report_name}")
+    missing = sorted(set(listed) - set(held))
+    print("listed names not kept: " + (" ".join(missing) if missing else "(none)"))
+    return listed, held, missing
+
+
+def substitute(template_bytes, subs):
+    out = template_bytes
+    for k, v in subs.items():
+        out = out.replace(k.encode("utf-8"), v.encode("utf-8"))
+    return out
+
+
+def counts_check(C, label, data, counts):
+    """counts: `{NAME}:n | ...`; exactly those placeholders, each n times, no other."""
+    want = {k.encode(): int(v) for k, v in pairs(counts)}
+    for k, n in want.items():
+        C.check(data.count(k) == n, f"{label} holds {k.decode()} {n} times", f"{data.count(k)}")
+    other = [m for m in PLACEHOLDER.findall(data) if m not in want]
+    C.check(not other, f"{label} holds no other placeholder", b" ".join(other).decode())
+
+
+def placeholder_lines(template_bytes, written_bytes):
+    tl, wl = template_bytes.decode("utf-8").split("\n"), written_bytes.decode("utf-8").split("\n")
+    print("each template line that held a placeholder, as written:")
+    for i, (a, b) in enumerate(zip(tl, wl), 1):
+        if PLACEHOLDER.search(a.encode("utf-8")):
+            print(f"  {i}: {b}")
+    return len(tl) == len(wl)
+
+
+TEMPLATE_NAME = "PASS6_STATUS.p6_1b2.template.md"
+
+
+def b_subs(E, D, D1):
+    """b's five substitutions."""
+    return {"{DATE}": D1, "{P6_0_SHA256}": sha256(path(E["P6_0_KEPT"])),
+            "{SANCTION_SHA256}": sha256(path(E["SANCTION_FILE"])), "{DATE_1B}": D,
+            "{P6_1B_RUN1_SHA256}": sha256(path(E["P6_1B_RUN1_KEPT"]))}
+
+
+class Checks:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.n = 0
+        self.fails = []
+
+    def check(self, ok, label, detail=""):
+        self.n += 1
+        if not ok:
+            self.fails.append(label)
+        print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+    def note(self, text):
+        print(f"[note] {text}")
+
+    def done(self):
+        print(f"checks: {self.n}; failed: {len(self.fails)}")
+        for f in self.fails:
+            print(f"FAIL {f}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+        return not self.fails
+----- end of /tmp/p6_1b2_common.py -----
+
+### a.2 (and the extra check in the tool's own zsh)
+----- /tmp/p6_1b2_a2.sh -----
+#!/bin/bash
+# P6-1b (second message) a.2: OFILT_RUN_SEALED and OFILT_P6_CONFIRM_RUN must both be absent from the session's
+# exported environment and unset in this shell. Runs no Python.
+ok=True
+for v in OFILT_RUN_SEALED OFILT_P6_CONFIRM_RUN; do
+  if env | grep -q "^${v}="; then
+    echo "$v in the exported environment: yes"
+    ok=False
+  else
+    echo "$v in the exported environment: no"
+  fi
+  if [ -n "${!v+x}" ]; then
+    echo "$v set in this shell: yes"
+    ok=False
+  else
+    echo "$v set in this shell: no"
+  fi
+done
+echo "A2_ENV CHECK: ${ok}"
+----- end of /tmp/p6_1b2_a2.sh -----
+
+----- /tmp/p6_1b2_a2.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+OFILT_P6_CONFIRM_RUN in the exported environment: no
+OFILT_P6_CONFIRM_RUN set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p6_1b2_a2.out -----
+
+----- /tmp/p6_1b2_a2_zsh.out -----
+zsh tool shell: OFILT_RUN_SEALED unset
+zsh tool shell: OFILT_P6_CONFIRM_RUN unset
+----- end of /tmp/p6_1b2_a2_zsh.out -----
+
+### a.3
+----- /tmp/p6_1b2_a3.py -----
+"""P6-1b (second message) a.3: REPO as P6-1 left it, by read-only git; files hashed as bytes. ACCESS_LOG is read,
+never written."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (REPO, Checks, access_log_check, appendix_check, barred, d1_date, expected, git,  # noqa: E402
+                           logs_check, path, porcelain_lines, read_bytes, repo_file, sha256, spaced, substitute,
+                           tags_check)
+
+E = expected()
+D1 = d1_date(E)
+C = Checks("A3")
+head = git("rev-parse", "HEAD").strip()
+print(f"HEAD, in full: {head}")
+C.check(head == E["G"], "HEAD is G", head)
+C.check(git("log", "-1", "--format=%s", "HEAD").rstrip("\n") == E["G_SUBJECT"], "HEAD's subject == G_SUBJECT")
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [E["S"]], "HEAD's only parent is S", " ".join(parents))
+files = sorted(f for f in git("show", "--name-only", "--format=", "HEAD").split("\n") if f)
+C.check(files == sorted(spaced(E["PART1_FILES"])), "HEAD's files are exactly PART1_FILES", " ".join(files))
+remote = git("branch", "-r", "--contains", "HEAD")
+C.check(remote.strip() != "", "HEAD is on a remote-tracking branch", " ".join(remote.split()))
+st = porcelain_lines()
+C.check(sorted(st) == sorted(barred(E["PRE_STATUS"])), "git status --porcelain --untracked-files=all == PRE_STATUS",
+        " | ".join(st))
+line = access_log_check(C, E)
+print(f"ACCESS_LOG's line, in full: {line}")
+for rel in spaced(E["ABSENT"]):
+    C.check(not os.path.lexists(os.path.join(REPO, rel)), f"ABSENT: {rel} does not exist")
+logs_check(C, E)
+tags_check(C, E)
+appendix_check(C, E)
+C.check(read_bytes(repo_file("docs/P6_SANCTION.txt")) == read_bytes(path(E["SANCTION_FILE"])),
+        "docs/P6_SANCTION.txt is byte-identical to SANCTION_FILE")
+t1 = read_bytes(path(E["PART1_TEMPLATE"]))
+C.check(sha256(path(E["PART1_TEMPLATE"])) == E["PART1_TEMPLATE_SHA256"], "PART1_TEMPLATE sha256 == PART1_TEMPLATE_SHA256")
+want = substitute(t1, {"{DATE}": D1, "{P6_0_SHA256}": sha256(path(E["P6_0_KEPT"])),
+                       "{SANCTION_SHA256}": sha256(path(E["SANCTION_FILE"]))})
+C.check(read_bytes(repo_file("PASS6_STATUS.md")) == want, "PASS6_STATUS.md equals PART1_TEMPLATE after part 1's "
+        "substitutions, recomputed", sha256(repo_file("PASS6_STATUS.md")))
+C.done()
+----- end of /tmp/p6_1b2_a3.py -----
+
+----- /tmp/p6_1b2_a3.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+D1 (from /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1/p6_1_date.out): 2026-10-12
+HEAD, in full: 221507d01547869376e73cde51c20b86892bed95
+[ok] HEAD is G: 221507d01547869376e73cde51c20b86892bed95
+[ok] HEAD's subject == G_SUBJECT
+[ok] HEAD's only parent is S: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] HEAD's files are exactly PART1_FILES: PASS6_STATUS.md docs/P6_SANCTION.txt reports/P6_reports/p6_0.txt
+[ok] HEAD is on a remote-tracking branch: origin/main
+[ok] git status --porcelain --untracked-files=all == PRE_STATUS: ?? ACCESS_LOG
+[ok] ACCESS_LOG is a regular file at REPO's root
+[ok] no other ACCESS_LOG* name exists in REPO outside .git: ACCESS_LOG
+[ok] ACCESS_LOG holds exactly one line, ending in a newline: 1 lines
+[ok] result GRANTED, tag prereg-v1, head G: GRANTED, prereg-v1, 221507d01547869376e73cde51c20b86892bed95
+[ok] ACCESS_LOG sha256 == ACCESS_LOG_SHA256: c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03
+ACCESS_LOG's line, in full: {"utc": "2026-10-12T23:38:45.210959+00:00", "tag": "prereg-v1", "result": "GRANTED", "head": "221507d01547869376e73cde51c20b86892bed95", "guard": "fallback", "caller": "File \"/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py\", line 57, in main |     frames = _confirm_frames() |   File \"/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py\", line 46, in _confirm_frames |     confirm = io.load_confirm()", "reason": "tag is an ancestor of HEAD"}
+[ok] ABSENT: reports/P6_runs does not exist
+[ok] ABSENT: reports/P6_reports/p6_1.txt does not exist
+[ok] ABSENT: reports/P6_reports/p6_1b_run1.txt does not exist
+[ok] ABSENT: tests/run_state.py does not exist
+[ok] ABSENT: docs/P6_RUN2_CRITERIA.md does not exist
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+[ok] docs/P6_SANCTION.txt is byte-identical to SANCTION_FILE
+[ok] PART1_TEMPLATE sha256 == PART1_TEMPLATE_SHA256
+[ok] PASS6_STATUS.md equals PART1_TEMPLATE after part 1's substitutions, recomputed: 53c84db59e463cde76627d8d59d10e76b2d6869e64e65b01a5cb624d08023b37
+checks: 27; failed: 0
+A3 CHECK: True
+----- end of /tmp/p6_1b2_a3.out -----
+
+### a.4
+----- /tmp/p6_1b2_a4.py -----
+"""P6-1b (second message) a.4: the kit (message, template), P6-1's kept report and its kept /tmp files, and the first
+P6-1b run's kept report and its kept /tmp files (all as bytes)."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (MSG, TEMPLATE_NAME, VERDICT, Checks, counts_check, ending_check, expected,  # noqa: E402
+                           kept_hashes, path, read_bytes, sha256_bytes)
+
+E = expected()
+C = Checks("A4")
+G = E["G"]
+
+
+def regular(p):
+    return os.path.isfile(p) and not os.path.islink(p)
+
+
+# KIT_DIR
+kit = path(E["KIT_DIR"])
+names = sorted(os.listdir(kit))
+C.check(names == sorted(["p6_1b2_msg.txt", TEMPLATE_NAME]), f"KIT_DIR holds exactly p6_1b2_msg.txt and {TEMPLATE_NAME}",
+        " ".join(names))
+C.check(read_bytes(os.path.join(kit, "p6_1b2_msg.txt")) == read_bytes(MSG), "kit p6_1b2_msg.txt identical to /tmp/p6_1b2_msg.txt")
+t = read_bytes(os.path.join(kit, TEMPLATE_NAME))
+C.check(sha256_bytes(t) == E["TEMPLATE_SHA256"], "the template's sha256 == TEMPLATE_SHA256", sha256_bytes(t))
+counts_check(C, "the template", t, E["TEMPLATE_COUNTS"])
+
+# P6_1_KEPT
+kept = path(E["P6_1_KEPT"])
+C.check(regular(kept), "P6_1_KEPT exists", kept)
+rep = read_bytes(kept)
+C.check(sha256_bytes(rep) == E["P6_1_SHA256"], "P6_1_KEPT sha256 == P6_1_SHA256", sha256_bytes(rep))
+if os.path.exists("/tmp/p6_1.txt"):
+    C.check(read_bytes("/tmp/p6_1.txt") == rep, "P6_1_KEPT is identical to /tmp/p6_1.txt")
+else:
+    C.note("/tmp/p6_1.txt does not exist")
+rl = rep.decode("utf-8").split("\n")
+C.check(rl[1] == G, "P6_1_KEPT's line 2 is G", rl[1])
+C.check(rl[2] == E["P6_1_LINE3"], "P6_1_KEPT's line 3 == P6_1_LINE3", rl[2])
+ending_check(C, "P6_1_KEPT", rl, E["P6_1_STOP_PREFIX"], E)
+vh = [x for x in rl if x.startswith("## Verdict lines")]
+C.check(len(vh) == 1, "P6_1_KEPT has one verdict section heading", " | ".join(vh))
+i = rl.index(vh[0])
+section = []
+j = i + 1
+while j < len(rl) and not rl[j].startswith("## "):
+    section.append(rl[j])
+    j += 1
+print("P6_1_KEPT's verdict section:")
+print(f"  {rl[i]}")
+for x in section:
+    print(f"  {x}")
+verdicts = [x for x in section if VERDICT.fullmatch(x)]
+for n in E["P6_1_TRUE"].split(", "):
+    C.check(f"{n} CHECK: True" in verdicts, f"its verdict lines include {n} CHECK: True")
+C.check("POST CHECK: False" in verdicts, "its verdict lines include POST CHECK: False")
+anywhere = [x for x in rl if VERDICT.fullmatch(x)]
+C.check(not [v for v in anywhere if v in ("G CHECK: True", "PART2 CHECK: True")],
+        "no verdict line for G or PART2 says True (anywhere in the report)")
+print(f"P6_1_KEPT: sha256 {sha256_bytes(rep)}; {rep.count(b'\n')} lines")
+
+# P6_1_TMP_KEEP
+keep = path(E["P6_1_TMP_KEEP"])
+listed, held, missing = kept_hashes(C, rl, "## SHA-256 of every /tmp/p6_1* file except this report", keep,
+                                    "p6_1.txt", rep)
+dpath = os.path.join(keep, "p6_1_date.out")
+C.check("p6_1_date.out" in held and "p6_1_date.out" in listed, "p6_1_date.out is kept and listed")
+if os.path.exists("/tmp/p6_1_date.out"):
+    C.check(read_bytes(dpath) == read_bytes("/tmp/p6_1_date.out"), "kept p6_1_date.out is identical to /tmp/p6_1_date.out")
+C.check(re.fullmatch(rb"\d{4}-\d{2}-\d{2}\n", read_bytes(dpath)) is not None, "its one line is a date (D1)",
+        read_bytes(dpath).decode().strip())
+
+# P6_1B_RUN1_KEPT
+r1 = path(E["P6_1B_RUN1_KEPT"])
+C.check(regular(r1), "P6_1B_RUN1_KEPT exists", r1)
+rep1 = read_bytes(r1)
+if os.path.exists("/tmp/p6_1b.txt"):
+    C.check(read_bytes("/tmp/p6_1b.txt") == rep1, "P6_1B_RUN1_KEPT is identical to /tmp/p6_1b.txt")
+else:
+    C.note("/tmp/p6_1b.txt does not exist")
+r1l = rep1.decode("utf-8").split("\n")
+C.check(r1l[1] == G, "P6_1B_RUN1_KEPT's line 2 is G", r1l[1])
+C.check(r1l[2] == E["P6_1B_RUN1_LINE3"], "P6_1B_RUN1_KEPT's line 3 == P6_1B_RUN1_LINE3", r1l[2])
+C.check("A4 CHECK: False" in r1l, "P6_1B_RUN1_KEPT contains the line `A4 CHECK: False`")
+ending_check(C, "P6_1B_RUN1_KEPT", r1l, E["P6_1B_RUN1_STOP_PREFIX"], E)
+print(f"P6_1B_RUN1_KEPT: sha256 {sha256_bytes(rep1)}; {rep1.count(b'\n')} lines")
+
+# P6_1B_RUN1_TMP_KEEP
+kept_hashes(C, r1l, "## SHA-256 of every /tmp/p6_1b* file except this report", path(E["P6_1B_RUN1_TMP_KEEP"]),
+            "p6_1b.txt", rep1)
+C.done()
+----- end of /tmp/p6_1b2_a4.py -----
+
+----- /tmp/p6_1b2_a4.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+[ok] KIT_DIR holds exactly p6_1b2_msg.txt and PASS6_STATUS.p6_1b2.template.md: PASS6_STATUS.p6_1b2.template.md p6_1b2_msg.txt
+[ok] kit p6_1b2_msg.txt identical to /tmp/p6_1b2_msg.txt
+[ok] the template's sha256 == TEMPLATE_SHA256: 5a984dde1b26cabbec3fa1c70d04770fdf8be0e3e9cedc0b4ecdd3656271aea2
+[ok] the template holds {DATE_1B} 5 times: 5
+[ok] the template holds {DATE} 3 times: 3
+[ok] the template holds {P6_0_SHA256} 1 times: 1
+[ok] the template holds {P6_1B_RUN1_SHA256} 1 times: 1
+[ok] the template holds {SANCTION_SHA256} 1 times: 1
+[ok] the template holds no other placeholder
+[ok] P6_1_KEPT exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1_final/p6_1.txt
+[ok] P6_1_KEPT sha256 == P6_1_SHA256: 2feeb8c79e770d77e4260ec5529110e6bbb50a0e9e8840f81cd25f532eaa48cb
+[ok] P6_1_KEPT is identical to /tmp/p6_1.txt
+[ok] P6_1_KEPT's line 2 is G: 221507d01547869376e73cde51c20b86892bed95
+[ok] P6_1_KEPT's line 3 == P6_1_LINE3: 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7  /tmp/p6_1_msg.txt
+[ok] P6_1_KEPT's last four non-empty lines: a STOP line (STOPPED at P6-1, f:), a date, G, PRE_STATUS's line: STOPPED at P6-1, f: the run failed after GRANTED (FileNotFoundError: no sealed panel at OFILT_DATA_DIR/panel_confirm_SEALED.csv); POST CHECK False; part 2 not run; ACCESS_LOG untouched; Isaiah decides. / 2026-10-12T23:42:17Z / 221507d01547869376e73cde51c20b86892bed95 / ?? ACCESS_LOG
+[ok] P6_1_KEPT has one verdict section heading: ## Verdict lines (in step order; G and PART2 not run)
+P6_1_KEPT's verdict section:
+  ## Verdict lines (in step order; G and PART2 not run)
+  
+  A2_ENV CHECK: True
+  SANCTION CHECK: True
+  PRE CHECK: True
+  A5 CHECK: True
+  B CHECK: True
+  GATE CHECK: True
+  POST CHECK: False
+  
+[ok] its verdict lines include A2_ENV CHECK: True
+[ok] its verdict lines include SANCTION CHECK: True
+[ok] its verdict lines include PRE CHECK: True
+[ok] its verdict lines include A5 CHECK: True
+[ok] its verdict lines include B CHECK: True
+[ok] its verdict lines include GATE CHECK: True
+[ok] its verdict lines include POST CHECK: False
+[ok] no verdict line for G or PART2 says True (anywhere in the report)
+P6_1_KEPT: sha256 2feeb8c79e770d77e4260ec5529110e6bbb50a0e9e8840f81cd25f532eaa48cb; 1827 lines
+listed in the hash section: 36 files
+/Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1 holds 37 entries
+[ok] kept p6_1.txt equals the kept report
+[ok] kept p6_1_a2.out sha256 == listed: e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a
+[ok] kept p6_1_a2.sh sha256 == listed: 7e17d76ab97f589265821d57e7099a97935f803d2c6a43ea444bd7b690ab28dd
+[ok] kept p6_1_a2_zsh.out sha256 == listed: 82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd
+[ok] kept p6_1_a3.out sha256 == listed: 15d9af9b4f459153e02e9c2e7909eb8315f4bad60136b5fa37d5c5b931ff98e8
+[ok] kept p6_1_a3.py sha256 == listed: 2f82cd86d96ea36ebf2f83a21a8ef9c6444772b71829de7b3c1e1f6120eba273
+[ok] kept p6_1_a4.out sha256 == listed: a308f687f515481ae1300a1025b3b5c507ec4a196b168477e7b113b3cd41bfb6
+[ok] kept p6_1_a4.py sha256 == listed: 45e4a7e6e3854b3a4911ee1618d1a34a2105b7526ecd83e81552843dd5838895
+[ok] kept p6_1_a5.out sha256 == listed: 798ebb937ee35737ddd0d9f6d1283c9c84d6fd20b6f98b787032e8d8015a5505
+[ok] kept p6_1_a5.py sha256 == listed: 0b53cbbff9263d5fdaac01891fafe8bfd414b8fc786e254494ce9f801dfb58fa
+[ok] kept p6_1_assemble.sh sha256 == listed: 46f684b140b92e4240208da26aa5bcb286ad3fc609a15bc51e413378972d7059
+[ok] kept p6_1_b.out sha256 == listed: 56ef151a4470595bdbb20557da1fb5d4ff3a27e10ff4d991aa61a6ca67547fb8
+[ok] kept p6_1_b.py sha256 == listed: a172e9f3a99276302b3905c34ce61c654fb3ea3a9518d2d8a423ffae097c4fd4
+[ok] kept p6_1_b.sh sha256 == listed: 9fe86db0d9cd9b07a1cf270ee4c6a03572c8a3fcdadfd9b3d921106d4d4303b4
+[ok] kept p6_1_b_sh.out sha256 == listed: 30b235aeae6c7713565f8d3d0f2481d09e513fe72bebeac393c838ce69832a7d
+[ok] kept p6_1_c.out sha256 == listed: 081c6a70cb56858df30d3a4b125a6a0b1f30cc6ebf9438847fc74ca23ab28a21
+[ok] kept p6_1_common.py sha256 == listed: 0c76f8d99608117859da426b914d0dcbdc157abdc196cef31e3a89489f2c97c5
+[ok] kept p6_1_d.out sha256 == listed: 7096cb04629c0736a3d6ed126554469106ce23afe3b74b36e2683a44a6c3a74d
+[ok] kept p6_1_d.py sha256 == listed: 5381741fbac7dd7875bf9897c8a45e5ecc6a7ba99e1c85301e215fbabbb58368
+[ok] kept p6_1_d_env.out sha256 == listed: e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a
+[ok] kept p6_1_d_env_zsh.out sha256 == listed: 82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd
+[ok] kept p6_1_date.out sha256 == listed: a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9
+[ok] kept p6_1_f.out sha256 == listed: 433673863e1848b1afa2af86047000fc48601f15cc3441e09bfd09b2e6bd423a
+[ok] kept p6_1_f.py sha256 == listed: 7467438a8f73b8f170a48a56461697b728e04bb739fae222bb3f5c67a24c276d
+[ok] kept p6_1_f_hashes.json sha256 == listed: 45d8b9b2c9b37c90a75ec1e8677cf575fdbd1fcc6d4649906f845c8ece6e16fa
+[ok] kept p6_1_g1.sh sha256 == listed: c4a7adc5da415aa41337a0afde845a3cd6a3b8b58d201390b0ea5e203aa92cc7
+[ok] kept p6_1_g2.sh sha256 == listed: b4a25e546eaeb7c6a2c552e3a5938b6524c0561377e20a45b56f040515af1721
+[ok] kept p6_1_g3.py sha256 == listed: 64e8164c3f2ade047a0d17a413ae46f9837b15448368530e6043217806eb0d53
+[ok] kept p6_1_h_check.py sha256 == listed: 61be9a0d06096d78b8ab5f93ce72b30157540f60b3a61d975bdb46765a12b865
+[ok] kept p6_1_msg.txt sha256 == listed: 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+[ok] kept p6_1_msgsha.out sha256 == listed: 5a8ca4478e3bf5ae379603102f45a424fa5900711d57e75503e346378f6b4681
+[ok] kept p6_1_notes.txt sha256 == listed: d536e865d70926e499777ddfc5b410b9dcccba3530ecaea5644f022032f95ead
+[ok] kept p6_1_readings.txt sha256 == listed: d02c95504b3943258d812012c304b3049113fdcbfe30f7987c217ab1eb78db5a
+[ok] kept p6_1_run_cmd.txt sha256 == listed: 2b7e44c90e15876b90bbabcd6444a120d6c96693037940c2a2f14db92e56141a
+[ok] kept p6_1_run_output.txt sha256 == listed: 39de1a6bb0e3d06fb7b49df933409a965970a8c7fe38ae78270c92510b52fccf
+[ok] kept p6_1_run_tool_output.sha sha256 == listed: 22f206aed980df201c019e73a77c545f7e3341680430999574620fc2c6f20741
+[ok] kept p6_1_run_tool_output.txt sha256 == listed: 79de9efa7b1d3d76d43b7ab65a0a2ad42a31bb178f9bd433fb1bc344f5d05c13
+listed names not kept: (none)
+[ok] p6_1_date.out is kept and listed
+[ok] kept p6_1_date.out is identical to /tmp/p6_1_date.out
+[ok] its one line is a date (D1): 2026-10-12
+[ok] P6_1B_RUN1_KEPT exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1b_run1_final/p6_1b.txt
+[ok] P6_1B_RUN1_KEPT is identical to /tmp/p6_1b.txt
+[ok] P6_1B_RUN1_KEPT's line 2 is G: 221507d01547869376e73cde51c20b86892bed95
+[ok] P6_1B_RUN1_KEPT's line 3 == P6_1B_RUN1_LINE3: 789c90c02285fc716ff3d00102ae9372b3d676b92ff63452a88f68fed30a7fbd  /tmp/p6_1b_msg.txt
+[ok] P6_1B_RUN1_KEPT contains the line `A4 CHECK: False`
+[ok] P6_1B_RUN1_KEPT's last four non-empty lines: a STOP line (STOPPED at P6-1b, a.4:), a date, G, PRE_STATUS's line: STOPPED at P6-1b, a.4: A4 CHECK False - P6-1's report ends with the form's status line `?? ACCESS_LOG`, so its last three non-empty lines are a date, G and `?? ACCESS_LOG`, not the STOP line, a date and G; REPO unchanged; the supervisor decides. / 2026-10-13T00:29:33Z / 221507d01547869376e73cde51c20b86892bed95 / ?? ACCESS_LOG
+P6_1B_RUN1_KEPT: sha256 fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1; 770 lines
+listed in the hash section: 14 files
+/Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1b_run1 holds 15 entries
+[ok] kept p6_1b.txt equals the kept report
+[ok] kept p6_1b_a2.out sha256 == listed: e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a
+[ok] kept p6_1b_a2.sh sha256 == listed: 5e7d755e716fe0383374d1ba702b7d0c49229df73b5bc3b47268a9cb66a00a03
+[ok] kept p6_1b_a2_zsh.out sha256 == listed: 82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd
+[ok] kept p6_1b_a3.out sha256 == listed: 4ceb856d222de675bf4034044ab4f30b4a8a0d029adb8615cd0bf1125657dcc2
+[ok] kept p6_1b_a3.py sha256 == listed: ef746e2e3bba2bfb8c0a8ce94e837e81967d9f1b976b7bfcb213aaa65b97a388
+[ok] kept p6_1b_a4.out sha256 == listed: 0f089a92fbdf9c5ae3f1dde466b0398517842dbb668d775aa21f5f2e5699d43f
+[ok] kept p6_1b_a4.py sha256 == listed: e4b51651d42b23f1054038a8bba2287d0eb0f18dcb65f0b896907d80b96ce1d4
+[ok] kept p6_1b_assemble.sh sha256 == listed: e2122ee1a8313f2eda4666fcf9f5aa79474f84289daefcf3948f8c9286fbb8c4
+[ok] kept p6_1b_common.py sha256 == listed: 05a58b3317e4386461db1418c07cc927cd6d32a8697f2ed6386fb0d481665e7d
+[ok] kept p6_1b_date.out sha256 == listed: a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9
+[ok] kept p6_1b_msg.txt sha256 == listed: 789c90c02285fc716ff3d00102ae9372b3d676b92ff63452a88f68fed30a7fbd
+[ok] kept p6_1b_msgsha.out sha256 == listed: f97c70467170b75a6e39b7a07b1370443003220bb30e042962d6aa6281c1101c
+[ok] kept p6_1b_notes.txt sha256 == listed: a5ef15893f30dd9eb737f85a7b4a5f5545a69e048b4036d7016bf84cd059948d
+[ok] kept p6_1b_readings.txt sha256 == listed: c124da31a6aaee07dbe0a6e174c1c71e32ca48ad81770469b48e65fa51c9e106
+listed names not kept: (none)
+checks: 85; failed: 0
+A4 CHECK: True
+----- end of /tmp/p6_1b2_a4.out -----
+
+### b: the copies (bash) and PASS6_STATUS.md (Python)
+----- /tmp/p6_1b2_b.sh -----
+#!/bin/bash
+# P6-1b (second message) b.1: cp -p P6_1_KEPT -> reports/P6_reports/p6_1.txt and P6_1B_RUN1_KEPT ->
+# reports/P6_reports/p6_1b_run1.txt. Sources read from the message's Expected values by script; both destinations are
+# checked absent before either copy. Runs no Python.
+set -euo pipefail
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG="/tmp/p6_1b2_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+ev() {
+  local n
+  n="$(grep -c -E "^- $1 = " "$MSG")"
+  [ "$n" = "1" ] || { echo "REFUSED: expected value $1 found $n times"; exit 2; }
+  grep -E "^- $1 = " "$MSG" | sed -E "s/^- $1 = //"
+}
+A="$(ev P6_1_KEPT)"; A="${A/#\~/$HOME}"
+B="$(ev P6_1B_RUN1_KEPT)"; B="${B/#\~/$HOME}"
+SRCS=("$A" "$B")
+DSTS=("reports/P6_reports/p6_1.txt" "reports/P6_reports/p6_1b_run1.txt")
+for i in 0 1; do
+  [ -f "${SRCS[$i]}" ] || { echo "REFUSED: source ${SRCS[$i]} is not a file"; exit 2; }
+  [ ! -e "$REPO/${DSTS[$i]}" ] || { echo "REFUSED: destination ${DSTS[$i]} exists"; exit 2; }
+done
+for i in 0 1; do
+  mkdir -p "$(dirname "$REPO/${DSTS[$i]}")"
+  cp -p "${SRCS[$i]}" "$REPO/${DSTS[$i]}"
+  echo "cp -p ${SRCS[$i]} -> ${DSTS[$i]}"
+done
+echo "copied: 2"
+----- end of /tmp/p6_1b2_b.sh -----
+
+----- /tmp/p6_1b2_b_sh.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1_final/p6_1.txt -> reports/P6_reports/p6_1.txt
+cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1b_run1_final/p6_1b.txt -> reports/P6_reports/p6_1b_run1.txt
+copied: 2
+exit 0
+----- end of /tmp/p6_1b2_b_sh.out -----
+
+----- /tmp/p6_1b2_b.py -----
+"""P6-1b (second message) b.2 and b.3: PASS6_STATUS.md from the kit's template with b's five substitutions; then the
+B checks (both copies' SHA-256 and mtimes; the substitution recomputed; no placeholder left)."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (PLACEHOLDER, TEMPLATE_NAME, Checks, b_subs, counts_check, d1_date, expected,  # noqa: E402
+                           item_date, lines_of, path, placeholder_lines, read_bytes, repo_file, sha256, sha256_bytes,
+                           substitute)
+
+E = expected()
+D = item_date()
+D1 = d1_date(E)
+C = Checks("B")
+tpath = os.path.join(path(E["KIT_DIR"]), TEMPLATE_NAME)
+t = read_bytes(tpath)
+C.check(sha256_bytes(t) == E["TEMPLATE_SHA256"], "the template's sha256 == TEMPLATE_SHA256")
+counts_check(C, "the template", t, E["TEMPLATE_COUNTS"])
+subs = b_subs(E, D, D1)
+for k, v in subs.items():
+    print(f"  {k} -> {v}")
+if C.fails:
+    C.done()
+    raise SystemExit("not written")
+status = repo_file("PASS6_STATUS.md")
+with open(status, "wb") as fh:
+    fh.write(substitute(t, subs))
+
+for src, dst in ((path(E["P6_1_KEPT"]), "reports/P6_reports/p6_1.txt"),
+                 (path(E["P6_1B_RUN1_KEPT"]), "reports/P6_reports/p6_1b_run1.txt")):
+    d = repo_file(dst)
+    C.check(os.path.isfile(d) and sha256(d) == sha256(src), f"{dst} has its source's sha256", sha256(d))
+    C.check(os.stat(d).st_mtime_ns == os.stat(src).st_mtime_ns, f"{dst} kept its source's mtime")
+written = read_bytes(status)
+again = substitute(read_bytes(tpath), b_subs(E, item_date(), d1_date(E)))
+C.check(written == again, "PASS6_STATUS.md equals the substitution, recomputed")
+C.check(not PLACEHOLDER.findall(written), "no placeholder is left")
+print(f"PASS6_STATUS.md: sha256 {sha256_bytes(written)}; {lines_of(written)} lines")
+C.check(placeholder_lines(t, written), "the same line count as the template")
+C.done()
+----- end of /tmp/p6_1b2_b.py -----
+
+----- /tmp/p6_1b2_b.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+D (from /tmp/p6_1b2_date.out): 2026-10-12
+D1 (from /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1/p6_1_date.out): 2026-10-12
+[ok] the template's sha256 == TEMPLATE_SHA256
+[ok] the template holds {DATE_1B} 5 times: 5
+[ok] the template holds {DATE} 3 times: 3
+[ok] the template holds {P6_0_SHA256} 1 times: 1
+[ok] the template holds {P6_1B_RUN1_SHA256} 1 times: 1
+[ok] the template holds {SANCTION_SHA256} 1 times: 1
+[ok] the template holds no other placeholder
+  {DATE} -> 2026-10-12
+  {P6_0_SHA256} -> 7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e
+  {SANCTION_SHA256} -> 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe
+  {DATE_1B} -> 2026-10-12
+  {P6_1B_RUN1_SHA256} -> fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1
+[ok] reports/P6_reports/p6_1.txt has its source's sha256: 2feeb8c79e770d77e4260ec5529110e6bbb50a0e9e8840f81cd25f532eaa48cb
+[ok] reports/P6_reports/p6_1.txt kept its source's mtime
+[ok] reports/P6_reports/p6_1b_run1.txt has its source's sha256: fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1
+[ok] reports/P6_reports/p6_1b_run1.txt kept its source's mtime
+D (from /tmp/p6_1b2_date.out): 2026-10-12
+D1 (from /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1/p6_1_date.out): 2026-10-12
+[ok] PASS6_STATUS.md equals the substitution, recomputed
+[ok] no placeholder is left
+PASS6_STATUS.md: sha256 f88fe90d9a807287997609494d50956dbd1ee14e7092f4816196ce8a7c06319d; 212 lines
+each template line that held a placeholder, as written:
+  11: | P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done; accepted by Isaiah 2026-10-12 | `records: P6-0` (`cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`), a records-only commit after the documentation modules (P6Q2); the commit the sanction names. Report `reports/P6_reports/p6_0.txt`. |
+  109: > - **P6-0 accepted** (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P6-1 paste).
+  114: >   - Report `reports/P6_reports/p6_0.txt`, SHA-256 `7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e`, the copy kept in `files/pass6_tmp_keep/p6_0_final/`.
+  115: > - **On P6-0's readings** (Isaiah, 2026-10-12, on the supervisor's recommendation; by the P6-1 paste). P6-1's message states these readings, each within the criteria file's text; none changes a criterion, and no version 2 is made.
+  121: >   - `docs/P6_SANCTION.txt`, SHA-256 `123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe`, dated by its `Date:` line. It is a byte-identical copy of the file Isaiah wrote with his own Terminal command, outside REPO.
+  125: > - **P6-1 stopped at f: the first request of the confirmation panel failed after GRANTED** (recorded at P6-1b, 2026-10-12).
+  135: > - **D2 decided: one second attempt** (Isaiah, 2026-10-12, on the supervisor's recommendation; by the P6-1b paste). A labelled deviation from the one-shot rule of §7.5, under these conditions:
+  163: - F6-1 (new, P6-1b, 2026-10-12): with the first `ACCESS_LOG` committed, `tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged` fails in a full suite (it asserts that no `ACCESS_LOG` exists). No full suite runs until P6-1c installs the revised kit. The documentation modules do not include that test.
+  189: - **D2, the second attempt** (Isaiah, 2026-10-12): a labelled deviation from the one-shot rule of the pre-registration's §7.5, decided after the first request failed before any byte of the sealed panel was read (Decision log). Conditions 1 to 7 there. The first request is reported beside the result.
+  190: - P6-1b, first message (`789c90c02285fc716ff3d00102ae9372b3d676b92ff63452a88f68fed30a7fbd`; recorded at its second run, 2026-10-12): stopped at a.4 on a supervisor's error. Its check expected P6-1's report to end with the STOP line, a date and G; the report form ends with `git status --porcelain`, which at P6-1's stop printed `?? ACCESS_LOG`. Every other check of a.2 to a.4 held; REPO was unchanged. The supervisor re-issued the message with the check corrected. Not a builder error. Report `reports/P6_reports/p6_1b_run1.txt`, SHA-256 `fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1`.
+[ok] the same line count as the template
+checks: 14; failed: 0
+B CHECK: True
+----- end of /tmp/p6_1b2_b.out -----
+
+### c
+----- /tmp/p6_1b2_c.py -----
+"""P6-1b (second message) c (and d's after-check, with an argument): REPO before the commit: exactly POST_STATUS;
+ACCESS_LOG at a.3's SHA-256; the logs, the tags and Appendix A unchanged."""
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (Checks, appendix_check, barred, expected, logs_check, porcelain_lines, repo_file,  # noqa: E402
+                           sha256, tags_check)
+
+E = expected()
+C = Checks(sys.argv[1] if len(sys.argv) > 1 else "C")
+st = porcelain_lines()
+for ln in st:
+    print(f"  {ln}")
+C.check(sorted(st) == sorted(barred(E["POST_STATUS"])), "git status --porcelain --untracked-files=all == POST_STATUS")
+h = sha256(repo_file("ACCESS_LOG"))
+C.check(h == E["ACCESS_LOG_SHA256"], "ACCESS_LOG has a.3's sha256 (ACCESS_LOG_SHA256)", h)
+logs_check(C, E)
+tags_check(C, E)
+appendix_check(C, E)
+C.done()
+----- end of /tmp/p6_1b2_c.py -----
+
+----- /tmp/p6_1b2_c.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+   M PASS6_STATUS.md
+  ?? ACCESS_LOG
+  ?? reports/P6_reports/p6_1.txt
+  ?? reports/P6_reports/p6_1b_run1.txt
+[ok] git status --porcelain --untracked-files=all == POST_STATUS
+[ok] ACCESS_LOG has a.3's sha256 (ACCESS_LOG_SHA256): c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+checks: 10; failed: 0
+C CHECK: True
+----- end of /tmp/p6_1b2_c.out -----
+
+### d: the documentation modules (bash) and the check (Python)
+----- /tmp/p6_1b2_d.sh -----
+#!/bin/bash
+# P6-1b (second message) d: the documentation modules, DOCTESTS read from the message's Expected values by script, run
+# in the standing prompt's form with OFILT_DATA_DIR exported. The output goes to /tmp/p6_1b2_d.out. No other test runs.
+set -uo pipefail
+MSG="/tmp/p6_1b2_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+[ "$(grep -c -E '^- DOCTESTS = ' "$MSG")" = "1" ] || { echo "REFUSED: DOCTESTS not found exactly once"; exit 2; }
+DOCTESTS="$(grep -E '^- DOCTESTS = ' "$MSG" | sed -E 's/^- DOCTESTS = //')"
+[[ "$DOCTESTS" =~ ^(tests\.[a-z0-9_]+)( tests\.[a-z0-9_]+)*$ ]] || { echo "REFUSED: DOCTESTS malformed"; exit 2; }
+echo "DOCTESTS = $DOCTESTS"
+if env | grep -q -E '^(OFILT_RUN_SEALED|OFILT_P6_CONFIRM_RUN)='; then echo "REFUSED: a forbidden variable is set"; exit 2; fi
+env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && python -B -m unittest "$@"' _ $DOCTESTS > /tmp/p6_1b2_d.out 2>&1
+rc=$?
+echo "exit $rc"
+cat /tmp/p6_1b2_d.out
+----- end of /tmp/p6_1b2_d.sh -----
+
+----- /tmp/p6_1b2_d_sh.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+DOCTESTS = tests.test_docs_p2 tests.test_docs_d3 tests.test_docs_d3b tests.test_docs_d4 tests.test_docs_d5 tests.test_docs_d6 tests.test_p5_tag_state
+exit 0
+..................s.......
+----------------------------------------------------------------------
+Ran 26 tests in 5.759s
+
+OK (skipped=1)
+----- end of /tmp/p6_1b2_d_sh.out -----
+
+----- /tmp/p6_1b2_d.out -----
+..................s.......
+----------------------------------------------------------------------
+Ran 26 tests in 5.759s
+
+OK (skipped=1)
+----- end of /tmp/p6_1b2_d.out -----
+
+----- /tmp/p6_1b2_d_check.py -----
+"""P6-1b (second message) d's check: /tmp/p6_1b2_d.out holds `Ran DOCTESTS_RAN tests` and a line exactly
+DOCTESTS_RESULT, with no FAIL: or ERROR: line; afterwards the tree is as in c (POST_STATUS; ACCESS_LOG at a.3's SHA-256;
+the logs, the tags and Appendix A unchanged)."""
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (Checks, appendix_check, barred, expected, logs_check, porcelain_lines, read_bytes,  # noqa: E402
+                           repo_file, sha256, tags_check)
+
+E = expected()
+C = Checks("D")
+out = read_bytes("/tmp/p6_1b2_d.out").decode("utf-8").split("\n")
+ran = [ln for ln in out if re.fullmatch(r"Ran \d+ tests? in [0-9.]+s", ln)]
+C.check(len(ran) == 1 and ran[0].startswith(f"Ran {E['DOCTESTS_RAN']} tests "), "the output holds Ran DOCTESTS_RAN tests",
+        " | ".join(ran))
+C.check(out.count(E["DOCTESTS_RESULT"]) == 1, "a line exactly DOCTESTS_RESULT", E["DOCTESTS_RESULT"])
+bad = [ln for ln in out if ln.startswith("FAIL:") or ln.startswith("ERROR:")]
+C.check(not bad, "no FAIL: or ERROR: line", " | ".join(bad))
+st = porcelain_lines()
+C.check(sorted(st) == sorted(barred(E["POST_STATUS"])), "afterwards the tree == POST_STATUS", " | ".join(st))
+C.check(sha256(repo_file("ACCESS_LOG")) == E["ACCESS_LOG_SHA256"], "afterwards ACCESS_LOG has a.3's sha256")
+logs_check(C, E)
+tags_check(C, E)
+appendix_check(C, E)
+C.done()
+----- end of /tmp/p6_1b2_d_check.py -----
+
+----- /tmp/p6_1b2_d_check.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+[ok] the output holds Ran DOCTESTS_RAN tests: Ran 26 tests in 5.759s
+[ok] a line exactly DOCTESTS_RESULT: OK (skipped=1)
+[ok] no FAIL: or ERROR: line
+[ok] afterwards the tree == POST_STATUS:  M PASS6_STATUS.md | ?? ACCESS_LOG | ?? reports/P6_reports/p6_1.txt | ?? reports/P6_reports/p6_1b_run1.txt
+[ok] afterwards ACCESS_LOG has a.3's sha256
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+checks: 13; failed: 0
+D CHECK: True
+----- end of /tmp/p6_1b2_d_check.out -----
+
+### e: the commit (bash) and its check (Python)
+----- /tmp/p6_1b2_e.sh -----
+#!/bin/bash
+# P6-1b (second message) e.1: the records-only commit. COMMIT_FILES and COMMIT_SUBJECT are read from the message's
+# Expected values by script. git add of exactly those files, then git commit with the subject and the attribution line.
+# Runs no Python.
+set -euo pipefail
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG="/tmp/p6_1b2_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+ev() {
+  local n
+  n="$(grep -c -E "^- $1 = " "$MSG")"
+  [ "$n" = "1" ] || { echo "REFUSED: expected value $1 found $n times"; exit 2; }
+  grep -E "^- $1 = " "$MSG" | sed -E "s/^- $1 = //"
+}
+read -r -a FILES <<< "$(ev COMMIT_FILES)"
+SUBJECT="$(ev COMMIT_SUBJECT)"
+echo "COMMIT_FILES (${#FILES[@]}): ${FILES[*]}"
+echo "COMMIT_SUBJECT: $SUBJECT"
+cd "$REPO"
+git add -- "${FILES[@]}"
+git commit -q -m "$SUBJECT" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+echo "commit $(git rev-parse HEAD)"
+----- end of /tmp/p6_1b2_e.sh -----
+
+----- /tmp/p6_1b2_e_sh.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+COMMIT_FILES (4): ACCESS_LOG PASS6_STATUS.md reports/P6_reports/p6_1.txt reports/P6_reports/p6_1b_run1.txt
+COMMIT_SUBJECT: records: P6-1b (P6-1 stopped at f; the first request's ACCESS_LOG preserved; the second attempt decided)
+commit 3251106ab31b05c14540bd55e195bb8fff912134
+exit 0
+----- end of /tmp/p6_1b2_e_sh.out -----
+
+----- /tmp/p6_1b2_e_check.py -----
+"""P6-1b (second message) e.2 to e.4: the commit (one commit line, HEAD's; the subject; the only parent G; exactly
+COMMIT_STATUS; nothing under NO_CHANGE_UNDER) and REPO afterwards (ACCESS_LOG tracked and byte-identical at HEAD; the
+tree clean; the logs, the tags and Appendix A unchanged; PASS6_STATUS.md equal to b's substitution). Prints HEAD."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1b2_common import (TEMPLATE_NAME, Checks, appendix_check, b_subs, barred, d1_date, expected, git,  # noqa: E402
+                           git_bytes, git_rc, item_date, logs_check, path, porcelain_lines, read_bytes, repo_file,
+                           sha256_bytes, spaced, substitute, tags_check)
+
+E = expected()
+D = item_date()
+D1 = d1_date(E)
+C = Checks("E")
+sh = read_bytes("/tmp/p6_1b2_e_sh.out").decode("utf-8").split("\n")
+commits = [ln for ln in sh if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+head = git("rev-parse", "HEAD").strip()
+C.check(commits == [f"commit {head}"], "exactly one commit line, and it is the new HEAD's", " | ".join(commits))
+C.check(git("log", "-1", "--format=%s", "HEAD").rstrip("\n") == E["COMMIT_SUBJECT"], "the subject == COMMIT_SUBJECT")
+body = git("log", "-1", "--format=%B", "HEAD").rstrip("\n")
+C.check(body == E["COMMIT_SUBJECT"] + "\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>",
+        "the message is the subject, then the attribution line")
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [E["G"]], "the only parent is G", " ".join(parents))
+ns = [ln for ln in git("show", "--name-status", "--format=", "HEAD").split("\n") if ln]
+got = sorted(ln.replace("\t", " ", 1) for ln in ns)
+C.check(all("\t" in ln for ln in ns) and got == sorted(barred(E["COMMIT_STATUS"])),
+        "git show --name-status --format= HEAD lists exactly COMMIT_STATUS", " | ".join(got))
+diff = [f for f in git("diff", "--name-only", "HEAD~1", "HEAD").split("\n") if f]
+under = [f for f in diff for d in spaced(E["NO_CHANGE_UNDER"]) if f.startswith(d + "/")]
+C.check(not under, "nothing changed under NO_CHANGE_UNDER", " ".join(under))
+C.check(git_rc("ls-files", "--error-unmatch", "ACCESS_LOG") == 0, "git ls-files --error-unmatch ACCESS_LOG succeeds")
+at_head = git_bytes("show", "HEAD:ACCESS_LOG")
+C.check(at_head == read_bytes(repo_file("ACCESS_LOG")) and sha256_bytes(at_head) == E["ACCESS_LOG_SHA256"],
+        "git show HEAD:ACCESS_LOG is byte-identical to the file and has a.3's sha256", sha256_bytes(at_head))
+st = porcelain_lines()
+C.check(st == [], "the tree is clean", repr(st))
+logs_check(C, E)
+tags_check(C, E)
+appendix_check(C, E)
+want = substitute(read_bytes(os.path.join(path(E["KIT_DIR"]), TEMPLATE_NAME)), b_subs(E, D, D1))
+C.check(read_bytes(repo_file("PASS6_STATUS.md")) == want, "PASS6_STATUS.md equals b's substitution, recomputed",
+        sha256_bytes(read_bytes(repo_file("PASS6_STATUS.md"))))
+C.check(git_bytes("show", "HEAD:PASS6_STATUS.md") == want, "and so does PASS6_STATUS.md at HEAD")
+print(f"the new HEAD: {head}")
+C.done()
+----- end of /tmp/p6_1b2_e_check.py -----
+
+----- /tmp/p6_1b2_e_check.out -----
+message /tmp/p6_1b2_msg.txt: sha256 4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e
+expected values read: 40
+D (from /tmp/p6_1b2_date.out): 2026-10-12
+D1 (from /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_1/p6_1_date.out): 2026-10-12
+[ok] exactly one commit line, and it is the new HEAD's: commit 3251106ab31b05c14540bd55e195bb8fff912134
+[ok] the subject == COMMIT_SUBJECT
+[ok] the message is the subject, then the attribution line
+[ok] the only parent is G: 221507d01547869376e73cde51c20b86892bed95
+[ok] git show --name-status --format= HEAD lists exactly COMMIT_STATUS: A ACCESS_LOG | A reports/P6_reports/p6_1.txt | A reports/P6_reports/p6_1b_run1.txt | M PASS6_STATUS.md
+[ok] nothing changed under NO_CHANGE_UNDER
+[ok] git ls-files --error-unmatch ACCESS_LOG succeeds
+[ok] git show HEAD:ACCESS_LOG is byte-identical to the file and has a.3's sha256: c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03
+[ok] the tree is clean: []
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+[ok] PASS6_STATUS.md equals b's substitution, recomputed: f88fe90d9a807287997609494d50956dbd1ee14e7092f4816196ce8a7c06319d
+[ok] and so does PASS6_STATUS.md at HEAD
+the new HEAD: 3251106ab31b05c14540bd55e195bb8fff912134
+checks: 19; failed: 0
+E CHECK: True
+----- end of /tmp/p6_1b2_e_check.out -----
+
+### The commit, as git shows it
+commit 3251106ab31b05c14540bd55e195bb8fff912134
+parent 221507d01547869376e73cde51c20b86892bed95
+subject records: P6-1b (P6-1 stopped at f; the first request's ACCESS_LOG preserved; the second attempt decided)
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+
+ ACCESS_LOG                        |    1 +
+ PASS6_STATUS.md                   |   42 +-
+ reports/P6_reports/p6_1.txt       | 1827 +++++++++++++++++++++++++++++++++++++
+ reports/P6_reports/p6_1b_run1.txt |  770 ++++++++++++++++
+ 4 files changed, 2635 insertions(+), 5 deletions(-)
+
+## Verdict lines (in step order)
+
+A2_ENV CHECK: True
+A3 CHECK: True
+A4 CHECK: True
+B CHECK: True
+C CHECK: True
+D CHECK: True
+E CHECK: True
+
+## Readings
+
+R1. The first command printed D = 2026-10-12 (`/tmp/p6_1b2_date.out`). `/tmp/p6_1b2_msg.txt` (SHA-256 `4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e`) was read in full with the Read tool. It is the message I was given, "P6-1b, second message: P6-1's stop recorded; the first request's ACCESS_LOG preserved; the second attempt decided (D2)", with its 40 expected values.
+
+R2. a.2 to a.4 are True:
+- the environment is clean;
+- HEAD is G, pushed (`origin/main`), with its subject, parent and three files;
+- the tree is `?? ACCESS_LOG`;
+- `ACCESS_LOG` holds one GRANTED line with head G, at ACCESS_LOG_SHA256;
+- none of ABSENT exists, and the logs, the tags and all 40 Appendix A files are unchanged;
+- `PASS6_STATUS.md` is part 1's (`53c84db5…`);
+- the corrected ending check holds for both kept reports. P6-1's last four non-empty lines are its STOP line, `2026-10-12T23:42:17Z`, G and `?? ACCESS_LOG`; the first P6-1b run's are its STOP line, `2026-10-13T00:29:33Z`, G and `?? ACCESS_LOG`;
+- P6-1's 36 and the first P6-1b run's 14 listed `/tmp` files are all kept and match, and no listed name is missing.
+
+R3. b to e:
+- the two reports were copied with `cp -p` (sources' SHA-256 and mtimes kept);
+- `PASS6_STATUS.md` was written from the template with the five substitutions: SHA-256 `f88fe90d9a807287997609494d50956dbd1ee14e7092f4816196ce8a7c06319d`, 212 lines;
+- the documentation modules gave 26 tests, `OK (skipped=1)`;
+- the commit is `3251106ab31b05c14540bd55e195bb8fff912134` (parent G), holding exactly `A ACCESS_LOG`, `M PASS6_STATUS.md`, `A reports/P6_reports/p6_1.txt` and `A reports/P6_reports/p6_1b_run1.txt`;
+- `ACCESS_LOG` is now tracked, byte-identical at HEAD (`c6eb0d5e…`), and the tree is clean.
+
+R4. Points for P6-1c, from reading D2's seven conditions as written in `PASS6_STATUS.md` (Decision log). Reported, not stopped for: this item only records D2.
+- **Condition 3, the rename.** It renames the committed `ACCESS_LOG` "with its bytes unchanged". Hard rule 3 of the standing prompt and P6Q7 say that what the run writes, `ACCESS_LOG` included, is never deleted, moved, renamed or edited. Hard rule 5 asks only that its bytes stay identical. So P6-1c's message should say that D2 supersedes hard rule 3 for that one rename. It should also check by script that the bytes are identical before and after, and that git records a rename of the tracked file, not an edit.
+- **The new name.** `tools/p6_confirm_run.py`'s one-shot check tests only `io.ACCESS_LOG_PATH`, REPO`/ACCESS_LOG` (`:41-43`), so any other name lets the second request through. But several checks count every name starting `ACCESS_LOG` in REPO outside `.git`: the old test 8's `no_access_log_in_repo`, the kit's `run_state.access_log_names`, the first criteria file's P5 and its gate checks. If the renamed file's name starts with `ACCESS_LOG`, the second criteria file and the revised kit must allow exactly that one name. If it does not, the record should still make the link to the first request plain. Either way the choice is the supervisor's, and it should be fixed in the second criteria file.
+- **Condition 5's presence check.** P5Q3 and P6Q3 forbid opening, reading, listing, hashing or copying anything under DATA. A stat of one named file is none of these words, but it is a contact with DATA's metadata. I propose that the second criteria file state the check as allowed by D2, name the one path and the one call (for example `os.stat`, regular file, no read), and say what it prints (existence and size only, or existence only).
+- **Condition 2** is Isaiah's, and its SHA-256 check is done by him before his second sanction. No builder step touches `build_out` or DATA for it.
+- **F6-1.** As P6-boot's c.1 found, `test_p4_confirm_run`'s test 8 is the only test that fails with `ACCESS_LOG` present. The three registry tests still pass, because the registry still holds the dev run's two lines. With a renamed file whose name starts `ACCESS_LOG`, test 8 would still fail until the revised kit is in.
+
+## Deviations and notes
+
+Deviations: none. Every check script ran once and passed, so the rerun-once rule was not used.
+
+N1. `/tmp/p6_1b2_d_check.py` was first written incompletely: a stub with a wrong import, never run. It was rewritten in full with the editor before its first run, so it was not a rerun. It also makes d's after-check of the tree, so D has one verdict. `/tmp/p6_1b2_c.py` was run once, as c.
+
+N2. One read outside the scripts: after b, the Read tool on `PASS6_STATUS.md` lines 123 to 192, the Decision log's P6-1 and D2 entries, for R4. It was read-only.
+
+N3. Blinding attestation:
+- nothing under DATA, `build_out` or anywhere else the sealed panel might be was opened, listed, hashed or looked for;
+- `ACCESS_LOG` was only read, hashed and committed, with its bytes unchanged;
+- no module of `ofilt` was imported by this item's scripts. The documentation modules imported theirs in their own process and read no data;
+- no test outside DOCTESTS ran, and no full suite;
+- `OFILT_RUN_SEALED` and `OFILT_P6_CONFIRM_RUN` were absent;
+- no tag was created, moved or deleted, and nothing was pushed.
+
+N4. The `/tmp/p6_1b2*` files are left in place. The first run's `/tmp/p6_1b*` files are untouched.
+
+## SHA-256 of every /tmp/p6_1b2* file except this report
+
+82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd  /tmp/p6_1b2_a2_zsh.out
+e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a  /tmp/p6_1b2_a2.out
+d86f527de24e70b402d434dd8ab6c50168f77f4ea05477d6b35fe51d2b7a67b1  /tmp/p6_1b2_a2.sh
+9c3fe0900d63e25d62c6a363a2969ece0c6198ec38d30ed83fc38b4fdb819b75  /tmp/p6_1b2_a3.out
+ab2ff4e70030419afabec790be0417688e40dd97b4dd5efa0062dc449a4dd8ac  /tmp/p6_1b2_a3.py
+0788f00b7a36cb22c8f0289fef209a69f4c584ea50e73e5ff34d1cbba235ab24  /tmp/p6_1b2_a4.out
+ad18f464712a83cf12cf878dc8c067d9dee0e8a43c59ebc8c99a226e3d4866a0  /tmp/p6_1b2_a4.py
+509ec5c09e4e246225af4edc9dbf5817a615362cb6117d9257cdb5c6628dd93b  /tmp/p6_1b2_assemble.sh
+3e1371ecc0e7afc834f9d9372b45a90839ed7b096f754da6effc1f9a5cb0ea55  /tmp/p6_1b2_b_sh.out
+2687518f49a9308dac24c9645a15f34745c7eaa6abf9960ccd06eafbba0bf76a  /tmp/p6_1b2_b.out
+f9db7ab6782c7120bbf6633726b13544544af147aba17ed31dc80b66b0e7236f  /tmp/p6_1b2_b.py
+0e64b6f1b8c4bf319e34813ad630e955590a00e778a747f23b1e57e08d9dd894  /tmp/p6_1b2_b.sh
+8176267dacfeccc9c0cac15e9f7e6a5853d652c5fa8c849909b184a3975f840e  /tmp/p6_1b2_c.out
+9dfceec3b3272a4a707c461b567d99cae1feda0d5d7e58842592e182380099e6  /tmp/p6_1b2_c.py
+e635db3d4537abdae6c97d9a07e6a9449fb015358ce68dc04475344fff3c129f  /tmp/p6_1b2_common.py
+c55ae4ac5089b34f8dd23f77443559b19987ebf04c97d3efbcb600613e576d0e  /tmp/p6_1b2_d_check.out
+6941c12f9350d46044ff4a7a8675e54f596e5c167ce5d06d00f25445e8ae0eba  /tmp/p6_1b2_d_check.py
+afc771f855dd6f5d88a8260e650241aaa638b34403b6505924ff6f55390709ad  /tmp/p6_1b2_d_sh.out
+9bb9a178e81ac7b768ad1b99e695666825e398a1ff1d697653cd5c63c7d49e67  /tmp/p6_1b2_d.out
+50349de1fc3b172e1cab2b7f777af0dd7b6d6222e1cd02a82269d73d1b34392f  /tmp/p6_1b2_d.sh
+a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  /tmp/p6_1b2_date.out
+5b389aca425bfcf1432296a60b8fbd07e11ab7644b3b3bc39c919afb024afb46  /tmp/p6_1b2_e_check.out
+1844163ec19d87c91dd59de1dedd85f9fd5ec64e383273302e5ef9e4be575829  /tmp/p6_1b2_e_check.py
+e386f4b87bf2135d33406ed8b26ddf4bfa344a7ec29faa30ef6ae725178f057c  /tmp/p6_1b2_e_sh.out
+d3180690a4ccb6365bbe42937599865569c8fc125c02e6b14a006e8f57243e11  /tmp/p6_1b2_e.sh
+4543abed3ebca068566c46a5ac5aebb516b83035515c9588735c0fa59309e10e  /tmp/p6_1b2_msg.txt
+5814a32debfaba935ea411e78a3631e8a0ead39ea0f50114dc7c01a897842ad3  /tmp/p6_1b2_msgsha.out
+96f7f8fdb5f91828adb81ac6ff0d06826eb914f8f6c7a4d8f7204e7f6018df9e  /tmp/p6_1b2_notes.txt
+9228b9fffaf75a6b17a19e01a580eaccbfef95f8b0b1e4372f5011190c23d09c  /tmp/p6_1b2_readings.txt
+
+## The assembler
+
+----- /tmp/p6_1b2_assemble.sh -----
+#!/bin/bash
+# P6-1b (second message) f: assembles /tmp/p6_1b2.txt, in the standing prompt's report form, from command output and
+# this run's /tmp/p6_1b2* files. Runs no Python; reads REPO only through git.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+OUT="/tmp/p6_1b2.txt"
+
+show() {  # one file in full, between markers
+  echo "----- $1 -----"
+  cat "$1"
+  echo "----- end of $1 -----"
+  echo
+}
+
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 "/tmp/p6_1b2_msg.txt"
+echo
+echo "# P6-1b, second message: P6-1's stop recorded; the first request's ACCESS_LOG preserved; the second attempt decided (D2)"
+echo
+echo "Builder report. D = $(cat /tmp/p6_1b2_date.out). The records-only commit: $(git -C "$REPO" rev-parse HEAD)."
+echo
+echo "## Scripts and their outputs"
+echo
+echo "### a.1"
+show /tmp/p6_1b2_date.out
+show /tmp/p6_1b2_msgsha.out
+echo "### Shared helper of the Python scripts"
+show /tmp/p6_1b2_common.py
+echo "### a.2 (and the extra check in the tool's own zsh)"
+show /tmp/p6_1b2_a2.sh
+show /tmp/p6_1b2_a2.out
+show /tmp/p6_1b2_a2_zsh.out
+echo "### a.3"
+show /tmp/p6_1b2_a3.py
+show /tmp/p6_1b2_a3.out
+echo "### a.4"
+show /tmp/p6_1b2_a4.py
+show /tmp/p6_1b2_a4.out
+echo "### b: the copies (bash) and PASS6_STATUS.md (Python)"
+show /tmp/p6_1b2_b.sh
+show /tmp/p6_1b2_b_sh.out
+show /tmp/p6_1b2_b.py
+show /tmp/p6_1b2_b.out
+echo "### c"
+show /tmp/p6_1b2_c.py
+show /tmp/p6_1b2_c.out
+echo "### d: the documentation modules (bash) and the check (Python)"
+show /tmp/p6_1b2_d.sh
+show /tmp/p6_1b2_d_sh.out
+show /tmp/p6_1b2_d.out
+show /tmp/p6_1b2_d_check.py
+show /tmp/p6_1b2_d_check.out
+echo "### e: the commit (bash) and its check (Python)"
+show /tmp/p6_1b2_e.sh
+show /tmp/p6_1b2_e_sh.out
+show /tmp/p6_1b2_e_check.py
+show /tmp/p6_1b2_e_check.out
+echo "### The commit, as git shows it"
+git -C "$REPO" show --stat --format='commit %H%nparent %P%nsubject %s%n%n%b' HEAD
+echo
+
+echo "## Verdict lines (in step order)"
+echo
+grep -h -E '^[A-Z0-9_]+( [A-Z0-9_]+)* CHECK: (True|False)$' /tmp/p6_1b2_a2.out /tmp/p6_1b2_a3.out /tmp/p6_1b2_a4.out \
+  /tmp/p6_1b2_b.out /tmp/p6_1b2_c.out /tmp/p6_1b2_d_check.out /tmp/p6_1b2_e_check.out
+echo
+echo "## Readings"
+echo
+cat /tmp/p6_1b2_readings.txt
+echo
+echo "## Deviations and notes"
+echo
+cat /tmp/p6_1b2_notes.txt
+echo
+echo "## SHA-256 of every /tmp/p6_1b2* file except this report"
+echo
+for f in /tmp/p6_1b2*; do
+  [ "$f" = "$OUT" ] && continue
+  if [ -d "$f" ]; then echo "(a folder, not hashed: $f)"; continue; fi
+  shasum -a 256 "$f"
+done
+echo
+echo "## The assembler"
+echo
+show /tmp/p6_1b2_assemble.sh
+echo "STOPPED at P6-1b, f: planned; Isaiah pushes, then uploads /tmp/p6_1.txt and /tmp/p6_1b2.txt to the supervisor chat."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$OUT" 2>&1
+----- end of /tmp/p6_1b2_assemble.sh -----
+
+STOPPED at P6-1b, f: planned; Isaiah pushes, then uploads /tmp/p6_1.txt and /tmp/p6_1b2.txt to the supervisor chat.
+
+2026-10-13T00:49:23Z
+3251106ab31b05c14540bd55e195bb8fff912134
