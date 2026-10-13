@@ -11,13 +11,13 @@ Standing prompt: `files/pass6/PASS6_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `2dfb
 | P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done; accepted by Isaiah 2026-10-12 | `records: P6-0` (`cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`), a records-only commit after the documentation modules (P6Q2); the commit the sanction names. Report `reports/P6_reports/p6_0.txt`. |
 | P6-1: the sanction, the gate's checkpoint and the run (part 1); §7.6's test changes and the post-run checkpoint (part 2) | stopped at f; accepted by Isaiah 2026-10-12 | The gate passed and `checkpoint: P6-1 part 1` (G, `221507d01547869376e73cde51c20b86892bed95`) was committed. The run failed after GRANTED: the sealed panel was not in the data folder. POST CHECK False; part 2 not run. Report `reports/P6_reports/p6_1.txt`. |
 | P6-1b: P6-1's stop recorded; the first request's `ACCESS_LOG` preserved; the second attempt decided (D2) | done; accepted by Isaiah 2026-10-12 | `records: P6-1b`, a records-only commit after the documentation modules (P6Q2). Its first message stopped at a.4 on a supervisor's check (Deviations); its second made the commit. Report `reports/P6_reports/p6_1b2.txt`; the first run's report `reports/P6_reports/p6_1b_run1.txt`. |
-| P6-1c: the second attempt prepared: the first log renamed with its bytes unchanged; the revised kit of §7.6's test changes; the second criteria file | done | `records: P6-1c (...)` (`655b1af42830ac59af113b80c35d9ada08c5787c`), the rename alone (R100); then `checkpoint: P6-1c` after the full suite, S2, the commit the second sanction names. Report `/tmp/p6_1c.txt`, copied at P6-1d. |
-| P6-1d: the second attempt (D2), under Isaiah's second sanction: the gate, the run and part 2 | to do | Under `docs/P6_RUN2_CRITERIA.md`. Before it, Isaiah runs the placement command (the sealed panel copied into the data folder and hash-verified) and gives the second sanction. |
+| P6-1c: the second attempt prepared: the first log renamed with its bytes unchanged; the revised kit of §7.6's test changes; the second criteria file | done; accepted by Isaiah 2026-10-12 | `records: P6-1c (...)` (`655b1af42830ac59af113b80c35d9ada08c5787c`), the rename alone (R100); then `checkpoint: P6-1c` after the full suite, S2, the commit the second sanction names. Report `reports/P6_reports/p6_1c.txt`. |
+| P6-1d: the second attempt (D2), under Isaiah's second sanction: the gate, the run and part 2 | in progress | Part 1's checkpoint, `checkpoint: P6-1d part 1`, is G2, the commit at which the second run is made (`docs/P6_RUN2_CRITERIA.md` §3). Part 2 follows only if every post-run check holds. |
 | P6-2: decisions P93 onward; P92's refresh; Pass 6 closed | to do | Records and documentation pins, after the documentation modules. |
 
 ## Next action
 
-Isaiah pushes P6-1c's two commits. He then runs the supervisor's placement command, which copies the sealed panel into the data folder and verifies its SHA-256, and gives the second sanction (`docs/P6_RUN2_CRITERIA.md` §2), naming P6-1c's checkpoint. Then P6-1d.
+The gate's checkpoint (`checkpoint: P6-1d part 1`) is the commit at which the second run is made, under `docs/P6_RUN2_CRITERIA.md` §3 to §5 and the second sanction `docs/P6_SANCTION2.txt`. Part 2 follows only if every post-run check holds.
 
 ## Decision log
 
@@ -165,6 +165,25 @@ Isaiah pushes P6-1c's two commits. He then runs the supervisor's placement comma
 >   4. **The second criteria file** `docs/P6_RUN2_CRITERIA.md`, version 1, SHA-256 `8a802f2953a7912b201b7d4deda45b70c844b8a8ba666235e96c57a465fbfc52`. It is committed by P6-1c's checkpoint and pinned by no test. Its §2 fixes the placement command (Isaiah's; condition 2) and the eleven-line second sanction (condition 6).
 >   5. **The items.** P6-1c; then Isaiah's placement command and second sanction; then P6-1d (the gate, the run and part 2, under the second criteria file); then P6-2.
 > - **F6-1 closed** (P6-1c, 2026-10-12). With the first log renamed and the revised kit installed, the full suite passed at `checkpoint: P6-1c`.
+>
+> - **P6-1c accepted** (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P6-1d paste).
+>   - Every verdict True (A2_ENV, A3, A4, R, C, D, E).
+>   - The rename's commit is `655b1af42830ac59af113b80c35d9ada08c5787c`, an R100 rename alone, with the bytes `c6eb0d5e…` unchanged. The checkpoint is `69d4ba2d414a6802ca22293f4ec6e0b724589e91` (S2): 398 tests, `OK (skipped=6)`, holding exactly the seven files.
+>   - The three changed modules gave 31 tests, OK, on the real first log.
+>   - `PASS6_STATUS.md` was `24c7748e7367b3375e5046db2048cf40211a4caffc992de8f2ba7fb7e6438718`, recomputed by the supervisor.
+>   - Report `reports/P6_reports/p6_1c.txt`, SHA-256 `b2ea04ef1c9ff718c65d731043b3690d41ed4e693d9aa6048370f327cf3b94fa`. Accepted with its readings R1 to R5 and notes N1 to N5.
+> - **On P6-1c's R5** (Isaiah, 2026-10-12, on the supervisor's recommendation; by the P6-1d paste). These are readings within `docs/P6_RUN2_CRITERIA.md`'s words; none changes a criterion.
+>   - The presence check is the criteria's own call, `os.stat` of the one panel path, with `stat.S_ISREG` on its mode. It prints one of three lines: `PANEL: present, regular file` (True), `PANEL: present, not a regular file` (False) or `PANEL: absent` (False).
+>   - It is made twice, the same single call each time: once in PRE CHECK and once as G12.
+>   - Isaiah's placement command made PANEL with `cp -p` and checked that it is a regular file, not a symbolic link.
+> - **The sealed panel placed** (Isaiah, by the supervisor's placement command; D2 condition 2; recorded by the P6-1d paste).
+>   - `build_out/p2_20261006T002928Z/panel_confirm_SEALED.csv` was copied with `cp -p` to the data folder's `panel_confirm_SEALED.csv`.
+>   - The command checked that the source had `b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1` (AM-04), that the build's `MANIFEST.json` records it, and that the copy has it too.
+>   - It printed hashes only; no content of the panel was shown.
+> - **The second sanction** (Isaiah; D2 condition 6; `docs/P6_RUN2_CRITERIA.md` §2; recorded by the P6-1d paste).
+>   - `docs/P6_SANCTION2.txt`, SHA-256 `44021289dab169c757a426c037b8d1e7a1d5e782858aafe60fb333d57360ff32`, dated by its `Date:` line. It is a byte-identical copy of the file Isaiah wrote with his own Terminal command.
+>   - It names S2, the SHA-256 of the script, the assembler and the configuration, the second criteria file, the panel's verified hash and the first request's log.
+>   - It sanctions one second run, by §7.4's command, at the gate of the second criteria file.
 
 ## Test results
 
@@ -173,6 +192,7 @@ Isaiah pushes P6-1c's two commits. He then runs the supervisor's placement comma
 - P6-1 part 1: the suite ran inside the gate's checkpoint (`checkpoint: P6-1 part 1`; P5Q2 rule 2), before the run: `Ran 398 tests`, `OK (skipped=6)`.
 - P6-1b: the seven documentation modules passed before the records-only commit: 26 tests, `OK (skipped=1)`. No full suite (P6Q2; Flag F6-1).
 - P6-1c: the seven documentation modules passed before the rename's records commit: 26 tests, `OK (skipped=1)`. After the kit's install, the three changed modules passed on their own: 31 tests, OK. The full suite ran inside `checkpoint: P6-1c` (P5Q2 rule 1). Its counts are in P6-1c's report.
+- P6-1d part 1: the suite ran inside the gate's checkpoint (`checkpoint: P6-1d part 1`), before the second run. Its counts are in P6-1d's report.
 
 ## Test changes
 
@@ -218,12 +238,15 @@ Flags open at the end of Pass 5 stay recorded in `PASS5_STATUS.md`, Flags (close
 - P6-1, the first request: §7.4's command, once, loaded the dev panel and the event files, verified by `io`. `io.load_confirm` was granted, then failed before it opened the sealed panel: no byte of it was read or hashed, and nothing was computed. `BLIND_FIT_LOG` and `RUN_REGISTRY.jsonl` are unchanged. Neither the builder nor the supervisor looked in the data folder, or anywhere else, for the file.
 - P6-1b: records only: `ACCESS_LOG` committed unchanged, P6-1's report copied, this file. No data file was opened; nothing was computed.
 - P6-1c: the rename (bytes unchanged), the second criteria file, the revised test kit, the records and a full-suite checkpoint. No data file was opened; the suite read the dev panel and the event files only through its existing tests; nothing was computed on confirmation data, and the confirmation panel was not requested.
+- The placement (Isaiah's command, before the second sanction): the sealed panel's bytes were read only to hash them, at the source and at the copy, and were copied with `cp -p`. Nothing of its content was printed, and nothing was computed.
+- P6-1d part 1, up to the command: records only, then the gate's checkpoint. The suite reached the data folder only through its existing tests; the presence check was a single `os.stat` of the one panel path, made twice; the confirmation panel was not requested before the command.
 
 ## Deviations
 
 - **D2, the second attempt** (Isaiah, 2026-10-12): a labelled deviation from the one-shot rule of the pre-registration's §7.5, decided after the first request failed before any byte of the sealed panel was read (Decision log). Conditions 1 to 7 there. The first request is reported beside the result.
 - P6-1b, first message (`789c90c02285fc716ff3d00102ae9372b3d676b92ff63452a88f68fed30a7fbd`; recorded at its second run, 2026-10-12): stopped at a.4 on a supervisor's error. Its check expected P6-1's report to end with the STOP line, a date and G; the report form ends with `git status --porcelain`, which at P6-1's stop printed `?? ACCESS_LOG`. Every other check of a.2 to a.4 held; REPO was unchanged. The supervisor re-issued the message with the check corrected. Not a builder error. Report `reports/P6_reports/p6_1b_run1.txt`, SHA-256 `fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1`.
 - **D2's conditions 3 and 4, made at P6-1c** (2026-10-12): the first request's `ACCESS_LOG` renamed, its bytes unchanged (superseding hard rule 3 for that one file); the revised kit of §7.6's test changes installed before the second run (a test change before a run). Both are labelled parts of D2.
+- P6-1c (message `75d8a6beb0d9a05e7d070723464e0109b9c4cb03db1efcfa79f6ad525449885a`; recorded at P6-1d): none of the builder's. The rename and the kit's installation are D2's labelled parts, above.
 - P6-1 (message `5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7`; recorded at P6-1b; reviewed at P6-1c): D1, a `sed -i ''` on a `/tmp` script during the gate's checkpoint, accepted as a minor procedural deviation with no effect (Decision log). N1 to N5 accepted.
 - P6-0 (message `a2bc44883ce3915f6f7f0cf8017200fe00ffc5419746c02a9e9b9d4c80302109`; recorded at P6-1): none. Its N1, two scripts corrected with the editor before their first run, was not a rerun. Its N7, the assembler run a second time under the rerun-once rule, changed no check and no verdict. Accepted.
 - P6-boot (message `b2fc20e5ae6b637de91768c28d2363300889cce8c51ac61043f2186be6637688`; recorded at P6-0): none. Its N2, a search script corrected with the editor before its first run, was not a rerun.
@@ -247,3 +270,4 @@ For the write-up. It continues `PASS5_STATUS.md`'s Disclosure list, by reference
 - **The sanction.** `docs/P6_SANCTION.txt`, written by Isaiah after the criteria file and before the run.
 - **The first request (P6-1).** Granted at G. It failed before the sealed panel was opened, so it revealed nothing of the confirmation sample. The dev panel and the events were loaded, as by design.
 - **The second criteria file.** `docs/P6_RUN2_CRITERIA.md`, written and committed after the first request and before the second.
+- **The placement and the second sanction.** Isaiah's two commands, after P6-1c and before the second request. The placement read the sealed panel's bytes only to hash them, and printed hashes only.

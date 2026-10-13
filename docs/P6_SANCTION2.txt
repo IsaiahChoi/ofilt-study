@@ -1,0 +1,11 @@
+SANCTION of the second attempt at the confirmation run, ofilt/drift (Pass 6, item P6-1d; D2; docs/PREREG_v1.md §7.2)
+Date: 2026-10-12
+By: Isaiah Choi
+HEAD: 69d4ba2d414a6802ca22293f4ec6e0b724589e91
+tools/p6_confirm_run.py: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+ofilt/drift/confirm_run.py: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+Criteria: docs/P6_RUN2_CRITERIA.md 8a802f2953a7912b201b7d4deda45b70c844b8a8ba666235e96c57a465fbfc52
+Sealed panel: data/panel_confirm_SEALED.csv b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1 (copied from build_out/p2_20261006T002928Z/ and hash-verified by this command)
+First request: reports/P6_runs/attempt1/ACCESS_LOG c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03 (granted at 221507d01547869376e73cde51c20b86892bed95; no byte of the sealed panel read)
+I sanction one second run of tools/p6_confirm_run.py (D2), by the command of docs/PREREG_v1.md §7.4, at the gate of the criteria file above. Any further run is a dated, labelled deviation that I decide.
