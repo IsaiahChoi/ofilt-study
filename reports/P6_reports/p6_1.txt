@@ -1,0 +1,1827 @@
+2026-10-12T23:42:16Z
+221507d01547869376e73cde51c20b86892bed95
+5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7  /tmp/p6_1_msg.txt
+
+# P6-1: the sanction, the gate, the confirmation run (part 1); §7.6's test changes and the post-run checkpoint (part 2)
+
+Builder report. D = 2026-10-12. STOPPED at f: the run failed after GRANTED (FileNotFoundError: the sealed
+panel is not at OFILT_DATA_DIR/panel_confirm_SEALED.csv). POST CHECK False; part 2 not run; nothing the run wrote was touched.
+
+## Scripts and their outputs
+
+### a.1
+----- /tmp/p6_1_date.out -----
+2026-10-12
+----- end of /tmp/p6_1_date.out -----
+
+----- /tmp/p6_1_msgsha.out -----
+5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7  /tmp/p6_1_msg.txt
+----- end of /tmp/p6_1_msgsha.out -----
+
+### Shared helper of the Python scripts
+----- /tmp/p6_1_common.py -----
+"""P6-1: shared helpers for the item's Python scripts.
+
+Imports no module of ofilt; reads files as bytes. Expected values are read from /tmp/p6_1_msg.txt, list
+"## Expected values", one line per name, `- NAME = value` (a value keeps any leading space after "= ", as POST_STATUS's
+first item does); the item's date D from /tmp/p6_1_date.out (a.1).
+"""
+import datetime
+import hashlib
+import json
+import os
+import re
+import subprocess
+
+MSG = "/tmp/p6_1_msg.txt"
+DATE_FILE = "/tmp/p6_1_date.out"
+PLACEHOLDER = re.compile(rb"\{[A-Z0-9_]+\}")
+REPO = os.path.expanduser("~/Desktop/FX_Project/ofilt_pass1")
+DATA = os.path.expanduser("~/Desktop/FX_Project/data")
+
+
+def read_bytes(path):
+    with open(path, "rb") as fh:
+        return fh.read()
+
+
+def sha256_bytes(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256(path):
+    return sha256_bytes(read_bytes(path))
+
+
+def expected():
+    data = read_bytes(MSG)
+    print(f"message {MSG}: sha256 {sha256_bytes(data)}")
+    lines = data.decode("utf-8").split("\n")
+    start = lines.index("## Expected values")
+    E = {}
+    for ln in lines[start + 1:]:
+        if ln.startswith("## "):
+            break
+        m = re.match(r"^- ([A-Z0-9_]+) = (.*)$", ln)
+        if m:
+            if m.group(1) in E:
+                raise SystemExit(f"duplicate expected value {m.group(1)}")
+            E[m.group(1)] = m.group(2)
+    print(f"expected values read: {len(E)}")
+    return E
+
+
+def item_date():
+    d = read_bytes(DATE_FILE).decode("utf-8").strip()
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", d):
+        raise SystemExit(f"{DATE_FILE} does not hold a date: {d!r}")
+    print(f"D (from {DATE_FILE}): {d}")
+    return d
+
+
+def path(value):
+    return os.path.expanduser(value)
+
+
+def spaced(value):
+    return value.split(" ")
+
+
+def barred(value):
+    """Items separated by ` | ` (each kept as written, leading spaces included)."""
+    return value.split(" | ")
+
+
+def pairs(value):
+    """`name:value` items separated by ` | `, split at the last colon."""
+    return [tuple(item.rsplit(":", 1)) for item in barred(value)]
+
+
+def git_bytes(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], check=True, capture_output=True).stdout
+
+
+def git(*args, repo=REPO):
+    return git_bytes(*args, repo=repo).decode("utf-8")
+
+
+def git_rc(*args, repo=REPO):
+    return subprocess.run(["git", "-C", repo, *args], capture_output=True).returncode
+
+
+def lines_of(data):
+    return data.count(b"\n")
+
+
+def repo_file(rel):
+    """A REPO path, refused if it would leave REPO or reach DATA (nothing in DATA is opened)."""
+    full = os.path.realpath(os.path.join(REPO, rel))
+    if os.path.isabs(rel) or ".." in rel.split("/") or not full.startswith(os.path.realpath(REPO) + os.sep) \
+            or full.startswith(os.path.realpath(DATA) + os.sep):
+        raise SystemExit(f"refused: {rel!r} is not a REPO path")
+    return full
+
+
+def access_log_hits(root=REPO):
+    """Names starting ACCESS_LOG under root outside .git (names only), relative to root, sorted."""
+    hits = []
+    for r, dirs, files in os.walk(root):
+        if r == root and ".git" in dirs:
+            dirs.remove(".git")
+        hits += [os.path.relpath(os.path.join(r, n), root) for n in dirs + files if n.startswith("ACCESS_LOG")]
+    return sorted(hits)
+
+
+def porcelain_lines(untracked="all"):
+    """`git status --porcelain --untracked-files=<untracked>`'s lines, exactly as printed."""
+    return [ln for ln in git("status", "--porcelain", f"--untracked-files={untracked}").split("\n") if ln]
+
+
+APPX_HEAD = "## Appendix A: the files that fix the confirmation (SHA-256 at the tag)"
+APPX_ROW = re.compile(r"^\| `([^`]+)` \| `([0-9a-f]{64})` \|.*\|$")
+RUN_MARK = "OFILT_P6_CONFIRM_RUN=P6-1 caffeinate"
+
+
+def appendix_rows_from(text):
+    lines = text.split("\n")
+    if lines.count(APPX_HEAD) != 1:
+        raise SystemExit("the Appendix A heading does not occur exactly once")
+    rows, near = [], []
+    for ln in lines[lines.index(APPX_HEAD):]:
+        m = APPX_ROW.match(ln)
+        if m:
+            rows.append((m.group(1), m.group(2)))
+        elif ln.startswith("| `"):
+            near.append(ln)
+    if near:
+        raise SystemExit(f"{len(near)} Appendix A lines start '| `' without the row form")
+    return rows
+
+
+def appendix_rows():
+    return appendix_rows_from(read_bytes(repo_file("docs/PREREG_v1.md")).decode("utf-8"))
+
+
+def appendix_check(C, E, skip=()):
+    """Every Appendix A file (except those in skip) has the row's SHA-256 in the working tree."""
+    rows = appendix_rows()
+    C.check(len(rows) == int(E["APPX_ROWS"]) and len({p for p, _ in rows}) == len(rows),
+            "Appendix A: APPX_ROWS rows, no path twice", f"{len(rows)}")
+    todo = [(p, h) for p, h in rows if p not in skip]
+    bad = [p for p, h in todo if sha256(repo_file(p)) != h]
+    C.check(not bad, f"every Appendix A file{' other than ' + ', '.join(skip) if skip else ''} has the row's sha256 "
+            f"(working tree)", f"{len(todo) - len(bad)} of {len(todo)}" + ("; mismatch: " + " ".join(bad) if bad else ""))
+    return rows
+
+
+def blind_log_check(C, E):
+    data = read_bytes(repo_file("BLIND_FIT_LOG"))
+    C.check(sha256_bytes(data) == E["BLIND_FIT_LOG_SHA256"] and lines_of(data) == int(E["BLIND_FIT_LOG_LINES"]),
+            "BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES",
+            f"{sha256_bytes(data)}, {lines_of(data)} lines")
+
+
+def registry_before_check(C, E):
+    data = read_bytes(repo_file("RUN_REGISTRY.jsonl"))
+    C.check(sha256_bytes(data) == E["RUN_REGISTRY_SHA256"] and lines_of(data) == int(E["RUN_REGISTRY_LINES"]),
+            "RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES",
+            f"{sha256_bytes(data)}, {lines_of(data)} lines")
+
+
+def logs_check(C, E):
+    blind_log_check(C, E)
+    registry_before_check(C, E)
+
+
+def tags_check(C, E):
+    tags = git("tag", "-l").split()
+    C.check(tags == spaced(E["TAG_LIST"]), "git tag -l == TAG_LIST", " ".join(tags))
+    kind = git("cat-file", "-t", "refs/tags/prereg-v1").strip()
+    C.check(kind == "tag", "prereg-v1 is of type tag (annotated)", kind)
+    obj = git("rev-parse", "refs/tags/prereg-v1").strip()
+    C.check(obj == E["PREREG_TAG_OBJECT"], "refs/tags/prereg-v1 == PREREG_TAG_OBJECT", obj)
+    commit = git("rev-parse", "refs/tags/prereg-v1^{commit}").strip()
+    C.check(commit == E["PREREG_TAG_COMMIT"], "prereg-v1's commit == PREREG_TAG_COMMIT", commit)
+
+
+def access_check(C):
+    hits = access_log_hits()
+    C.check(hits == [], "no name starting ACCESS_LOG in REPO outside .git (names only)", " ".join(hits))
+
+
+def env_check(C):
+    for v in ("OFILT_RUN_SEALED", "OFILT_P6_CONFIRM_RUN"):
+        C.check(v not in os.environ, f"{v} is absent from this process's environment")
+
+
+def sanction_check(C, E, data, label):
+    """a.3's checks of a sanction text (bytes)."""
+    print(f"----- {label}, in full -----")
+    print(data.decode("utf-8", errors="replace"), end="")
+    print(f"----- end of {label} -----")
+    print(f"{label} sha256 {sha256_bytes(data)}")
+    try:
+        text = data.decode("utf-8")
+        C.check(True, f"{label} is UTF-8")
+    except UnicodeDecodeError:
+        C.check(False, f"{label} is UTF-8")
+        return
+    C.check(text.endswith("\n"), f"{label} ends in a newline")
+    lines = text.split("\n")
+    C.check(len(lines) == 10 and lines[-1] == "", f"{label} has exactly nine lines, nothing after the ninth",
+            f"{len(lines) - 1} newline-ended lines; trailing {lines[-1]!r}")
+    if len(lines) < 10:
+        return
+    C.check(re.fullmatch(r"Date: [0-9]{4}-[0-9]{2}-[0-9]{2}", lines[1]) is not None,
+            "line 2 matches ^Date: YYYY-MM-DD$", lines[1])
+    try:
+        datetime.date.fromisoformat(lines[1][len("Date: "):])
+        C.check(True, "line 2 is a valid calendar date", lines[1][len("Date: "):])
+    except ValueError:
+        C.check(False, "line 2 is a valid calendar date", lines[1])
+    for i in (1, 3, 4, 5, 6, 7, 8, 9):
+        C.check(lines[i - 1] == E[f"SANCTION_LINE{i}"], f"line {i} == SANCTION_LINE{i}")
+    C.check(lines[3] == f"HEAD: {E['S']}", "line 4's commit is S", lines[3])
+    for i, (p, h) in zip((5, 6, 7), pairs(E["SANCTIONED"])):
+        C.check(lines[i - 1] == f"{p}: {h}", f"line {i} holds SANCTIONED's hash for {p}")
+    m = re.fullmatch(r"Criteria: docs/P6_RUN_CRITERIA\.md ([0-9a-f]{64})", lines[7])
+    named = m.group(1) if m else None
+    C.check(named == E["CRITERIA_SHA256"], "line 8's hash is CRITERIA_SHA256", str(named))
+    at_s = sha256_bytes(git_bytes("show", f"{E['S']}:docs/P6_RUN_CRITERIA.md"))
+    C.check(named == at_s, "line 8's hash == sha256 of git show S:docs/P6_RUN_CRITERIA.md", at_s)
+    status_s = git("show", f"{E['S']}:PASS6_STATUS.md")
+    C.check(named is not None and named in status_s, "git show S:PASS6_STATUS.md contains it")
+
+
+def verdict_of(out_path, name):
+    """True iff the file holds exactly one line `<name> CHECK: True` and no `<name> CHECK: False`."""
+    if not os.path.exists(out_path):
+        return False
+    lines = read_bytes(out_path).decode("utf-8").split("\n")
+    return lines.count(f"{name} CHECK: True") == 1 and f"{name} CHECK: False" not in lines
+
+
+def substitute(template_bytes, d, p6_0_sha, sanction_sha):
+    return (template_bytes.replace(b"{DATE}", d.encode()).replace(b"{P6_0_SHA256}", p6_0_sha.encode())
+            .replace(b"{SANCTION_SHA256}", sanction_sha.encode()))
+
+
+def counts_check(C, label, data, counts):
+    """counts: `{NAME}:n | ...`; exactly those placeholders, each n times, no other."""
+    want = {k.encode(): int(v) for k, v in pairs(counts)}
+    for k, n in want.items():
+        C.check(data.count(k) == n, f"{label} holds {k.decode()} {n} times", f"{data.count(k)}")
+    other = [m for m in PLACEHOLDER.findall(data) if m not in want]
+    C.check(not other, f"{label} holds no other placeholder", b" ".join(other).decode())
+
+
+def placeholder_lines(template_bytes, written_bytes):
+    tl, wl = template_bytes.decode("utf-8").split("\n"), written_bytes.decode("utf-8").split("\n")
+    print("each template line that held a placeholder, as written:")
+    for i, (a, b) in enumerate(zip(tl, wl), 1):
+        if PLACEHOLDER.search(a.encode("utf-8")):
+            print(f"  {i}: {b}")
+    return len(tl) == len(wl)
+
+
+def strict_json(data):
+    def refuse(c):
+        raise ValueError(f"non-finite constant {c}")
+    return json.loads(data.decode("utf-8"), parse_constant=refuse)
+
+
+class Checks:
+    def __init__(self, verdict):
+        self.verdict = verdict
+        self.n = 0
+        self.fails = []
+
+    def check(self, ok, label, detail=""):
+        self.n += 1
+        if not ok:
+            self.fails.append(label)
+        print(f"[{'ok' if ok else 'FAIL'}] {label}" + (f": {detail}" if detail else ""))
+
+    def note(self, text):
+        print(f"[note] {text}")
+
+    def done(self):
+        print(f"checks: {self.n}; failed: {len(self.fails)}")
+        for f in self.fails:
+            print(f"FAIL {f}")
+        print(f"{self.verdict} CHECK: {not self.fails}")
+        return not self.fails
+----- end of /tmp/p6_1_common.py -----
+
+### a.2 (and the extra check in the tool's own zsh)
+----- /tmp/p6_1_a2.sh -----
+#!/bin/bash
+# P6-1 a.2 (and G9): OFILT_RUN_SEALED and OFILT_P6_CONFIRM_RUN must both be absent from the session's exported
+# environment and unset in this shell. Runs no Python.
+ok=True
+for v in OFILT_RUN_SEALED OFILT_P6_CONFIRM_RUN; do
+  if env | grep -q "^${v}="; then
+    echo "$v in the exported environment: yes"
+    ok=False
+  else
+    echo "$v in the exported environment: no"
+  fi
+  if [ -n "${!v+x}" ]; then
+    echo "$v set in this shell: yes"
+    ok=False
+  else
+    echo "$v set in this shell: no"
+  fi
+done
+echo "A2_ENV CHECK: ${ok}"
+----- end of /tmp/p6_1_a2.sh -----
+
+----- /tmp/p6_1_a2.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+OFILT_P6_CONFIRM_RUN in the exported environment: no
+OFILT_P6_CONFIRM_RUN set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p6_1_a2.out -----
+
+----- /tmp/p6_1_a2_zsh.out -----
+zsh tool shell: OFILT_RUN_SEALED unset
+zsh tool shell: OFILT_P6_CONFIRM_RUN unset
+----- end of /tmp/p6_1_a2_zsh.out -----
+
+### a.3
+----- /tmp/p6_1_a3.py -----
+"""P6-1 a.3: the sanction (criteria §2): SANCTION_FILE's form and what it names. Read as bytes; never written."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import Checks, expected, path, read_bytes, sanction_check  # noqa: E402
+
+E = expected()
+C = Checks("SANCTION")
+f = path(E["SANCTION_FILE"])
+C.check(os.path.isfile(f) and not os.path.islink(f), "SANCTION_FILE is a regular file", f)
+sanction_check(C, E, read_bytes(f), "SANCTION_FILE")
+C.done()
+----- end of /tmp/p6_1_a3.py -----
+
+----- /tmp/p6_1_a3.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+[ok] SANCTION_FILE is a regular file: /Users/isaiahchoi/Desktop/FX_Project/files/pass6/sanction/P6_SANCTION.txt
+----- SANCTION_FILE, in full -----
+SANCTION of the confirmation run, ofilt/drift (Pass 6, item P6-1; docs/PREREG_v1.md §7.2)
+Date: 2026-10-12
+By: Isaiah Choi
+HEAD: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+tools/p6_confirm_run.py: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+ofilt/drift/confirm_run.py: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+Criteria: docs/P6_RUN_CRITERIA.md ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+I sanction one run of tools/p6_confirm_run.py, by the command of docs/PREREG_v1.md §7.4, at the gate of the criteria file above. Any further run is a dated, labelled deviation that I decide.
+----- end of SANCTION_FILE -----
+SANCTION_FILE sha256 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe
+[ok] SANCTION_FILE is UTF-8
+[ok] SANCTION_FILE ends in a newline
+[ok] SANCTION_FILE has exactly nine lines, nothing after the ninth: 9 newline-ended lines; trailing ''
+[ok] line 2 matches ^Date: YYYY-MM-DD$: Date: 2026-10-12
+[ok] line 2 is a valid calendar date: 2026-10-12
+[ok] line 1 == SANCTION_LINE1
+[ok] line 3 == SANCTION_LINE3
+[ok] line 4 == SANCTION_LINE4
+[ok] line 5 == SANCTION_LINE5
+[ok] line 6 == SANCTION_LINE6
+[ok] line 7 == SANCTION_LINE7
+[ok] line 8 == SANCTION_LINE8
+[ok] line 9 == SANCTION_LINE9
+[ok] line 4's commit is S: HEAD: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] line 5 holds SANCTIONED's hash for tools/p6_confirm_run.py
+[ok] line 6 holds SANCTIONED's hash for ofilt/drift/confirm_run.py
+[ok] line 7 holds SANCTIONED's hash for docs/P4_CONFIRM_CONFIG.json
+[ok] line 8's hash is CRITERIA_SHA256: ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+[ok] line 8's hash == sha256 of git show S:docs/P6_RUN_CRITERIA.md: ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+[ok] git show S:PASS6_STATUS.md contains it
+checks: 21; failed: 0
+SANCTION CHECK: True
+----- end of /tmp/p6_1_a3.out -----
+
+### a.4
+----- /tmp/p6_1_a4.py -----
+"""P6-1 a.4: REPO before part 1's records (criteria §3.1), by read-only git; files hashed as bytes."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (REPO, Checks, access_check, appendix_check, env_check, expected, git, logs_check,  # noqa: E402
+                         porcelain_lines, repo_file, sha256, tags_check)
+
+E = expected()
+C = Checks("PRE")
+head = git("rev-parse", "HEAD").strip()
+C.check(head == E["S"], "HEAD == S", head)
+C.check(git("log", "-1", "--format=%s", "HEAD").rstrip("\n") == E["S_SUBJECT"], "HEAD's subject == S_SUBJECT")
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [E["S_PARENT"]], "HEAD's only parent == S_PARENT", " ".join(parents))
+st = porcelain_lines()
+C.check(st == [], "git status --porcelain --untracked-files=all prints nothing", repr(st))
+remote = git("branch", "-r", "--contains", "HEAD")
+C.check(remote.strip() != "", "HEAD is on a remote-tracking branch", " ".join(remote.split()))
+tags_check(C, E)
+access_check(C)
+C.check(not os.path.lexists(os.path.join(REPO, "reports/P6_runs")), "reports/P6_runs does not exist")
+logs_check(C, E)
+env_check(C)
+appendix_check(C, E)
+h = sha256(repo_file("docs/PREREG_v1.md"))
+C.check(h == E["PREREG_SHA256"], "docs/PREREG_v1.md sha256 == PREREG_SHA256", h)
+C.done()
+----- end of /tmp/p6_1_a4.py -----
+
+----- /tmp/p6_1_a4.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+[ok] HEAD == S: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] HEAD's subject == S_SUBJECT
+[ok] HEAD's only parent == S_PARENT: 6775d6ed737a5c57cb686ade28d11f30a99ebfe8
+[ok] git status --porcelain --untracked-files=all prints nothing: []
+[ok] HEAD is on a remote-tracking branch: origin/main
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] no name starting ACCESS_LOG in REPO outside .git (names only)
+[ok] reports/P6_runs does not exist
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] OFILT_RUN_SEALED is absent from this process's environment
+[ok] OFILT_P6_CONFIRM_RUN is absent from this process's environment
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+[ok] docs/PREREG_v1.md sha256 == PREREG_SHA256: 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+checks: 18; failed: 0
+PRE CHECK: True
+----- end of /tmp/p6_1_a4.out -----
+
+### a.5
+----- /tmp/p6_1_a5.py -----
+"""P6-1 a.5: the kit (message, the two templates, tests/), REPO's three bases, P6-0's kept report and its kept /tmp
+files (as bytes)."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (MSG, Checks, counts_check, expected, pairs, path, read_bytes, repo_file, sha256,  # noqa: E402
+                         sha256_bytes)
+
+E = expected()
+C = Checks("A5")
+
+
+def regular(p):
+    return os.path.isfile(p) and not os.path.islink(p)
+
+
+kit = path(E["KIT_DIR"])
+names = sorted(os.listdir(kit))
+C.check(names == sorted(["p6_1_msg.txt", "PASS6_STATUS.part1.template.md", "PASS6_STATUS.part2.template.md", "tests"]),
+        "KIT_DIR holds exactly p6_1_msg.txt, the two templates and the folder tests", " ".join(names))
+C.check(os.path.isdir(os.path.join(kit, "tests")) and not os.path.islink(os.path.join(kit, "tests")), "tests is a folder")
+C.check(read_bytes(os.path.join(kit, "p6_1_msg.txt")) == read_bytes(MSG), "kit p6_1_msg.txt identical to /tmp/p6_1_msg.txt")
+for key, counts in (("PART1_TEMPLATE", "PART1_COUNTS"), ("PART2_TEMPLATE", "PART2_COUNTS")):
+    p = path(E[key])
+    C.check(os.path.dirname(p) == kit and regular(p), f"{key} is a file in KIT_DIR", p)
+    t = read_bytes(p)
+    C.check(sha256_bytes(t) == E[f"{key}_SHA256"], f"{key} sha256 == {key}_SHA256", sha256_bytes(t))
+    counts_check(C, key, t, E[counts])
+
+tk = os.path.join(kit, "tests")
+testkit = dict(pairs(E["TESTKIT"]))
+names = sorted(os.listdir(tk))
+C.check(names == sorted(testkit), "KIT_DIR/tests holds exactly the four files of TESTKIT", " ".join(names))
+for n, want in sorted(testkit.items()):
+    p = os.path.join(tk, n)
+    h = sha256(p) if regular(p) else "missing"
+    C.check(h == want, f"KIT_DIR/tests/{n} sha256 == TESTKIT's", h)
+for p, want in pairs(E["TESTKIT_BASE"]):
+    h = sha256(repo_file(p))
+    C.check(h == want, f"REPO's {p} has its TESTKIT_BASE sha256", h)
+C.check(not os.path.lexists(repo_file("tests/run_state.py")), "tests/run_state.py is absent")
+
+kept = path(E["P6_0_KEPT"])
+C.check(regular(kept), "P6_0_KEPT exists", kept)
+rep = read_bytes(kept)
+C.check(os.path.lexists("/tmp/p6_0.txt") and read_bytes("/tmp/p6_0.txt") == rep, "P6_0_KEPT is identical to /tmp/p6_0.txt")
+rl = rep.decode("utf-8").split("\n")
+C.check(rl[0] == E["P6_0_LINE1"], "its line 1 == P6_0_LINE1", rl[0])
+C.check(rl[1] == E["S"], "its line 2 == S", rl[1])
+C.check(rl[2] == E["P6_0_LINE3"], "its line 3 == P6_0_LINE3", rl[2])
+ne = [x for x in rl if x.strip()]
+C.check(ne[-3:] == [E["P6_0_STOP"], E["P6_0_LAST_DATE"], E["S"]],
+        "its last three non-empty lines == P6_0_STOP, P6_0_LAST_DATE, S", " / ".join(ne[-3:]))
+vh = "## Verdict lines (in step order)"
+C.check(rl.count(vh) == 1, "its verdict section heading occurs once")
+i = rl.index(vh) + 1
+while rl[i] == "":
+    i += 1
+got = []
+while rl[i] != "":
+    got.append(rl[i])
+    i += 1
+C.check(got == [f"{n} CHECK: True" for n in E["P6_0_VERDICTS"].split(", ")],
+        "its verdict section holds exactly P6_0_VERDICTS, each True", " | ".join(got))
+print(f"P6_0_KEPT: sha256 {sha256_bytes(rep)}; {rep.count(b'\n')} lines")
+
+sh = "## SHA-256 of every /tmp/p6_0* file except this report"
+C.check(rl.count(sh) == 1, "P6_0_KEPT has the hash section heading once", sh)
+listed = {}
+for ln in rl[rl.index(sh) + 1:]:
+    if ln.startswith("## "):
+        break
+    m = re.fullmatch(r"([0-9a-f]{64})  /tmp/([^/]+)", ln)
+    if m:
+        listed[m.group(2)] = m.group(1)
+    elif ln:
+        print(f"(a line of another form in the section: {ln})")
+print(f"listed in the section: {len(listed)} files")
+keep = path(E["P6_0_TMP_KEEP"])
+held = sorted(os.listdir(keep)) if os.path.isdir(keep) else []
+print(f"P6_0_TMP_KEEP ({keep}) holds {len(held)} entries")
+for n in held:
+    full = os.path.join(keep, n)
+    if n in listed:
+        h = sha256(full) if regular(full) else "not a regular file"
+        C.check(h == listed[n], f"kept {n} sha256 == listed", h)
+    elif n == "p6_0.txt":
+        C.check(regular(full) and read_bytes(full) == rep, "kept p6_0.txt equals P6_0_KEPT")
+    else:
+        C.note(f"kept {n} is neither in the list nor p6_0.txt")
+missing = sorted(set(listed) - set(held))
+print("listed names not kept (a note): " + (" ".join(missing) if missing else "(none)"))
+C.done()
+----- end of /tmp/p6_1_a5.py -----
+
+----- /tmp/p6_1_a5.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+[ok] KIT_DIR holds exactly p6_1_msg.txt, the two templates and the folder tests: PASS6_STATUS.part1.template.md PASS6_STATUS.part2.template.md p6_1_msg.txt tests
+[ok] tests is a folder
+[ok] kit p6_1_msg.txt identical to /tmp/p6_1_msg.txt
+[ok] PART1_TEMPLATE is a file in KIT_DIR: /Users/isaiahchoi/Desktop/FX_Project/files/pass6/p6_1/PASS6_STATUS.part1.template.md
+[ok] PART1_TEMPLATE sha256 == PART1_TEMPLATE_SHA256: 3246080cd9b82bf64252865de86d67b9d187a886c6fbf98dcca6714a21d7b582
+[ok] PART1_TEMPLATE holds {DATE} 3 times: 3
+[ok] PART1_TEMPLATE holds {P6_0_SHA256} 1 times: 1
+[ok] PART1_TEMPLATE holds {SANCTION_SHA256} 1 times: 1
+[ok] PART1_TEMPLATE holds no other placeholder
+[ok] PART2_TEMPLATE is a file in KIT_DIR: /Users/isaiahchoi/Desktop/FX_Project/files/pass6/p6_1/PASS6_STATUS.part2.template.md
+[ok] PART2_TEMPLATE sha256 == PART2_TEMPLATE_SHA256: e494495375ecdba79981f369e57fbfb486e0e0d1d8c92bd6dfbb1f37c185c425
+[ok] PART2_TEMPLATE holds {DATE} 9 times: 9
+[ok] PART2_TEMPLATE holds {P6_0_SHA256} 1 times: 1
+[ok] PART2_TEMPLATE holds {SANCTION_SHA256} 1 times: 1
+[ok] PART2_TEMPLATE holds no other placeholder
+[ok] KIT_DIR/tests holds exactly the four files of TESTKIT: run_state.py test_docs_d3b.py test_p4_confirm_forecast.py test_p4_confirm_run.py
+[ok] KIT_DIR/tests/run_state.py sha256 == TESTKIT's: cac0340a9486e15fa53be85f4625760d75f742a00bf8d0557699622eea730b24
+[ok] KIT_DIR/tests/test_docs_d3b.py sha256 == TESTKIT's: 40d62035bb764bdeda0d7e0e6aa171cfaa3c34a5d0d963bc8de785301a8ebb96
+[ok] KIT_DIR/tests/test_p4_confirm_forecast.py sha256 == TESTKIT's: 419658008d1471d59fff52704bab41bc08e1a094fbea869be3559f6fd3af3665
+[ok] KIT_DIR/tests/test_p4_confirm_run.py sha256 == TESTKIT's: 792ac94e58f7c84f1dbd50f29f6553298ab24cc0460de96344846e180445abc1
+[ok] REPO's tests/test_docs_d3b.py has its TESTKIT_BASE sha256: 33c975d82230818b81872bce1acaf73a43cbf4c0171e59a8a1240897b658de20
+[ok] REPO's tests/test_p4_confirm_forecast.py has its TESTKIT_BASE sha256: 470fdf23c601ee24a5e5110eac74eb655064181042143aaac9b9f9d1b0c7ef52
+[ok] REPO's tests/test_p4_confirm_run.py has its TESTKIT_BASE sha256: 69d74d062ba87d5fc5d23b919d4c7d4162074ed80c08279efb963a3b15374913
+[ok] tests/run_state.py is absent
+[ok] P6_0_KEPT exists: /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_0_final/p6_0.txt
+[ok] P6_0_KEPT is identical to /tmp/p6_0.txt
+[ok] its line 1 == P6_0_LINE1: 2026-10-12T22:28:49Z
+[ok] its line 2 == S: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] its line 3 == P6_0_LINE3: a2bc44883ce3915f6f7f0cf8017200fe00ffc5419746c02a9e9b9d4c80302109  /tmp/p6_0_msg.txt
+[ok] its last three non-empty lines == P6_0_STOP, P6_0_LAST_DATE, S: STOPPED at P6-0, f: planned; Isaiah pushes S, then uploads /tmp/p6_0.txt to the supervisor chat; the sanction follows. / 2026-10-12T22:28:50Z / cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] its verdict section heading occurs once
+[ok] its verdict section holds exactly P6_0_VERDICTS, each True: A2_ENV CHECK: True | A3 CHECK: True | A4 CHECK: True | B1 CHECK: True | B2 CHECK: True | C CHECK: True | D CHECK: True | E CHECK: True
+P6_0_KEPT: sha256 7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e; 1318 lines
+[ok] P6_0_KEPT has the hash section heading once: ## SHA-256 of every /tmp/p6_0* file except this report
+listed in the section: 35 files
+P6_0_TMP_KEEP (/Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_0) holds 36 entries
+[ok] kept p6_0.txt equals P6_0_KEPT
+[ok] kept p6_0_a2.out sha256 == listed: e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a
+[ok] kept p6_0_a2.sh sha256 == listed: 3733a5f7eddc79210cffd9df0d15cb2c87ea5166bb0b93085f04091780d62467
+[ok] kept p6_0_a2_zsh.out sha256 == listed: 82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd
+[ok] kept p6_0_a3.out sha256 == listed: ba1b6a7c7eff34567203a8daef88e74f0faf956f42c91a819058873172d5b323
+[ok] kept p6_0_a3.py sha256 == listed: c9703d56e57723a0936ff043c0c6868a406d6791e1b23e320e187a072acb3789
+[ok] kept p6_0_a4.out sha256 == listed: a69244b7d064171f710ddab0ff104cbf37ad857396051d4b145e10b1e6dd66c4
+[ok] kept p6_0_a4.py sha256 == listed: df7856f5e51c60c10abc0b39be4a6e2ab12465fb3231cdd79099b0909e15606a
+[ok] kept p6_0_assemble.sh sha256 == listed: c68b928c57b69bf9f937b24360b0ef45581d5dd0940e12f5c3911f84669c8fc5
+[ok] kept p6_0_b.out sha256 == listed: 096e152d978ede1584b8968bb239f981d1595bafd794400c226aea8f4f2846ed
+[ok] kept p6_0_b.py sha256 == listed: d37d50ac8cddcbe9996fd76776a827984e7d978f2c25a76fb6d539dbd5a6218d
+[ok] kept p6_0_b1.out sha256 == listed: 7b7e59a60385dc29345f7ef1625b32c5a72e4853c22e589e45202972ace2b367
+[ok] kept p6_0_b1.sh sha256 == listed: a3c1cd1d190666ffffdace136cb8f23a5e0f010b8f618c75af682292cefd17c0
+[ok] kept p6_0_b1_check.out sha256 == listed: 173a5aeefe40200a844d3e21a408e138c9d529718e9a965208400b92b1bf6cfc
+[ok] kept p6_0_b1_check.py sha256 == listed: 37cbccd306517837e803b03f673c376c185241fe980fc53e34e1a5863e44d139
+[ok] kept p6_0_b2.out sha256 == listed: 22fdf089112f56905b2bee4051e21f14bdb5eeab53c8c467aa7794799edad714
+[ok] kept p6_0_b2.py sha256 == listed: 7e2dba370a59dd33458d5f72490352a008362ba3a26af4944497be0cbd72bba8
+[ok] kept p6_0_b_print.out sha256 == listed: 291c2dd565486c37312cd12b6adc4e494a8b6c2387fe517ba1d55201f3e04424
+[ok] kept p6_0_c.out sha256 == listed: 5cafea672e17802e24078aa4ea98cd5c3103017ff74a61f3880386289a1f6f59
+[ok] kept p6_0_c.py sha256 == listed: 5284239b52dc2045c89425b945cf3f43525cc684c87bf382be06af1a24d82a3f
+[ok] kept p6_0_common.py sha256 == listed: 9fe32996330f860c19a0fe80157d23298e5b66d012bb0a81939fd96cdd016c84
+[ok] kept p6_0_d.out sha256 == listed: 3a15c0dd883c50e42fc59c626e77a4aab079bf1362aae71681f5f67c6c5221c2
+[ok] kept p6_0_d.sh sha256 == listed: 826640693662f06a740e28ce2af90ef0d265afc17aed7399f2b6569f8a3cbc52
+[ok] kept p6_0_d_check.out sha256 == listed: a886b60bded05a6d03425fd4db790a3f86ddf976ab9eef365a11f6f0c1958082
+[ok] kept p6_0_d_check.py sha256 == listed: fe6ac795971ec5d299352d72d334a02e2506ce791f2a397b8051836907920d9c
+[ok] kept p6_0_d_data.out sha256 == listed: 92fcc83fdbc6f179bd5e066435df3a88499efbbab0a204642c3cdc4470bde9ec
+[ok] kept p6_0_d_sh.out sha256 == listed: 1dfcc3bca1a15e2176171b1caf00b4f94b4aa763cd100bbdb0cb80e80f85c931
+[ok] kept p6_0_date.out sha256 == listed: a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9
+[ok] kept p6_0_e.sh sha256 == listed: 2adceea54bb4dded4c73d140c5476a4af4f670cb3e6b9007b592d47abe0777bd
+[ok] kept p6_0_e_check.out sha256 == listed: 5bf7bceb7e7c81ef7288527d670ab1fd18016eec3b3fdf02c9dba004d32d330f
+[ok] kept p6_0_e_check.py sha256 == listed: 0906ee6a5dcba7ee032dce7bb9b3cecd29cff362b8ca2fdc6b6c60f28361931e
+[ok] kept p6_0_e_sh.out sha256 == listed: 6a60279060c9f15338b86143ddfdffb4c38d27ab5c8ec1bef66a5e0e27667939
+[ok] kept p6_0_msg.txt sha256 == listed: a2bc44883ce3915f6f7f0cf8017200fe00ffc5419746c02a9e9b9d4c80302109
+[ok] kept p6_0_msgsha.out sha256 == listed: 7ac70f4d86111f209d8ef05cb5829158efa78d29dca24a7205b1b77c7bb66810
+[ok] kept p6_0_notes.txt sha256 == listed: 15acd524ed51bbada02fe723e7e82b904726791fc1b067437612665c8d1c0b09
+[ok] kept p6_0_readings.txt sha256 == listed: 5e476d8714a337fdc7a7565b3f12b6f15b70bba4f8feb5e06a1f886dabfd0849
+listed names not kept (a note): (none)
+checks: 69; failed: 0
+A5 CHECK: True
+----- end of /tmp/p6_1_a5.out -----
+
+### b: the copies (bash) and PASS6_STATUS.md's part 1 (Python)
+----- /tmp/p6_1_b.sh -----
+#!/bin/bash
+# P6-1 b.1: cp -p SANCTION_FILE -> docs/P6_SANCTION.txt and P6_0_KEPT -> reports/P6_reports/p6_0.txt. The sources are
+# read from the message's Expected values by script; both destinations are checked absent before either copy.
+# Runs no Python.
+set -euo pipefail
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG="/tmp/p6_1_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+ev() {
+  local n
+  n="$(grep -c -E "^- $1 = " "$MSG")"
+  [ "$n" = "1" ] || { echo "REFUSED: expected value $1 found $n times"; exit 2; }
+  grep -E "^- $1 = " "$MSG" | sed -E "s/^- $1 = //"
+}
+SANCTION="$(ev SANCTION_FILE)"; SANCTION="${SANCTION/#\~/$HOME}"
+P60="$(ev P6_0_KEPT)"; P60="${P60/#\~/$HOME}"
+SRCS=("$SANCTION" "$P60")
+DSTS=("docs/P6_SANCTION.txt" "reports/P6_reports/p6_0.txt")
+for i in 0 1; do
+  [ -f "${SRCS[$i]}" ] || { echo "REFUSED: source ${SRCS[$i]} is not a file"; exit 2; }
+  [ ! -e "$REPO/${DSTS[$i]}" ] || { echo "REFUSED: destination ${DSTS[$i]} exists"; exit 2; }
+done
+for i in 0 1; do
+  mkdir -p "$(dirname "$REPO/${DSTS[$i]}")"
+  cp -p "${SRCS[$i]}" "$REPO/${DSTS[$i]}"
+  echo "cp -p ${SRCS[$i]} -> ${DSTS[$i]}"
+done
+echo "copied: 2"
+----- end of /tmp/p6_1_b.sh -----
+
+----- /tmp/p6_1_b_sh.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass6/sanction/P6_SANCTION.txt -> docs/P6_SANCTION.txt
+cp -p /Users/isaiahchoi/Desktop/FX_Project/files/pass6_tmp_keep/p6_0_final/p6_0.txt -> reports/P6_reports/p6_0.txt
+copied: 2
+exit 0
+----- end of /tmp/p6_1_b_sh.out -----
+
+----- /tmp/p6_1_b.py -----
+"""P6-1 b.2 to b.4: PASS6_STATUS.md from PART1_TEMPLATE ({DATE} -> D, {P6_0_SHA256} -> P6_0_KEPT's SHA-256,
+{SANCTION_SHA256} -> SANCTION_FILE's SHA-256), after checking its base; then the B checks."""
+import os
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (PLACEHOLDER, Checks, appendix_check, counts_check, expected, item_date, lines_of,  # noqa: E402
+                         logs_check, path, placeholder_lines, porcelain_lines, read_bytes, repo_file, sha256,
+                         sha256_bytes, substitute)
+
+E = expected()
+D = item_date()
+C = Checks("B")
+status = repo_file("PASS6_STATUS.md")
+base = sha256(status)
+C.check(base == E["STATUS_BASE_SHA256"], "PASS6_STATUS.md has STATUS_BASE_SHA256 before the write", base)
+tmpl = read_bytes(path(E["PART1_TEMPLATE"]))
+C.check(sha256_bytes(tmpl) == E["PART1_TEMPLATE_SHA256"], "PART1_TEMPLATE sha256 == PART1_TEMPLATE_SHA256")
+counts_check(C, "PART1_TEMPLATE", tmpl, E["PART1_COUNTS"])
+p60, sanc = sha256(path(E["P6_0_KEPT"])), sha256(path(E["SANCTION_FILE"]))
+print(f"{{P6_0_SHA256}} -> {p60}; {{SANCTION_SHA256}} -> {sanc}; {{DATE}} -> {D}")
+if C.fails:
+    C.done()
+    raise SystemExit("not written")
+with open(status, "wb") as fh:
+    fh.write(substitute(tmpl, D, p60, sanc))
+
+for src, dst in ((path(E["SANCTION_FILE"]), "docs/P6_SANCTION.txt"), (path(E["P6_0_KEPT"]), "reports/P6_reports/p6_0.txt")):
+    d = repo_file(dst)
+    C.check(os.path.isfile(d) and sha256(d) == sha256(src), f"{dst} has its source's sha256", sha256(d))
+    C.check(os.stat(d).st_mtime_ns == os.stat(src).st_mtime_ns, f"{dst} kept its source's mtime")
+written = read_bytes(status)
+again = substitute(read_bytes(path(E["PART1_TEMPLATE"])), item_date(), sha256(path(E["P6_0_KEPT"])),
+                   sha256(path(E["SANCTION_FILE"])))
+C.check(written == again, "PASS6_STATUS.md equals the substitution, recomputed")
+C.check(not PLACEHOLDER.findall(written), "no placeholder is left")
+print(f"PASS6_STATUS.md: sha256 {sha256_bytes(written)}; {lines_of(written)} lines")
+st = porcelain_lines()
+for ln in st:
+    print(f"  {ln}")
+C.check(sorted(st) == sorted([" M PASS6_STATUS.md", "?? docs/P6_SANCTION.txt", "?? reports/P6_reports/p6_0.txt"]),
+        "git status --porcelain --untracked-files=all lists exactly the three records")
+appendix_check(C, E)
+logs_check(C, E)
+C.check(placeholder_lines(tmpl, written), "the same line count as the template")
+C.done()
+----- end of /tmp/p6_1_b.py -----
+
+----- /tmp/p6_1_b.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+D (from /tmp/p6_1_date.out): 2026-10-12
+[ok] PASS6_STATUS.md has STATUS_BASE_SHA256 before the write: 2b6942cd51abe4b69c13967342f7efe2e0b2c9b62dff5d38fa62a942c8d9e1c6
+[ok] PART1_TEMPLATE sha256 == PART1_TEMPLATE_SHA256
+[ok] PART1_TEMPLATE holds {DATE} 3 times: 3
+[ok] PART1_TEMPLATE holds {P6_0_SHA256} 1 times: 1
+[ok] PART1_TEMPLATE holds {SANCTION_SHA256} 1 times: 1
+[ok] PART1_TEMPLATE holds no other placeholder
+{P6_0_SHA256} -> 7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e; {SANCTION_SHA256} -> 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe; {DATE} -> 2026-10-12
+[ok] docs/P6_SANCTION.txt has its source's sha256: 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe
+[ok] docs/P6_SANCTION.txt kept its source's mtime
+[ok] reports/P6_reports/p6_0.txt has its source's sha256: 7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e
+[ok] reports/P6_reports/p6_0.txt kept its source's mtime
+D (from /tmp/p6_1_date.out): 2026-10-12
+[ok] PASS6_STATUS.md equals the substitution, recomputed
+[ok] no placeholder is left
+PASS6_STATUS.md: sha256 53c84db59e463cde76627d8d59d10e76b2d6869e64e65b01a5cb624d08023b37; 180 lines
+   M PASS6_STATUS.md
+  ?? docs/P6_SANCTION.txt
+  ?? reports/P6_reports/p6_0.txt
+[ok] git status --porcelain --untracked-files=all lists exactly the three records
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file has the row's sha256 (working tree): 40 of 40
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+each template line that held a placeholder, as written:
+  11: | P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done; accepted by Isaiah 2026-10-12 | `records: P6-0` (`cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`), a records-only commit after the documentation modules (P6Q2); the commit the sanction names. Report `reports/P6_reports/p6_0.txt`. |
+  106: > - **P6-0 accepted** (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P6-1 paste).
+  111: >   - Report `reports/P6_reports/p6_0.txt`, SHA-256 `7efafda407030bd88e552e2c9711e10b13a7ca5e73a5db813cc74e283f102a8e`, the copy kept in `files/pass6_tmp_keep/p6_0_final/`.
+  112: > - **On P6-0's readings** (Isaiah, 2026-10-12, on the supervisor's recommendation; by the P6-1 paste). P6-1's message states these readings, each within the criteria file's text; none changes a criterion, and no version 2 is made.
+  118: >   - `docs/P6_SANCTION.txt`, SHA-256 `123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe`, dated by its `Date:` line. It is a byte-identical copy of the file Isaiah wrote with his own Terminal command, outside REPO.
+[ok] the same line count as the template
+checks: 18; failed: 0
+B CHECK: True
+----- end of /tmp/p6_1_b.out -----
+
+### c: the gate's checkpoint (its command is the message's, run with the background option; its output)
+----- /tmp/p6_1_c.out -----
+interpreter: /Users/isaiahchoi/venvs/ofilt_p2/bin/python
+version: 3.12.4 (v3.12.4:8e8a4baf65, Jun  6 2024, 17:33:18) [Clang 13.0.0 (clang-1300.0.29.30)]
+repo: /Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1
+OFILT_DATA_DIR: /Users/isaiahchoi/Desktop/FX_Project/data
+before suite: git diff --binary sha256 12f187a4cbdaa01bfb1f8695ed887298e350a298ca452e1b9e9ba0dabebc9555
+before suite: git status --porcelain
+ M PASS6_STATUS.md
+?? docs/P6_SANCTION.txt
+?? reports/P6_reports/p6_0.txt
+----------------------------------------------------------------------
+Ran 398 tests in 1514.646s
+
+OK (skipped=6)
+the suite rewrote reports/B6_coverage.json; its diff:
+diff --git a/reports/B6_coverage.json b/reports/B6_coverage.json
+index 29433aa..fa8bf36 100644
+--- a/reports/B6_coverage.json
++++ b/reports/B6_coverage.json
+@@ -5,9 +5,9 @@
+  "seeds": "50000..50999",
+  "coverage": 0.952,
+  "mc_se": 0.006759881655768837,
+- "mean_b": 0.2504642871694474,
+- "sd_b": 0.05901418651563313,
++ "mean_b": 0.25046428716944735,
++ "sd_b": 0.05901418651563316,
+  "mean_se": 0.058951734804794424,
+- "se_over_sd": 0.9989417508818467,
++ "se_over_sd": 0.9989417508818462,
+  "lag": 7
+ }
+restored reports/B6_coverage.json
+ M PASS6_STATUS.md
+?? docs/P6_SANCTION.txt
+?? reports/P6_reports/p6_0.txt
+commit 221507d01547869376e73cde51c20b86892bed95
+checkpoint exit: 0
+----- end of /tmp/p6_1_c.out -----
+
+### d: G9's environment, rerun before d; then the gate's checks
+----- /tmp/p6_1_d_env.out -----
+OFILT_RUN_SEALED in the exported environment: no
+OFILT_RUN_SEALED set in this shell: no
+OFILT_P6_CONFIRM_RUN in the exported environment: no
+OFILT_P6_CONFIRM_RUN set in this shell: no
+A2_ENV CHECK: True
+----- end of /tmp/p6_1_d_env.out -----
+
+----- /tmp/p6_1_d_env_zsh.out -----
+zsh tool shell: OFILT_RUN_SEALED unset
+zsh tool shell: OFILT_P6_CONFIRM_RUN unset
+----- end of /tmp/p6_1_d_env_zsh.out -----
+
+----- /tmp/p6_1_d.py -----
+"""P6-1 d: the gate's checks after the checkpoint, before the command (criteria §3.3, G1 to G11). Prints
+`GATE CHECK: True` only if SANCTION, PRE, A5, B and every G-check are True. Imports no module of ofilt."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (REPO, RUN_MARK, Checks, access_check, appendix_rows, appendix_rows_from, expected,  # noqa: E402
+                         git, git_bytes, git_rc, logs_check, pairs, path, porcelain_lines, read_bytes, repo_file,
+                         sanction_check, sha256, sha256_bytes, spaced, tags_check, verdict_of)
+
+E = expected()
+C = Checks("GATE")
+S = E["S"]
+
+# G1 (and G7): the checkpoint's output, the commit G, its only parent S
+out = read_bytes("/tmp/p6_1_c.out").decode("utf-8").split("\n")
+C.check(out.count("checkpoint exit: 0") == 1, "G1: /tmp/p6_1_c.out holds `checkpoint exit: 0`")
+commits = [ln for ln in out if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+C.check(len(commits) == 1, "G1: exactly one `commit <40 hex>` line", " | ".join(commits))
+G = commits[0].split()[1] if len(commits) == 1 else None
+ran = [ln for ln in out if re.fullmatch(r"Ran \d+ tests? in [0-9.]+s", ln)]
+C.check(len(ran) == 1 and ran[0].startswith(f"Ran {E['SUITE_RAN']} tests "), "G7: `Ran SUITE_RAN tests`", " | ".join(ran))
+C.check(out.count(E["SUITE_RESULT"]) == 1, "G7: a line exactly SUITE_RESULT", E["SUITE_RESULT"])
+head = git("rev-parse", "HEAD").strip()
+C.check(G is not None and head == G, "G1: HEAD is G", f"HEAD {head}; G {G}")
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [S], "G1: G's only parent is S", " ".join(parents))
+print(f"G = {G}")
+if G is None:
+    C.done()
+    raise SystemExit("no G")
+
+# G2: its files
+diff = sorted(f for f in git("diff", "--name-only", S, G).split("\n") if f)
+C.check(diff == sorted(spaced(E["PART1_FILES"])), "G2: git diff --name-only S G lists exactly PART1_FILES", " ".join(diff))
+
+
+def both(rel, want, label):
+    wt = sha256(repo_file(rel))
+    at_g = sha256_bytes(git_bytes("show", f"{G}:{rel}"))
+    C.check(wt == want and at_g == want, f"G3: {label} (working tree and at G)", f"{wt} / {at_g}")
+
+
+# G3: the hashes at G, twice each
+for rel, h in pairs(E["SANCTIONED"]):
+    both(rel, h, f"SANCTIONED {rel}")
+rows_g = appendix_rows_from(git_bytes("show", f"{G}:docs/PREREG_v1.md").decode("utf-8"))
+C.check(len(rows_g) == int(E["APPX_ROWS"]) and len({p for p, _ in rows_g}) == len(rows_g),
+        "G3: Appendix A parsed at G: APPX_ROWS rows, no path twice", f"{len(rows_g)}")
+C.check(rows_g == appendix_rows(), "G3: the table at G equals the working tree's")
+bad = []
+for rel, h in rows_g:
+    if sha256(repo_file(rel)) != h or sha256_bytes(git_bytes("show", f"{G}:{rel}")) != h:
+        bad.append(rel)
+C.check(not bad, "G3: every Appendix A file has the table's sha256, in the working tree and at G",
+        f"{len(rows_g) - len(bad)} of {len(rows_g)}" + ("; " + " ".join(bad) if bad else ""))
+both("docs/PREREG_v1.md", E["PREREG_SHA256"], "docs/PREREG_v1.md == PREREG_SHA256")
+both("docs/P6_RUN_CRITERIA.md", E["CRITERIA_SHA256"], "docs/P6_RUN_CRITERIA.md == CRITERIA_SHA256")
+
+# G4: the sanction at G
+sanction = read_bytes(path(E["SANCTION_FILE"]))
+at_g = git_bytes("show", f"{G}:docs/P6_SANCTION.txt")
+C.check(at_g == sanction, "G4: docs/P6_SANCTION.txt at G is byte-identical to SANCTION_FILE", sha256_bytes(at_g))
+C.check(read_bytes(repo_file("docs/P6_SANCTION.txt")) == sanction, "G4: and so is its working-tree copy")
+sanction_check(C, E, at_g, "docs/P6_SANCTION.txt at G")
+
+# G5: the tags
+tags_check(C, E)
+C.check(git_rc("merge-base", "--is-ancestor", E["PREREG_TAG_COMMIT"], G) == 0, "G5: PREREG_TAG_COMMIT is an ancestor of G")
+
+# G6: the tree
+st = porcelain_lines()
+C.check(st == [], "G6: the tree is clean", repr(st))
+
+# G8: the logs
+access_check(C)
+C.check(not os.path.lexists(os.path.join(REPO, E["OUT_DIR"])), "G8: reports/P6_runs/confirm does not exist")
+logs_check(C, E)
+
+# G9: the environment (a.2's script and zsh line, rerun just before this script)
+C.check(verdict_of("/tmp/p6_1_d_env.out", "A2_ENV"), "G9: a.2's script, rerun before d: A2_ENV CHECK: True")
+z = read_bytes("/tmp/p6_1_d_env_zsh.out").decode("utf-8").split("\n")
+C.check("zsh tool shell: OFILT_RUN_SEALED unset" in z and "zsh tool shell: OFILT_P6_CONFIRM_RUN unset" in z,
+        "G9: the tool's zsh: both unset")
+for v in ("OFILT_RUN_SEALED", "OFILT_P6_CONFIRM_RUN"):
+    C.check(v not in os.environ, f"G9: {v} absent from this process's environment")
+
+# G10: the command
+cmd = E["RUN_CMD"]
+C.check(sha256_bytes(cmd.encode("utf-8")) == E["RUN_CMD_SHA256"], "G10: RUN_CMD has RUN_CMD_SHA256",
+        sha256_bytes(cmd.encode("utf-8")))
+lines = [ln for ln in git("show", f"{G}:docs/PREREG_v1.md").split("\n") if RUN_MARK in ln]
+C.check(len(lines) == 1, "G10: exactly one line of docs/PREREG_v1.md at G contains the run mark", f"{len(lines)}")
+if len(lines) == 1:
+    t = lines[0][lines[0].index("`") + 1:lines[0].rindex("`")]
+    C.check(sha256_bytes(t.encode("utf-8")) == E["RUN_CMD_SHA256"] and t == cmd,
+            "G10: that line's text between its first and last backtick has RUN_CMD_SHA256 and equals RUN_CMD")
+print(f"the command: {cmd}")
+
+# G11: the registration
+C.check("https://osf.io/3mr5h" in git("show", f"{G}:PASS5_STATUS.md"), "G11: PASS5_STATUS.md at G records the OSF URL")
+
+# the earlier verdicts
+for f, name in (("/tmp/p6_1_a3.out", "SANCTION"), ("/tmp/p6_1_a4.out", "PRE"), ("/tmp/p6_1_a5.out", "A5"),
+                ("/tmp/p6_1_b.out", "B")):
+    C.check(verdict_of(f, name), f"{name} CHECK: True ({f})")
+C.done()
+----- end of /tmp/p6_1_d.py -----
+
+----- /tmp/p6_1_d.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+[ok] G1: /tmp/p6_1_c.out holds `checkpoint exit: 0`
+[ok] G1: exactly one `commit <40 hex>` line: commit 221507d01547869376e73cde51c20b86892bed95
+[ok] G7: `Ran SUITE_RAN tests`: Ran 398 tests in 1514.646s
+[ok] G7: a line exactly SUITE_RESULT: OK (skipped=6)
+[ok] G1: HEAD is G: HEAD 221507d01547869376e73cde51c20b86892bed95; G 221507d01547869376e73cde51c20b86892bed95
+[ok] G1: G's only parent is S: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+G = 221507d01547869376e73cde51c20b86892bed95
+[ok] G2: git diff --name-only S G lists exactly PART1_FILES: PASS6_STATUS.md docs/P6_SANCTION.txt reports/P6_reports/p6_0.txt
+[ok] G3: SANCTIONED tools/p6_confirm_run.py (working tree and at G): 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f / 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+[ok] G3: SANCTIONED ofilt/drift/confirm_run.py (working tree and at G): 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3 / 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+[ok] G3: SANCTIONED docs/P4_CONFIRM_CONFIG.json (working tree and at G): 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd / 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+[ok] G3: Appendix A parsed at G: APPX_ROWS rows, no path twice: 40
+[ok] G3: the table at G equals the working tree's
+[ok] G3: every Appendix A file has the table's sha256, in the working tree and at G: 40 of 40
+[ok] G3: docs/PREREG_v1.md == PREREG_SHA256 (working tree and at G): 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6 / 79447ba199ce2360fb1fc8c51ae5d0eea3c20ba2645d6167c17ba1e1792f35e6
+[ok] G3: docs/P6_RUN_CRITERIA.md == CRITERIA_SHA256 (working tree and at G): ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0 / ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+[ok] G4: docs/P6_SANCTION.txt at G is byte-identical to SANCTION_FILE: 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe
+[ok] G4: and so is its working-tree copy
+----- docs/P6_SANCTION.txt at G, in full -----
+SANCTION of the confirmation run, ofilt/drift (Pass 6, item P6-1; docs/PREREG_v1.md §7.2)
+Date: 2026-10-12
+By: Isaiah Choi
+HEAD: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+tools/p6_confirm_run.py: 5b3922d79bb0a6d093dccf2aff5f1aaf3f869e8d93c900ac6fb3a6c74eaf5b7f
+ofilt/drift/confirm_run.py: 998912c5c9e89ca14fde5e1ca1811ff3f3e4ac65dd36b29b61debffab8e9eaf3
+docs/P4_CONFIRM_CONFIG.json: 5962c44cdc220afb7eee26d7dc91db30c0f4fa231578823799742b44ae4e15bd
+Criteria: docs/P6_RUN_CRITERIA.md ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+I sanction one run of tools/p6_confirm_run.py, by the command of docs/PREREG_v1.md §7.4, at the gate of the criteria file above. Any further run is a dated, labelled deviation that I decide.
+----- end of docs/P6_SANCTION.txt at G -----
+docs/P6_SANCTION.txt at G sha256 123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe
+[ok] docs/P6_SANCTION.txt at G is UTF-8
+[ok] docs/P6_SANCTION.txt at G ends in a newline
+[ok] docs/P6_SANCTION.txt at G has exactly nine lines, nothing after the ninth: 9 newline-ended lines; trailing ''
+[ok] line 2 matches ^Date: YYYY-MM-DD$: Date: 2026-10-12
+[ok] line 2 is a valid calendar date: 2026-10-12
+[ok] line 1 == SANCTION_LINE1
+[ok] line 3 == SANCTION_LINE3
+[ok] line 4 == SANCTION_LINE4
+[ok] line 5 == SANCTION_LINE5
+[ok] line 6 == SANCTION_LINE6
+[ok] line 7 == SANCTION_LINE7
+[ok] line 8 == SANCTION_LINE8
+[ok] line 9 == SANCTION_LINE9
+[ok] line 4's commit is S: HEAD: cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe
+[ok] line 5 holds SANCTIONED's hash for tools/p6_confirm_run.py
+[ok] line 6 holds SANCTIONED's hash for ofilt/drift/confirm_run.py
+[ok] line 7 holds SANCTIONED's hash for docs/P4_CONFIRM_CONFIG.json
+[ok] line 8's hash is CRITERIA_SHA256: ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+[ok] line 8's hash == sha256 of git show S:docs/P6_RUN_CRITERIA.md: ac973a1e6da258c0e48c4296ff83f0103c3a6dd13ad08d4c258b7844a4f902a0
+[ok] git show S:PASS6_STATUS.md contains it
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] G5: PREREG_TAG_COMMIT is an ancestor of G
+[ok] G6: the tree is clean: []
+[ok] no name starting ACCESS_LOG in REPO outside .git (names only)
+[ok] G8: reports/P6_runs/confirm does not exist
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] RUN_REGISTRY.jsonl sha256 == RUN_REGISTRY_SHA256 and lines == RUN_REGISTRY_LINES: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c, 2 lines
+[ok] G9: a.2's script, rerun before d: A2_ENV CHECK: True
+[ok] G9: the tool's zsh: both unset
+[ok] G9: OFILT_RUN_SEALED absent from this process's environment
+[ok] G9: OFILT_P6_CONFIRM_RUN absent from this process's environment
+[ok] G10: RUN_CMD has RUN_CMD_SHA256: 1b34bf5c0a8d1f55245963329eaa3ec00bb927801187bbcca5cf6b25c45d2aa9
+[ok] G10: exactly one line of docs/PREREG_v1.md at G contains the run mark: 1
+[ok] G10: that line's text between its first and last backtick has RUN_CMD_SHA256 and equals RUN_CMD
+the command: env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && OFILT_P6_CONFIRM_RUN=P6-1 caffeinate -dimsu python -B tools/p6_confirm_run.py --out reports/P6_runs/confirm'
+[ok] G11: PASS5_STATUS.md at G records the OSF URL
+[ok] SANCTION CHECK: True (/tmp/p6_1_a3.out)
+[ok] PRE CHECK: True (/tmp/p6_1_a4.out)
+[ok] A5 CHECK: True (/tmp/p6_1_a5.out)
+[ok] B CHECK: True (/tmp/p6_1_b.out)
+checks: 59; failed: 0
+GATE CHECK: True
+----- end of /tmp/p6_1_d.out -----
+
+### e: the command as given to the tool (transcription), its output (transcription), the tool's output file (R6)
+----- /tmp/p6_1_run_cmd.txt -----
+env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && OFILT_P6_CONFIRM_RUN=P6-1 caffeinate -dimsu python -B tools/p6_confirm_run.py --out reports/P6_runs/confirm'
+----- end of /tmp/p6_1_run_cmd.txt -----
+
+----- /tmp/p6_1_run_output.txt -----
+Traceback (most recent call last):
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 68, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 57, in main
+    frames = _confirm_frames()
+             ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 46, in _confirm_frames
+    confirm = io.load_confirm()
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 165, in load_confirm
+    digest = _verify(p, spec.data_hash("sealed_panel"), "sealed confirmation panel")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 65, in _verify
+    got = sha256_file(path)
+          ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 58, in sha256_file
+    with open(path, "rb") as fh:
+         ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/isaiahchoi/Desktop/FX_Project/data/panel_confirm_SEALED.csv'
+
+[exited with code 1]
+exit status: 1
+----- end of /tmp/p6_1_run_output.txt -----
+
+----- /tmp/p6_1_run_tool_output.txt -----
+Traceback (most recent call last):
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 68, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 57, in main
+    frames = _confirm_frames()
+             ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 46, in _confirm_frames
+    confirm = io.load_confirm()
+              ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 165, in load_confirm
+    digest = _verify(p, spec.data_hash("sealed_panel"), "sealed confirmation panel")
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 65, in _verify
+    got = sha256_file(path)
+          ^^^^^^^^^^^^^^^^^
+  File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 58, in sha256_file
+    with open(path, "rb") as fh:
+         ^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/Users/isaiahchoi/Desktop/FX_Project/data/panel_confirm_SEALED.csv'
+
+[exited with code 1]
+----- end of /tmp/p6_1_run_tool_output.txt -----
+
+----- /tmp/p6_1_run_tool_output.sha -----
+79de9efa7b1d3d76d43b7ab65a0a2ad42a31bb178f9bd433fb1bc344f5d05c13  /private/tmp/claude-502/-Users-isaiahchoi-Desktop-FX-Project-ofilt-pass1/5aa719b6-e8cd-4208-9a6a-719ea5ab9607/tasks/bxn22usv0.output
+79de9efa7b1d3d76d43b7ab65a0a2ad42a31bb178f9bd433fb1bc344f5d05c13  /tmp/p6_1_run_tool_output.txt
+----- end of /tmp/p6_1_run_tool_output.sha -----
+
+### f: the post-run checks and printouts
+----- /tmp/p6_1_f.py -----
+"""P6-1 f: after the command (criteria §5, P0 to P8): verdict POST CHECK; then the printouts. Read-only: it reads the
+run's outputs (if any), ACCESS_LOG and the registry as the criteria file says, and writes only /tmp files. Each check
+reports ok or FAIL, and a missing file is a FAIL, not a crash. It imports one module of ofilt, confirm_inference, for
+ROW_IDS only (P6-0 R7, as answered in P6-1's message), and only if document.json exists. Saves the hashes of what exists
+to /tmp/p6_1_f_hashes.json."""
+import json
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (REPO, Checks, access_log_hits, appendix_check, appendix_rows, barred,  # noqa: E402
+                         blind_log_check, expected, git, lines_of, pairs, porcelain_lines, read_bytes, repo_file,
+                         sha256, sha256_bytes, spaced, strict_json, tags_check)
+
+E = expected()
+C = Checks("POST")
+G = re.search(r"^G = ([0-9a-f]{40})$", read_bytes("/tmp/p6_1_d.out").decode("utf-8"), re.M).group(1)
+print(f"G (from /tmp/p6_1_d.out) = {G}")
+OUT = E["OUT_DIR"]
+NAMES = spaced(E["OUTPUT_FILES"])
+
+
+def present(rel):
+    p = repo_file(rel)
+    return os.path.isfile(p) and not os.path.islink(p)
+
+
+def load(rel):
+    """Strict JSON of a REPO file, or None (FAIL recorded) if it is absent or does not parse."""
+    if not present(rel):
+        C.check(False, f"{rel} exists")
+        return None
+    try:
+        return strict_json(read_bytes(repo_file(rel)))
+    except ValueError as e:
+        C.check(False, f"{rel} parses, NaN and Infinity refused", type(e).__name__)
+        return None
+
+
+# P0: the command as run
+cmd = read_bytes("/tmp/p6_1_run_cmd.txt").decode("utf-8")
+cmd = cmd[:-1] if cmd.endswith("\n") else cmd
+C.check("\n" not in cmd, "P0: /tmp/p6_1_run_cmd.txt is one line")
+C.check(sha256_bytes(cmd.encode("utf-8")) == E["RUN_CMD_SHA256"], "P0: its line has RUN_CMD_SHA256",
+        sha256_bytes(cmd.encode("utf-8")))
+
+# P1: the exit and the printout
+tr = read_bytes("/tmp/p6_1_run_output.txt").decode("utf-8").split("\n")
+if tr and tr[-1] == "":
+    tr = tr[:-1]
+m = re.fullmatch(r"exit status: (-?\d+)", tr[-1]) if tr else None
+C.check(m is not None, "P1: the transcription's last line is `exit status: <n>`", tr[-1] if tr else "")
+C.check(m is not None and int(m.group(1)) == 0, "P1: the exit status is 0", m.group(1) if m else "")
+output = tr[:-1]
+path_re = re.compile(r"^reports/P6_runs/confirm/(document|manifest|runtime)\.json ([0-9a-f]{64})$")
+plines = [ln for ln in output if path_re.match(ln)]
+others = [ln for ln in output if not path_re.match(ln)]
+C.check([path_re.match(ln).group(1) + ".json" for ln in plines] == NAMES,
+        "P1: exactly three path lines, in the order of OUTPUT_FILES", f"{len(plines)} path lines")
+for ln in plines:
+    name, h = path_re.match(ln).group(1) + ".json", path_re.match(ln).group(2)
+    C.check(present(f"{OUT}/{name}") and sha256(repo_file(f"{OUT}/{name}")) == h,
+            f"P1: the printed sha256 of {name} equals the file's", h)
+print(f"P1: other lines of the output: {len(others)}")
+for ln in others:
+    print(f"  | {ln}")
+if os.path.exists("/tmp/p6_1_run_tool_output.txt"):
+    tool = read_bytes("/tmp/p6_1_run_tool_output.txt").decode("utf-8").split("\n")
+    if tool and tool[-1] == "":
+        tool = tool[:-1]
+    C.check(output == tool, "P1: the transcription's output lines equal the tool's output file's lines",
+            f"{len(output)} / {len(tool)} lines")
+else:
+    C.note("no tool output file was copied (R6)")
+
+# P2: the folder
+d = repo_file(OUT)
+held = sorted(os.listdir(d)) if os.path.isdir(d) else None
+C.check(held == sorted(NAMES), "P2: OUT_DIR holds exactly OUTPUT_FILES",
+        "OUT_DIR does not exist" if held is None else " ".join(held))
+print(f"reports/P6_runs exists: {os.path.lexists(repo_file('reports/P6_runs'))}")
+
+# P3: the document
+doc = load(f"{OUT}/document.json")
+if doc is not None:
+    sys.path.insert(0, REPO)
+    from ofilt.drift.confirm_inference import ROW_IDS  # noqa: E402  (R7: this one module, for this constant)
+    cfg = json.loads(read_bytes(repo_file("docs/P4_CONFIRM_CONFIG.json")).decode("utf-8"))
+    cfg_rows = list(cfg["rows"]) if isinstance(cfg.get("rows"), dict) else None
+    C.check(cfg_rows is not None and list(ROW_IDS) == cfg_rows,
+            "P3: ROW_IDS equals the configuration's rows keys, in order", f"{len(ROW_IDS)} ids")
+    rows = doc.get("rows", {})
+    C.check(list(rows) == list(ROW_IDS), "P3: the document's rows keys, in order, equal ROW_IDS", f"{len(rows)} rows")
+    pending = [r for r, e in rows.items() if e.get("status") == "pending"]
+    C.check(not pending, "P3: no row is pending", " ".join(pending))
+    C.check(doc.get("mode") == "confirmation", "P3: mode is confirmation", str(doc.get("mode")))
+    C.check(doc.get("provenance") == "confirm_real", "P3: provenance is confirm_real", str(doc.get("provenance")))
+    listed = [(r, e.get("status"), e.get("reason")) for r, e in rows.items()
+              if e.get("status") in ("not_estimable", "not_applicable")]
+    print(f"P3: rows not_estimable or not_applicable (a report, not a failure): {len(listed)}")
+    for r, s, why in listed:
+        print(f"  {r}: {s}; reason: {why}")
+else:
+    C.note("P3: no document; ROW_IDS not imported")
+
+# P4: the manifest
+man = load(f"{OUT}/manifest.json")
+if man is not None:
+    appx = dict(appendix_rows())
+    if doc is not None:
+        C.check((man.get("mode"), man.get("provenance")) == (doc.get("mode"), doc.get("provenance")),
+                "P4: the manifest's mode and provenance are the document's")
+    cfg_sha = dict(pairs(E["SANCTIONED"]))["docs/P4_CONFIRM_CONFIG.json"]
+    C.check(man.get("config_sha256") == cfg_sha, "P4: config_sha256 is the configuration's SANCTIONED hash")
+    C.check(man.get("cost_inputs_sha256") == appx["docs/P3_COST_INPUTS.json"], "P4: cost_inputs_sha256 == Appendix A's")
+    C.check(man.get("analysis_spec_sha256") == appx["spec/analysis_spec_dev_v1.yaml"],
+            "P4: analysis_spec_sha256 == Appendix A's")
+    specs = man.get("specifications") or []
+    C.check(len(specs) > 0, "P4: the manifest lists specifications", f"{len(specs)}")
+    for s in specs:
+        C.check(s.get("path") in appx and s.get("sha256") == appx[s.get("path")],
+                f"P4: specification {s.get('path')}'s sha256 == Appendix A's")
+
+# P5: the access log
+hits = access_log_hits()
+C.check(hits == ["ACCESS_LOG"], "P5: ACCESS_LOG is the only ACCESS_LOG* name in REPO outside .git, at its root",
+        " ".join(hits))
+rec = None
+if present("ACCESS_LOG"):
+    al_b = read_bytes(repo_file("ACCESS_LOG"))
+    al_lines = al_b.decode("utf-8").split("\n")
+    C.check(al_b.endswith(b"\n") and len(al_lines) == 2, "P5: ACCESS_LOG has exactly one line", f"{lines_of(al_b)} lines")
+    try:
+        rec = json.loads(al_lines[0])
+    except ValueError:
+        C.check(False, "P5: its line is JSON")
+if rec is not None:
+    C.check(rec.get("result") == "GRANTED", "P5: result GRANTED", str(rec.get("result")))
+    C.check(rec.get("tag") == "prereg-v1", "P5: tag prereg-v1", str(rec.get("tag")))
+    C.check(rec.get("head") == G, "P5: head G", str(rec.get("head")))
+    print(f"P5: guard (reported, not a criterion): {rec.get('guard')}")
+
+# P6: the registry
+reg_b = read_bytes(repo_file("RUN_REGISTRY.jsonl"))
+reg_lines = [x for x in reg_b.decode("utf-8").split("\n")]
+C.check(reg_b.endswith(b"\n") and lines_of(reg_b) == 4, "P6: RUN_REGISTRY.jsonl has 4 lines", f"{lines_of(reg_b)} lines")
+nl = [i for i, b in enumerate(reg_b) if b == 0x0A]
+head2 = reg_b[:nl[1] + 1] if len(nl) >= 2 else reg_b
+C.check(sha256_bytes(head2) == E["RUN_REGISTRY_SHA256"], "P6: its bytes up to the second newline have RUN_REGISTRY_SHA256",
+        sha256_bytes(head2))
+print(f"P6: RUN_REGISTRY.jsonl sha256 {sha256_bytes(reg_b)}; {lines_of(reg_b)} lines; "
+      f"unchanged from before the run: {sha256_bytes(reg_b) == E['RUN_REGISTRY_SHA256']}")
+runtime = load(f"{OUT}/runtime.json")
+l3 = json.loads(reg_lines[2]) if lines_of(reg_b) >= 3 else None
+l4 = json.loads(reg_lines[3]) if lines_of(reg_b) >= 4 else None
+C.check(l3 is not None and runtime is not None and l3.get("run_id") == runtime["run_ids"]["main"],
+        "P6: line 3's run_id is runtime.json's run_ids.main")
+C.check(l4 is not None and runtime is not None and l4.get("run_id") == runtime["run_ids"]["m7"],
+        "P6: line 4's run_id is runtime.json's run_ids.m7")
+for n, ln in ((3, l3), (4, l4)):
+    C.check(ln is not None and ln.get("provenance") == "confirm_real" and ln.get("git_commit") == G,
+            f"P6: line {n} has provenance confirm_real and git_commit G")
+    if ln is not None:
+        print(f"P6: line {n}'s git_dirty as written: {ln.get('git_dirty')}")
+
+# P7: the tree
+C.check(git("rev-parse", "HEAD").strip() == G, "P7: HEAD is G")
+st = porcelain_lines()
+print("git status --porcelain --untracked-files=all:")
+for ln in st:
+    print(f"  {ln}")
+C.check(sorted(st) == sorted(barred(E["POST_STATUS"])), "P7: git status --porcelain --untracked-files=all == POST_STATUS")
+st_no = porcelain_lines("no")
+C.check(st_no == [" M RUN_REGISTRY.jsonl"], "P7: with --untracked-files=no, exactly ` M RUN_REGISTRY.jsonl`",
+        repr(st_no))
+
+# P8: what must not change
+blind_log_check(C, E)
+tags_check(C, E)
+appendix_check(C, E, skip=("RUN_REGISTRY.jsonl",))
+C.note(f"RUN_REGISTRY.jsonl, the 40th Appendix A row, has its row's sha256: "
+       f"{sha256_bytes(reg_b) == dict(appendix_rows())['RUN_REGISTRY.jsonl']}")
+
+C.done()
+
+# the hashes of what exists
+rels = [f"{OUT}/{n}" for n in NAMES] + ["ACCESS_LOG", "RUN_REGISTRY.jsonl"]
+hashes = {rel: sha256(repo_file(rel)) for rel in rels if present(rel)}
+with open("/tmp/p6_1_f_hashes.json", "w", encoding="utf-8") as fh:
+    json.dump(hashes, fh, indent=1, sort_keys=True)
+    fh.write("\n")
+print("the hashes of what exists (/tmp/p6_1_f_hashes.json):")
+for rel in rels:
+    print(f"  {hashes.get(rel, '(absent)')}  {rel}")
+
+# the printouts
+if runtime is not None:
+    print(f"wall time (runtime.json wall_seconds): {runtime.get('wall_seconds')}")
+else:
+    print("wall time: runtime.json does not exist")
+for rel in [f"{OUT}/{n}" for n in NAMES] + ["ACCESS_LOG"]:
+    if present(rel):
+        print(f"----- {rel}, in full -----")
+        print(read_bytes(repo_file(rel)).decode("utf-8"), end="")
+        print(f"----- end of {rel} -----")
+    else:
+        print(f"----- {rel}: absent -----")
+for n, ln in ((3, l3), (4, l4)):
+    if ln is None:
+        print(f"registry line {n}: absent")
+    else:
+        folds = ln.get("folds") or []
+        print(f"registry line {n}, without folds ({len(folds)} folds): "
+              f"{json.dumps({k: v for k, v in ln.items() if k != 'folds'}, sort_keys=True)}")
+----- end of /tmp/p6_1_f.py -----
+
+----- /tmp/p6_1_f.out -----
+message /tmp/p6_1_msg.txt: sha256 5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7
+expected values read: 54
+G (from /tmp/p6_1_d.out) = 221507d01547869376e73cde51c20b86892bed95
+[ok] P0: /tmp/p6_1_run_cmd.txt is one line
+[ok] P0: its line has RUN_CMD_SHA256: 1b34bf5c0a8d1f55245963329eaa3ec00bb927801187bbcca5cf6b25c45d2aa9
+[ok] P1: the transcription's last line is `exit status: <n>`: exit status: 1
+[FAIL] P1: the exit status is 0: 1
+[FAIL] P1: exactly three path lines, in the order of OUTPUT_FILES: 0 path lines
+P1: other lines of the output: 22
+  | Traceback (most recent call last):
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 68, in <module>
+  |     sys.exit(main())
+  |              ^^^^^^
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 57, in main
+  |     frames = _confirm_frames()
+  |              ^^^^^^^^^^^^^^^^^
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py", line 46, in _confirm_frames
+  |     confirm = io.load_confirm()
+  |               ^^^^^^^^^^^^^^^^^
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 165, in load_confirm
+  |     digest = _verify(p, spec.data_hash("sealed_panel"), "sealed confirmation panel")
+  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 65, in _verify
+  |     got = sha256_file(path)
+  |           ^^^^^^^^^^^^^^^^^
+  |   File "/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/ofilt/drift/io.py", line 58, in sha256_file
+  |     with open(path, "rb") as fh:
+  |          ^^^^^^^^^^^^^^^^
+  | FileNotFoundError: [Errno 2] No such file or directory: '/Users/isaiahchoi/Desktop/FX_Project/data/panel_confirm_SEALED.csv'
+  | 
+  | [exited with code 1]
+[ok] P1: the transcription's output lines equal the tool's output file's lines: 22 / 22 lines
+[FAIL] P2: OUT_DIR holds exactly OUTPUT_FILES: OUT_DIR does not exist
+reports/P6_runs exists: False
+[FAIL] reports/P6_runs/confirm/document.json exists
+[note] P3: no document; ROW_IDS not imported
+[FAIL] reports/P6_runs/confirm/manifest.json exists
+[ok] P5: ACCESS_LOG is the only ACCESS_LOG* name in REPO outside .git, at its root: ACCESS_LOG
+[ok] P5: ACCESS_LOG has exactly one line: 1 lines
+[ok] P5: result GRANTED: GRANTED
+[ok] P5: tag prereg-v1: prereg-v1
+[ok] P5: head G: 221507d01547869376e73cde51c20b86892bed95
+P5: guard (reported, not a criterion): fallback
+[FAIL] P6: RUN_REGISTRY.jsonl has 4 lines: 2 lines
+[ok] P6: its bytes up to the second newline have RUN_REGISTRY_SHA256: 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c
+P6: RUN_REGISTRY.jsonl sha256 9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c; 2 lines; unchanged from before the run: True
+[FAIL] reports/P6_runs/confirm/runtime.json exists
+[FAIL] P6: line 3's run_id is runtime.json's run_ids.main
+[FAIL] P6: line 4's run_id is runtime.json's run_ids.m7
+[FAIL] P6: line 3 has provenance confirm_real and git_commit G
+[FAIL] P6: line 4 has provenance confirm_real and git_commit G
+[ok] P7: HEAD is G
+git status --porcelain --untracked-files=all:
+  ?? ACCESS_LOG
+[FAIL] P7: git status --porcelain --untracked-files=all == POST_STATUS
+[FAIL] P7: with --untracked-files=no, exactly ` M RUN_REGISTRY.jsonl`: []
+[ok] BLIND_FIT_LOG sha256 == BLIND_FIT_LOG_SHA256 and lines == BLIND_FIT_LOG_LINES: 0cdedae9662221145dd3b9f4baecacc7431d17706d01f6cef19cce10c0f83383, 7 lines
+[ok] git tag -l == TAG_LIST: pass1-final prereg-v1 spec-dev-v1
+[ok] prereg-v1 is of type tag (annotated): tag
+[ok] refs/tags/prereg-v1 == PREREG_TAG_OBJECT: 148b742e097c0ed6945992b7707d928ad21b4d37
+[ok] prereg-v1's commit == PREREG_TAG_COMMIT: 8341ffd930caea6e0327e8fcac90fc2e34652962
+[ok] Appendix A: APPX_ROWS rows, no path twice: 40
+[ok] every Appendix A file other than RUN_REGISTRY.jsonl has the row's sha256 (working tree): 39 of 39
+[note] RUN_REGISTRY.jsonl, the 40th Appendix A row, has its row's sha256: True
+checks: 31; failed: 13
+FAIL P1: the exit status is 0
+FAIL P1: exactly three path lines, in the order of OUTPUT_FILES
+FAIL P2: OUT_DIR holds exactly OUTPUT_FILES
+FAIL reports/P6_runs/confirm/document.json exists
+FAIL reports/P6_runs/confirm/manifest.json exists
+FAIL P6: RUN_REGISTRY.jsonl has 4 lines
+FAIL reports/P6_runs/confirm/runtime.json exists
+FAIL P6: line 3's run_id is runtime.json's run_ids.main
+FAIL P6: line 4's run_id is runtime.json's run_ids.m7
+FAIL P6: line 3 has provenance confirm_real and git_commit G
+FAIL P6: line 4 has provenance confirm_real and git_commit G
+FAIL P7: git status --porcelain --untracked-files=all == POST_STATUS
+FAIL P7: with --untracked-files=no, exactly ` M RUN_REGISTRY.jsonl`
+POST CHECK: False
+the hashes of what exists (/tmp/p6_1_f_hashes.json):
+  (absent)  reports/P6_runs/confirm/document.json
+  (absent)  reports/P6_runs/confirm/manifest.json
+  (absent)  reports/P6_runs/confirm/runtime.json
+  c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03  ACCESS_LOG
+  9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c  RUN_REGISTRY.jsonl
+wall time: runtime.json does not exist
+----- reports/P6_runs/confirm/document.json: absent -----
+----- reports/P6_runs/confirm/manifest.json: absent -----
+----- reports/P6_runs/confirm/runtime.json: absent -----
+----- ACCESS_LOG, in full -----
+{"utc": "2026-10-12T23:38:45.210959+00:00", "tag": "prereg-v1", "result": "GRANTED", "head": "221507d01547869376e73cde51c20b86892bed95", "guard": "fallback", "caller": "File \"/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py\", line 57, in main |     frames = _confirm_frames() |   File \"/Users/isaiahchoi/Desktop/FX_Project/ofilt_pass1/tools/p6_confirm_run.py\", line 46, in _confirm_frames |     confirm = io.load_confirm()", "reason": "tag is an ancestor of HEAD"}
+----- end of ACCESS_LOG -----
+registry line 3: absent
+registry line 4: absent
+----- end of /tmp/p6_1_f.out -----
+
+----- /tmp/p6_1_f_hashes.json -----
+{
+ "ACCESS_LOG": "c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03",
+ "RUN_REGISTRY.jsonl": "9c6cb9c68538215cab8ae5c91f582e695757165bc4de5e033c8c61d49a9f542c"
+}
+----- end of /tmp/p6_1_f_hashes.json -----
+
+### Part 2's scripts: written during c, NOT run (the item stopped at f)
+----- /tmp/p6_1_g1.sh -----
+#!/bin/bash
+# P6-1 g.1: the bases still have TESTKIT_BASE and tests/run_state.py is absent; then cp -p the four kit files from
+# KIT_DIR/tests/ to REPO's tests/. Values read from the message's Expected values by script. Runs no Python.
+set -euo pipefail
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+MSG="/tmp/p6_1_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+ev() {
+  local n
+  n="$(grep -c -E "^- $1 = " "$MSG")"
+  [ "$n" = "1" ] || { echo "REFUSED: expected value $1 found $n times"; exit 2; }
+  grep -E "^- $1 = " "$MSG" | sed -E "s/^- $1 = //"
+}
+KIT="$(ev KIT_DIR)"; KIT="${KIT/#\~/$HOME}/tests"
+splitbar() {  # items separated by " | ", one per line
+  local rest="$1" item
+  while :; do item="${rest%% | *}"; printf '%s\n' "$item"; [ "$item" = "$rest" ] && break; rest="${rest#* | }"; done
+}
+while IFS= read -r item; do
+  p="${item%:*}"; want="${item##*:}"
+  got="$(shasum -a 256 "$REPO/$p" | cut -d' ' -f1)"
+  if [ "$got" = "$want" ]; then echo "base $p: $got (TESTKIT_BASE)"; else echo "REFUSED: base $p is $got, not $want"; exit 2; fi
+done < <(splitbar "$(ev TESTKIT_BASE)")
+[ ! -e "$REPO/tests/run_state.py" ] || { echo "REFUSED: tests/run_state.py exists"; exit 2; }
+echo "tests/run_state.py: absent"
+n=0
+while IFS= read -r item; do
+  f="${item%:*}"
+  cp -p "$KIT/$f" "$REPO/tests/$f"
+  echo "cp -p $KIT/$f -> tests/$f"
+  n=$((n + 1))
+done < <(splitbar "$(ev TESTKIT)")
+echo "installed: $n"
+----- end of /tmp/p6_1_g1.sh -----
+
+----- /tmp/p6_1_g2.sh -----
+#!/bin/bash
+# P6-1 g.2: the three changed modules on their own, FOCUSED read from the message's Expected values by script, in the
+# standing prompt's form with OFILT_DATA_DIR exported. Output to /tmp/p6_1_g.out.
+set -uo pipefail
+MSG="/tmp/p6_1_msg.txt"
+echo "message $MSG: sha256 $(shasum -a 256 "$MSG" | cut -d' ' -f1)"
+[ "$(grep -c -E '^- FOCUSED = ' "$MSG")" = "1" ] || { echo "REFUSED: FOCUSED not found exactly once"; exit 2; }
+FOCUSED="$(grep -E '^- FOCUSED = ' "$MSG" | sed -E 's/^- FOCUSED = //')"
+[[ "$FOCUSED" =~ ^(tests\.[a-z0-9_]+)( tests\.[a-z0-9_]+)*$ ]] || { echo "REFUSED: FOCUSED malformed"; exit 2; }
+echo "FOCUSED = $FOCUSED"
+if env | grep -q -E '^(OFILT_RUN_SEALED|OFILT_P6_CONFIRM_RUN)='; then echo "REFUSED: a forbidden variable is set"; exit 2; fi
+env -u OFILT_RUN_SEALED bash -c 'source "$HOME/venvs/ofilt_p2/bin/activate" && cd "$HOME/Desktop/FX_Project/ofilt_pass1" && export OFILT_DATA_DIR="$HOME/Desktop/FX_Project/data" && python -B -m unittest "$@"' _ $FOCUSED > /tmp/p6_1_g.out 2>&1
+rc=$?
+echo "exit $rc"
+cat /tmp/p6_1_g.out
+----- end of /tmp/p6_1_g2.sh -----
+
+----- /tmp/p6_1_g3.py -----
+"""P6-1 g.1 to g.4's checks: the kit installed (TESTKIT, mtimes kept); the focused run (Ran FOCUSED_RAN tests,
+FOCUSED_RESULT); PASS6_STATUS.md equal to part 1's substitution, then PART2_TEMPLATE written with the same three
+substitutions and checked; the tree equal to PRE_PART2_STATUS. Verdict G CHECK."""
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (PLACEHOLDER, Checks, barred, counts_check, expected, item_date, lines_of, pairs,  # noqa: E402
+                         path, placeholder_lines, porcelain_lines, read_bytes, repo_file, sha256, sha256_bytes,
+                         substitute)
+
+E = expected()
+D = item_date()
+C = Checks("G")
+kit = os.path.join(path(E["KIT_DIR"]), "tests")
+C.check("installed: 4" in read_bytes("/tmp/p6_1_g1.out").decode("utf-8").split("\n"), "g.1's script installed 4 files")
+for n, want in pairs(E["TESTKIT"]):
+    d = repo_file(f"tests/{n}")
+    C.check(os.path.isfile(d) and sha256(d) == want, f"tests/{n} has TESTKIT's sha256", sha256(d))
+    C.check(os.stat(d).st_mtime_ns == os.stat(os.path.join(kit, n)).st_mtime_ns, f"tests/{n} kept the kit's mtime")
+
+out = read_bytes("/tmp/p6_1_g.out").decode("utf-8").split("\n")
+ran = [ln for ln in out if re.fullmatch(r"Ran \d+ tests? in [0-9.]+s", ln)]
+C.check(len(ran) == 1 and ran[0].startswith(f"Ran {E['FOCUSED_RAN']} tests "), "g.2: Ran FOCUSED_RAN tests",
+        " | ".join(ran))
+C.check(out.count(E["FOCUSED_RESULT"]) == 1, "g.2: a line exactly FOCUSED_RESULT", E["FOCUSED_RESULT"])
+bad = [ln for ln in out if ln.startswith("FAIL:") or ln.startswith("ERROR:")]
+C.check(not bad, "g.2: no FAIL: or ERROR: line", " | ".join(bad))
+
+subs = (D, sha256(path(E["P6_0_KEPT"])), sha256(path(E["SANCTION_FILE"])))
+status = repo_file("PASS6_STATUS.md")
+p1 = substitute(read_bytes(path(E["PART1_TEMPLATE"])), *subs)
+C.check(read_bytes(status) == p1, "g.3: PASS6_STATUS.md equals PART1_TEMPLATE with part 1's substitutions, recomputed",
+        sha256(status))
+t2 = read_bytes(path(E["PART2_TEMPLATE"]))
+C.check(sha256_bytes(t2) == E["PART2_TEMPLATE_SHA256"], "g.3: PART2_TEMPLATE sha256 == PART2_TEMPLATE_SHA256")
+counts_check(C, "PART2_TEMPLATE", t2, E["PART2_COUNTS"])
+if C.fails:
+    C.done()
+    raise SystemExit("not written")
+with open(status, "wb") as fh:
+    fh.write(substitute(t2, *subs))
+written = read_bytes(status)
+again = substitute(read_bytes(path(E["PART2_TEMPLATE"])), item_date(), sha256(path(E["P6_0_KEPT"])),
+                   sha256(path(E["SANCTION_FILE"])))
+C.check(written == again, "g.3: PASS6_STATUS.md equals PART2_TEMPLATE's substitution, recomputed")
+C.check(not PLACEHOLDER.findall(written), "g.3: no placeholder is left")
+print(f"PASS6_STATUS.md: sha256 {sha256_bytes(written)}; {lines_of(written)} lines")
+C.check(placeholder_lines(t2, written), "g.3: the same line count as the template")
+
+st = porcelain_lines()
+for ln in st:
+    print(f"  {ln}")
+C.check(sorted(st) == sorted(barred(E["PRE_PART2_STATUS"])),
+        "g.4: git status --porcelain --untracked-files=all == PRE_PART2_STATUS")
+C.done()
+----- end of /tmp/p6_1_g3.py -----
+
+----- /tmp/p6_1_h_check.py -----
+"""P6-1 h's check: the post-run checkpoint (criteria §6), verdict PART2 CHECK."""
+import json
+import os
+import re
+import sys
+
+sys.path.insert(0, "/tmp")
+from p6_1_common import (Checks, blind_log_check, expected, git, git_bytes, git_rc, item_date, pairs, path,  # noqa: E402
+                         porcelain_lines, read_bytes, repo_file, sha256, sha256_bytes, spaced, substitute, tags_check)
+
+E = expected()
+D = item_date()
+C = Checks("PART2")
+G = re.search(r"^G = ([0-9a-f]{40})$", read_bytes("/tmp/p6_1_d.out").decode("utf-8"), re.M).group(1)
+print(f"G (from /tmp/p6_1_d.out) = {G}")
+out = read_bytes("/tmp/p6_1_h.out").decode("utf-8").split("\n")
+C.check(out.count("checkpoint exit: 0") == 1, "the output holds `checkpoint exit: 0`")
+commits = [ln for ln in out if re.fullmatch(r"commit [0-9a-f]{40}", ln)]
+head = git("rev-parse", "HEAD").strip()
+C.check(commits == [f"commit {head}"], "one commit line, and it is HEAD's", " | ".join(commits))
+ran = [ln for ln in out if re.fullmatch(r"Ran \d+ tests? in [0-9.]+s", ln)]
+C.check(len(ran) == 1 and ran[0].startswith(f"Ran {E['SUITE_RAN']} tests "), "Ran SUITE_RAN tests", " | ".join(ran))
+C.check(out.count(E["SUITE_RESULT"]) == 1, "a line exactly SUITE_RESULT", E["SUITE_RESULT"])
+parents = git("log", "-1", "--format=%P", "HEAD").split()
+C.check(parents == [G], "HEAD's only parent is G", " ".join(parents))
+diff = sorted(f for f in git("diff", "--name-only", G, "HEAD").split("\n") if f)
+C.check(diff == sorted(spaced(E["PART2_FILES"])), "git diff --name-only G HEAD lists exactly PART2_FILES", " ".join(diff))
+under = [f for f in diff for d in spaced(E["NO_CHANGE_UNDER"]) if f.startswith(d + "/")]
+C.check(not under, "nothing under NO_CHANGE_UNDER", " ".join(under))
+C.check(git_rc("ls-files", "--error-unmatch", "ACCESS_LOG") == 0, "git ls-files --error-unmatch ACCESS_LOG succeeds")
+st = porcelain_lines()
+C.check(st == [], "the tree is clean", repr(st))
+blind_log_check(C, E)
+tags_check(C, E)
+want = substitute(read_bytes(path(E["PART2_TEMPLATE"])), D, sha256(path(E["P6_0_KEPT"])), sha256(path(E["SANCTION_FILE"])))
+C.check(read_bytes(repo_file("PASS6_STATUS.md")) == want, "PASS6_STATUS.md equals the part-2 substitution, recomputed",
+        sha256(repo_file("PASS6_STATUS.md")))
+for n, h in pairs(E["TESTKIT"]):
+    C.check(sha256(repo_file(f"tests/{n}")) == h, f"tests/{n} has TESTKIT's sha256")
+hashes = json.loads(read_bytes("/tmp/p6_1_f_hashes.json").decode("utf-8"))
+for rel, h in sorted(hashes.items()):
+    wt, at_head = sha256(repo_file(rel)), sha256_bytes(git_bytes("show", f"HEAD:{rel}"))
+    C.check(wt == h and at_head == h, f"{rel} is byte-identical to what f hashed (working tree and at HEAD)", h)
+print(f"HEAD after part 2: {head}")
+C.done()
+----- end of /tmp/p6_1_h_check.py -----
+
+### REPO now (read-only git)
+HEAD: 221507d01547869376e73cde51c20b86892bed95
+221507d01547869376e73cde51c20b86892bed95 cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe checkpoint: P6-1 part 1
+cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe 6775d6ed737a5c57cb686ade28d11f30a99ebfe8 records: P6-0 (P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria)
+git status --porcelain --untracked-files=all:
+?? ACCESS_LOG
+git branch -r --contains HEAD: ''
+
+## Verdict lines (in step order; G and PART2 not run)
+
+A2_ENV CHECK: True
+SANCTION CHECK: True
+PRE CHECK: True
+A5 CHECK: True
+B CHECK: True
+GATE CHECK: True
+POST CHECK: False
+
+## The run's wall time
+
+runtime.json was not written (the run failed in its third load); the background command ran from its launch to its
+completion notice. ACCESS_LOG's GRANTED line is timed 2026-10-12T23:38:45.210959+00:00.
+
+## Readings
+
+### a.1 to e
+
+R1. The first command printed D = 2026-10-12 (`/tmp/p6_1_date.out`). `/tmp/p6_1_msg.txt` (SHA-256 `5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7`) was read in full with the Read tool. It is the message I was given, "P6-1: the sanction, the gate, the confirmation run (part 1); §7.6's test changes and the post-run checkpoint (part 2)", with its 54 expected values.
+
+R2. a.2, as at P6-0, plus the one-line check in the tool's zsh (`/tmp/p6_1_a2_zsh.out`): both variables unset. For G9, both were rerun just before d (`/tmp/p6_1_d_env.out`, `/tmp/p6_1_d_env_zsh.out`).
+
+R3. Part 1 up to the command went as planned:
+- SANCTION CHECK True. The sanction is dated 2026-10-12 and names S, the three hashes and the criteria file. Its SHA-256 is `123ad81ecd591796749daa25b8a78c25bdaf18a90dc25bd4f92f5dcd09d83cbe`.
+- PRE CHECK, A5 and B True.
+- The gate's checkpoint ran 398 tests, `OK (skipped=6)`, in 1,514.6 s, and committed G = `221507d01547869376e73cde51c20b86892bed95` (parent S). The B6 report's float noise was restored, as expected (Flag 16).
+- GATE CHECK True, with all 59 checks passing.
+
+R4. The command ran once, at G, as the tool's own command with its background option, verbatim (P0: `1b34bf5c…`). It exited with status 1. Its whole output, a traceback, is in `/tmp/p6_1_run_output.txt`. The tool's own output file, `/private/tmp/claude-502/-Users-isaiahchoi-Desktop-FX-Project-ofilt-pass1/5aa719b6-e8cd-4208-9a6a-719ea5ab9607/tasks/bxn22usv0.output` (SHA-256 `79de9efa7b1d3d76d43b7ab65a0a2ad42a31bb178f9bd433fb1bc344f5d05c13`), was copied with `cp` to `/tmp/p6_1_run_tool_output.txt` (R6). The two agree line for line (P1).
+
+### f. What happened, read from the traceback and the post-run state
+
+R5. The failure:
+- `tools/p6_confirm_run.py:46` called `io.load_confirm()`.
+- `io.load_confirm`'s guard granted `prereg-v1` and logged GRANTED (`io.py:162`).
+- At `io.py:165`, `_verify` of the sealed panel raised `FileNotFoundError: [Errno 2] No such file or directory: '/Users/isaiahchoi/Desktop/FX_Project/data/panel_confirm_SEALED.csv'`. The raise came from `open(path, "rb")` in `sha256_file` (`io.py:58`).
+
+So:
+- `io.load_dev()` and `io.load_events_firm()` had returned. Both are called before `io.load_confirm()` (`p6_confirm_run.py:44-45`), and each verifies its file's SHA-256 against the spec, so the dev panel and the firm events were found in DATA and matched their pinned hashes.
+- The sealed panel was not found at the path `io` builds, `OFILT_DATA_DIR/panel_confirm_SEALED.csv`. No byte of it was read: the `open` failed.
+- Nothing after the load ran. There was no `build_document`, no forecasting call, no registry append and no `write_outputs`.
+
+R6. What the run wrote, and the state now:
+- Only `ACCESS_LOG`, at REPO's root, untracked: one line, `GRANTED`, `prereg-v1`, head G, guard `fallback`, at `2026-10-12T23:38:45.210959+00:00`. Its SHA-256 is `c6eb0d5ecf89f2f6b705488c71b0c281154ba94008755731739a7c0ffadfbc03`.
+- `RUN_REGISTRY.jsonl` is unchanged (2 lines, `9c6cb9c6…`), `BLIND_FIT_LOG` is unchanged (7 lines), and the tags are unchanged.
+- All 40 Appendix A files have their SHA-256.
+- `reports/P6_runs/` does not exist. HEAD is G, and `git status --porcelain --untracked-files=all` is `?? ACCESS_LOG` only.
+
+Nothing the run wrote was deleted, moved, renamed or edited.
+
+R7. Under the pre-registration's §7.5 and the criteria file's §4, "once `io.load_confirm` has logged GRANTED, the opening counts, whatever follows". The run then failed by an exception, so no result exists. As the message says:
+- P6-1 stops at f, and part 2 does not run;
+- no kit file was installed;
+- `PASS6_STATUS.md` is still part 1's;
+- no second checkpoint ran.
+
+R8. Why the gate could not catch this. P5Q3 and P6Q3 forbid opening, listing or hashing anything under DATA outside the suite and the run's command. So no check before the command could test whether the sealed panel was present. The criteria file has no such check, and the suite's tests use an empty temporary data folder for `io.load_confirm`. The first and only contact with the sealed path was the run itself, which is when the absence showed. I did not look in DATA, or anywhere else, for the file, and I will not without Isaiah's instruction.
+
+R9. For Isaiah's decision. These are facts and constraints, not a recommendation of a course:
+- The one-shot rule now holds in code. `tools/p6_confirm_run.py` refuses to run while `ACCESS_LOG` exists (`:41-43`). The sanction's own line 9 says "Any further run is a dated, labelled deviation that I decide."
+- Hard rule 3 and P6Q7 forbid deleting, moving, renaming or editing `ACCESS_LOG`. A second attempt would therefore need a decision about the one-shot check (a code change after the tag, a labelled deviation under P13(c)) or some other route that Isaiah and the supervisor define. Before any such attempt, the sealed panel must be placed at, or `io` pointed to, the path its pinned SHA-256 (AM-04, `b575272a…`) is checked against.
+- The records that may say where the sealed panel was written in Pass 2 (`docs/DATA_PROVENANCE.md`, `PASS2_STATUS.md`) were not read in this item.
+- G (`221507d0…`) is a local commit, not yet pushed. `ACCESS_LOG` is untracked and uncommitted.
+- How this event is recorded is for the supervisor and Isaiah: in `PASS6_STATUS.md`, in the Disclosure list and as §7.5's report of the failure.
+
+R10. Part 2's scripts (`/tmp/p6_1_g1.sh`, `/tmp/p6_1_g2.sh`, `/tmp/p6_1_g3.py`, `/tmp/p6_1_h_check.py`) were written while the gate's checkpoint ran, and none of them was run. They are shown in the report for completeness only.
+
+## Deviations and notes
+
+D1 (a deviation, for the supervisor to classify). Step c says that nothing else runs while the gate's checkpoint runs. During it, I ran one command: `sed -i ''` on `/tmp/p6_1_g1.sh`, to rename a shell function from `split` to `splitbar`. It ran no Python, touched no file in REPO, and did not affect the checkpoint: the checkpoint compares REPO's `git status` and `git diff` before and after the suite, and it passed and committed G. Writing the scripts of d to h with the editor during the checkpoint ran no command.
+
+N1. `/tmp/p6_1_f.py` was written during the checkpoint for a successful run, and would have crashed on the missing outputs. Before its first run, I rewrote it so that every P-check records ok or FAIL, and a missing file counts as a FAIL. It then ran once. It is read-only (it writes only `/tmp/p6_1_f_hashes.json` and its output). It did not import `ofilt.drift.confirm_inference`, because no document exists. This was not a rerun.
+
+N2. R6: the tool's output file holds the command's 20-line traceback, then a blank line, then the tool's own trailer line `[exited with code 1]`. The transcription copies those 22 lines verbatim and adds `exit status: 1`. So "the output lines" that P1 compares include the tool's trailer line, as the file does.
+
+N3. Commands outside the check scripts, all read-only except where noted:
+- `cat /tmp/p6_1_c.out`, after the checkpoint's completion notice;
+- the Read tool on the tool's output file for the run, after the command's completion notice;
+- `cp` of that file to `/tmp/p6_1_run_tool_output.txt` (R6), with `shasum`, `wc -l` and `tail -c 120 | od -c` of it to see its exact bytes for the transcription;
+- before b, `grep -n -o -E '"rows": *.{0,40}' docs/P4_CONFIRM_CONFIG.json | head -5`, to see the configuration's `rows` field's shape for f's P3;
+- D1's `sed -i ''`.
+
+N4. Blinding attestation:
+- None of my scripts opened, listed or hashed anything under DATA. The only contacts with DATA were:
+  - the gate checkpoint's suite, through `io` as its tests already do;
+  - the run's command, in which `io` verified the dev panel and the firm events against their pinned SHA-256 and failed to find the sealed panel.
+- No byte of the sealed panel was read, no panel value was printed, nothing was computed on confirmation data, and no result exists.
+- Before the run, no script of mine imported a module of `ofilt`. After it, f imported none: no document exists, so it never needed `ROW_IDS`.
+- `OFILT_RUN_SEALED` was absent from every command, and `OFILT_P6_CONFIRM_RUN` from every command but the run's.
+- No tag was created, moved or deleted, and nothing was pushed.
+
+N5. The `/tmp/p6_1*` files are left in place.
+
+## SHA-256 of every /tmp/p6_1* file except this report
+
+82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd  /tmp/p6_1_a2_zsh.out
+e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a  /tmp/p6_1_a2.out
+7e17d76ab97f589265821d57e7099a97935f803d2c6a43ea444bd7b690ab28dd  /tmp/p6_1_a2.sh
+15d9af9b4f459153e02e9c2e7909eb8315f4bad60136b5fa37d5c5b931ff98e8  /tmp/p6_1_a3.out
+2f82cd86d96ea36ebf2f83a21a8ef9c6444772b71829de7b3c1e1f6120eba273  /tmp/p6_1_a3.py
+a308f687f515481ae1300a1025b3b5c507ec4a196b168477e7b113b3cd41bfb6  /tmp/p6_1_a4.out
+45e4a7e6e3854b3a4911ee1618d1a34a2105b7526ecd83e81552843dd5838895  /tmp/p6_1_a4.py
+798ebb937ee35737ddd0d9f6d1283c9c84d6fd20b6f98b787032e8d8015a5505  /tmp/p6_1_a5.out
+0b53cbbff9263d5fdaac01891fafe8bfd414b8fc786e254494ce9f801dfb58fa  /tmp/p6_1_a5.py
+46f684b140b92e4240208da26aa5bcb286ad3fc609a15bc51e413378972d7059  /tmp/p6_1_assemble.sh
+30b235aeae6c7713565f8d3d0f2481d09e513fe72bebeac393c838ce69832a7d  /tmp/p6_1_b_sh.out
+56ef151a4470595bdbb20557da1fb5d4ff3a27e10ff4d991aa61a6ca67547fb8  /tmp/p6_1_b.out
+a172e9f3a99276302b3905c34ce61c654fb3ea3a9518d2d8a423ffae097c4fd4  /tmp/p6_1_b.py
+9fe86db0d9cd9b07a1cf270ee4c6a03572c8a3fcdadfd9b3d921106d4d4303b4  /tmp/p6_1_b.sh
+081c6a70cb56858df30d3a4b125a6a0b1f30cc6ebf9438847fc74ca23ab28a21  /tmp/p6_1_c.out
+0c76f8d99608117859da426b914d0dcbdc157abdc196cef31e3a89489f2c97c5  /tmp/p6_1_common.py
+82e28c886a752e44aaa805bfbc33007b62fe04c33bf1451427593c9fe85f2bfd  /tmp/p6_1_d_env_zsh.out
+e12f9688e46acf99a5a6c5cc0e66790945316294ab617603d958a248a0c8701a  /tmp/p6_1_d_env.out
+7096cb04629c0736a3d6ed126554469106ce23afe3b74b36e2683a44a6c3a74d  /tmp/p6_1_d.out
+5381741fbac7dd7875bf9897c8a45e5ecc6a7ba99e1c85301e215fbabbb58368  /tmp/p6_1_d.py
+a8e5dc16b6c35b49458a7c5d2cca55a2e3fca013f6801316103f97f431a998c9  /tmp/p6_1_date.out
+45d8b9b2c9b37c90a75ec1e8677cf575fdbd1fcc6d4649906f845c8ece6e16fa  /tmp/p6_1_f_hashes.json
+433673863e1848b1afa2af86047000fc48601f15cc3441e09bfd09b2e6bd423a  /tmp/p6_1_f.out
+7467438a8f73b8f170a48a56461697b728e04bb739fae222bb3f5c67a24c276d  /tmp/p6_1_f.py
+c4a7adc5da415aa41337a0afde845a3cd6a3b8b58d201390b0ea5e203aa92cc7  /tmp/p6_1_g1.sh
+b4a25e546eaeb7c6a2c552e3a5938b6524c0561377e20a45b56f040515af1721  /tmp/p6_1_g2.sh
+64e8164c3f2ade047a0d17a413ae46f9837b15448368530e6043217806eb0d53  /tmp/p6_1_g3.py
+61be9a0d06096d78b8ab5f93ce72b30157540f60b3a61d975bdb46765a12b865  /tmp/p6_1_h_check.py
+5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7  /tmp/p6_1_msg.txt
+5a8ca4478e3bf5ae379603102f45a424fa5900711d57e75503e346378f6b4681  /tmp/p6_1_msgsha.out
+d536e865d70926e499777ddfc5b410b9dcccba3530ecaea5644f022032f95ead  /tmp/p6_1_notes.txt
+d02c95504b3943258d812012c304b3049113fdcbfe30f7987c217ab1eb78db5a  /tmp/p6_1_readings.txt
+2b7e44c90e15876b90bbabcd6444a120d6c96693037940c2a2f14db92e56141a  /tmp/p6_1_run_cmd.txt
+39de1a6bb0e3d06fb7b49df933409a965970a8c7fe38ae78270c92510b52fccf  /tmp/p6_1_run_output.txt
+22f206aed980df201c019e73a77c545f7e3341680430999574620fc2c6f20741  /tmp/p6_1_run_tool_output.sha
+79de9efa7b1d3d76d43b7ab65a0a2ad42a31bb178f9bd433fb1bc344f5d05c13  /tmp/p6_1_run_tool_output.txt
+
+## The assembler
+
+----- /tmp/p6_1_assemble.sh -----
+#!/bin/bash
+# P6-1 i (after the STOP at f): assembles /tmp/p6_1.txt, in the standing prompt's report form, from command output and
+# this item's /tmp files. Runs no Python; reads REPO only through git; changes nothing.
+REPO="$HOME/Desktop/FX_Project/ofilt_pass1"
+OUT="/tmp/p6_1.txt"
+
+show() {  # one file in full, between markers
+  echo "----- $1 -----"
+  cat "$1"
+  echo "----- end of $1 -----"
+  echo
+}
+
+{
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+shasum -a 256 "/tmp/p6_1_msg.txt"
+echo
+echo "# P6-1: the sanction, the gate, the confirmation run (part 1); §7.6's test changes and the post-run checkpoint (part 2)"
+echo
+echo "Builder report. D = $(cat /tmp/p6_1_date.out). STOPPED at f: the run failed after GRANTED (FileNotFoundError: the sealed"
+echo "panel is not at OFILT_DATA_DIR/panel_confirm_SEALED.csv). POST CHECK False; part 2 not run; nothing the run wrote was touched."
+echo
+echo "## Scripts and their outputs"
+echo
+echo "### a.1"
+show /tmp/p6_1_date.out
+show /tmp/p6_1_msgsha.out
+echo "### Shared helper of the Python scripts"
+show /tmp/p6_1_common.py
+echo "### a.2 (and the extra check in the tool's own zsh)"
+show /tmp/p6_1_a2.sh
+show /tmp/p6_1_a2.out
+show /tmp/p6_1_a2_zsh.out
+echo "### a.3"
+show /tmp/p6_1_a3.py
+show /tmp/p6_1_a3.out
+echo "### a.4"
+show /tmp/p6_1_a4.py
+show /tmp/p6_1_a4.out
+echo "### a.5"
+show /tmp/p6_1_a5.py
+show /tmp/p6_1_a5.out
+echo "### b: the copies (bash) and PASS6_STATUS.md's part 1 (Python)"
+show /tmp/p6_1_b.sh
+show /tmp/p6_1_b_sh.out
+show /tmp/p6_1_b.py
+show /tmp/p6_1_b.out
+echo "### c: the gate's checkpoint (its command is the message's, run with the background option; its output)"
+show /tmp/p6_1_c.out
+echo "### d: G9's environment, rerun before d; then the gate's checks"
+show /tmp/p6_1_d_env.out
+show /tmp/p6_1_d_env_zsh.out
+show /tmp/p6_1_d.py
+show /tmp/p6_1_d.out
+echo "### e: the command as given to the tool (transcription), its output (transcription), the tool's output file (R6)"
+show /tmp/p6_1_run_cmd.txt
+show /tmp/p6_1_run_output.txt
+show /tmp/p6_1_run_tool_output.txt
+show /tmp/p6_1_run_tool_output.sha
+echo "### f: the post-run checks and printouts"
+show /tmp/p6_1_f.py
+show /tmp/p6_1_f.out
+show /tmp/p6_1_f_hashes.json
+echo "### Part 2's scripts: written during c, NOT run (the item stopped at f)"
+show /tmp/p6_1_g1.sh
+show /tmp/p6_1_g2.sh
+show /tmp/p6_1_g3.py
+show /tmp/p6_1_h_check.py
+echo "### REPO now (read-only git)"
+echo "HEAD: $(git -C "$REPO" rev-parse HEAD)"
+git -C "$REPO" log -2 --format='%H %P %s'
+echo "git status --porcelain --untracked-files=all:"
+git -C "$REPO" status --porcelain --untracked-files=all
+echo "git branch -r --contains HEAD: '$(git -C "$REPO" branch -r --contains HEAD | tr -d ' ')'"
+echo
+
+echo "## Verdict lines (in step order; G and PART2 not run)"
+echo
+grep -h -E '^[A-Z0-9_]+( [A-Z0-9_]+)* CHECK: (True|False)$' /tmp/p6_1_a2.out /tmp/p6_1_a3.out /tmp/p6_1_a4.out \
+  /tmp/p6_1_a5.out /tmp/p6_1_b.out /tmp/p6_1_d.out /tmp/p6_1_f.out
+echo
+echo "## The run's wall time"
+echo
+echo "runtime.json was not written (the run failed in its third load); the background command ran from its launch to its"
+echo "completion notice. ACCESS_LOG's GRANTED line is timed 2026-10-12T23:38:45.210959+00:00."
+echo
+echo "## Readings"
+echo
+cat /tmp/p6_1_readings.txt
+echo
+echo "## Deviations and notes"
+echo
+cat /tmp/p6_1_notes.txt
+echo
+echo "## SHA-256 of every /tmp/p6_1* file except this report"
+echo
+for f in /tmp/p6_1*; do
+  [ "$f" = "$OUT" ] && continue
+  if [ -d "$f" ]; then echo "(a folder, not hashed: $f)"; continue; fi
+  shasum -a 256 "$f"
+done
+echo
+echo "## The assembler"
+echo
+show /tmp/p6_1_assemble.sh
+echo "STOPPED at P6-1, f: the run failed after GRANTED (FileNotFoundError: no sealed panel at OFILT_DATA_DIR/panel_confirm_SEALED.csv); POST CHECK False; part 2 not run; ACCESS_LOG untouched; Isaiah decides."
+echo
+date -u +%FT%TZ
+git -C "$REPO" rev-parse HEAD
+git -C "$REPO" status --porcelain
+} > "$OUT" 2>&1
+----- end of /tmp/p6_1_assemble.sh -----
+
+STOPPED at P6-1, f: the run failed after GRANTED (FileNotFoundError: no sealed panel at OFILT_DATA_DIR/panel_confirm_SEALED.csv); POST CHECK False; part 2 not run; ACCESS_LOG untouched; Isaiah decides.
+
+2026-10-12T23:42:17Z
+221507d01547869376e73cde51c20b86892bed95
+?? ACCESS_LOG
