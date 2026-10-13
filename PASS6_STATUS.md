@@ -6,18 +6,18 @@ Standing prompt: `files/pass6/PASS6_BUILDER_PROMPT_2026-10-12.md` (SHA-256 `2dfb
 
 | Item | Status | Notes |
 |---|---|---|
-| Pass 6 | in progress | The confirmation run (PLAN §8, row 6; the pre-registration's §7). |
+| Pass 6 | done; closed 2026-10-12 | The confirmation (PLAN §8, row 6; the pre-registration's §7). The first request failed before any byte was read; the second, under D2, produced the confirmation document. Decisions P93–P99 (`docs/DECISIONS_P93_onward.md`). |
 | P6-boot: a new builder session; the standing prompt found by its hash; read-only orientation | done; accepted by Isaiah 2026-10-12 | Read-only; no commit. Report `reports/P6_reports/p6_boot.txt`. |
 | P6-0: P5-4 and P6-boot accepted; Pass 6 opened; P6Q1 to P6Q13 and their clarifications; the run's criteria | done; accepted by Isaiah 2026-10-12 | `records: P6-0` (`cd2344e8a42f58dc5c3edd7e9a17a1a558445fbe`), a records-only commit after the documentation modules (P6Q2); the commit the sanction names. Report `reports/P6_reports/p6_0.txt`. |
 | P6-1: the sanction, the gate's checkpoint and the run (part 1); §7.6's test changes and the post-run checkpoint (part 2) | stopped at f; accepted by Isaiah 2026-10-12 | The gate passed and `checkpoint: P6-1 part 1` (G, `221507d01547869376e73cde51c20b86892bed95`) was committed. The run failed after GRANTED: the sealed panel was not in the data folder. POST CHECK False; part 2 not run. Report `reports/P6_reports/p6_1.txt`. |
 | P6-1b: P6-1's stop recorded; the first request's `ACCESS_LOG` preserved; the second attempt decided (D2) | done; accepted by Isaiah 2026-10-12 | `records: P6-1b`, a records-only commit after the documentation modules (P6Q2). Its first message stopped at a.4 on a supervisor's check (Deviations); its second made the commit. Report `reports/P6_reports/p6_1b2.txt`; the first run's report `reports/P6_reports/p6_1b_run1.txt`. |
 | P6-1c: the second attempt prepared: the first log renamed with its bytes unchanged; the revised kit of §7.6's test changes; the second criteria file | done; accepted by Isaiah 2026-10-12 | `records: P6-1c (...)` (`655b1af42830ac59af113b80c35d9ada08c5787c`), the rename alone (R100); then `checkpoint: P6-1c` after the full suite, S2, the commit the second sanction names. Report `reports/P6_reports/p6_1c.txt`. |
-| P6-1d: the second attempt (D2), under Isaiah's second sanction: the gate, the run and part 2 | done | `checkpoint: P6-1d part 1` (G2, the second run's commit) and `checkpoint: P6-1d part 2`. Outputs `reports/P6_runs/confirm/`; `ACCESS_LOG`; the registry's lines 3 and 4. Report `/tmp/p6_1d.txt`, copied at P6-2. |
-| P6-2: decisions P93 onward; P92's refresh; Pass 6 closed | to do | Records and documentation pins, after the documentation modules. |
+| P6-1d: the second attempt (D2), under Isaiah's second sanction: the gate, the run and part 2 | done; accepted by Isaiah 2026-10-12 | `checkpoint: P6-1d part 1` (G2, the second run's commit) and `checkpoint: P6-1d part 2`. Outputs `reports/P6_runs/confirm/`; `ACCESS_LOG`; the registry's lines 3 and 4. Report `reports/P6_reports/p6_1d.txt`. |
+| P6-2: decisions P93 onward; P92's refresh; Pass 6 closed | done | `records: P6-2`, a records and documentation-pin commit after the documentation modules (P6Q2). Report `/tmp/p6_2.txt`, copied by the next pass's first item. |
 
 ## Next action
 
-The supervisor reviews P6-1d's report. Then P6-2: decisions P93 onward, the run's facts recorded in full, P92's refresh, and Pass 6 closed. The write-up, which reports both requests, and the forward holdout follow Pass 6.
+**Pass 6 is closed.** Next come the write-up (§7.7: every row, in §4's wording, with both requests reported) and the forward holdout (§8), each under its own plan, in a new supervisor chat started from handoff H12. This file is closed from the next pass's first item and never edited again.
 
 ## Decision log
 
@@ -192,6 +192,41 @@ The supervisor reviews P6-1d's report. Then P6-2: decisions P93 onward, the run'
 >   - The run's hashes, run ids and wall time are in P6-1d's report; P6-2 records them here.
 >   - The first request (granted at `221507d0…`, no byte of the sealed panel read) is reported beside this result (D2 condition 7).
 > - **F5-1 and F5-3 closed** (P6-1d, 2026-10-12). The second request's `ACCESS_LOG` is committed and not ignored by git (P6Q9). POST CHECK P7 found the registry's append the only tracked change during the run, so `git_dirty` is read with the registry excluded (P6Q8).
+>
+> - **P6-1d accepted** (Isaiah, 2026-10-12, on the supervisor's recommendation; recorded by the P6-2 paste).
+>   - Every verdict True: A2_ENV, SANCTION, PRE, A5, B, GATE (64 checks), POST (49), G and PART2.
+>   - There is no deviation.
+>   - The supervisor rebuilt the second sanction and both of P6-1d's `PASS6_STATUS.md` versions (`4819790d…`, `327ef5b2…`) byte for byte.
+>   - Report `reports/P6_reports/p6_1d.txt`, SHA-256 `515809bdd2d51ea5854783c89bef0ff9d39d62b0770ff6e9377779ca396aea1b`.
+> - **The confirmation run's facts** (P98; recorded by the P6-2 paste).
+>   - **The gate.** G2 is `1da6164024856b4bce437e6414862a9a7da174f3` (`checkpoint: P6-1d part 1`, parent S2): 398 tests, `OK (skipped=6)`, GATE CHECK on 64 checks, the presence check twice.
+>   - **The run.** It ran on 2026-10-13 from 02:35:01 to 02:40:56 UTC, 354.6 s, with exit status 0.
+>   - **The outputs**, in `reports/P6_runs/confirm/`:
+>     - `document.json` `8e24fa53fdbabd90a1f5768f1ab6fda603d45d0e7deaf347ef098b9166b03a19`;
+>     - `manifest.json` `a56e18247c197fa8985563809cf7999070904588a4808ee201d7bd84c42bd06d`;
+>     - `runtime.json` `f7b002fa9e8d7815a08e3fbe72213281f5aa4105449df66afbedbe3b111ede1b`.
+>   - **`ACCESS_LOG`.** `ec003f2c9a47d84f3aa1b193ba5ee5e23bc582c5ae21edbb398fba85c64f4667`: one GRANTED line at G2, at 02:35:01Z. The first request's log, `reports/P6_runs/attempt1/ACCESS_LOG`, is unchanged (`c6eb0d5e…`).
+>   - **`RUN_REGISTRY.jsonl`.** `89d669cac68fa88df98041c78a06cede9c680a640b3c8bfd90a091b2c32777df`, 4 lines.
+>     - The dev run's two lines are byte-identical.
+>     - The new lines are `673153b9e4484516b29265cdbcd145e9` (main) and `c8547454ec1644099a22c79d633afbc7` (m7), both `confirm_real` at G2, with `git_dirty` False then True.
+>   - **The commit.** `checkpoint: P6-1d part 2` is `619bf39be5f324b95135bdabf6830de20d9cc7ab`: 398 tests, `OK (skipped=6)`, holding the six files.
+>   - **The document.** 71 rows: 52 estimated, 18 fixed, and 1 not applicable (R25, the forward holdout, §8).
+>   - **The claim rows, as the code reports them.** This is a record; the readings belong to the write-up, in §4's wording.
+>     - **H1 not rejected:** b̂ = 0.0954, DK SE 0.0946, p = 0.313, 95% CI [−0.090, 0.281], over 1,013 dates and 2,955 rows (O1, R4).
+>     - **Not claimed:** R10 (tier i) and R11 (tier ii). R12 makes no tier (iii) claim.
+>     - **R21.** The null is read against MDE80 = 0.2471.
+>     - **R14, claimed: "no drift exploitable net of costs".** TOST is equivalent at the primary SESOI 0.8652 and at the high SESOI 2.719, not at the low SESOI 0.07152 (O10, O11).
+>     - **R20.** H1 and the primary Clark–West comparison agree: M3 against M2, p = 0.424, not rejected at the calibrated value (O36).
+>   - **O45, the economic evaluation.** Its primary and high cost cases failed, "traded price 32210.0 exceeds the table's last bound 30000"; only the low cost case is computed (Flag F6-2).
+> - **P92's refresh made** (P99; P6Q11; by the P6-2 paste). Each pin move is a labelled documentation-pin deviation (P13(c)), after the run.
+>   - `docs/replacements/PLAN.md` v2.7 (`26c1d084ae199d42e9b8b6204b623d04d18a248d37faa4020e4c6f8ec43a4ef8`);
+>   - `docs/DATA_PROVENANCE.md` §4.5's Pass 5 and Pass 6 entries (`e54b829d5091ac174a7c0906895610ca37b8c0af11e53c8ab81577de1793e4a3`);
+>   - `docs/replacements/README.md`'s status block and pass table (`aca8811b87e53449feee583ff1302261db878bb50b34dedea3291bdedc320945`), which closes F5-2;
+>   - `docs/replacements/PROJECT_SETUP.md`'s upload lists (`282b147bd16037f280e1eb979a228c9ccecf5c68b7d1de2e06f9b6ccf4b4813f`);
+>   - `docs/DECISIONS_P93_onward.md` (`e7dcc46a26105dd73530b6b20645883347f1c429cd0cb0e0f0c317acb0a0670e`), new, recording P93–P99;
+>   - the pins in `tests/test_docs_p2.py`, `test_docs_d4.py` and `test_docs_d6.py`, including the decision files P88 onward and P93 onward.
+>   - Two of these files, PLAN and DATA_PROVENANCE, are Appendix A rows, as is `RUN_REGISTRY.jsonl`, which the run appended to. Appendix A records their SHA-256 at the tag, which is unchanged. The confirmation is already made, so refreshing them changes nothing it used.
+> - **Pass 6 closed** (Isaiah, 2026-10-12; by the P6-2 paste).
 
 ## Test results
 
@@ -202,6 +237,7 @@ The supervisor reviews P6-1d's report. Then P6-2: decisions P93 onward, the run'
 - P6-1c: the seven documentation modules passed before the rename's records commit: 26 tests, `OK (skipped=1)`. After the kit's install, the three changed modules passed on their own: 31 tests, OK. The full suite ran inside `checkpoint: P6-1c` (P5Q2 rule 1). Its counts are in P6-1c's report.
 - P6-1d part 1: the suite ran inside the gate's checkpoint (`checkpoint: P6-1d part 1`), before the second run. Its counts are in P6-1d's report.
 - P6-1d part 2: the three changed modules passed on their own on the real run's effects: 31 tests, OK. The suite ran inside `checkpoint: P6-1d part 2`. Its counts are in P6-1d's report.
+- P6-2: the seven documentation modules passed before the records commit: 26 tests, `OK (skipped=1)`. No full suite: the changes are documentation pins (P5Q2 rule 1).
 
 ## Test changes
 
@@ -216,12 +252,18 @@ The supervisor reviews P6-1d's report. Then P6-2: decisions P93 onward, the run'
     - Now: those two assertions until the second request; after it, `run_state.check_registry_after`.
   - `tests/test_p4_confirm_forecast.py` also inserts the tests folder into `sys.path`, for `run_state`.
   - No test is added or removed; the suite stays at 398.
+- P6-2 (P99; P6Q11; documentation pins, P13(c)):
+  - `tests/test_docs_p2.py`: the SHA-256 pins of PLAN, DATA_PROVENANCE, PROJECT_SETUP and README moved, each with its old value in the comment; `docs/DECISIONS_P88_onward.md` and `docs/DECISIONS_P93_onward.md` added to `NEW_PINNED`.
+  - `tests/test_docs_d4.py`: README's and PLAN's hash prefixes; PLAN's title is now `v2.7`; the Supersedes line now starts at v2.6.
+  - `tests/test_docs_d6.py`: PROJECT_SETUP's hash prefix; `PLAN.md` (v2.7); the Project's PLAN title, `v2.7`, in the check that runs only where the Project is mounted.
+  - No test is added or removed.
 
 ## Flags
 
 Flags open at the end of Pass 5 stay recorded in `PASS5_STATUS.md`, Flags (closed). Carried:
 - F5-1 (closed at P6-1d part 2, 2026-10-12): the second request's `ACCESS_LOG` committed by the post-run checkpoint, not ignored by git (P6Q9). Was: `ACCESS_LOG` is not in `.gitignore`. P6-1b committed the first request's `ACCESS_LOG` (P6Q9). The flag closes when the second request's log is committed.
-- F5-2: README's status block is stale. It is refreshed at P6-2 (P6Q11).
+- F5-2 (closed at P6-2, 2026-10-12): README's status block refreshed (P99). Was: README's status block is stale. It is refreshed at P6-2 (P6Q11).
+- F6-2 (new, P6-2, 2026-10-12): O45's primary and high cost cases are not estimable. A traded price of ¥32,210 exceeds the dev-era cost table's last bound of ¥30,000, so only the low cost case is computed. O45 is context and carries no claim (§4.6), and R14 rests on TOST, so the claims are unaffected. The write-up reports the failure, and any extension of the table is exploratory and labelled.
 - F5-3 (closed at P6-1d, 2026-10-12): POST CHECK P7 found the registry's append the only tracked change during the second run (P6Q8). Was: `git_dirty` is read with the registry excluded (P6Q8). The first request added no registry line, so it carries to the second attempt.
 - F6-1 (closed at P6-1c, 2026-10-12): the first log renamed and the revised kit installed; the full suite passed at `checkpoint: P6-1c`. Was: with the first `ACCESS_LOG` committed, `tests.test_p4_confirm_run.TestConfirmRun.test_load_confirm_refused_and_logged` fails in a full suite (it asserts that no `ACCESS_LOG` exists). No full suite runs until P6-1c installs the revised kit. The documentation modules do not include that test.
 
@@ -251,11 +293,14 @@ Flags open at the end of Pass 5 stay recorded in `PASS5_STATUS.md`, Flags (close
 - P6-1d part 1, up to the command: records only, then the gate's checkpoint. The suite reached the data folder only through its existing tests; the presence check was a single `os.stat` of the one panel path, made twice; the confirmation panel was not requested before the command.
 - P6-1d, the second request: the one computation on confirmation data in Pass 6. §7.4's command, once, loaded the dev panel, the events and the confirmation panel, each verified by `io` against its pinned SHA-256, and wrote the confirmation document. No sealed fit: `BLIND_FIT_LOG` is unchanged at 7 lines.
 - P6-1d part 2: the three changed modules and the suite ran, and the records were written. Nothing was computed on real data, and the confirmation panel was not requested again.
+- P6-2: records only. The documents were refreshed and their pins moved, and P6-1d's report was copied. No data file was opened, and nothing was computed.
 
 ## Deviations
 
 - **D2, the second attempt** (Isaiah, 2026-10-12): a labelled deviation from the one-shot rule of the pre-registration's §7.5, decided after the first request failed before any byte of the sealed panel was read (Decision log). Conditions 1 to 7 there. The first request is reported beside the result.
 - P6-1b, first message (`789c90c02285fc716ff3d00102ae9372b3d676b92ff63452a88f68fed30a7fbd`; recorded at its second run, 2026-10-12): stopped at a.4 on a supervisor's error. Its check expected P6-1's report to end with the STOP line, a date and G; the report form ends with `git status --porcelain`, which at P6-1's stop printed `?? ACCESS_LOG`. Every other check of a.2 to a.4 held; REPO was unchanged. The supervisor re-issued the message with the check corrected. Not a builder error. Report `reports/P6_reports/p6_1b_run1.txt`, SHA-256 `fa73a5b850bb19ec41e654b9ddf1098ffd15ccbc6db2f9d6e2680ee9d2190df1`.
+- **P6-2's documentation pins** (2026-10-12; P6Q11; P13(c)): the three documentation test modules' pins moved after the run, as Test changes lists. They touch no computation.
+- P6-1d (message `1fc9672ae5d26380126a99664aba30fee8d6522f1e47e1b923afce7a88e03351`; recorded at P6-2): none.
 - **D2's conditions 3 and 4, made at P6-1c** (2026-10-12): the first request's `ACCESS_LOG` renamed, its bytes unchanged (superseding hard rule 3 for that one file); the revised kit of §7.6's test changes installed before the second run (a test change before a run). Both are labelled parts of D2.
 - P6-1c (message `75d8a6beb0d9a05e7d070723464e0109b9c4cb03db1efcfa79f6ad525449885a`; recorded at P6-1d): none of the builder's. The rename and the kit's installation are D2's labelled parts, above.
 - P6-1 (message `5d3086aac207698cc69d7b4cfa97729455bc52beebf0c6ea53651b44b450a3f7`; recorded at P6-1b; reviewed at P6-1c): D1, a `sed -i ''` on a `/tmp` script during the gate's checkpoint, accepted as a minor procedural deviation with no effect (Decision log). N1 to N5 accepted.

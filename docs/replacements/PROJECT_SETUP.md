@@ -27,14 +27,15 @@ The analysis machine is a git repository, not project files: `ofilt/drift/`, `sp
 ## In the project
 
 **Plan and status:**
-- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.6);
+- `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.7);
 - `PASS2_HANDOFF.md`, `PASS2_ADDENDUM.md`;
 - `PASS1_STATUS.md` (stored as `PASS1_STATUS__2_.md`), `REBUILD_VERIFICATION.md`;
 - `PASS2_STATUS.md` and the Pass 2 reports;
 - `PASS3_STATUS.md` and the Pass 3 reports;
-- `PASS4_STATUS.md` and the Pass 4 documents and outputs listed under "After Pass 4".
+- `PASS4_STATUS.md` and the Pass 4 documents and outputs listed under "After Pass 4";
+- `PASS5_STATUS.md`, `PASS6_STATUS.md`, the pre-registration and its review, and the Pass 5 and Pass 6 files listed under "After Pass 5" and "After Pass 6".
 
-**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81), `DECISIONS_P82_onward.md` (P82–P87).
+**Decisions:** `DECISIONS_ADDENDUM.md` (P01–P13), `DECISIONS_P14_onward.md` (P14–P36), `DECISIONS_P37_onward.md` (P37–P57), `DECISIONS_P58_onward.md` (P58–P70), `DECISIONS_P71_onward.md` (P71–P81), `DECISIONS_P82_onward.md` (P82–P87), `DECISIONS_P88_onward.md` (P88–P92), `DECISIONS_P93_onward.md` (P93–P99).
 
 **Data documentation:** `DATA_PROVENANCE.md`, `DATA_DICTIONARY.md`, `MANIFEST.json`, `PASS2_INPUTS.json`.
 
@@ -66,6 +67,14 @@ After Pass 4 (replaced at the Pass 4 upload, after P4-7c):
 - the dev document holds the dev first look (P4-6). It is dev, not sealed, and it is disclosed in the pre-registration; once uploaded, every later session sees it.
 
 The data, event and build files do not change in Pass 4. The confirmation code and its specifications stay in the repo.
+
+After Pass 5 (uploaded at the start of Pass 6, from handoff H11's package):
+- added: `PREREG_v1.md`, `PREREG_v1_REVIEW.md`, `PASS5_STATUS.md`, `DECISIONS_P88_onward.md`, `P5_CONFIRM_SCRIPT_SPEC.md`, `p6_confirm_run.py` and `test_p6_confirm_run.py`.
+
+After Pass 6 (replaced at the Pass 6 upload, after P6-2):
+- replaced: `README.md`, `PROJECT_SETUP.md`, `PLAN.md` (v2.7), `DATA_PROVENANCE.md`;
+- added: `DECISIONS_P93_onward.md`, `PASS6_STATUS.md`, `P6_RUN_CRITERIA.md`, `P6_RUN2_CRITERIA.md`, and the confirmation document `reports/P6_runs/confirm/document.json`, uploaded as `P6_confirm_document.json`;
+- the confirmation document holds the confirmation results. Once uploaded, every later session sees them, by design. The sealed panel itself never enters the Project.
 
 ## Chat uploads
 

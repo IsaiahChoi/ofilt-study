@@ -1,4 +1,4 @@
-# Research Plan v2.6: Is overnight FX fully priced at the Tokyo open?
+# Research Plan v2.7: Is overnight FX fully priced at the Tokyo open?
 
 **Owner:** Isaiah Choi. **Executor:** Claude, with Isaiah as decision-maker.
 
@@ -9,9 +9,14 @@
 - Pass 3 (calibration, dev still blinded) is complete. One sanctioned sealed fit (`BLIND_FIT_LOG` line 7) calibrated the inference on dev-calibrated simulations. DK with the normal reference is kept for H1 (5.82% at b = 0, inside AM-02's band); the primary Clark–West comparison uses its calibrated critical value (AM-09); TOST is viable at the primary SESOI (AM-07); and the switch froze the spec (AM-10). Its decisions are P71–P81.
 - `spec-dev-v1` was tagged on the final Pass 3 records commit.
 - Pass 4 (the dev first look and the P13(b) dry run) is complete. The confirmation script was built and validated on synthetic data only; a dry run at confirmation length met every pre-stated criterion; the dev run was made once, under its sanction, and is exploratory. The M2 derivation is adopted for the documents (P83–P85). Its decisions are P4Q1–P4Q42, recorded as P82–P87.
-- Next: Pass 5, the pre-registration (`prereg-v1`).
+- Pass 5 (the pre-registration) is complete: `docs/PREREG_v1.md` with its review and Isaiah's sign-off; the tag `prereg-v1`; the OSF registration `osf.io/3mr5h`, embargoed. Its decisions are P5Q1–P5Q19, recorded as P88–P92.
+- Pass 6 (the confirmation) is complete.
+  - The first request of the confirmation panel was granted but failed before any byte was read: the sealed panel was not in the data folder.
+  - A second attempt was decided as the labelled deviation D2. Under `docs/P6_RUN2_CRITERIA.md`, it produced the confirmation document `reports/P6_runs/confirm/`.
+  - Its decisions are P6Q1–P6Q13 and D2, recorded as P93–P99.
+- Next: the write-up (every row, in the pre-registration's §4 wording, with both requests reported) and the forward holdout (the pre-registration's §8), each under its own plan.
 
-**Supersedes:** v2.5 (2026-10-07), which superseded v2.4 (2026-10-06), v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all six. If any wording differs, the decision log (P01–P87), the Pass 4 decision log (`PASS4_STATUS.md`) and `spec/SPEC_AMENDMENTS.md` govern.
+**Supersedes:** v2.6 (2026-10-12), which superseded v2.5 (2026-10-07), v2.4 (2026-10-06), v2.3 (2026-10-05), v2.2 (2026-10-04), v2.1 (Pass 1, item D4b, `docs/replacements/PLAN.md`) and v2.0. Archive all seven. If any wording differs, the decision log (P01–P99), the Pass 6 decision log (`PASS6_STATUS.md`), the pre-registration (`docs/PREREG_v1.md`) and `spec/SPEC_AMENDMENTS.md` govern.
 
 **Companion files:**
 
@@ -409,9 +414,9 @@ The lemma justifies the parsimonious ladder and explains Math 86's negative OOS 
 | 2 | Data and rebuild (`PASS2_HANDOFF.md`) | **Complete** (2026-10-06): see below; run as corrected by `PASS2_ADDENDUM.md` (P51); decisions P58–P70 | Yes, at every decision point, including one combined decision checkpoint before the switch commit |
 | 3 | Calibration, dev still blinded | **Complete** (2026-10-07): one sealed fit (`BLIND_FIT_LOG` line 7); the selection and the switch (AM-07, AM-09, AM-10); decisions P71–P81 | Each AM-xx |
 | — | **Tag `spec-dev-v1`** | Inference and calibration **locked** | — |
-| 4 | Dev first look (exploratory) + P13(b) dry run | Confirmation script recovers a known b on simulated data, runs end to end on dev; post-2024 row implemented | Yes |
-| 5 | Pre-registration (S4) | Prior exposure disclosed, sealed hash recorded, the sealed panel's old-column provenance disclosed (P59), advisor sign-off → **tag `prereg-v1`** | Yes |
-| 6 | Confirmation | Sealed panel opened once; every pre-registered output produced. Forward holdout after that (P13a) | — |
+| 4 | Dev first look (exploratory) + P13(b) dry run | **Complete** (2026-10-12): the confirmation script recovered a known b on simulated data and ran end to end on dev; the post-2024 row implemented; decisions P82–P87 | Yes |
+| 5 | Pre-registration (S4) | **Complete** (2026-10-12): prior exposure disclosed, sealed hash recorded, the sealed panel's old-column provenance disclosed (P59), advisor sign-off → **tag `prereg-v1`**; OSF `osf.io/3mr5h`; decisions P88–P92 | Yes |
+| 6 | Confirmation | **Complete** (2026-10-12): every pre-registered output produced at the second request (D2); the first request failed before any byte was read; decisions P93–P99. Forward holdout after that (P13a) | — |
 
 **Pass 2 is done when:**
 - the inputs pass their hash checks;
@@ -512,6 +517,12 @@ Dates are set with the advisor; v2.0's dates are only indicative.
 ---
 
 ## 13. Change log
+
+**v2.6 → v2.7 (2026-10-12)**
+- Passes 5 and 6 recorded.
+  - Pass 5 as P88–P92 (`docs/DECISIONS_P88_onward.md`).
+  - Pass 6 as P93–P99 (`docs/DECISIONS_P93_onward.md`): the standing prompt and P6Q1–P6Q13 (P93); the first criteria file and sanction (P94); the first request and its failure (P95); D2 (P96); the second attempt's preparation (P97); the confirmation run (P98); this refresh, with Pass 6 closed (P99).
+- The status block, the Supersedes line and §8's rows 4 to 6 updated. No other section changes.
 
 **v2.5 → v2.6 (2026-10-12)**
 - Pass 4 recorded as P82–P87: Pass 4's decisions P4Q1–P4Q42 (P82); the M2 derivation adopted for the documents (P83); P15's reading of a₂ = 0 qualified (P84); the reading of b qualified (P85); the registry's `git_dirty` (P86); this refresh (P87).

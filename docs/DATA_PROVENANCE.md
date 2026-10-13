@@ -292,6 +292,32 @@ What each earlier chat saw is as its attestation records. In the last chat, the 
 
 The builder's real-data contact in Pass 4 is listed in PASS4_STATUS, Blinding attestation, including the one sanctioned dev run (P4-6).
 
+**Pass 5 and Pass 6 (2026-10-12).**
+- **Pass 5's supervisor chat.** Its attestation is §8 of `PASS5_SUPERVISOR_HANDOFF_2026-10-12.md` (H11), and its contacts are in `PASS5_STATUS.md`, Disclosure list:
+  - the dev document, read by design;
+  - synthetic sandbox runs on snapshot copies, with an empty data folder and stand-in tags;
+  - no data file opened.
+
+  Pass 5's builder sessions read no dev value, and opened no data file beyond the suite's existing reads (`PASS5_STATUS.md`, Blinding attestation).
+- **Pass 6's supervisor chat (from H11).**
+  - It read the H11 snapshot, the Project's documents (the dev document among them, by design) and the builder reports.
+  - It hashed document copies, never a data file. The chat interface attached the column names, inferred types and row counts of the Project's three CSV files, which were ignored.
+  - It ran synthetic sandbox tests on snapshot copies with an empty data folder.
+  - It opened no data file and did not look in `build_out`.
+  - After the run it read the confirmation document, as every later reader does.
+- **The sealed panel's placement** (Isaiah's command; D2 condition 2).
+  - `build_out/p2_20261006T002928Z/panel_confirm_SEALED.csv` was copied with `cp -p` into the data folder, after the command checked its SHA-256, `b575272aad752b3af84abe109fa66edde421f7c99184c9d1885bacdce64f06d1` (AM-04), and the build's `MANIFEST.json`.
+  - The copy's hash was verified, and only hashes were printed.
+- **The first request (P6-1).**
+  - It was granted at `221507d01547869376e73cde51c20b86892bed95`.
+  - `io` could not open the sealed panel, which was not in the data folder, so no byte of it was read.
+  - The dev panel and the events were loaded and verified.
+- **The second request (P6-1d).**
+  - It was granted at `1da6164024856b4bce437e6414862a9a7da174f3`.
+  - `io` verified the dev panel, the events and the sealed panel against their pinned SHA-256, and the confirmation document was computed once.
+  - The P6-1d builder session read the document after the run, by design.
+- **Nothing else.** Nothing else in Pass 6 opened the sealed panel or computed on real data. The builder's contacts are in `PASS6_STATUS.md`, Blinding attestation.
+
 ### 4.6 Calendar facts used by the Pass 2 build (2026-10-05)
 
 **TSE sessions.**

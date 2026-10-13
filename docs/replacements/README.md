@@ -1,18 +1,19 @@
 # Overnight FX and the Tokyo opening auction (October 2026)
 
-**Status (2026-10-07).**
+**Status (2026-10-12).**
 - **Done:**
   - Pass 1, the analysis machine, completed 2026-10-02. Its final repository was lost, and Stage C4–D was rebuilt from the C3 checkpoint (205 tests). The rebuilt repository is the canonical study repository (P45).
   - Pass 2, data and rebuild, completed 2026-10-06 (decisions P58–P70):
     - the 60-column panels were built on macOS arm64 (P2-4) and accepted;
-    - the hedge is the 1306 ETF (AM-03); the panel hashes are in AM-04, and the Pass 2 robustness rows in AM-05;
-    - the switch commit applied them (P2-3b), and the C7 rerun on the Mac reproduced every rejection decision (D16).
-  - The four items still open on 2026-10-05 were resolved that day: the settings check by attestation (D2); the TOPIX total-return series, TPXDDVD Index (D3); the raw files organised; the Mac environment, `~/venvs/ofilt_p2`.
-  - Pass 3, calibration with dev still blinded, completed 2026-10-07 (decisions P71–P81):
-    - one sanctioned sealed fit, `BLIND_FIT_LOG` line 7, calibrated the inference on dev-calibrated simulations;
-    - the pre-stated rules kept DK with the normal reference for H1, set the calibrated Clark–West critical value (AM-09) and found TOST viable at the primary SESOI (AM-07);
-    - the switch froze the spec (AM-10).
-- **Next:** the `spec-dev-v1` tag, then Pass 4, the dev first look.
+    - the hedge is the 1306 ETF (AM-03), the panel hashes are in AM-04, and the Pass 2 robustness rows are in AM-05.
+  - Pass 3, calibration with dev still blinded, completed 2026-10-07 (decisions P71–P81). One sanctioned sealed fit (`BLIND_FIT_LOG` line 7) calibrated the inference, and the switch froze the spec (AM-10). The tag `spec-dev-v1` followed.
+  - Pass 4, the dev first look and the P13(b) dry run, completed 2026-10-12 (decisions P82–P87). The dev run is exploratory.
+  - Pass 5, the pre-registration, completed 2026-10-12 (decisions P88–P92): `docs/PREREG_v1.md`, the tag `prereg-v1`, and the OSF registration `osf.io/3mr5h` (embargoed).
+  - Pass 6, the confirmation, completed 2026-10-12 (decisions P93–P99):
+    - the first request was granted but failed before any byte of the sealed panel was read, because the panel was not in the data folder;
+    - the second attempt (D2) produced the confirmation document `reports/P6_runs/confirm/`;
+    - both requests are on record (`PASS6_STATUS.md`).
+- **Next:** the write-up (every row in the pre-registration's §4 wording, with both requests reported), then the forward holdout (the pre-registration's §8).
 
 ## Current scope
 
@@ -67,9 +68,9 @@ This tests whether FX is fully priced at the open, not how fast. Speed needs int
 | 2 | Data and rebuild (`PASS2_HANDOFF.md` + `PASS2_ADDENDUM.md`). No sealed fit is sanctioned in this pass | **Complete** (2026-10-06): 60-column panels built on macOS arm64; hedge 1306 (AM-03); the C7 rerun on the Mac reproduced every rejection decision (D16) |
 | 3 | Calibration, with dev still blinded by the guard: binding size run (AM-02), power and MDE, joint H1/CW cross-tab, Flags 10/12, SESOI and equivalence viability. Exactly one sanctioned sealed fit | **Complete** (2026-10-07): the sealed fit is `BLIND_FIT_LOG` line 7; DK-normal kept, c_CW,cal for Clark–West (AM-09), TOST viable (AM-07), the spec frozen (AM-10) |
 | — | **Tag `spec-dev-v1`**. Inference and calibration choices are locked from here | — |
-| 4 | Dev first look (exploratory) + the P13(b) dry run | — |
-| 5 | Pre-registration (prior-exposure disclosure, advisor sign-off) → tag `prereg-v1` | — |
-| 6 | Confirmation, once. The forward holdout (after 2026-03-05) is evaluated later | — |
+| 4 | Dev first look (exploratory) + the P13(b) dry run | **Complete** (2026-10-12): the dev run is exploratory; decisions P82–P87 |
+| 5 | Pre-registration (prior-exposure disclosure, advisor sign-off) → tag `prereg-v1` | **Complete** (2026-10-12): `docs/PREREG_v1.md`; OSF `osf.io/3mr5h`; decisions P88–P92 |
+| 6 | Confirmation, once. The forward holdout (after 2026-03-05) is evaluated later | **Complete** (2026-10-12): at the second request (D2); the first failed before any read; decisions P93–P99 |
 
 Older documents use other pass names; P44 maps them. In particular, AM-02's "Pass 4" means Pass 3.
 
